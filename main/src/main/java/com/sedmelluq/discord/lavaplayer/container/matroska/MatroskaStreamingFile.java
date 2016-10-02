@@ -235,11 +235,9 @@ public class MatroskaStreamingFile {
       if (level4.isType(MatroskaDocTypes.CueTrack.getType())) {
         level4.readData(dataSource);
         currentTrackId = ((UnsignedIntegerElement)level4).getValue();
-      } else if (level4.isType(MatroskaDocTypes.CueClusterPosition.getType())) {
-        if (currentTrackId != null) {
-          level4.readData(dataSource);
-          positions[currentTrackId.intValue()] = ((UnsignedIntegerElement)level4).getValue();
-        }
+      } else if (level4.isType(MatroskaDocTypes.CueClusterPosition.getType()) && currentTrackId != null) {
+        level4.readData(dataSource);
+        positions[currentTrackId.intValue()] = ((UnsignedIntegerElement)level4).getValue();
       }
 
       level4.skipData(dataSource);
