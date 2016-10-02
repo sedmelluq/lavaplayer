@@ -12,3 +12,16 @@ gradle-app.setting
 
 # # Work around https://youtrack.jetbrains.com/issue/IDEA-116898
 # gradle/wrapper/gradle-wrapper.properties
+
+.idea/
+jebml/src
+*.iml
+
+**/resources/natives
+natives/dist
+natives/fdk-aac/**
+!natives/fdk-aac/CMakeLists.txt
+natives/libs
+natives/opus/opus*
+natives/samplerate/src
+natives/vorbis/*/

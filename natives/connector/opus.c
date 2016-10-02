@@ -1,0 +1,25 @@
+#include <jni.h>
+#include <opus.h>
+
+JNIEXPORT jlong JNICALL Java_com_sedmelluq_discord_lavaplayer_natives_opus_OpusEncoderLibrary_create(JNIEnv *jni, jobject me, jint sample_rate, jint channels, jint application) {
+	int error;
+	return (jlong) opus_encoder_create(sample_rate, channels, application, &error);
+}
+
+JNIEXPORT jint JNICALL Java_com_sedmelluq_discord_lavaplayer_natives_opus_OpusEncoderLibrary_encode(JNIEnv *jni, jobject me, jlong instance, jobject direct_input, jint frame_size,
+		jobject direct_output, jint output_length) {
+	if (instance == 0) {
+		return 0;
+	}
+
+	opus_int16* input = (*jni)->GetDirectBufferAddress(jni, direct_input);
+	unsigned char* output = (*jni)->GetDirectBufferAddress(jni, direct_output);
+
+	return opus_encode((OpusEncoder*) instance, input, frame_size, output, output_length);
+}
+
+JNIEXPORT void JNICALL Java_com_sedmelluq_discord_lavaplayer_natives_opus_OpusEncoderLibrary_destroy(JNIEnv *jni, jobject me, jlong instance) {
+	if (instance != 0) {
+		opus_encoder_destroy(instance);
+	}
+}

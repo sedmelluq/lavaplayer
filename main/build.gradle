@@ -1,0 +1,25 @@
+plugins {
+  id 'java'
+  id 'application'
+  id 'org.sonarqube' version '2.1'
+}
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+dependencies {
+  compile project(':jebml')
+
+  compile "org.slf4j:slf4j-api:$slf4jVersion"
+
+  compile 'org.apache.httpcomponents:httpclient:4.5.2'
+  compile 'commons-io:commons-io:2.5'
+  compile 'net.dv8tion:JDA:2.2.1_353'
+
+  compile 'com.fasterxml.jackson.core:jackson-core:2.8.1'
+  compile 'com.fasterxml.jackson.core:jackson-databind:2.8.1'
+
+  compile 'org.jsoup:jsoup:1.9.2'
+}
+
+compileJava.dependsOn(':natives:checkNatives')

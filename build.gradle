@@ -1,0 +1,16 @@
+wrapper {
+  gradleVersion '2.9'
+}
+
+allprojects {
+  repositories {
+    mavenCentral()
+    jcenter()
+    mavenLocal()
+  }
+
+  apply plugin: 'java'
+  apply plugin: 'idea'
+}
+
+ext.slf4jVersion = '1.7.21'

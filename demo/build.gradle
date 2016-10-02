@@ -1,0 +1,22 @@
+plugins {
+  id 'java'
+  id 'application'
+}
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+ext.logbackVersion = '1.1.7'
+
+dependencies {
+  compile project(':main')
+  
+  compile 'net.dv8tion:JDA:2.2.1_353'
+
+  runtime "ch.qos.logback:logback-classic:$logbackVersion"
+  runtime "ch.qos.logback:logback-core:$logbackVersion"
+}
+
+mainClassName = 'com.sedmelluq.discord.lavaplayer.demo.Main'
+
+compileJava.dependsOn(':natives:checkNatives')

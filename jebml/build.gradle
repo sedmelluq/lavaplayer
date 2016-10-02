@@ -1,0 +1,33 @@
+plugins {
+  id 'de.undercouch.download' version '3.1.1'
+}
+
+apply plugin: 'de.undercouch.download'
+
+task load << {
+  if (!file("$projectDir/src/main").exists()) {
+    def downloadPath = "$buildDir/tmp/master.zip"
+    def unpackPath = "$buildDir/tmp"
+
+    download {
+      src 'https://github.com/Matroska-Org/jebml/archive/master.zip'
+      dest downloadPath
+    }
+
+    copy {
+      from zipTree(file(downloadPath))
+      into unpackPath
+    }
+
+    copy {
+      from "$unpackPath/jebml-master/src/main"
+      into "$projectDir/src/main"
+    }
+  }
+}
+
+dependencies {
+  compile "org.slf4j:slf4j-api:$slf4jVersion"
+}
+
+compileJava.dependsOn(tasks.load)

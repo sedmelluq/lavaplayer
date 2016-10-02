@@ -1,0 +1,252 @@
+plugins {
+  id 'de.undercouch.download' version '3.1.1'
+}
+
+import org.apache.tools.ant.taskdefs.condition.Os
+
+import java.util.regex.Pattern
+
+apply plugin: 'de.undercouch.download'
+
+task load << {
+  if (!file("$projectDir/samplerate/src").exists()) {
+    def downloadPath = "$buildDir/tmp/libsamplerate.tar.gz"
+    def unpackPath = "$buildDir/tmp"
+
+    download {
+      src 'http://www.mega-nerd.com/SRC/libsamplerate-0.1.8.tar.gz'
+      dest downloadPath
+    }
+
+    copy {
+      from tarTree(resources.gzip(downloadPath))
+      into unpackPath
+    }
+
+    copy {
+      from "$unpackPath/libsamplerate-0.1.8/src"
+      into "$projectDir/samplerate/src"
+    }
+  }
+  
+  if (!file("$projectDir/fdk-aac/libAACdec").exists()) {
+    def downloadPath = "$buildDir/tmp/fdk-aac-master.zip"
+    def unpackPath = "$buildDir"
+
+    download {
+      src 'https://github.com/mstorsjo/fdk-aac/archive/master.zip'
+      dest downloadPath
+    }
+
+    copy {
+      from zipTree(file(downloadPath))
+      into unpackPath
+    }
+
+    copy {
+      from "$unpackPath/fdk-aac-master"
+      into "$projectDir/fdk-aac"
+    }
+  }
+
+  if (!file("$projectDir/vorbis/libogg-1.3.2").exists()) {
+    def downloadPath = "$buildDir/tmp/temp.zip"
+    def unpackPath = "$buildDir"
+
+    download {
+      src 'http://downloads.xiph.org/releases/ogg/libogg-1.3.2.zip'
+      dest downloadPath
+    }
+
+    copy {
+      from zipTree(file(downloadPath))
+      into "$projectDir/vorbis"
+    }
+
+    download {
+      src 'http://downloads.xiph.org/releases/vorbis/libvorbis-1.3.5.zip'
+      dest downloadPath
+    }
+
+    copy {
+      from zipTree(file(downloadPath))
+      into "$projectDir/vorbis"
+    }
+  }
+
+  if (!file("$projectDir/opus/opus-1.1.3").exists()) {
+    def downloadPath = "$buildDir/tmp/temp.tar.gz"
+    def unpackPath = "$buildDir"
+
+    download {
+      src 'http://downloads.xiph.org/releases/opus/opus-1.1.3.tar.gz'
+      dest downloadPath
+    }
+
+    copy {
+      from tarTree(file(downloadPath))
+      into "$projectDir/opus"
+    }
+  }
+}
+
+ext.devEnvPath = null
+
+def getDevEnvLocation() {
+  if (ext.devEnvPath == null) {
+    def testDirectory = file("$buildDir/tmp/vsloc")
+    testDirectory.deleteDir()
+    testDirectory.mkdirs()
+
+    new File(testDirectory, "CMakeLists.txt") << ""
+
+    def outStream = new StringBuilder()
+    def cmakeProcess = "cmake .".execute(null as String[], testDirectory)
+    cmakeProcess.consumeProcessOutput(outStream, outStream)
+    cmakeProcess.waitFor()
+
+    def matcher = Pattern.compile("working C compiler: ([^\\n]*) -- works").matcher(outStream)
+    matcher.find()
+
+    ext.devEnvPath = new File(file(matcher.group(1)).parentFile.parentFile.parentFile, "Common7/IDE/devenv.exe").absolutePath
+  }
+
+  return ext.devEnvPath
+}
+
+def buildOpusOnWindows(bits, force) {
+  def base = "$projectDir/libs/${bits}"
+  def libs = ['opus', 'silk_fixed', 'silk_common', 'silk_float', 'celt']
+  def present = libs.every { file("${base}/${it}.lib").exists() }
+
+  if (force || !present) {
+    file(base).deleteDir()
+    file(base).mkdirs()
+
+    def devenv = getDevEnvLocation()
+    def platformName = bits == 64 ? "x64" : "Win32"
+
+    def process = [devenv, "opus.sln", "/Project", "opus", "/Build", "Release|${platformName}"].
+        execute(null as String[], file("$projectDir/opus/opus-1.1.3/win32/VS2015"))
+
+    process.waitForProcessOutput(System.out as Appendable, System.err)
+
+    libs.each {
+      assert file("$projectDir/opus/opus-1.1.3/win32/VS2015/${platformName}/Release/${it}.lib").renameTo("${base}/${it}.lib")
+    }
+  }
+}
+
+def buildOpusOnLinux(bits, force) {
+
+}
+
+def buildOpus(bits, force) {
+  if (Os.isFamily(Os.FAMILY_WINDOWS)) {
+    buildOpusOnWindows(bits, force)
+  } else {
+    buildOpusOnLinux(bits, force)
+  }
+}
+
+def getBuildParameters(base, bits) {
+  def bitSuffix = (bits == 32) ? 'x86' : 'x86-64'
+
+  if (Os.isFamily(Os.FAMILY_WINDOWS)) {
+    return [
+        'identifier': "win-${bitSuffix}",
+        'library': "${base}.dll",
+        'setupArguments': ["-DBITZ:STRING=${bits}", '-A', (bits == 64 ? 'x64' : 'Win32')],
+        'buildArguments': ['--config', 'Release'],
+        'env': [:]
+    ]
+  } else if (Os.isFamily(Os.FAMILY_MAC)) {
+    return [
+        'identifier': 'darwin',
+        'library': "lib${base}.so",
+        'setupArguments': ["-DBITZ:STRING=${bits}"],
+        'buildArguments': [],
+        'env': ['CXXFLAGS': "-m${bits}", 'CFLAGS': "-m${bits}", 'LDFLAGS': "-m${bits}"]
+    ]
+  } else {
+    return [
+        'identifier': "linux-${bitSuffix}",
+        'library': "lib${base}.dylib",
+        'setupArguments': ["-DBITZ:STRING=${bits}"],
+        'buildArguments': [],
+        'env': ['CXXFLAGS': "-m${bits}", 'CFLAGS': "-m${bits}", 'LDFLAGS': "-m${bits}"]
+    ]
+  }
+}
+
+def getHomeDirectory() {
+  def directory = file(System.getProperty('java.home'))
+  return directory.name == 'jre' ? directory.parentFile.absolutePath : directory.absolutePath
+}
+
+def createBuildTask(compileTask, checkTask, base, bits) {
+  def parameters = getBuildParameters(base, bits)
+  def buildDirectory = "$buildDir/${parameters.identifier}"
+  def distDirectory = "$projectDir/dist/${parameters.identifier}"
+  def deployDirectory = "${project(':main').projectDir}/src/main/resources/natives/${parameters.identifier}"
+  def taskBase = "${base}-${bits}"
+
+  if (Os.isFamily(Os.FAMILY_MAC) && bits != 64) {
+    return
+  }
+
+  parameters.env.put('DIST_DIR', distDirectory)
+  parameters.env.put('JAVA_HOME', getHomeDirectory())
+
+  def setupTask = tasks.create("${taskBase}-setup", Exec) {
+    doFirst {
+      buildOpus(bits, false)
+
+      file(buildDirectory).with {
+        it.deleteDir()
+        it.mkdirs()
+      }
+    }
+
+    workingDir buildDirectory
+    executable 'cmake'
+    args(parameters.setupArguments + ['../..'])
+    environment parameters.env
+  }
+
+  def buildTask = tasks.create("${taskBase}-build", Exec) {
+    workingDir buildDirectory
+    executable 'cmake'
+    args(['--build', '.'] + parameters.buildArguments)
+    environment parameters.env
+  }
+
+  def deployTask = tasks.create("${taskBase}-deploy") << {
+    copy {
+      from distDirectory
+      into deployDirectory
+    }
+  }
+  
+  tasks.create("${taskBase}-deploy-only") << {
+    copy {
+      from distDirectory
+      into deployDirectory
+    }
+  }
+
+  setupTask.dependsOn(tasks.load)
+  buildTask.dependsOn(setupTask)
+  deployTask.dependsOn(buildTask)
+  compileTask.dependsOn(deployTask)
+
+  if (!file("${deployDirectory}/${parameters.library}").exists()) {
+    checkTask.dependsOn(deployTask)
+  }
+}
+
+task compileNatives() { }
+task checkNatives() { }
+
+createBuildTask(tasks.compileNatives, tasks.checkNatives, 'connector', 32)
+createBuildTask(tasks.compileNatives, tasks.checkNatives, 'connector', 64)
