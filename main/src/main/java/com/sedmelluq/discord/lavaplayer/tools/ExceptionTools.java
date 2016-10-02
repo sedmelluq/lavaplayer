@@ -25,9 +25,9 @@ public class ExceptionTools {
    */
   public static FriendlyException wrapUnfriendlyExceptions(String message, Throwable throwable) {
     if (throwable instanceof FriendlyException) {
-      throw (FriendlyException) throwable;
+      return (FriendlyException) throwable;
     } else {
-      throw new FriendlyException(message, throwable);
+      return new FriendlyException(message, throwable);
     }
   }
 }
