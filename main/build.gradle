@@ -4,6 +4,8 @@ plugins {
   id 'org.sonarqube' version '2.1'
 }
 
+version = '0.1.0'
+
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
 
@@ -14,7 +16,6 @@ dependencies {
 
   compile 'org.apache.httpcomponents:httpclient:4.5.2'
   compile 'commons-io:commons-io:2.5'
-  compile 'net.dv8tion:JDA:2.2.1_353'
 
   compile 'com.fasterxml.jackson.core:jackson-core:2.8.1'
   compile 'com.fasterxml.jackson.core:jackson-databind:2.8.1'
@@ -23,3 +24,19 @@ dependencies {
 }
 
 compileJava.dependsOn(':natives:checkNatives')
+
+task sourceJar(type: Jar) {
+  from sourceSets.main.allJava
+}
+
+publishing {
+  publications {
+    mavenJava(MavenPublication) {
+      from components.java
+
+      artifact sourceJar {
+        classifier "sources"
+      }
+    }
+  }
+}

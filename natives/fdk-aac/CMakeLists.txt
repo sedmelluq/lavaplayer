@@ -16,10 +16,12 @@ foreach(subdir ${MAIN_DIRS})
 	include_directories("${subdir}/include")
 endforeach()
 
-if(${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
+if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
 	add_definitions(-Dinline=__inline)
+	set(CMAKE_CXX_FLAGS_RELEASE "/MT")
+else()
+	add_definitions(-Wno-narrowing)
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
 endif()
-
-message(STATUS "${MAIN_SOURCES}")
 
 add_library(fdk-aac STATIC ${MAIN_SOURCES})

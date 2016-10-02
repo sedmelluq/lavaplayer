@@ -2,12 +2,16 @@ cmake_minimum_required(VERSION 3.0)
 project(connector C)
 
 if(${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
-	add_definitions(-Dinline=__inline)
 	include_directories("$ENV{JAVA_HOME}/include/win32")
 elseif(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
 	include_directories("$ENV{JAVA_HOME}/include/linux")
 else()
 	include_directories("$ENV{JAVA_HOME}/include/darwin")
+endif()
+
+if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
+	add_definitions(-Dinline=__inline)
+	set(CMAKE_CXX_FLAGS_RELEASE "/MT")
 endif()
 
 include_directories("$ENV{JAVA_HOME}/include/")
@@ -26,4 +30,8 @@ if (DEFINED ENV{DIST_DIR})
 endif()
 
 add_library(connector SHARED samplerate.c fdk-aac.c vorbis.c opus.c)
-target_link_libraries(connector samplerate fdk-aac vorbis opus silk_common silk_fixed silk_float celt)
+target_link_libraries(connector samplerate fdk-aac vorbis opus)
+
+if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
+	target_link_libraries(connector silk_common silk_fixed silk_float celt)
+endif()
