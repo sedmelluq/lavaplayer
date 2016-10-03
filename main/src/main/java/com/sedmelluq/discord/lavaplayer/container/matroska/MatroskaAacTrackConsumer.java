@@ -13,6 +13,7 @@ import org.slf4j.LoggerFactory;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.ShortBuffer;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Consumes AAC track data from a matroska file.
@@ -30,13 +31,14 @@ public class MatroskaAacTrackConsumer implements MatroskaTrackConsumer {
   /**
    * @param track The MP4 audio track descriptor
    * @param frameConsumer Consumer of the decoded frames
+   * @param volumeLevel Mutable volume level
    */
-  public MatroskaAacTrackConsumer(AudioFrameConsumer frameConsumer, MatroskaFileTrack track) {
+  public MatroskaAacTrackConsumer(AudioFrameConsumer frameConsumer, MatroskaFileTrack track, AtomicInteger volumeLevel) {
     this.track = track;
     this.decoder = new AacDecoder();
     this.inputBuffer = ByteBuffer.allocateDirect(4096);
     this.outputBuffer = ByteBuffer.allocateDirect(2048 * track.getAudio().getChannels()).order(ByteOrder.LITTLE_ENDIAN).asShortBuffer();
-    this.downstream = FilterChainBuilder.forShortPcm(frameConsumer, track.getAudio().getChannels(),
+    this.downstream = FilterChainBuilder.forShortPcm(frameConsumer, volumeLevel, track.getAudio().getChannels(),
         (int) track.getAudio().getSamplingFrequency(), true);
   }
 

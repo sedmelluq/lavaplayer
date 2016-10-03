@@ -10,6 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Audio track that handles the processing of MP4 format
@@ -31,9 +32,9 @@ public class MpegAudioTrack extends BaseAudioTrack {
   }
 
   @Override
-  public void process() {
+  public void process(AtomicInteger volumeLevel) {
     MpegStreamingFile file = loadMp4File();
-    MpegTrackConsumer trackConsumer = loadAudioTrack(file);
+    MpegTrackConsumer trackConsumer = loadAudioTrack(file, volumeLevel);
 
     try {
       executor.executeProcessingLoop(() -> file.provideFrames(trackConsumer), file::seekToTimecode);
@@ -56,12 +57,12 @@ public class MpegAudioTrack extends BaseAudioTrack {
     return file;
   }
 
-  private MpegTrackConsumer loadAudioTrack(MpegStreamingFile file) {
+  private MpegTrackConsumer loadAudioTrack(MpegStreamingFile file, AtomicInteger volumeLevel) {
     MpegTrackConsumer trackConsumer = null;
     boolean success = false;
 
     try {
-      trackConsumer = selectAudioTrack(file.getTrackList());
+      trackConsumer = selectAudioTrack(file.getTrackList(), volumeLevel);
 
       if (trackConsumer == null) {
         throw new FriendlyException("The audio codec used in the track is not supported.", null);
@@ -81,10 +82,10 @@ public class MpegAudioTrack extends BaseAudioTrack {
     }
   }
 
-  private MpegTrackConsumer selectAudioTrack(List<MpegTrackInfo> tracks) {
+  private MpegTrackConsumer selectAudioTrack(List<MpegTrackInfo> tracks, AtomicInteger volumeLevel) {
     for (MpegTrackInfo track : tracks) {
       if ("soun".equals(track.handler) && "mp4a".equals(track.codecName)) {
-        return new MpegAacTrackConsumer(track, executor.getFrameConsumer());
+        return new MpegAacTrackConsumer(track, executor.getFrameConsumer(), volumeLevel);
       }
     }
 

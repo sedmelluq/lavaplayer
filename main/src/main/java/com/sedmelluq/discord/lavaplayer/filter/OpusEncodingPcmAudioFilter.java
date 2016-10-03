@@ -1,14 +1,17 @@
 package com.sedmelluq.discord.lavaplayer.filter;
 
+import com.sedmelluq.discord.lavaplayer.filter.volume.PcmVolumeProcessor;
 import com.sedmelluq.discord.lavaplayer.natives.opus.OpusEncoder;
 import com.sedmelluq.discord.lavaplayer.track.playback.AudioFrame;
 import com.sedmelluq.discord.lavaplayer.track.playback.AudioFrameConsumer;
+import com.sedmelluq.discord.lavaplayer.filter.volume.AudioFrameVolumeChanger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.ShortBuffer;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Encodes the input audio samples to OPUS frames and passes them to a frame consumer.
@@ -19,6 +22,7 @@ public class OpusEncodingPcmAudioFilter implements FloatPcmAudioFilter, ShortPcm
 
   public static final int FREQUENCY = 48000;
   public static final int CHANNEL_COUNT = 2;
+  public static final int FRAME_SIZE = 960;
 
   private static final int CHUNK_LENGTH_MS = 20;
   private static final int SAMPLES_PER_MS = 48;
@@ -27,18 +31,23 @@ public class OpusEncodingPcmAudioFilter implements FloatPcmAudioFilter, ShortPcm
   private final ShortBuffer frameBuffer;
   private final ByteBuffer encoded;
   private final OpusEncoder opusEncoder;
+  private final AtomicInteger volumeLevel;
+  private final PcmVolumeProcessor volumeProcessor;
 
   private long ignoredFrames;
   private long nextTimecode;
 
   /**
    * @param frameConsumer Frame consumer where to pass the encoded frames to
+   * @param volumeLevel Mutable volume level
    */
-  public OpusEncodingPcmAudioFilter(AudioFrameConsumer frameConsumer) {
+  public OpusEncodingPcmAudioFilter(AudioFrameConsumer frameConsumer, AtomicInteger volumeLevel) {
     this.frameConsumer = frameConsumer;
     this.frameBuffer = ByteBuffer.allocateDirect(CHUNK_LENGTH_MS * SAMPLES_PER_MS * CHANNEL_COUNT * 2).
         order(ByteOrder.LITTLE_ENDIAN).asShortBuffer();
     this.encoded = ByteBuffer.allocateDirect(4096);
+    this.volumeLevel = volumeLevel;
+    this.volumeProcessor = new PcmVolumeProcessor(volumeLevel.get());
 
     opusEncoder = new OpusEncoder(48000, 2);
     nextTimecode = 0;
@@ -132,16 +141,24 @@ public class OpusEncodingPcmAudioFilter implements FloatPcmAudioFilter, ShortPcm
   }
 
   private void dispatch() throws InterruptedException {
+    int currentVolume = volumeLevel.get();
+
+    if (currentVolume != volumeProcessor.getLastVolume()) {
+      AudioFrameVolumeChanger.apply(frameConsumer, currentVolume);
+    }
+
     if (!frameBuffer.hasRemaining()) {
       frameBuffer.clear();
+      volumeProcessor.applyVolume(100, currentVolume, frameBuffer);
 
       encoded.clear();
-      int encodedLength = opusEncoder.encode(frameBuffer, 960, encoded);
+
+      int encodedLength = opusEncoder.encode(frameBuffer, FRAME_SIZE, encoded);
 
       byte[] encodedBytes = new byte[encodedLength];
       encoded.get(encodedBytes);
 
-      frameConsumer.consume(new AudioFrame(nextTimecode, encodedBytes));
+      frameConsumer.consume(new AudioFrame(nextTimecode, encodedBytes, currentVolume));
       frameBuffer.clear();
 
       nextTimecode += CHUNK_LENGTH_MS;

@@ -10,6 +10,11 @@ public interface AudioTrack extends AudioItem {
   AudioTrackInfo getInfo();
 
   /**
+   * @return The identifier of the track
+   */
+  String getIdentifier();
+
+  /**
    * @return The current execution state of the track
    */
   AudioTrackState getState();

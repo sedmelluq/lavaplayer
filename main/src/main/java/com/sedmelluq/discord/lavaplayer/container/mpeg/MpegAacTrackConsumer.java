@@ -14,6 +14,7 @@ import java.nio.ByteOrder;
 import java.nio.ShortBuffer;
 import java.nio.channels.ClosedByInterruptException;
 import java.nio.channels.ReadableByteChannel;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Handles processing MP4 AAC frames. Passes the decoded frames to the specified frame consumer. Currently only AAC LC
@@ -32,13 +33,14 @@ public class MpegAacTrackConsumer implements MpegTrackConsumer {
   /**
    * @param track The MP4 audio track descriptor
    * @param frameConsumer Consumer of the decoded frames
+   * @param volumeLevel Mutable volume level
    */
-  public MpegAacTrackConsumer(MpegTrackInfo track, AudioFrameConsumer frameConsumer) {
+  public MpegAacTrackConsumer(MpegTrackInfo track, AudioFrameConsumer frameConsumer, AtomicInteger volumeLevel) {
     this.track = track;
     this.decoder = new AacDecoder();
     this.inputBuffer = ByteBuffer.allocateDirect(4096);
     this.outputBuffer = ByteBuffer.allocateDirect(2048 * track.channelCount).order(ByteOrder.LITTLE_ENDIAN).asShortBuffer();
-    this.downstream = FilterChainBuilder.forShortPcm(frameConsumer, track.channelCount, track.sampleRate, true);
+    this.downstream = FilterChainBuilder.forShortPcm(frameConsumer, volumeLevel, track.channelCount, track.sampleRate, true);
   }
 
   @Override

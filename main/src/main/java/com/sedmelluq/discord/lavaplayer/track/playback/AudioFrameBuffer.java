@@ -1,5 +1,10 @@
 package com.sedmelluq.discord.lavaplayer.track.playback;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 
@@ -8,6 +13,8 @@ import java.util.concurrent.BlockingQueue;
  * Consumes frames in a blocking manner and provides frames in a non-blocking manner.
  */
 public class AudioFrameBuffer implements AudioFrameConsumer, AudioFrameProvider {
+  private static final Logger log = LoggerFactory.getLogger(AudioFrameBuffer.class);
+
   private final Object synchronizer;
   private final BlockingQueue<AudioFrame> audioFrames;
   private boolean terminated;
@@ -91,5 +98,17 @@ public class AudioFrameBuffer implements AudioFrameConsumer, AudioFrameProvider 
    */
   public boolean hasClearOnInsert() {
     return clearOnInsert;
+  }
+
+  @Override
+  public void rebuild(AudioFrameRebuilder rebuilder) {
+    List<AudioFrame> frames = new ArrayList<>();
+    int frameCount = audioFrames.drainTo(frames);
+
+    log.debug("Running rebuilder {} on {} buffered frames.", rebuilder.getClass().getSimpleName(), frameCount);
+
+    for (AudioFrame frame : frames) {
+      audioFrames.add(rebuilder.rebuild(frame));
+    }
   }
 }

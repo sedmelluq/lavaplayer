@@ -1,5 +1,6 @@
 package com.sedmelluq.discord.lavaplayer.player;
 
+import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 
@@ -26,7 +27,7 @@ public interface AudioLoadResultHandler {
 
   /**
    * Called when loading an item failed with an exception.
-   * @param throwable The exception that was thrown
+   * @param exception The exception that was thrown
    */
-  void loadFailed(Throwable throwable);
+  void loadFailed(FriendlyException exception);
 }

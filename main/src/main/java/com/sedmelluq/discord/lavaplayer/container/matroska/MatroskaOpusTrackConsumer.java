@@ -1,24 +1,56 @@
 package com.sedmelluq.discord.lavaplayer.container.matroska;
 
+import com.sedmelluq.discord.lavaplayer.filter.FilterChainBuilder;
+import com.sedmelluq.discord.lavaplayer.filter.OpusEncodingPcmAudioFilter;
+import com.sedmelluq.discord.lavaplayer.filter.ShortPcmAudioFilter;
+import com.sedmelluq.discord.lavaplayer.natives.opus.OpusDecoder;
 import com.sedmelluq.discord.lavaplayer.track.playback.AudioFrame;
 import com.sedmelluq.discord.lavaplayer.track.playback.AudioFrameConsumer;
+import com.sedmelluq.discord.lavaplayer.filter.volume.AudioFrameVolumeChanger;
 import org.ebml.matroska.MatroskaFileFrame;
 import org.ebml.matroska.MatroskaFileTrack;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.ShortBuffer;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Consumes OPUS track data from a matroska file.
  */
 public class MatroskaOpusTrackConsumer implements MatroskaTrackConsumer {
-  private AudioFrameConsumer frameConsumer;
-  private MatroskaFileTrack track;
+  private static final Logger log = LoggerFactory.getLogger(MatroskaOpusTrackConsumer.class);
+
+  private final AudioFrameConsumer frameConsumer;
+  private final MatroskaFileTrack track;
+  private final AtomicInteger volumeLevel;
+  private final boolean hasStandardInput;
+  private final int inputFrequency;
+  private final int inputChannels;
+
+  private long currentTimecode;
+  private boolean hasStandardSize;
+  private OpusDecoder opusDecoder;
+  private ShortPcmAudioFilter downstream;
+  private ByteBuffer directInput;
+  private ShortBuffer frameBuffer;
 
   /**
    * @param frameConsumer The consumer of the audio frames created from this track
    * @param track The associated matroska track
+   * @param volumeLevel Mutable volume level
    */
-  public MatroskaOpusTrackConsumer(AudioFrameConsumer frameConsumer, MatroskaFileTrack track) {
+  public MatroskaOpusTrackConsumer(AudioFrameConsumer frameConsumer, MatroskaFileTrack track, AtomicInteger volumeLevel) {
     this.frameConsumer = frameConsumer;
     this.track = track;
+    this.volumeLevel = volumeLevel;
+    this.inputFrequency = (int) track.getAudio().getSamplingFrequency();
+    this.inputChannels = track.getAudio().getChannels();
+    this.hasStandardInput = inputFrequency == OpusEncodingPcmAudioFilter.FREQUENCY && inputChannels == OpusEncodingPcmAudioFilter.CHANNEL_COUNT;
+    this.hasStandardSize = true;
+    this.currentTimecode = 0;
   }
 
   @Override
@@ -33,24 +65,118 @@ public class MatroskaOpusTrackConsumer implements MatroskaTrackConsumer {
 
   @Override
   public void seekPerformed(long requestedTimecode, long providedTimecode) {
-    // Nothing to do here
+    currentTimecode = providedTimecode;
+
+    if (downstream != null) {
+      downstream.seekPerformed(requestedTimecode, providedTimecode);
+    }
   }
 
   @Override
-  public void flush() {
-    // Nothing to do here
+  public void flush() throws InterruptedException {
+    if (downstream != null) {
+      downstream.flush();
+    }
   }
 
   @Override
   public void consume(MatroskaFileFrame frame) throws InterruptedException {
-    byte[] bytes = new byte[frame.getData().remaining()];
-    frame.getData().get(bytes);
+    int frameSize = processFrameSize(frame.getData());
 
-    frameConsumer.consume(new AudioFrame(frame.getTimecode(), bytes));
+    if (frameSize != 0) {
+      checkDecoderNecessity();
+
+      if (opusDecoder != null) {
+        passDownstream(frame.getData(), frameSize);
+      } else {
+        passThrough(frame.getData());
+      }
+    }
   }
 
   @Override
   public void close() {
-    // Nothing to do here
+    if (opusDecoder != null) {
+      destroyDecoder();
+    }
+  }
+
+  private int processFrameSize(ByteBuffer buffer) {
+    int frameSize = OpusDecoder.getPacketFrameSize(inputFrequency, buffer.array(), buffer.position(), buffer.remaining());
+
+    if (frameSize == 0) {
+      return 0;
+    } else if (frameSize != OpusEncodingPcmAudioFilter.FRAME_SIZE) {
+      hasStandardSize = false;
+    }
+
+    currentTimecode += frameSize * 1000 / inputFrequency;
+    return frameSize;
+  }
+
+  private void passDownstream(ByteBuffer buffer, int frameSize) throws InterruptedException {
+    if (directInput == null || directInput.capacity() < buffer.remaining()) {
+      directInput = ByteBuffer.allocateDirect(buffer.remaining() + 200);
+    }
+
+    directInput.clear();
+    directInput.put(buffer);
+    directInput.flip();
+
+    if (frameBuffer == null || frameBuffer.capacity() < frameSize * inputChannels) {
+      frameBuffer = ByteBuffer.allocateDirect(frameSize * inputChannels * 2).order(ByteOrder.LITTLE_ENDIAN).asShortBuffer();
+    }
+
+    frameBuffer.clear();
+    frameBuffer.limit(frameSize);
+
+    opusDecoder.decode(directInput, frameBuffer);
+    downstream.process(frameBuffer);
+  }
+
+  private void passThrough(ByteBuffer buffer) throws InterruptedException {
+    byte[] bytes = new byte[buffer.remaining()];
+    buffer.get(bytes);
+
+    frameConsumer.consume(new AudioFrame(currentTimecode, bytes, 100));
+  }
+
+  private boolean needsDecoding() {
+    return volumeLevel.get() != 100 || !hasStandardSize || !hasStandardInput;
+  }
+
+  private void checkDecoderNecessity() {
+    if (needsDecoding()) {
+      if (opusDecoder == null) {
+        log.debug("Enabling reencode mode on opus track.");
+
+        initialiseDecoder();
+
+        AudioFrameVolumeChanger.apply(frameConsumer, volumeLevel.get());
+      }
+    } else {
+      if (opusDecoder != null) {
+        log.debug("Enabling passthrough mode on opus track.");
+
+        destroyDecoder();
+
+        AudioFrameVolumeChanger.apply(frameConsumer, volumeLevel.get());
+      }
+    }
+  }
+
+  private void initialiseDecoder() {
+    opusDecoder = new OpusDecoder(inputFrequency, inputChannels);
+    downstream = FilterChainBuilder.forShortPcm(frameConsumer, volumeLevel, inputChannels, inputFrequency, true);
+    downstream.seekPerformed(currentTimecode, currentTimecode);
+  }
+
+  private void destroyDecoder() {
+    opusDecoder.close();
+    opusDecoder = null;
+    downstream.close();
+    downstream = null;
+    directInput = null;
+    frameBuffer = null;
   }
 }

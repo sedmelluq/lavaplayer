@@ -8,6 +8,8 @@ import org.ebml.matroska.MatroskaFileTrack;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.concurrent.atomic.AtomicInteger;
+
 /**
  * Audio track that handles the processing of MKV and WEBM formats
  */
@@ -32,9 +34,9 @@ public class MatroskaAudioTrack extends BaseAudioTrack {
   }
 
   @Override
-  public void process() {
+  public void process(AtomicInteger volumeLevel) {
     MatroskaStreamingFile file = loadMatroskaFile();
-    MatroskaTrackConsumer trackConsumer = loadAudioTrack(file);
+    MatroskaTrackConsumer trackConsumer = loadAudioTrack(file, volumeLevel);
 
     try {
       executor.executeProcessingLoop(() -> {
@@ -58,12 +60,12 @@ public class MatroskaAudioTrack extends BaseAudioTrack {
     return file;
   }
 
-  private MatroskaTrackConsumer loadAudioTrack(MatroskaStreamingFile file) {
+  private MatroskaTrackConsumer loadAudioTrack(MatroskaStreamingFile file, AtomicInteger volumeLevel) {
     MatroskaTrackConsumer trackConsumer = null;
     boolean success = false;
 
     try {
-      trackConsumer = selectAudioTrack(file.getTrackList());
+      trackConsumer = selectAudioTrack(file.getTrackList(), volumeLevel);
 
       if (trackConsumer == null) {
         throw new IllegalStateException("No supported audio tracks in the file.");
@@ -82,18 +84,18 @@ public class MatroskaAudioTrack extends BaseAudioTrack {
     return trackConsumer;
   }
 
-  private MatroskaTrackConsumer selectAudioTrack(MatroskaFileTrack[] tracks) {
+  private MatroskaTrackConsumer selectAudioTrack(MatroskaFileTrack[] tracks, AtomicInteger volumeLevel) {
     MatroskaTrackConsumer trackConsumer = null;
 
     for (MatroskaFileTrack track : tracks) {
       if (track.getTrackType() == MatroskaFileTrack.TrackType.AUDIO) {
         if (OPUS_CODEC.equals(track.getCodecID())) {
-          trackConsumer = new MatroskaOpusTrackConsumer(executor.getFrameConsumer(), track);
+          trackConsumer = new MatroskaOpusTrackConsumer(executor.getFrameConsumer(), track, volumeLevel);
           break;
         } else if (VORBIS_CODEC.equals(track.getCodecID())) {
-          trackConsumer = new MatroskaVorbisTrackConsumer(executor.getFrameConsumer(), track);
+          trackConsumer = new MatroskaVorbisTrackConsumer(executor.getFrameConsumer(), track, volumeLevel);
         } else if (AAC_CODEC.equals(track.getCodecID())) {
-          trackConsumer = new MatroskaAacTrackConsumer(executor.getFrameConsumer(), track);
+          trackConsumer = new MatroskaAacTrackConsumer(executor.getFrameConsumer(), track, volumeLevel);
         }
       }
     }

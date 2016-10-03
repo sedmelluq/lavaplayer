@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.StringJoiner;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.sedmelluq.discord.lavaplayer.container.Formats.MIME_AUDIO_WEBM;
 import static com.sedmelluq.discord.lavaplayer.tools.DataFormatTools.convertToMapLayout;
@@ -50,7 +51,7 @@ public class YoutubeAudioTrack extends DelegatedAudioTrack {
   }
 
   @Override
-  public void process() throws Exception {
+  public void process(AtomicInteger volumeLevel) throws Exception {
     try (CloseableHttpClient httpClient = manager.createHttpClient()) {
       JsonBrowser info = getTrackInfo(httpClient);
 
@@ -63,9 +64,9 @@ public class YoutubeAudioTrack extends DelegatedAudioTrack {
 
       try (YoutubePersistentHttpStream stream = new YoutubePersistentHttpStream(httpClient, signedUrl, format.getContentLength())) {
         if (MIME_AUDIO_WEBM.equals(format.getType().getMimeType())) {
-          processDelegate(new MatroskaAudioTrack(executor, trackInfo, stream));
+          processDelegate(new MatroskaAudioTrack(executor, trackInfo, stream), volumeLevel);
         } else {
-          processDelegate(new MpegAudioTrack(executor, trackInfo, stream));
+          processDelegate(new MpegAudioTrack(executor, trackInfo, stream), volumeLevel);
         }
       }
     }

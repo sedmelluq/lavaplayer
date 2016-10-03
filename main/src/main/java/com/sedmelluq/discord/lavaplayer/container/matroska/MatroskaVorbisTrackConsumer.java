@@ -8,6 +8,7 @@ import org.ebml.matroska.MatroskaFileFrame;
 import org.ebml.matroska.MatroskaFileTrack;
 
 import java.nio.ByteBuffer;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Consumes Vorbis track data from a matroska file.
@@ -26,14 +27,15 @@ public class MatroskaVorbisTrackConsumer implements MatroskaTrackConsumer {
   /**
    * @param frameConsumer The consumer of the audio frames created from this track
    * @param track The associated matroska track
+   * @param volumeLevel Mutable volume level
    */
-  public MatroskaVorbisTrackConsumer(AudioFrameConsumer frameConsumer, MatroskaFileTrack track) {
+  public MatroskaVorbisTrackConsumer(AudioFrameConsumer frameConsumer, MatroskaFileTrack track, AtomicInteger volumeLevel) {
     this.track = track;
     this.decoder = new VorbisDecoder();
     this.copyBuffer = new byte[COPY_BUFFER_SIZE];
 
     MatroskaFileTrack.MatroskaAudioTrack audioTrack = track.getAudio();
-    this.downstream = FilterChainBuilder.forFloatPcm(frameConsumer, audioTrack.getChannels(), (int) audioTrack.getSamplingFrequency());
+    this.downstream = FilterChainBuilder.forFloatPcm(frameConsumer, volumeLevel, audioTrack.getChannels(), (int) audioTrack.getSamplingFrequency());
   }
 
   @Override

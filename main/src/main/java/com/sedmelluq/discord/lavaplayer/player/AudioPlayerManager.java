@@ -58,7 +58,7 @@ public class AudioPlayerManager {
         }
       } catch (Throwable throwable) {
         log.error("Failed to load track with identifier {} due to exception.", identifier, throwable);
-        resultHandler.loadFailed(throwable);
+        resultHandler.loadFailed(ExceptionTools.wrapUnfriendlyExceptions("Something went wrong when looking up the track", throwable));
         ExceptionTools.rethrowErrors(throwable);
       }
     });

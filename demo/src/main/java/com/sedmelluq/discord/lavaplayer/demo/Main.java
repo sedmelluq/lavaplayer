@@ -58,6 +58,8 @@ public class Main {
             executePlayCommand(event, message.split(" ", 2)[1], true);
           } else if ("add".equals(parts[0]) && parts.length > 1) {
             executePlayCommand(event, message.split(" ", 2)[1], false);
+          } else if ("volume".equals(parts[0]) && parts.length == 2) {
+            player.setVolume(Integer.parseInt(parts[1]));
           } else if ("skip".equals(parts[0])) {
             scheduler.skipTrack();
           } else if ("ahead".equals(parts[0])) {

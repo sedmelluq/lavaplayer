@@ -11,6 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -67,8 +68,9 @@ public class AudioTrackExecutor implements AudioFrameProvider {
   /**
    * Execute the track, which means that this thread will fill the frame buffer until the track finishes or is stopped.
    * @param player The AudioPlayer which is running this executor
+   * @param volumeLevel Mutable volume level to use when executing the track
    */
-  public void execute(AudioPlayer player) {
+  public void execute(AudioPlayer player, AtomicInteger volumeLevel) {
     InternalAudioTrack audioTrack = rootTrack.get();
 
     if (playingThread.compareAndSet(null, Thread.currentThread())) {
@@ -76,7 +78,7 @@ public class AudioTrackExecutor implements AudioFrameProvider {
       currentPlayer.set(player);
 
       try {
-        audioTrack.process();
+        audioTrack.process(volumeLevel);
 
         log.info("Playing track {} finished or was stopped.", audioTrack.getIdentifier());
       } catch (Throwable e) {

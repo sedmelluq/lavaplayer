@@ -8,6 +8,7 @@ import com.sedmelluq.discord.lavaplayer.track.DelegatedAudioTrack;
 import com.sedmelluq.discord.lavaplayer.container.mpeg.MpegAudioTrack;
 
 import java.io.File;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Audio track that handles processing local files as audio tracks.
@@ -26,11 +27,11 @@ public class LocalAudioTrack extends DelegatedAudioTrack {
   }
 
   @Override
-  public void process() throws Exception {
+  public void process(AtomicInteger volumeLevel) throws Exception {
     if (executor.getIdentifier().endsWith(".mp4") || executor.getIdentifier().endsWith(".m4a")) {
-      processDelegate(new MpegAudioTrack(executor, trackInfo, new LocalSeekableInputStream(file)));
+      processDelegate(new MpegAudioTrack(executor, trackInfo, new LocalSeekableInputStream(file)), volumeLevel);
     } else if (executor.getIdentifier().endsWith(".webm") || executor.getIdentifier().endsWith(".mkv")) {
-      processDelegate(new MatroskaAudioTrack(executor, trackInfo, new LocalSeekableInputStream(file)));
+      processDelegate(new MatroskaAudioTrack(executor, trackInfo, new LocalSeekableInputStream(file)), volumeLevel);
     } else {
       throw new FriendlyException("Unknown file extension.", null);
     }

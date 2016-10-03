@@ -41,6 +41,9 @@ task sourceJar(type: Jar) {
 publishing {
   publications {
     mavenJava(MavenPublication) {
+      groupId 'com.sedmelluq'
+      artifactId 'lavaplayer-jebml'
+
       from components.java
 
       artifact sourceJar {

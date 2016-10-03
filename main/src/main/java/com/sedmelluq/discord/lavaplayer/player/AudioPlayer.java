@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -32,6 +33,7 @@ public class AudioPlayer implements AudioFrameProvider {
   private final AtomicBoolean paused;
   private final AudioPlayerManager manager;
   private final List<AudioEventListener> listeners;
+  private final AtomicInteger volumeLevel;
 
   /**
    * @param manager Audio player manager which this player is attached to
@@ -41,6 +43,7 @@ public class AudioPlayer implements AudioFrameProvider {
     paused = new AtomicBoolean();
     this.manager = manager;
     listeners = new ArrayList<>();
+    volumeLevel = new AtomicInteger(100);
   }
 
   /**
@@ -85,7 +88,7 @@ public class AudioPlayer implements AudioFrameProvider {
     }
 
     final AudioPlayer self = this;
-    manager.getExecutor().submit(() -> newTrack.getExecutor().execute(self));
+    manager.getExecutor().submit(() -> newTrack.getExecutor().execute(self, volumeLevel));
 
     return true;
   }
@@ -159,6 +162,14 @@ public class AudioPlayer implements AudioFrameProvider {
     }
   }
 
+  public int getVolume() {
+    return volumeLevel.get();
+  }
+
+  public void setVolume(int volume) {
+    volumeLevel.set(Math.min(150, Math.max(0, volume)));
+  }
+
   /**
    * @return Whether the player is paused
    */
@@ -184,11 +195,7 @@ public class AudioPlayer implements AudioFrameProvider {
    * Destroy the player and stop all playing tracks.
    */
   public void destroy() {
-    AudioTrack track = activeTrack.get();
-
-    if (track != null) {
-      track.stop();
-    }
+    stopTrack();
   }
 
   /**
