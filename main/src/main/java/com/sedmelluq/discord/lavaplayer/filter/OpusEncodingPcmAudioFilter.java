@@ -141,13 +141,13 @@ public class OpusEncodingPcmAudioFilter implements FloatPcmAudioFilter, ShortPcm
   }
 
   private void dispatch() throws InterruptedException {
-    int currentVolume = volumeLevel.get();
-
-    if (currentVolume != volumeProcessor.getLastVolume()) {
-      AudioFrameVolumeChanger.apply(frameConsumer, currentVolume);
-    }
-
     if (!frameBuffer.hasRemaining()) {
+      int currentVolume = volumeLevel.get();
+
+      if (currentVolume != volumeProcessor.getLastVolume()) {
+        AudioFrameVolumeChanger.apply(frameConsumer, currentVolume);
+      }
+
       frameBuffer.clear();
       volumeProcessor.applyVolume(100, currentVolume, frameBuffer);
 
