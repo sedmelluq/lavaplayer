@@ -25,6 +25,7 @@ public class AudioFrameVolumeChanger implements AudioFrameRebuilder {
 
   private OpusEncoder encoder;
   private OpusDecoder decoder;
+  private int frameIndex;
 
   private AudioFrameVolumeChanger(int newVolume) {
     this.newVolume = newVolume;
@@ -49,12 +50,27 @@ public class AudioFrameVolumeChanger implements AudioFrameRebuilder {
 
     encodedBuffer.clear();
 
-    volumeProcessor.applyVolume(frame.volume, newVolume, sampleBuffer);
+    int targetVolume = newVolume;
+
+    if (++frameIndex < 50) {
+      targetVolume = (int) ((newVolume - frame.volume) * (frameIndex / 50.0) + frame.volume);
+    }
+
+    volumeProcessor.applyVolume(frame.volume, targetVolume, sampleBuffer);
 
     encoder.encode(sampleBuffer, FRAME_SIZE, encodedBuffer);
 
     byte[] bytes = new byte[encodedBuffer.remaining()];
     encodedBuffer.get(bytes);
+
+    // One frame per 20ms is consumed. To not spike the CPU usage, reencode only once per 5ms. By the time the buffer is
+    // fully rebuilt, it is probably near to 3/4 its maximum size.
+    try {
+      Thread.sleep(5);
+    } catch (InterruptedException e) {
+      // Keep it interrupted, it will trip on the next interruptible operation
+      Thread.currentThread().interrupt();
+    }
 
     return new AudioFrame(frame.timecode, bytes, newVolume);
   }
