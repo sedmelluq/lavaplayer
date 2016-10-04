@@ -9,7 +9,6 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -94,7 +93,7 @@ public class YoutubeSignatureCipherManager {
       try (CloseableHttpResponse response = httpClient.execute(new HttpGet(parseTokenScriptUrl(cipherScriptUrl)))) {
         validateResponseCode(response);
 
-        cipherKey = extractTokensFromScript(IOUtils.toString(response.getEntity().getContent(), Charset.defaultCharset()));
+        cipherKey = extractTokensFromScript(IOUtils.toString(response.getEntity().getContent(), "UTF-8"));
         cipherCache.put(cipherScriptUrl, cipherKey);
       }
     }

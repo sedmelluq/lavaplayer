@@ -137,7 +137,7 @@ public class YoutubeAudioSourceManager implements AudioSourceManager {
         throw new IOException("Invalid status code for video page response.");
       }
 
-      String html = IOUtils.toString(response.getEntity().getContent(), Charset.defaultCharset());
+      String html = IOUtils.toString(response.getEntity().getContent(), Charset.forName("UTF-8"));
       String configJson = DataFormatTools.extractBetween(html, "ytplayer.config = ", ";ytplayer.load");
 
       if (configJson != null) {
@@ -193,7 +193,7 @@ public class YoutubeAudioSourceManager implements AudioSourceManager {
           throw new IOException("Invalid status code for playlist response.");
         }
 
-        Document document = Jsoup.parse(response.getEntity().getContent(), Charset.defaultCharset().name(), "");
+        Document document = Jsoup.parse(response.getEntity().getContent(), "UTF-8", "");
         return buildPlaylist(httpClient, document);
       }
     } catch (Exception e) {

@@ -97,7 +97,7 @@ public class YoutubeAudioTrack extends DelegatedAudioTrack {
     List<YoutubeTrackFormat> tracks = new ArrayList<>();
 
     for (String formatString : adaptiveFormats.split(",")) {
-      Map<String, String> format = convertToMapLayout(URLEncodedUtils.parse(formatString, Charset.defaultCharset()));
+      Map<String, String> format = convertToMapLayout(URLEncodedUtils.parse(formatString, Charset.forName("UTF-8")));
 
       tracks.add(new YoutubeTrackFormat(
           ContentType.parse(format.get("type")),
@@ -117,7 +117,7 @@ public class YoutubeAudioTrack extends DelegatedAudioTrack {
         throw new IOException("Invalid status code for track info page response.");
       }
 
-      Document document = Jsoup.parse(response.getEntity().getContent(), Charset.defaultCharset().name(), "", Parser.xmlParser());
+      Document document = Jsoup.parse(response.getEntity().getContent(), "UTF-8", "", Parser.xmlParser());
       return loadTrackFormatsFromDashDocument(document);
     }
   }
