@@ -12,6 +12,9 @@ import org.slf4j.LoggerFactory;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.sedmelluq.discord.lavaplayer.tools.FriendlyException.Severity.FAULT;
+import static com.sedmelluq.discord.lavaplayer.tools.FriendlyException.Severity.SUSPICIOUS;
+
 /**
  * Audio track that handles the processing of MP4 format
  */
@@ -48,7 +51,7 @@ public class MpegAudioTrack extends BaseAudioTrack {
     file.readFile();
 
     if (!file.isFragmented()) {
-      throw new FriendlyException("This track uses an unsupported MP4 version.",
+      throw new FriendlyException("This track uses an unsupported MP4 version.", SUSPICIOUS,
           new IllegalStateException("Non-fragmented MP4 files are not supported."));
     }
 
@@ -65,7 +68,7 @@ public class MpegAudioTrack extends BaseAudioTrack {
       trackConsumer = selectAudioTrack(file.getTrackList(), volumeLevel);
 
       if (trackConsumer == null) {
-        throw new FriendlyException("The audio codec used in the track is not supported.", null);
+        throw new FriendlyException("The audio codec used in the track is not supported.", SUSPICIOUS, null);
       } else {
         log.debug("Starting to play track with codec {}", trackConsumer.getTrack().codecName);
       }
@@ -74,7 +77,7 @@ public class MpegAudioTrack extends BaseAudioTrack {
       success = true;
       return trackConsumer;
     } catch (Exception e) {
-      throw ExceptionTools.wrapUnfriendlyExceptions("Something went wrong when loading an MP4 format track.", e);
+      throw ExceptionTools.wrapUnfriendlyExceptions("Something went wrong when loading an MP4 format track.", FAULT, e);
     } finally {
       if (!success && trackConsumer != null) {
         trackConsumer.close();

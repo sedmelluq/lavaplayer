@@ -15,6 +15,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static com.sedmelluq.discord.lavaplayer.tools.FriendlyException.Severity.FAULT;
+import static com.sedmelluq.discord.lavaplayer.tools.FriendlyException.Severity.SUSPICIOUS;
+
 /**
  * Handles the execution and output buffering of an audio track.
  */
@@ -82,10 +85,10 @@ public class AudioTrackExecutor implements AudioFrameProvider {
 
         log.info("Playing track {} finished or was stopped.", audioTrack.getIdentifier());
       } catch (Throwable e) {
-        log.error("Playing track {} terminated with an exception.", audioTrack.getIdentifier(), e);
+        FriendlyException exception = ExceptionTools.wrapUnfriendlyExceptions("Something broke when playing the track.", FAULT, e);
+        ExceptionTools.log(log, exception, "playback of " + getIdentifier());
 
-        player.dispatchEvent(new TrackExceptionEvent(player, audioTrack,
-            ExceptionTools.wrapUnfriendlyExceptions("Something broke when playing the track.", e)));
+        player.dispatchEvent(new TrackExceptionEvent(player, audioTrack, exception));
 
         ExceptionTools.rethrowErrors(e);
       } finally {
@@ -237,10 +240,10 @@ public class AudioTrackExecutor implements AudioFrameProvider {
         } else if (applyPendingSeek(seekExecutor)) {
           proceed = true;
         } else {
-          throw new FriendlyException("The track was unexpectedly terminated.", interruption);
+          throw new FriendlyException("The track was unexpectedly terminated.", SUSPICIOUS, interruption);
         }
       } catch (Exception e) {
-        throw ExceptionTools.wrapUnfriendlyExceptions("Something went wrong when decoding the track.", e);
+        throw ExceptionTools.wrapUnfriendlyExceptions("Something went wrong when decoding the track.", FAULT, e);
       }
     }
   }
@@ -264,7 +267,7 @@ public class AudioTrackExecutor implements AudioFrameProvider {
           seekExecutor.performSeek(seek);
           pendingSeek.set(-1);
         } catch (Exception e) {
-          throw ExceptionTools.wrapUnfriendlyExceptions("Something went wrong when seeking to a position.", e);
+          throw ExceptionTools.wrapUnfriendlyExceptions("Something went wrong when seeking to a position.", FAULT, e);
         }
 
         return true;

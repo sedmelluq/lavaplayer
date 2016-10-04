@@ -2,6 +2,7 @@ package com.sedmelluq.discord.lavaplayer.player;
 
 import com.sedmelluq.discord.lavaplayer.source.AudioSourceManager;
 import com.sedmelluq.discord.lavaplayer.tools.ExceptionTools;
+import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.track.AudioItem;
 import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
@@ -14,6 +15,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+
+import static com.sedmelluq.discord.lavaplayer.tools.FriendlyException.Severity.FAULT;
 
 /**
  * Audio player manager which is used for creating audio players and loading tracks and playlists.
@@ -57,8 +60,11 @@ public class AudioPlayerManager {
           resultHandler.noMatches();
         }
       } catch (Throwable throwable) {
-        log.error("Failed to load track with identifier {} due to exception.", identifier, throwable);
-        resultHandler.loadFailed(ExceptionTools.wrapUnfriendlyExceptions("Something went wrong when looking up the track", throwable));
+        FriendlyException exception = ExceptionTools.wrapUnfriendlyExceptions("Something went wrong when looking up the track", FAULT, throwable);
+        ExceptionTools.log(log, exception, "loading item " + identifier);
+
+        resultHandler.loadFailed(exception);
+
         ExceptionTools.rethrowErrors(throwable);
       }
     });

@@ -1,5 +1,7 @@
 package com.sedmelluq.discord.lavaplayer.source.youtube;
 
+import com.sedmelluq.discord.lavaplayer.tools.ExceptionTools;
+import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.track.AudioItem;
 import com.sedmelluq.discord.lavaplayer.source.AudioSourceManager;
 import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
@@ -13,6 +15,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.http.client.CookieStore;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.http.impl.client.BasicCookieStore;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
@@ -27,8 +30,14 @@ import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import static com.sedmelluq.discord.lavaplayer.tools.DataFormatTools.convertToMapLayout;
+import static com.sedmelluq.discord.lavaplayer.tools.FriendlyException.Severity.COMMON;
+import static com.sedmelluq.discord.lavaplayer.tools.FriendlyException.Severity.FAULT;
+import static com.sedmelluq.discord.lavaplayer.tools.FriendlyException.Severity.SUSPICIOUS;
 
 /**
  * Audio source manager that implements finding Youtube videos or playlists based on an URL or ID.
@@ -106,7 +115,7 @@ public class YoutubeAudioSourceManager implements AudioSourceManager {
 
   private AudioTrack loadTrackWithVideoId(String videoId) {
     try (CloseableHttpClient httpClient = httpClientBuilder.build()) {
-      JsonBrowser info = getTrackInfoFromMainPage(httpClient, videoId);
+      JsonBrowser info = getTrackInfoFromMainPage(httpClient, videoId, false);
       if (info == null) {
         return null;
       }
@@ -118,11 +127,11 @@ public class YoutubeAudioSourceManager implements AudioSourceManager {
 
       return new YoutubeAudioTrack(new AudioTrackExecutor(videoId), trackInfo, this);
     } catch (Exception e) {
-      throw new RuntimeException(e);
+      throw ExceptionTools.wrapUnfriendlyExceptions("Loading information for a YouTube track failed.", FAULT, e);
     }
   }
 
-  JsonBrowser getTrackInfoFromMainPage(CloseableHttpClient httpClient, String videoId) throws Exception {
+  JsonBrowser getTrackInfoFromMainPage(CloseableHttpClient httpClient, String videoId, boolean mustExist) throws Exception {
     try (CloseableHttpResponse response = httpClient.execute(new HttpGet("https://www.youtube.com/watch?v=" + videoId))) {
       if (response.getStatusLine().getStatusCode() != 200) {
         throw new IOException("Invalid status code for video page response.");
@@ -131,11 +140,35 @@ public class YoutubeAudioSourceManager implements AudioSourceManager {
       String html = IOUtils.toString(response.getEntity().getContent(), Charset.defaultCharset());
       String configJson = DataFormatTools.extractBetween(html, "ytplayer.config = ", ";ytplayer.load");
 
-      if (configJson == null) {
-        return null;
+      if (configJson != null) {
+        return JsonBrowser.parse(configJson);
+      }
+    }
+
+    determineFailureReason(httpClient, videoId, mustExist);
+    return null;
+  }
+
+  private void determineFailureReason(CloseableHttpClient httpClient, String videoId, boolean mustExist) throws Exception {
+    try (CloseableHttpResponse response = httpClient.execute(new HttpGet("https://www.youtube.com/get_video_info?hl=en_GB&video_id=" + videoId))) {
+      if (response.getStatusLine().getStatusCode() != 200) {
+        throw new IOException("Invalid status code for video info response.");
       }
 
-      return JsonBrowser.parse(configJson);
+      Map<String, String> format = convertToMapLayout(URLEncodedUtils.parse(response.getEntity()));
+
+      if ("fail".equals(format.get("status"))) {
+        String reason = format.get("reason");
+
+        if ("This video does not exist.".equals(reason) && !mustExist) {
+          return;
+        } else if (reason != null) {
+          throw new FriendlyException(reason, COMMON, null);
+        }
+      }
+
+      throw new FriendlyException("Track is unavailable for an unknown reason.", SUSPICIOUS,
+          new IllegalStateException("Main page had no video, but video info has no error."));
     }
   }
 

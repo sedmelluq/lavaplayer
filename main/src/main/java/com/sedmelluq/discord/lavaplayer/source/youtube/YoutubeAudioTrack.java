@@ -3,6 +3,7 @@ package com.sedmelluq.discord.lavaplayer.source.youtube;
 import com.sedmelluq.discord.lavaplayer.container.matroska.MatroskaAudioTrack;
 import com.sedmelluq.discord.lavaplayer.container.mpeg.MpegAudioTrack;
 import com.sedmelluq.discord.lavaplayer.tools.DataFormatTools;
+import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.tools.JsonBrowser;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo;
 import com.sedmelluq.discord.lavaplayer.track.DelegatedAudioTrack;
@@ -30,6 +31,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.sedmelluq.discord.lavaplayer.container.Formats.MIME_AUDIO_WEBM;
 import static com.sedmelluq.discord.lavaplayer.tools.DataFormatTools.convertToMapLayout;
+import static com.sedmelluq.discord.lavaplayer.tools.FriendlyException.Severity.SUSPICIOUS;
 
 /**
  * Audio track that handles processing Youtube videos as audio tracks.
@@ -73,7 +75,7 @@ public class YoutubeAudioTrack extends DelegatedAudioTrack {
   }
 
   private JsonBrowser getTrackInfo(CloseableHttpClient httpClient) throws Exception {
-    return manager.getTrackInfoFromMainPage(httpClient, getIdentifier());
+    return manager.getTrackInfoFromMainPage(httpClient, getIdentifier(), true);
   }
 
   private List<YoutubeTrackFormat> loadTrackFormats(JsonBrowser info, CloseableHttpClient httpClient) throws Exception {
@@ -87,7 +89,8 @@ public class YoutubeAudioTrack extends DelegatedAudioTrack {
       return loadTrackFormatsFromDash(dashUrl, httpClient);
     }
 
-    throw new IllegalStateException("No adaptive formats, no dash.");
+    throw new FriendlyException("Unable to play this YouTube track.", SUSPICIOUS,
+        new IllegalStateException("No adaptive formats, no dash."));
   }
 
   private List<YoutubeTrackFormat> loadTrackFormatsFromAdaptive(String adaptiveFormats) throws Exception {

@@ -10,6 +10,8 @@ import com.sedmelluq.discord.lavaplayer.container.mpeg.MpegAudioTrack;
 import java.io.File;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.sedmelluq.discord.lavaplayer.tools.FriendlyException.Severity.COMMON;
+
 /**
  * Audio track that handles processing local files as audio tracks.
  */
@@ -33,7 +35,7 @@ public class LocalAudioTrack extends DelegatedAudioTrack {
     } else if (executor.getIdentifier().endsWith(".webm") || executor.getIdentifier().endsWith(".mkv")) {
       processDelegate(new MatroskaAudioTrack(executor, trackInfo, new LocalSeekableInputStream(file)), volumeLevel);
     } else {
-      throw new FriendlyException("Unknown file extension.", null);
+      throw new FriendlyException("Unknown file extension.", COMMON, null);
     }
   }
 }
