@@ -24,12 +24,19 @@ public class PcmVolumeProcessor {
   }
 
   /**
+   * @param lastVolume Value to explicitly set for the return value of getLastVolume()
+   */
+  public void setLastVolume(int lastVolume) {
+    currentVolume = lastVolume;
+  }
+
+  /**
    * @param initialVolume The input volume of the samples
    * @param targetVolume The target volume of the samples
    * @param buffer The buffer containing the samples
    */
   public void applyVolume(int initialVolume, int targetVolume, ShortBuffer buffer) {
-    if (initialVolume != 100) {
+    if (initialVolume != 100 && initialVolume != 0) {
       setupMultipliers(initialVolume);
       unapplyCurrentVolume(buffer);
     }

@@ -15,6 +15,8 @@ import java.util.concurrent.BlockingQueue;
 public class AudioFrameBuffer implements AudioFrameConsumer, AudioFrameProvider {
   private static final Logger log = LoggerFactory.getLogger(AudioFrameBuffer.class);
 
+  private static final byte[] SILENT_OPUS_FRAME = new byte[] {(byte) 0xFC, (byte) 0xFF, (byte) 0xFE};
+
   private final Object synchronizer;
   private final BlockingQueue<AudioFrame> audioFrames;
   private boolean terminated;
@@ -67,6 +69,8 @@ public class AudioFrameBuffer implements AudioFrameConsumer, AudioFrameProvider 
           return AudioFrame.TERMINATOR;
         }
       }
+    } else if (frame.volume == 0) {
+      return new AudioFrame(frame.timecode, SILENT_OPUS_FRAME, 0);
     }
 
     return frame;

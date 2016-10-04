@@ -149,7 +149,13 @@ public class OpusEncodingPcmAudioFilter implements FloatPcmAudioFilter, ShortPcm
       }
 
       frameBuffer.clear();
-      volumeProcessor.applyVolume(100, currentVolume, frameBuffer);
+
+      // Volume 0 is stored in the frame with volume 100 buffer
+      if (currentVolume != 0) {
+        volumeProcessor.applyVolume(100, currentVolume, frameBuffer);
+      } else {
+        volumeProcessor.setLastVolume(0);
+      }
 
       encoded.clear();
 

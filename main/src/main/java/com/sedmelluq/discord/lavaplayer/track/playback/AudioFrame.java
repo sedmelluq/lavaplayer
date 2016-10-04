@@ -21,7 +21,9 @@ public class AudioFrame {
   public final byte[] data;
 
   /**
-   * Volume level of the audio in this frame
+   * Volume level of the audio in this frame. Internally when this value is 0, the data may actually contain a
+   * non-silent frame. This is to allow frames with 0 volume to be modified later. These frames should still be
+   * handled as silent frames.
    */
   public final int volume;
 

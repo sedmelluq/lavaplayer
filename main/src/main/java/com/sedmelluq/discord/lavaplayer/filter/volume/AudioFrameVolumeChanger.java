@@ -56,7 +56,10 @@ public class AudioFrameVolumeChanger implements AudioFrameRebuilder {
       targetVolume = (int) ((newVolume - frame.volume) * (frameIndex / 50.0) + frame.volume);
     }
 
-    volumeProcessor.applyVolume(frame.volume, targetVolume, sampleBuffer);
+    // Volume 0 is stored in the frame with volume 100 buffer
+    if (targetVolume != 0) {
+      volumeProcessor.applyVolume(frame.volume, targetVolume, sampleBuffer);
+    }
 
     encoder.encode(sampleBuffer, FRAME_SIZE, encodedBuffer);
 
@@ -72,7 +75,7 @@ public class AudioFrameVolumeChanger implements AudioFrameRebuilder {
       Thread.currentThread().interrupt();
     }
 
-    return new AudioFrame(frame.timecode, bytes, newVolume);
+    return new AudioFrame(frame.timecode, bytes, targetVolume);
   }
 
   private void setupLibraries() {
