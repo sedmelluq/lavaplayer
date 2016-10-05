@@ -30,6 +30,7 @@ import java.util.StringJoiner;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.sedmelluq.discord.lavaplayer.container.Formats.MIME_AUDIO_WEBM;
+import static com.sedmelluq.discord.lavaplayer.source.youtube.YoutubeAudioSourceManager.CHARSET;
 import static com.sedmelluq.discord.lavaplayer.tools.DataFormatTools.convertToMapLayout;
 import static com.sedmelluq.discord.lavaplayer.tools.FriendlyException.Severity.SUSPICIOUS;
 
@@ -97,7 +98,7 @@ public class YoutubeAudioTrack extends DelegatedAudioTrack {
     List<YoutubeTrackFormat> tracks = new ArrayList<>();
 
     for (String formatString : adaptiveFormats.split(",")) {
-      Map<String, String> format = convertToMapLayout(URLEncodedUtils.parse(formatString, Charset.forName("UTF-8")));
+      Map<String, String> format = convertToMapLayout(URLEncodedUtils.parse(formatString, Charset.forName(CHARSET)));
 
       tracks.add(new YoutubeTrackFormat(
           ContentType.parse(format.get("type")),
@@ -117,7 +118,7 @@ public class YoutubeAudioTrack extends DelegatedAudioTrack {
         throw new IOException("Invalid status code for track info page response.");
       }
 
-      Document document = Jsoup.parse(response.getEntity().getContent(), "UTF-8", "", Parser.xmlParser());
+      Document document = Jsoup.parse(response.getEntity().getContent(), CHARSET, "", Parser.xmlParser());
       return loadTrackFormatsFromDashDocument(document);
     }
   }

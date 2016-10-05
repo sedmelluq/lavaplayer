@@ -9,8 +9,8 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -49,13 +49,15 @@ public class YoutubeSignatureCipherManager {
   private static final Pattern splicePattern = Pattern.compile(PATTERN_PREFIX + SPLICE_PART, Pattern.MULTILINE);
   private static final Pattern swapPattern = Pattern.compile(PATTERN_PREFIX + SWAP_PART, Pattern.MULTILINE);
 
-  private final Map<String, YoutubeSignatureCipher> cipherCache;
+  private final ConcurrentMap<String, YoutubeSignatureCipher> cipherCache;
+  private final Object cipherLoadLock;
 
   /**
    * Create a new signature cipher manager
    */
   public YoutubeSignatureCipherManager() {
-    this.cipherCache = new HashMap<>();
+    this.cipherCache = new ConcurrentHashMap<>();
+    this.cipherLoadLock = new Object();
   }
 
   /**
@@ -90,11 +92,13 @@ public class YoutubeSignatureCipherManager {
     YoutubeSignatureCipher cipherKey = cipherCache.get(cipherScriptUrl);
 
     if (cipherKey == null) {
-      try (CloseableHttpResponse response = httpClient.execute(new HttpGet(parseTokenScriptUrl(cipherScriptUrl)))) {
-        validateResponseCode(response);
+      synchronized (cipherLoadLock) {
+        try (CloseableHttpResponse response = httpClient.execute(new HttpGet(parseTokenScriptUrl(cipherScriptUrl)))) {
+          validateResponseCode(response);
 
-        cipherKey = extractTokensFromScript(IOUtils.toString(response.getEntity().getContent(), "UTF-8"));
-        cipherCache.put(cipherScriptUrl, cipherKey);
+          cipherKey = extractTokensFromScript(IOUtils.toString(response.getEntity().getContent(), "UTF-8"));
+          cipherCache.put(cipherScriptUrl, cipherKey);
+        }
       }
     }
 
