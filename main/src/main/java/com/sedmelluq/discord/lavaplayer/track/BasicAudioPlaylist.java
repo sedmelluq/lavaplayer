@@ -8,14 +8,17 @@ import java.util.List;
 public class BasicAudioPlaylist implements AudioPlaylist {
   private final String name;
   private final List<AudioTrack> tracks;
+  private final AudioTrack selectedTrack;
 
   /**
    * @param name Name of the playlist
    * @param tracks List of tracks in the playlist
+   * @param selectedTrack Track that is explicitly selected
    */
-  public BasicAudioPlaylist(String name, List<AudioTrack> tracks) {
+  public BasicAudioPlaylist(String name, List<AudioTrack> tracks, AudioTrack selectedTrack) {
     this.name = name;
     this.tracks = tracks;
+    this.selectedTrack = selectedTrack;
   }
 
   @Override
@@ -26,5 +29,10 @@ public class BasicAudioPlaylist implements AudioPlaylist {
   @Override
   public List<AudioTrack> getTracks() {
     return tracks;
+  }
+
+  @Override
+  public AudioTrack getSelectedTrack() {
+    return selectedTrack;
   }
 }

@@ -131,8 +131,16 @@ public class Main {
           List<AudioTrack> tracks = playlist.getTracks();
           event.getTextChannel().sendMessage("Loaded playlist: " + playlist.getName() + " (" + tracks.size() + ")");
 
-          for (int i = 0; i < Math.min(10, playlist.getTracks().size()); i++) {
-            trackLoaded(tracks.get(i));
+          AudioTrack selected = playlist.getSelectedTrack();
+          if (selected != null) {
+            event.getTextChannel().sendMessage("Selected track from playlist: " + selected.getInfo().title);
+            trackLoaded(selected);
+          }
+
+          for (int i = 0; i < Math.min(2, playlist.getTracks().size()); i++) {
+            if (tracks.get(i) != selected) {
+              trackLoaded(tracks.get(i));
+            }
           }
         }
 

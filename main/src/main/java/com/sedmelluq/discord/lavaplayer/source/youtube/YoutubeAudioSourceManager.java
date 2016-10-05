@@ -61,6 +61,8 @@ public class YoutubeAudioSourceManager implements AudioSourceManager {
       Pattern.compile("^" + PROTOCOL_REGEX + "(?:www\\.|)youtube.com/playlist\\?list=" + PLAYLIST_REGEX + SUFFIX_REGEX + "$")
   };
 
+  private static final Pattern playlistEmbeddedPattern = Pattern.compile("&list=([^&]*)(?:&.*|)$");
+
   private final HttpClientBuilder httpClientBuilder;
   private final YoutubeSignatureCipherManager signatureCipherManager;
 
@@ -101,12 +103,18 @@ public class YoutubeAudioSourceManager implements AudioSourceManager {
     return result;
   }
 
-  private AudioTrack loadTrack(String identifier) {
+  private AudioItem loadTrack(String identifier) {
     for (Pattern pattern : validTrackPatterns) {
       Matcher matcher = pattern.matcher(identifier);
 
       if (matcher.matches()) {
-        return loadTrackWithVideoId(matcher.group(1));
+        Matcher playlistMatcher = playlistEmbeddedPattern.matcher(identifier);
+
+        if (playlistMatcher.find()) {
+          return loadPlaylistWithId(playlistMatcher.group(1), matcher.group(1));
+        } else {
+          return loadTrackWithVideoId(matcher.group(1));
+        }
       }
     }
 
@@ -177,14 +185,14 @@ public class YoutubeAudioSourceManager implements AudioSourceManager {
       Matcher matcher = pattern.matcher(identifier);
 
       if (matcher.matches()) {
-        return loadPlaylistWithId(matcher.group(1));
+        return loadPlaylistWithId(matcher.group(1), null);
       }
     }
 
     return null;
   }
 
-  private AudioPlaylist loadPlaylistWithId(String playlistId) {
+  private AudioPlaylist loadPlaylistWithId(String playlistId, String selectedVideoId) {
     log.debug("Starting to load playlist with ID {}", playlistId);
 
     try (CloseableHttpClient httpClient = httpClientBuilder.build()) {
@@ -194,14 +202,14 @@ public class YoutubeAudioSourceManager implements AudioSourceManager {
         }
 
         Document document = Jsoup.parse(response.getEntity().getContent(), "UTF-8", "");
-        return buildPlaylist(httpClient, document);
+        return buildPlaylist(httpClient, document, selectedVideoId);
       }
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
   }
 
-  private AudioPlaylist buildPlaylist(CloseableHttpClient httpClient, Document document) throws IOException {
+  private AudioPlaylist buildPlaylist(CloseableHttpClient httpClient, Document document, String selectedVideoId) throws IOException {
     Element container = document.select("#pl-header").get(0).parent();
 
     String playlistName = container.select(".pl-header-title").get(0).text();
@@ -229,7 +237,18 @@ public class YoutubeAudioSourceManager implements AudioSourceManager {
       }
     }
 
-    return new BasicAudioPlaylist(playlistName, tracks);
+    return new BasicAudioPlaylist(playlistName, tracks, findSelectedTrack(tracks, selectedVideoId));
+  }
+
+  private AudioTrack findSelectedTrack(List<AudioTrack> tracks, String selectedVideoId) {
+    if (selectedVideoId != null) {
+      for (AudioTrack track : tracks) {
+        if (selectedVideoId.equals(track.getIdentifier())) {
+          return track;
+        }
+      }
+    }
+    return null;
   }
 
   private String extractPlaylistTracks(Element videoContainer, Element loadMoreContainer, List<AudioTrack> tracks) {
