@@ -31,11 +31,11 @@ public class Mp3AudioTrack extends BaseAudioTrack {
   @Override
   public void process(AtomicInteger volumeLevel) throws Exception {
     Mp3StreamingFile file = new Mp3StreamingFile(inputStream, executor.getFrameConsumer(), volumeLevel);
-    file.parseHeaders();
-
-    log.debug("Starting to play MP3 track {}", getIdentifier());
 
     try {
+      file.parseHeaders();
+
+      log.debug("Starting to play MP3 track {}", getIdentifier());
       executor.executeProcessingLoop(file::provideFrames, file::seekToTimecode);
     } finally {
       file.close();
