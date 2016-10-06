@@ -7,7 +7,7 @@ import java.io.InputStream;
  * An input stream that is seekable.
  */
 public abstract class SeekableInputStream extends InputStream {
-  protected final long contentLength;
+  protected long contentLength;
   private final long maxSkipDistance;
 
   /**

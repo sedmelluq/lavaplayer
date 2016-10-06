@@ -10,7 +10,7 @@ class VorbisDecoderLibrary {
   }
 
   static VorbisDecoderLibrary getInstance() {
-    NativeLibLoader.load("connector");
+    NativeLibLoader.loadConnectorLibrary();
     return new VorbisDecoderLibrary();
   }
 

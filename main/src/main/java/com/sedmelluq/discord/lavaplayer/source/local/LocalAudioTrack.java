@@ -1,6 +1,7 @@
 package com.sedmelluq.discord.lavaplayer.source.local;
 
 import com.sedmelluq.discord.lavaplayer.container.matroska.MatroskaAudioTrack;
+import com.sedmelluq.discord.lavaplayer.container.mp3.Mp3AudioTrack;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.track.playback.AudioTrackExecutor;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo;
@@ -34,6 +35,8 @@ public class LocalAudioTrack extends DelegatedAudioTrack {
       processDelegate(new MpegAudioTrack(executor, trackInfo, new LocalSeekableInputStream(file)), volumeLevel);
     } else if (executor.getIdentifier().endsWith(".webm") || executor.getIdentifier().endsWith(".mkv")) {
       processDelegate(new MatroskaAudioTrack(executor, trackInfo, new LocalSeekableInputStream(file)), volumeLevel);
+    } else if (executor.getIdentifier().endsWith(".mp3")) {
+      processDelegate(new Mp3AudioTrack(executor, trackInfo, new LocalSeekableInputStream(file)), volumeLevel);
     } else {
       throw new FriendlyException("Unknown file extension.", COMMON, null);
     }

@@ -81,6 +81,12 @@ public class AudioFrameBuffer implements AudioFrameConsumer, AudioFrameProvider 
    */
   public void setTerminateOnEmpty() {
     synchronized (synchronizer) {
+      // Count this also as inserting the terminator frame, hence trigger clearOnInsert
+      if (clearOnInsert) {
+        audioFrames.clear();
+        clearOnInsert = false;
+      }
+
       if (!terminated) {
         terminateOnEmpty = true;
       }
@@ -102,6 +108,13 @@ public class AudioFrameBuffer implements AudioFrameConsumer, AudioFrameProvider 
    */
   public boolean hasClearOnInsert() {
     return clearOnInsert;
+  }
+
+  /**
+   * Clear the buffer.
+   */
+  public void clear() {
+    audioFrames.clear();
   }
 
   @Override

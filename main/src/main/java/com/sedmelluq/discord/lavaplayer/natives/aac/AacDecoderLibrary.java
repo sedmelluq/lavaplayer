@@ -11,7 +11,7 @@ class AacDecoderLibrary {
   }
 
   static AacDecoderLibrary getInstance() {
-    NativeLibLoader.load("connector");
+    NativeLibLoader.loadConnectorLibrary();
     return new AacDecoderLibrary();
   }
 

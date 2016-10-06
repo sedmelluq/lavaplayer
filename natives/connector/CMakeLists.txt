@@ -29,9 +29,9 @@ if (DEFINED ENV{DIST_DIR})
 	set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE "$ENV{DIST_DIR}")
 endif()
 
-add_library(connector SHARED samplerate.c fdk-aac.c vorbis.c opus.c)
-target_link_libraries(connector samplerate fdk-aac vorbis opus)
+add_library(connector SHARED samplerate.c fdk-aac.c vorbis.c opus.c mpg123.c)
+target_link_libraries(connector samplerate fdk-aac vorbis opus mpg123)
 
-if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
+if ("${CMAKE_C_COMPILER_ID}" STREQUAL "MSVC")
 	target_link_libraries(connector silk_common silk_fixed silk_float celt)
 endif()

@@ -83,7 +83,7 @@ public class YoutubeAudioSourceManager implements AudioSourceManager {
   public YoutubeAudioSourceManager() {
     httpClientBuilder = createSharedCookiesHttpBuilder();
     signatureCipherManager = new YoutubeSignatureCipherManager();
-    mixLoadingExecutor = new ThreadPoolExecutor(0, 25, 5, TimeUnit.SECONDS, new LinkedBlockingQueue<>());
+    mixLoadingExecutor = new ThreadPoolExecutor(0, 10, 5, TimeUnit.SECONDS, new LinkedBlockingQueue<>());
   }
 
   /**

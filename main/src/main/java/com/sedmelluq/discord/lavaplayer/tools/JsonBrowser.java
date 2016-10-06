@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -56,6 +57,24 @@ public class JsonBrowser {
     } else {
       return new JsonBrowser(null);
     }
+  }
+
+  /**
+   * Returns a list of all the values in this element
+   * @return The list of values as JsonBrowser elements
+   */
+  public List<JsonBrowser> values() {
+    List<JsonBrowser> values = new ArrayList<>();
+    if (value instanceof Map) {
+      for (Object object : ((Map) value).values()) {
+        values.add(new JsonBrowser(object));
+      }
+    } else if (value instanceof List) {
+      for (Object object : (List) value) {
+        values.add(new JsonBrowser(object));
+      }
+    }
+    return values;
   }
 
   /**

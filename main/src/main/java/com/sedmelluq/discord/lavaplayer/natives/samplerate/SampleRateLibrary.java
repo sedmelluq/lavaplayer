@@ -8,7 +8,7 @@ class SampleRateLibrary {
   }
 
   static SampleRateLibrary getInstance() {
-    NativeLibLoader.load("connector");
+    NativeLibLoader.loadConnectorLibrary();
     return new SampleRateLibrary();
   }
 

@@ -13,7 +13,7 @@ class OpusEncoderLibrary {
   }
 
   static OpusEncoderLibrary getInstance() {
-    NativeLibLoader.load("connector");
+    NativeLibLoader.loadConnectorLibrary();
     return new OpusEncoderLibrary();
   }
 

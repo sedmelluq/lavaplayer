@@ -1,7 +1,5 @@
-#include <stdint.h>
 #include <jni.h>
 #include <aacdecoder_lib.h>
-#include <stdio.h>
 
 JNIEXPORT jlong JNICALL Java_com_sedmelluq_discord_lavaplayer_natives_aac_AacDecoderLibrary_create(JNIEnv *jni, jobject me, jint transport_type) {
 	return (jlong) aacDecoder_Open(transport_type, 1);

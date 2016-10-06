@@ -34,8 +34,8 @@ public class PersistentHttpStream extends SeekableInputStream implements AutoClo
    * @param contentUrl The URL of the resource
    * @param contentLength The length of the resource in bytes
    */
-  public PersistentHttpStream(CloseableHttpClient httpClient, URI contentUrl, long contentLength) {
-    super(contentLength, MAX_SKIP_DISTANCE);
+  public PersistentHttpStream(CloseableHttpClient httpClient, URI contentUrl, Long contentLength) {
+    super(contentLength == null ? Long.MAX_VALUE : contentLength, MAX_SKIP_DISTANCE);
 
     this.httpClient = httpClient;
     this.contentUrl = contentUrl;
@@ -72,6 +72,10 @@ public class PersistentHttpStream extends SeekableInputStream implements AutoClo
       currentResponse = httpClient.execute(getConnectRequest());
       validateStatusCode(currentResponse);
       currentContent = new BufferedInputStream(currentResponse.getEntity().getContent());
+
+      if (contentLength == Long.MAX_VALUE) {
+        contentLength = Long.valueOf(currentResponse.getFirstHeader("Content-Length").getValue());
+      }
     }
   }
 

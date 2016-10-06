@@ -11,7 +11,7 @@ class OpusDecoderLibrary {
   }
 
   static OpusDecoderLibrary getInstance() {
-    NativeLibLoader.load("connector");
+    NativeLibLoader.loadConnectorLibrary();
     return new OpusDecoderLibrary();
   }
 
