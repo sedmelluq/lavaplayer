@@ -5,6 +5,7 @@ import com.sedmelluq.discord.lavaplayer.container.mpeg.MpegAudioTrack;
 import com.sedmelluq.discord.lavaplayer.tools.DataFormatTools;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.tools.JsonBrowser;
+import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo;
 import com.sedmelluq.discord.lavaplayer.track.DelegatedAudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.playback.AudioTrackExecutor;
@@ -73,6 +74,11 @@ public class YoutubeAudioTrack extends DelegatedAudioTrack {
         }
       }
     }
+  }
+
+  @Override
+  public AudioTrack makeClone() {
+    return new YoutubeAudioTrack(new AudioTrackExecutor(getIdentifier()), trackInfo, manager);
   }
 
   private JsonBrowser getTrackInfo(CloseableHttpClient httpClient) throws Exception {

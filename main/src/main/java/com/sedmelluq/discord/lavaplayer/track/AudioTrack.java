@@ -45,4 +45,9 @@ public interface AudioTrack extends AudioItem {
    * @return Duration of the track in milliseconds
    */
   long getDuration();
+
+  /**
+   * @return Clone of this track which does not share the execution state of this track
+   */
+  AudioTrack makeClone();
 }

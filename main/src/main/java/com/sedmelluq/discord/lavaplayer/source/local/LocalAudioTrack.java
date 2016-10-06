@@ -3,6 +3,7 @@ package com.sedmelluq.discord.lavaplayer.source.local;
 import com.sedmelluq.discord.lavaplayer.container.matroska.MatroskaAudioTrack;
 import com.sedmelluq.discord.lavaplayer.container.mp3.Mp3AudioTrack;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
+import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.playback.AudioTrackExecutor;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo;
 import com.sedmelluq.discord.lavaplayer.track.DelegatedAudioTrack;
@@ -40,5 +41,10 @@ public class LocalAudioTrack extends DelegatedAudioTrack {
     } else {
       throw new FriendlyException("Unknown file extension.", COMMON, null);
     }
+  }
+
+  @Override
+  public AudioTrack makeClone() {
+    return new LocalAudioTrack(new AudioTrackExecutor(getIdentifier()), trackInfo);
   }
 }

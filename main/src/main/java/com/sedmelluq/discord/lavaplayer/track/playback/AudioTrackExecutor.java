@@ -100,7 +100,7 @@ public class AudioTrackExecutor implements AudioFrameProvider {
           currentPlayer.set(null);
           playingThread.compareAndSet(Thread.currentThread(), null);
 
-          state.set(AudioTrackState.INACTIVE);
+          state.set(AudioTrackState.FINISHED);
         }
       }
     } else {

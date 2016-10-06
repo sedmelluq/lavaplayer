@@ -79,4 +79,9 @@ public abstract class BaseAudioTrack implements InternalAudioTrack {
       return accurate;
     }
   }
+
+  @Override
+  public AudioTrack makeClone() {
+    throw new UnsupportedOperationException();
+  }
 }

@@ -7,5 +7,6 @@ public enum AudioTrackState {
   INACTIVE,
   LOADING,
   PLAYING,
-  SEEKING
+  SEEKING,
+  FINISHED
 }
