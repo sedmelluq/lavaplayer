@@ -1,5 +1,6 @@
 package com.sedmelluq.discord.lavaplayer.track;
 
+import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.track.playback.AudioFrame;
 import com.sedmelluq.discord.lavaplayer.track.playback.AudioTrackExecutor;
 
@@ -9,15 +10,18 @@ import java.util.concurrent.atomic.AtomicLong;
  * Abstract base for all audio tracks with an executor
  */
 public abstract class BaseAudioTrack implements InternalAudioTrack {
+  protected final AudioPlayerManager manager;
   protected final AudioTrackExecutor executor;
   protected final AudioTrackInfo trackInfo;
   protected final AtomicLong accurateDuration;
 
   /**
+   * @param manager Audio player manager which created the track
    * @param executor Track executor
    * @param trackInfo Track info
    */
-  public BaseAudioTrack(AudioTrackExecutor executor, AudioTrackInfo trackInfo) {
+  public BaseAudioTrack(AudioPlayerManager manager, AudioTrackExecutor executor, AudioTrackInfo trackInfo) {
+    this.manager = manager;
     this.executor = executor;
     this.trackInfo = trackInfo;
     this.accurateDuration = new AtomicLong();

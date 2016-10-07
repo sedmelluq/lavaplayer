@@ -29,6 +29,7 @@ public class AudioPlayerManager {
   private final ExecutorService trackPlaybackExecutorService;
   private final ExecutorService trackInfoExecutorService;
   private volatile long trackStuckThreshold;
+  private volatile ResamplingQuality resamplingQuality;
 
   /**
    * Create a new instance
@@ -38,6 +39,7 @@ public class AudioPlayerManager {
     trackPlaybackExecutorService = new ThreadPoolExecutor(1, Integer.MAX_VALUE, 10, TimeUnit.SECONDS, new SynchronousQueue<>());
     trackInfoExecutorService = new ThreadPoolExecutor(1, 5, 30, TimeUnit.SECONDS, new LinkedBlockingDeque<>());
     trackStuckThreshold = TimeUnit.MILLISECONDS.toNanos(10000);
+    resamplingQuality = ResamplingQuality.MEDIUM;
   }
 
   /**
@@ -75,13 +77,21 @@ public class AudioPlayerManager {
     this.trackStuckThreshold = TimeUnit.MILLISECONDS.toNanos(trackStuckThreshold);
   }
 
+  public void setResamplingQuality(ResamplingQuality resamplingQuality) {
+    this.resamplingQuality = resamplingQuality;
+  }
+
+  public ResamplingQuality getResamplingQuality() {
+    return resamplingQuality;
+  }
+
   public long getTrackStuckThresholdNanos() {
     return trackStuckThreshold;
   }
 
   private boolean checkSourcesForItem(String identifier, AudioLoadResultHandler resultHandler) {
     for (AudioSourceManager sourceManager : sourceManagers) {
-      AudioItem item = sourceManager.loadItem(identifier);
+      AudioItem item = sourceManager.loadItem(this, identifier);
 
       if (item != null) {
         if (item instanceof AudioTrack) {
@@ -108,5 +118,14 @@ public class AudioPlayerManager {
    */
   public AudioPlayer createPlayer() {
     return new AudioPlayer(this);
+  }
+
+  /**
+   * Resampling quality levels
+   */
+  public enum ResamplingQuality {
+    HIGH,
+    MEDIUM,
+    LOW
   }
 }

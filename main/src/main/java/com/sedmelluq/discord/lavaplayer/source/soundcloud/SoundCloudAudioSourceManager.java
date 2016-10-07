@@ -1,5 +1,6 @@
 package com.sedmelluq.discord.lavaplayer.source.soundcloud;
 
+import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.source.AudioSourceManager;
 import com.sedmelluq.discord.lavaplayer.tools.DataFormatTools;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
@@ -48,7 +49,7 @@ public class SoundCloudAudioSourceManager implements AudioSourceManager {
   }
 
   @Override
-  public AudioItem loadItem(String identifier) {
+  public AudioItem loadItem(AudioPlayerManager manager, String identifier) {
     if (!urlPattern.matcher(identifier).matches()) {
       return null;
     }
@@ -65,7 +66,7 @@ public class SoundCloudAudioSourceManager implements AudioSourceManager {
       String trackId = trackJson.get("id").text();
       String trackUrl = "https://api.soundcloud.com/tracks/" + trackId + "/stream?client_id=" + CLIENT_ID;
 
-      return new SoundCloudAudioTrack(new AudioTrackExecutor(trackId), trackInfo, this, trackUrl);
+      return new SoundCloudAudioTrack(manager, new AudioTrackExecutor(trackId), trackInfo, this, trackUrl);
     } catch (IOException e) {
       throw new FriendlyException("Reading page from SoundCloud failed.", SUSPICIOUS, e);
     }

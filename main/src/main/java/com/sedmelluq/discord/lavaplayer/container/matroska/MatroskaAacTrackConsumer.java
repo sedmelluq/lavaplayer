@@ -4,6 +4,7 @@ import com.sedmelluq.discord.lavaplayer.container.mpeg.MpegAacTrackConsumer;
 import com.sedmelluq.discord.lavaplayer.filter.FilterChainBuilder;
 import com.sedmelluq.discord.lavaplayer.filter.ShortPcmAudioFilter;
 import com.sedmelluq.discord.lavaplayer.natives.aac.AacDecoder;
+import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.track.playback.AudioFrameConsumer;
 import org.ebml.matroska.MatroskaFileFrame;
 import org.ebml.matroska.MatroskaFileTrack;
@@ -29,16 +30,17 @@ public class MatroskaAacTrackConsumer implements MatroskaTrackConsumer {
   private AacDecoder decoder;
 
   /**
+   * @param manager Audio player manager which is used for configuration
    * @param track The MP4 audio track descriptor
    * @param frameConsumer Consumer of the decoded frames
    * @param volumeLevel Mutable volume level
    */
-  public MatroskaAacTrackConsumer(AudioFrameConsumer frameConsumer, MatroskaFileTrack track, AtomicInteger volumeLevel) {
+  public MatroskaAacTrackConsumer(AudioPlayerManager manager, AudioFrameConsumer frameConsumer, MatroskaFileTrack track, AtomicInteger volumeLevel) {
     this.track = track;
     this.decoder = new AacDecoder();
     this.inputBuffer = ByteBuffer.allocateDirect(4096);
     this.outputBuffer = ByteBuffer.allocateDirect(2048 * track.getAudio().getChannels()).order(ByteOrder.LITTLE_ENDIAN).asShortBuffer();
-    this.downstream = FilterChainBuilder.forShortPcm(frameConsumer, volumeLevel, track.getAudio().getChannels(),
+    this.downstream = FilterChainBuilder.forShortPcm(manager, frameConsumer, volumeLevel, track.getAudio().getChannels(),
         (int) track.getAudio().getSamplingFrequency(), true);
   }
 

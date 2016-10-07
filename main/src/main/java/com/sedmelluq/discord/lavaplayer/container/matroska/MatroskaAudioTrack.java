@@ -1,5 +1,6 @@
 package com.sedmelluq.discord.lavaplayer.container.matroska;
 
+import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.tools.io.SeekableInputStream;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo;
 import com.sedmelluq.discord.lavaplayer.track.BaseAudioTrack;
@@ -23,12 +24,13 @@ public class MatroskaAudioTrack extends BaseAudioTrack {
   private final SeekableInputStream inputStream;
 
   /**
+   * @param manager Audio player manager which created the track
    * @param executor Track executor
    * @param trackInfo Track info
    * @param inputStream Input stream for the file
    */
-  public MatroskaAudioTrack(AudioTrackExecutor executor, AudioTrackInfo trackInfo, SeekableInputStream inputStream) {
-    super(executor, trackInfo);
+  public MatroskaAudioTrack(AudioPlayerManager manager, AudioTrackExecutor executor, AudioTrackInfo trackInfo, SeekableInputStream inputStream) {
+    super(manager, executor, trackInfo);
 
     this.inputStream = inputStream;
   }
@@ -90,12 +92,12 @@ public class MatroskaAudioTrack extends BaseAudioTrack {
     for (MatroskaFileTrack track : tracks) {
       if (track.getTrackType() == MatroskaFileTrack.TrackType.AUDIO) {
         if (OPUS_CODEC.equals(track.getCodecID())) {
-          trackConsumer = new MatroskaOpusTrackConsumer(executor.getFrameConsumer(), track, volumeLevel);
+          trackConsumer = new MatroskaOpusTrackConsumer(manager, executor.getFrameConsumer(), track, volumeLevel);
           break;
         } else if (VORBIS_CODEC.equals(track.getCodecID())) {
-          trackConsumer = new MatroskaVorbisTrackConsumer(executor.getFrameConsumer(), track, volumeLevel);
+          trackConsumer = new MatroskaVorbisTrackConsumer(manager, executor.getFrameConsumer(), track, volumeLevel);
         } else if (AAC_CODEC.equals(track.getCodecID())) {
-          trackConsumer = new MatroskaAacTrackConsumer(executor.getFrameConsumer(), track, volumeLevel);
+          trackConsumer = new MatroskaAacTrackConsumer(manager, executor.getFrameConsumer(), track, volumeLevel);
         }
       }
     }

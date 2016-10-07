@@ -1,5 +1,6 @@
 package com.sedmelluq.discord.lavaplayer.container.mpeg;
 
+import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.tools.ExceptionTools;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.tools.io.SeekableInputStream;
@@ -24,12 +25,13 @@ public class MpegAudioTrack extends BaseAudioTrack {
   private final SeekableInputStream inputStream;
 
   /**
+   * @param manager Audio player manager which created the track
    * @param executor Track executor associated with the current track
    * @param trackInfo Track info
    * @param inputStream Input stream for the MP4 file
    */
-  public MpegAudioTrack(AudioTrackExecutor executor, AudioTrackInfo trackInfo, SeekableInputStream inputStream) {
-    super(executor, trackInfo);
+  public MpegAudioTrack(AudioPlayerManager manager, AudioTrackExecutor executor, AudioTrackInfo trackInfo, SeekableInputStream inputStream) {
+    super(manager, executor, trackInfo);
 
     this.inputStream = inputStream;
   }
@@ -88,7 +90,7 @@ public class MpegAudioTrack extends BaseAudioTrack {
   private MpegTrackConsumer selectAudioTrack(List<MpegTrackInfo> tracks, AtomicInteger volumeLevel) {
     for (MpegTrackInfo track : tracks) {
       if ("soun".equals(track.handler) && "mp4a".equals(track.codecName)) {
-        return new MpegAacTrackConsumer(track, executor.getFrameConsumer(), volumeLevel);
+        return new MpegAacTrackConsumer(manager, track, executor.getFrameConsumer(), volumeLevel);
       }
     }
 

@@ -1,5 +1,6 @@
 package com.sedmelluq.discord.lavaplayer.source;
 
+import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.track.AudioItem;
 
 /**
@@ -11,8 +12,9 @@ public interface AudioSourceManager {
    * track for this identifier for this source. If checking that requires more expensive operations, then it should
    * return a track instance and check that in InternalAudioTrack#loadTrackInfo.
    *
+   * @param manager The audio manager to attach to the loaded tracks
    * @param identifier The identifier which the source manager should find the track with
    * @return The loaded item or null on unrecognized identifier
    */
-  AudioItem loadItem(String identifier);
+  AudioItem loadItem(AudioPlayerManager manager, String identifier);
 }

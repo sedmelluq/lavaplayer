@@ -1,5 +1,6 @@
 package com.sedmelluq.discord.lavaplayer.filter;
 
+import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.track.playback.AudioFrameConsumer;
 
 import java.util.concurrent.atomic.AtomicInteger;
@@ -9,6 +10,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class FilterChainBuilder {
   /**
+   * @param manager Audio player manager which is used for configuration
    * @param frameConsumer The consumer of the final OPUS frames
    * @param volumeLevel Mutable volume level
    * @param channels Number of channels in the input data
@@ -16,7 +18,8 @@ public class FilterChainBuilder {
    * @param noPartialFrames Whether incoming buffers will always contain full frames (length % channelCount == 0)
    * @return Filter which accepts short PCM buffers
    */
-  public static ShortPcmAudioFilter forShortPcm(AudioFrameConsumer frameConsumer, AtomicInteger volumeLevel, int channels,
+  public static ShortPcmAudioFilter forShortPcm(AudioPlayerManager manager, AudioFrameConsumer frameConsumer,
+                                                AtomicInteger volumeLevel, int channels,
                                                 int frequency, boolean noPartialFrames) {
 
     OpusEncodingPcmAudioFilter opusEncoder = new OpusEncodingPcmAudioFilter(frameConsumer, volumeLevel);
@@ -25,7 +28,7 @@ public class FilterChainBuilder {
     int outChannels = OpusEncodingPcmAudioFilter.CHANNEL_COUNT;
 
     if (frequency != OpusEncodingPcmAudioFilter.FREQUENCY) {
-      filter = new ShortToFloatPcmAudioFilter(outChannels, new ResamplingPcmAudioFilter(outChannels, opusEncoder,
+      filter = new ShortToFloatPcmAudioFilter(outChannels, new ResamplingPcmAudioFilter(manager, outChannels, opusEncoder,
           frequency, OpusEncodingPcmAudioFilter.FREQUENCY));
     } else {
       filter = opusEncoder;
@@ -39,19 +42,20 @@ public class FilterChainBuilder {
   }
 
   /**
+   * @param manager Audio player manager which is used for configuration
    * @param frameConsumer The consumer of the final OPUS frames
    * @param volumeLevel Mutable volume level
    * @param channels Number of channels in the input data
    * @param frequency Frequency of the input data
    * @return Filter which accepts float PCM buffers
    */
-  public static FloatPcmAudioFilter forFloatPcm(AudioFrameConsumer frameConsumer, AtomicInteger volumeLevel, int channels,
-                                                int frequency) {
+  public static FloatPcmAudioFilter forFloatPcm(AudioPlayerManager manager, AudioFrameConsumer frameConsumer,
+                                                AtomicInteger volumeLevel, int channels, int frequency) {
 
     FloatPcmAudioFilter filter = new OpusEncodingPcmAudioFilter(frameConsumer, volumeLevel);
 
     if (frequency != OpusEncodingPcmAudioFilter.FREQUENCY) {
-      filter = new ResamplingPcmAudioFilter(channels, filter, frequency, OpusEncodingPcmAudioFilter.FREQUENCY);
+      filter = new ResamplingPcmAudioFilter(manager, channels, filter, frequency, OpusEncodingPcmAudioFilter.FREQUENCY);
     }
 
     return filter;

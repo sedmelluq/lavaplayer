@@ -1,6 +1,7 @@
 package com.sedmelluq.discord.lavaplayer.filter;
 
 import com.sedmelluq.discord.lavaplayer.natives.samplerate.SampleRateConverter;
+import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
 
 /**
  * Filter which resamples audio to the specified sample rate
@@ -14,19 +15,22 @@ public class ResamplingPcmAudioFilter implements FloatPcmAudioFilter {
   private final float[][] outputSegments;
 
   /**
+   * @param manager Audio player manager which is used for configuration
    * @param channels Number of channels in input data
    * @param downstream Next filter in chain
    * @param sourceRate Source sample rate
    * @param targetRate Target sample rate
    */
-  public ResamplingPcmAudioFilter(int channels, FloatPcmAudioFilter downstream, int sourceRate, int targetRate) {
+  public ResamplingPcmAudioFilter(AudioPlayerManager manager, int channels, FloatPcmAudioFilter downstream, int sourceRate, int targetRate) {
     this.downstream = downstream;
     converters = new SampleRateConverter[channels];
     outputSegments = new float[channels][];
 
+    SampleRateConverter.ResamplingType type = getResamplingType(manager.getResamplingQuality());
+
     for (int i = 0; i < channels; i++) {
       outputSegments[i] = new float[BUFFER_SIZE];
-      converters[i] = new SampleRateConverter(1, sourceRate, targetRate);
+      converters[i] = new SampleRateConverter(type, 1, sourceRate, targetRate);
     }
   }
 
@@ -67,5 +71,17 @@ public class ResamplingPcmAudioFilter implements FloatPcmAudioFilter {
         downstream.process(outputSegments, 0, progress.getOutputGenerated());
       }
     } while (length > 0 || progress.getOutputGenerated() == BUFFER_SIZE);
+  }
+
+  private static SampleRateConverter.ResamplingType getResamplingType(AudioPlayerManager.ResamplingQuality quality) {
+    switch (quality) {
+      case HIGH:
+        return SampleRateConverter.ResamplingType.SINC_MEDIUM_QUALITY;
+      case MEDIUM:
+        return SampleRateConverter.ResamplingType.SINC_FASTEST;
+      case LOW:
+      default:
+        return SampleRateConverter.ResamplingType.LINEAR;
+    }
   }
 }

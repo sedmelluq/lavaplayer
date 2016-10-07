@@ -28,6 +28,7 @@ public class Main {
 
   public static void main(String[] args) throws Exception {
     AudioPlayerManager playerManager = new AudioPlayerManager();
+    playerManager.setResamplingQuality(AudioPlayerManager.ResamplingQuality.LOW);
     playerManager.registerSourceManager(new YoutubeAudioSourceManager());
     playerManager.registerSourceManager(new LocalAudioSourceManager());
     playerManager.registerSourceManager(new SoundCloudAudioSourceManager());

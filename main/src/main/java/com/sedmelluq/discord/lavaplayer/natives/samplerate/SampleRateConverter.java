@@ -2,8 +2,6 @@ package com.sedmelluq.discord.lavaplayer.natives.samplerate;
 
 import com.sedmelluq.discord.lavaplayer.natives.NativeResourceHolder;
 
-import static com.sedmelluq.discord.lavaplayer.natives.samplerate.SampleRateLibrary.Type.SINC_MEDIUM_QUALITY;
-
 /**
  * Sample rate converter backed by libsamplerate
  */
@@ -13,14 +11,15 @@ public class SampleRateConverter extends NativeResourceHolder {
   private final long instance;
 
   /**
+   * @param type Resampling type
    * @param channels Number of channels
    * @param sourceRate Source sample rate
    * @param targetRate Target sample rate
    */
-  public SampleRateConverter(int channels, int sourceRate, int targetRate) {
+  public SampleRateConverter(ResamplingType type, int channels, int sourceRate, int targetRate) {
     ratio = (double)targetRate / (double)sourceRate;
     library = SampleRateLibrary.getInstance();
-    instance = library.create(SINC_MEDIUM_QUALITY.ordinal(), channels);
+    instance = library.create(type.ordinal(), channels);
 
     if (instance == 0) {
       throw new IllegalStateException("Could not create an instance of sample rate converter.");
@@ -80,5 +79,16 @@ public class SampleRateConverter extends NativeResourceHolder {
     public int getOutputGenerated() {
       return fields[1];
     }
+  }
+
+  /**
+   * Available resampling types
+   */
+  public enum ResamplingType {
+    SINC_BEST_QUALITY,
+    SINC_MEDIUM_QUALITY,
+    SINC_FASTEST,
+    ZERO_ORDER_HOLD,
+    LINEAR
   }
 }

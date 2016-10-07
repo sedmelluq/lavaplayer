@@ -3,6 +3,7 @@ package com.sedmelluq.discord.lavaplayer.container.mp3;
 import com.sedmelluq.discord.lavaplayer.filter.FilterChainBuilder;
 import com.sedmelluq.discord.lavaplayer.filter.ShortPcmAudioFilter;
 import com.sedmelluq.discord.lavaplayer.natives.mp3.Mp3Decoder;
+import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.tools.io.SeekableInputStream;
 import com.sedmelluq.discord.lavaplayer.track.playback.AudioFrameConsumer;
 
@@ -22,6 +23,7 @@ import static com.sedmelluq.discord.lavaplayer.natives.mp3.Mp3Decoder.SAMPLES_PE
 public class Mp3StreamingFile {
   private static final byte[] IDV3_TAG = new byte[] { 0x49, 0x44, 0x33 };
 
+  private final AudioPlayerManager manager;
   private final SeekableInputStream inputStream;
   private final DataInputStream dataInput;
   private final AudioFrameConsumer frameConsumer;
@@ -36,11 +38,13 @@ public class Mp3StreamingFile {
   private int nextFrameSize;
 
   /**
+   * @param manager Audio player manager which is used for configuration
    * @param inputStream Stream to read the file from
    * @param frameConsumer The frame consumer where the audio frames are sent
    * @param volumeLevel Mutable audio level
    */
-  public Mp3StreamingFile(SeekableInputStream inputStream, AudioFrameConsumer frameConsumer, AtomicInteger volumeLevel) {
+  public Mp3StreamingFile(AudioPlayerManager manager, SeekableInputStream inputStream, AudioFrameConsumer frameConsumer, AtomicInteger volumeLevel) {
+    this.manager = manager;
     this.inputStream = inputStream;
     this.dataInput = new DataInputStream(inputStream);
     this.frameConsumer = frameConsumer;
@@ -64,7 +68,7 @@ public class Mp3StreamingFile {
     configuration = new Configuration(
         inputStream.getPosition() - 4,
         sampleRate,
-        FilterChainBuilder.forShortPcm(frameConsumer, volumeLevel, 2, sampleRate, true),
+        FilterChainBuilder.forShortPcm(manager, frameConsumer, volumeLevel, 2, sampleRate, true),
         Mp3Decoder.getAverageFrameSize(scanBuffer, scanOffset)
     );
   }

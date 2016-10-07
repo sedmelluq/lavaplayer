@@ -2,6 +2,7 @@ package com.sedmelluq.discord.lavaplayer.source.youtube;
 
 import com.sedmelluq.discord.lavaplayer.container.matroska.MatroskaAudioTrack;
 import com.sedmelluq.discord.lavaplayer.container.mpeg.MpegAudioTrack;
+import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.tools.DataFormatTools;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.tools.JsonBrowser;
@@ -41,36 +42,37 @@ import static com.sedmelluq.discord.lavaplayer.tools.FriendlyException.Severity.
 public class YoutubeAudioTrack extends DelegatedAudioTrack {
   private static final Logger log = LoggerFactory.getLogger(YoutubeAudioTrack.class);
 
-  private final YoutubeAudioSourceManager manager;
+  private final YoutubeAudioSourceManager sourceManager;
 
   /**
+   * @param manager Audio player manager which created the track
    * @param executor Track executor
    * @param trackInfo Track info
-   * @param manager Source manager which was used to find this track
+   * @param sourceManager Source manager which was used to find this track
    */
-  public YoutubeAudioTrack(AudioTrackExecutor executor, AudioTrackInfo trackInfo, YoutubeAudioSourceManager manager) {
-    super(executor, trackInfo);
+  public YoutubeAudioTrack(AudioPlayerManager manager, AudioTrackExecutor executor, AudioTrackInfo trackInfo, YoutubeAudioSourceManager sourceManager) {
+    super(manager, executor, trackInfo);
 
-    this.manager = manager;
+    this.sourceManager = sourceManager;
   }
 
   @Override
   public void process(AtomicInteger volumeLevel) throws Exception {
-    try (CloseableHttpClient httpClient = manager.createHttpClient()) {
+    try (CloseableHttpClient httpClient = sourceManager.createHttpClient()) {
       JsonBrowser info = getTrackInfo(httpClient);
 
       List<YoutubeTrackFormat> formats = loadTrackFormats(info, httpClient);
       YoutubeTrackFormat format = findBestSupportedFormat(formats);
 
-      URI signedUrl = manager.getCipherManager().getValidUrl(httpClient, extractPlayerScriptFromInfo(info), format);
+      URI signedUrl = sourceManager.getCipherManager().getValidUrl(httpClient, extractPlayerScriptFromInfo(info), format);
 
       log.debug("Starting track from URL: {}", signedUrl);
 
       try (YoutubePersistentHttpStream stream = new YoutubePersistentHttpStream(httpClient, signedUrl, format.getContentLength())) {
         if (MIME_AUDIO_WEBM.equals(format.getType().getMimeType())) {
-          processDelegate(new MatroskaAudioTrack(executor, trackInfo, stream), volumeLevel);
+          processDelegate(new MatroskaAudioTrack(manager, executor, trackInfo, stream), volumeLevel);
         } else {
-          processDelegate(new MpegAudioTrack(executor, trackInfo, stream), volumeLevel);
+          processDelegate(new MpegAudioTrack(manager, executor, trackInfo, stream), volumeLevel);
         }
       }
     }
@@ -78,11 +80,11 @@ public class YoutubeAudioTrack extends DelegatedAudioTrack {
 
   @Override
   public AudioTrack makeClone() {
-    return new YoutubeAudioTrack(new AudioTrackExecutor(getIdentifier()), trackInfo, manager);
+    return new YoutubeAudioTrack(manager, new AudioTrackExecutor(getIdentifier()), trackInfo, sourceManager);
   }
 
   private JsonBrowser getTrackInfo(CloseableHttpClient httpClient) throws Exception {
-    return manager.getTrackInfoFromMainPage(httpClient, getIdentifier(), true);
+    return sourceManager.getTrackInfoFromMainPage(httpClient, getIdentifier(), true);
   }
 
   private List<YoutubeTrackFormat> loadTrackFormats(JsonBrowser info, CloseableHttpClient httpClient) throws Exception {

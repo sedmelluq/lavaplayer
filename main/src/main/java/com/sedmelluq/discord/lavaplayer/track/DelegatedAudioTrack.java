@@ -1,5 +1,6 @@
 package com.sedmelluq.discord.lavaplayer.track;
 
+import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.track.playback.AudioTrackExecutor;
 
 import java.util.concurrent.atomic.AtomicInteger;
@@ -12,11 +13,12 @@ public abstract class DelegatedAudioTrack extends BaseAudioTrack {
   private InternalAudioTrack delegate;
 
   /**
+   * @param manager Audio player manager which created the track
    * @param executor Track executor
    * @param trackInfo Track info
    */
-  public DelegatedAudioTrack(AudioTrackExecutor executor, AudioTrackInfo trackInfo) {
-    super(executor, trackInfo);
+  public DelegatedAudioTrack(AudioPlayerManager manager, AudioTrackExecutor executor, AudioTrackInfo trackInfo) {
+    super(manager, executor, trackInfo);
   }
 
   protected synchronized void processDelegate(InternalAudioTrack delegate, AtomicInteger volumeLevel) throws Exception {
