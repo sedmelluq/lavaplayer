@@ -4,7 +4,7 @@ plugins {
   id 'org.sonarqube' version '2.1'
 }
 
-version = '0.1.6'
+version = '0.1.7'
 
 sourceCompatibility = 1.8
 targetCompatibility = 1.8

@@ -13,18 +13,18 @@ public class AudioTrackInfo {
    */
   public final String author;
   /**
-   * Length of the track in seconds
+   * Length of the track in milliseconds
    */
-  public final int lengthInSeconds;
+  public final int length;
 
   /**
    * @param title Track title
    * @param author Track author, if known
-   * @param lengthInSeconds Length of the track in seconds
+   * @param length Length of the track in milliseconds
    */
-  public AudioTrackInfo(String title, String author, int lengthInSeconds) {
+  public AudioTrackInfo(String title, String author, int length) {
     this.title = title;
     this.author = author;
-    this.lengthInSeconds = lengthInSeconds;
+    this.length = length;
   }
 }

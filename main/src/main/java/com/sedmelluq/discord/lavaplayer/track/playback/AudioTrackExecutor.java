@@ -223,6 +223,8 @@ public class AudioTrackExecutor implements AudioFrameProvider {
   public void executeProcessingLoop(ReadExecutor readExecutor, SeekExecutor seekExecutor) {
     boolean proceed = true;
 
+    applyPendingSeek(seekExecutor);
+
     while (proceed) {
       state.set(AudioTrackState.PLAYING);
       proceed = false;

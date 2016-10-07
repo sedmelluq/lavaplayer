@@ -59,7 +59,7 @@ public class SoundCloudAudioSourceManager implements AudioSourceManager {
       AudioTrackInfo trackInfo = new AudioTrackInfo(
           trackJson.get("title").text(),
           trackJson.get("user").get("username").text(),
-          trackJson.get("full_duration").as(Integer.class) / 1000
+          trackJson.get("full_duration").as(Integer.class)
       );
 
       String trackId = trackJson.get("id").text();

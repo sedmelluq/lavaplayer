@@ -145,7 +145,7 @@ public class YoutubeAudioSourceManager implements AudioSourceManager {
 
       JsonBrowser args = info.get("args");
       AudioTrackInfo trackInfo = new AudioTrackInfo(
-          args.get("title").text(), args.get("author").text(), args.get("length_seconds").as(Integer.class)
+          args.get("title").text(), args.get("author").text(), args.get("length_seconds").as(Integer.class) * 1000
       );
 
       return new YoutubeAudioTrack(new AudioTrackExecutor(videoId), trackInfo, this);
@@ -278,7 +278,7 @@ public class YoutubeAudioSourceManager implements AudioSourceManager {
 
         int lengthInSeconds = lengthTextToSeconds(lengthElements.get(0).text());
 
-        AudioTrackInfo info = new AudioTrackInfo(title, author, lengthInSeconds);
+        AudioTrackInfo info = new AudioTrackInfo(title, author, lengthInSeconds * 1000);
         tracks.add(new YoutubeAudioTrack(new AudioTrackExecutor(videoId), info, this));
       }
     }

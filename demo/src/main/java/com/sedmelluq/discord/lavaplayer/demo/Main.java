@@ -93,6 +93,12 @@ public class Main {
             if (track != null) {
               track.setPosition(Long.parseLong(parts[1]));
             }
+          } else if ("x".equals(parts[0])) {
+            AudioTrack track = player.getPlayingTrack();
+
+            if (track != null) {
+              event.getTextChannel().sendMessage("Position is: " + track.getPosition());
+            }
           } else if ("loop".equals(parts[0]) && parts.length == 3) {
             AudioTrack track = player.getPlayingTrack();
 
