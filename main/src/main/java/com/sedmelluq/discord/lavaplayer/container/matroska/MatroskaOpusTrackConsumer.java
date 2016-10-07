@@ -4,7 +4,7 @@ import com.sedmelluq.discord.lavaplayer.filter.FilterChainBuilder;
 import com.sedmelluq.discord.lavaplayer.filter.OpusEncodingPcmAudioFilter;
 import com.sedmelluq.discord.lavaplayer.filter.ShortPcmAudioFilter;
 import com.sedmelluq.discord.lavaplayer.natives.opus.OpusDecoder;
-import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
+import com.sedmelluq.discord.lavaplayer.player.AudioConfiguration;
 import com.sedmelluq.discord.lavaplayer.track.playback.AudioFrame;
 import com.sedmelluq.discord.lavaplayer.track.playback.AudioFrameConsumer;
 import com.sedmelluq.discord.lavaplayer.filter.volume.AudioFrameVolumeChanger;
@@ -24,7 +24,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class MatroskaOpusTrackConsumer implements MatroskaTrackConsumer {
   private static final Logger log = LoggerFactory.getLogger(MatroskaOpusTrackConsumer.class);
 
-  private final AudioPlayerManager manager;
+  private final AudioConfiguration configuration;
   private final AudioFrameConsumer frameConsumer;
   private final MatroskaFileTrack track;
   private final AtomicInteger volumeLevel;
@@ -40,13 +40,13 @@ public class MatroskaOpusTrackConsumer implements MatroskaTrackConsumer {
   private ShortBuffer frameBuffer;
 
   /**
-   * @param manager Audio player manager which is used for configuration
+   * @param configuration Audio configuration to use with this track
    * @param frameConsumer The consumer of the audio frames created from this track
    * @param track The associated matroska track
    * @param volumeLevel Mutable volume level
    */
-  public MatroskaOpusTrackConsumer(AudioPlayerManager manager, AudioFrameConsumer frameConsumer, MatroskaFileTrack track, AtomicInteger volumeLevel) {
-    this.manager = manager;
+  public MatroskaOpusTrackConsumer(AudioConfiguration configuration, AudioFrameConsumer frameConsumer, MatroskaFileTrack track, AtomicInteger volumeLevel) {
+    this.configuration = configuration;
     this.frameConsumer = frameConsumer;
     this.track = track;
     this.volumeLevel = volumeLevel;
@@ -171,7 +171,7 @@ public class MatroskaOpusTrackConsumer implements MatroskaTrackConsumer {
 
   private void initialiseDecoder() {
     opusDecoder = new OpusDecoder(inputFrequency, inputChannels);
-    downstream = FilterChainBuilder.forShortPcm(manager, frameConsumer, volumeLevel, inputChannels, inputFrequency, true);
+    downstream = FilterChainBuilder.forShortPcm(configuration, frameConsumer, volumeLevel, inputChannels, inputFrequency, true);
     downstream.seekPerformed(currentTimecode, currentTimecode);
   }
 

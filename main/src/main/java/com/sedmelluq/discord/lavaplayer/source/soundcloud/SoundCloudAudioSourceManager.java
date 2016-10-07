@@ -66,7 +66,7 @@ public class SoundCloudAudioSourceManager implements AudioSourceManager {
       String trackId = trackJson.get("id").text();
       String trackUrl = "https://api.soundcloud.com/tracks/" + trackId + "/stream?client_id=" + CLIENT_ID;
 
-      return new SoundCloudAudioTrack(manager, new AudioTrackExecutor(trackId), trackInfo, this, trackUrl);
+      return new SoundCloudAudioTrack(new AudioTrackExecutor(trackId), trackInfo, this, trackUrl);
     } catch (IOException e) {
       throw new FriendlyException("Reading page from SoundCloud failed.", SUSPICIOUS, e);
     }

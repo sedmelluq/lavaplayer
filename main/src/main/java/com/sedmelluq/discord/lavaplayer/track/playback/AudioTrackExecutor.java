@@ -1,5 +1,6 @@
 package com.sedmelluq.discord.lavaplayer.track.playback;
 
+import com.sedmelluq.discord.lavaplayer.player.AudioConfiguration;
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
 import com.sedmelluq.discord.lavaplayer.player.event.TrackExceptionEvent;
 import com.sedmelluq.discord.lavaplayer.tools.ExceptionTools;
@@ -71,9 +72,10 @@ public class AudioTrackExecutor implements AudioFrameProvider {
   /**
    * Execute the track, which means that this thread will fill the frame buffer until the track finishes or is stopped.
    * @param player The AudioPlayer which is running this executor
+   * @param configuration Configuration to use for audio processing
    * @param volumeLevel Mutable volume level to use when executing the track
    */
-  public void execute(AudioPlayer player, AtomicInteger volumeLevel) {
+  public void execute(AudioPlayer player, AudioConfiguration configuration, AtomicInteger volumeLevel) {
     InternalAudioTrack audioTrack = rootTrack.get();
 
     if (playingThread.compareAndSet(null, Thread.currentThread())) {
@@ -81,7 +83,7 @@ public class AudioTrackExecutor implements AudioFrameProvider {
       currentPlayer.set(player);
 
       try {
-        audioTrack.process(volumeLevel);
+        audioTrack.process(configuration, volumeLevel);
 
         log.info("Playing track {} finished or was stopped.", audioTrack.getIdentifier());
       } catch (Throwable e) {

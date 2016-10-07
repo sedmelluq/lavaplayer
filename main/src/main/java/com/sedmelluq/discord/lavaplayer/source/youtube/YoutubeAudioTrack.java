@@ -2,7 +2,7 @@ package com.sedmelluq.discord.lavaplayer.source.youtube;
 
 import com.sedmelluq.discord.lavaplayer.container.matroska.MatroskaAudioTrack;
 import com.sedmelluq.discord.lavaplayer.container.mpeg.MpegAudioTrack;
-import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
+import com.sedmelluq.discord.lavaplayer.player.AudioConfiguration;
 import com.sedmelluq.discord.lavaplayer.tools.DataFormatTools;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.tools.JsonBrowser;
@@ -45,19 +45,18 @@ public class YoutubeAudioTrack extends DelegatedAudioTrack {
   private final YoutubeAudioSourceManager sourceManager;
 
   /**
-   * @param manager Audio player manager which created the track
    * @param executor Track executor
    * @param trackInfo Track info
    * @param sourceManager Source manager which was used to find this track
    */
-  public YoutubeAudioTrack(AudioPlayerManager manager, AudioTrackExecutor executor, AudioTrackInfo trackInfo, YoutubeAudioSourceManager sourceManager) {
-    super(manager, executor, trackInfo);
+  public YoutubeAudioTrack(AudioTrackExecutor executor, AudioTrackInfo trackInfo, YoutubeAudioSourceManager sourceManager) {
+    super(executor, trackInfo);
 
     this.sourceManager = sourceManager;
   }
 
   @Override
-  public void process(AtomicInteger volumeLevel) throws Exception {
+  public void process(AudioConfiguration configuration, AtomicInteger volumeLevel) throws Exception {
     try (CloseableHttpClient httpClient = sourceManager.createHttpClient()) {
       JsonBrowser info = getTrackInfo(httpClient);
 
@@ -70,9 +69,9 @@ public class YoutubeAudioTrack extends DelegatedAudioTrack {
 
       try (YoutubePersistentHttpStream stream = new YoutubePersistentHttpStream(httpClient, signedUrl, format.getContentLength())) {
         if (MIME_AUDIO_WEBM.equals(format.getType().getMimeType())) {
-          processDelegate(new MatroskaAudioTrack(manager, executor, trackInfo, stream), volumeLevel);
+          processDelegate(new MatroskaAudioTrack(executor, trackInfo, stream), configuration, volumeLevel);
         } else {
-          processDelegate(new MpegAudioTrack(manager, executor, trackInfo, stream), volumeLevel);
+          processDelegate(new MpegAudioTrack(executor, trackInfo, stream), configuration, volumeLevel);
         }
       }
     }
@@ -80,7 +79,7 @@ public class YoutubeAudioTrack extends DelegatedAudioTrack {
 
   @Override
   public AudioTrack makeClone() {
-    return new YoutubeAudioTrack(manager, new AudioTrackExecutor(getIdentifier()), trackInfo, sourceManager);
+    return new YoutubeAudioTrack(new AudioTrackExecutor(getIdentifier()), trackInfo, sourceManager);
   }
 
   private JsonBrowser getTrackInfo(CloseableHttpClient httpClient) throws Exception {

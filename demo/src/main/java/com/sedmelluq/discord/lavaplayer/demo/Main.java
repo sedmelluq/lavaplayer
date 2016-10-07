@@ -1,5 +1,6 @@
 package com.sedmelluq.discord.lavaplayer.demo;
 
+import com.sedmelluq.discord.lavaplayer.player.AudioConfiguration;
 import com.sedmelluq.discord.lavaplayer.player.AudioLoadResultHandler;
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
@@ -28,7 +29,7 @@ public class Main {
 
   public static void main(String[] args) throws Exception {
     AudioPlayerManager playerManager = new AudioPlayerManager();
-    playerManager.setResamplingQuality(AudioPlayerManager.ResamplingQuality.LOW);
+    playerManager.getConfiguration().setResamplingQuality(AudioConfiguration.ResamplingQuality.LOW);
     playerManager.registerSourceManager(new YoutubeAudioSourceManager());
     playerManager.registerSourceManager(new LocalAudioSourceManager());
     playerManager.registerSourceManager(new SoundCloudAudioSourceManager());

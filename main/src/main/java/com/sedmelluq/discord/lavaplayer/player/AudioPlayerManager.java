@@ -29,7 +29,7 @@ public class AudioPlayerManager {
   private final ExecutorService trackPlaybackExecutorService;
   private final ExecutorService trackInfoExecutorService;
   private volatile long trackStuckThreshold;
-  private volatile ResamplingQuality resamplingQuality;
+  private volatile AudioConfiguration configuration;
 
   /**
    * Create a new instance
@@ -39,7 +39,7 @@ public class AudioPlayerManager {
     trackPlaybackExecutorService = new ThreadPoolExecutor(1, Integer.MAX_VALUE, 10, TimeUnit.SECONDS, new SynchronousQueue<>());
     trackInfoExecutorService = new ThreadPoolExecutor(1, 5, 30, TimeUnit.SECONDS, new LinkedBlockingDeque<>());
     trackStuckThreshold = TimeUnit.MILLISECONDS.toNanos(10000);
-    resamplingQuality = ResamplingQuality.MEDIUM;
+    configuration = new AudioConfiguration();
   }
 
   /**
@@ -51,7 +51,8 @@ public class AudioPlayerManager {
 
   /**
    * Schedules loading a track or playlist with the specified identifier.
-   * @param identifier The identifier that a specific source manager should be able to find the track with.
+   *
+   * @param identifier    The identifier that a specific source manager should be able to find the track with.
    * @param resultHandler A handler to process the result of this operation. It can either end by finding a track,
    *                      finding a playlist, finding nothing or terminating with an exception.
    */
@@ -77,12 +78,8 @@ public class AudioPlayerManager {
     this.trackStuckThreshold = TimeUnit.MILLISECONDS.toNanos(trackStuckThreshold);
   }
 
-  public void setResamplingQuality(ResamplingQuality resamplingQuality) {
-    this.resamplingQuality = resamplingQuality;
-  }
-
-  public ResamplingQuality getResamplingQuality() {
-    return resamplingQuality;
+  public AudioConfiguration getConfiguration() {
+    return configuration;
   }
 
   public long getTrackStuckThresholdNanos() {
@@ -114,18 +111,10 @@ public class AudioPlayerManager {
 
   /**
    * Creates an instance of audio player.
+   *
    * @return The new audio player instance.
    */
   public AudioPlayer createPlayer() {
     return new AudioPlayer(this);
-  }
-
-  /**
-   * Resampling quality levels
-   */
-  public enum ResamplingQuality {
-    HIGH,
-    MEDIUM,
-    LOW
   }
 }

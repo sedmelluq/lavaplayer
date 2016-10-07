@@ -1,7 +1,7 @@
 package com.sedmelluq.discord.lavaplayer.container.mpeg;
 
 import com.sedmelluq.discord.lavaplayer.filter.FilterChainBuilder;
-import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
+import com.sedmelluq.discord.lavaplayer.player.AudioConfiguration;
 import com.sedmelluq.discord.lavaplayer.track.playback.AudioFrameConsumer;
 import com.sedmelluq.discord.lavaplayer.natives.aac.AacDecoder;
 import com.sedmelluq.discord.lavaplayer.filter.ShortPcmAudioFilter;
@@ -32,17 +32,17 @@ public class MpegAacTrackConsumer implements MpegTrackConsumer {
   private AacDecoder decoder;
 
   /**
-   * @param manager Audio player manager which is used for configuration
+   * @param configuration Audio configuration to use with this track
    * @param track The MP4 audio track descriptor
    * @param frameConsumer Consumer of the decoded frames
    * @param volumeLevel Mutable volume level
    */
-  public MpegAacTrackConsumer(AudioPlayerManager manager, MpegTrackInfo track, AudioFrameConsumer frameConsumer, AtomicInteger volumeLevel) {
+  public MpegAacTrackConsumer(AudioConfiguration configuration, MpegTrackInfo track, AudioFrameConsumer frameConsumer, AtomicInteger volumeLevel) {
     this.track = track;
     this.decoder = new AacDecoder();
     this.inputBuffer = ByteBuffer.allocateDirect(4096);
     this.outputBuffer = ByteBuffer.allocateDirect(2048 * track.channelCount).order(ByteOrder.LITTLE_ENDIAN).asShortBuffer();
-    this.downstream = FilterChainBuilder.forShortPcm(manager, frameConsumer, volumeLevel, track.channelCount, track.sampleRate, true);
+    this.downstream = FilterChainBuilder.forShortPcm(configuration, frameConsumer, volumeLevel, track.channelCount, track.sampleRate, true);
   }
 
   @Override

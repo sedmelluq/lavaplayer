@@ -1,7 +1,7 @@
 package com.sedmelluq.discord.lavaplayer.container.matroska;
 
 import com.sedmelluq.discord.lavaplayer.filter.FilterChainBuilder;
-import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
+import com.sedmelluq.discord.lavaplayer.player.AudioConfiguration;
 import com.sedmelluq.discord.lavaplayer.track.playback.AudioFrameConsumer;
 import com.sedmelluq.discord.lavaplayer.filter.FloatPcmAudioFilter;
 import com.sedmelluq.discord.lavaplayer.natives.vorbis.VorbisDecoder;
@@ -26,12 +26,12 @@ public class MatroskaVorbisTrackConsumer implements MatroskaTrackConsumer {
   private float[][] channelPcmBuffers;
 
   /**
-   * @param manager Audio player manager which is used for configuration
+   * @param configuration Audio configuration to use with this track
    * @param frameConsumer The consumer of the audio frames created from this track
    * @param track The associated matroska track
    * @param volumeLevel Mutable volume level
    */
-  public MatroskaVorbisTrackConsumer(AudioPlayerManager manager, AudioFrameConsumer frameConsumer, MatroskaFileTrack track,
+  public MatroskaVorbisTrackConsumer(AudioConfiguration configuration, AudioFrameConsumer frameConsumer, MatroskaFileTrack track,
                                      AtomicInteger volumeLevel) {
 
     this.track = track;
@@ -39,7 +39,7 @@ public class MatroskaVorbisTrackConsumer implements MatroskaTrackConsumer {
     this.copyBuffer = new byte[COPY_BUFFER_SIZE];
 
     MatroskaFileTrack.MatroskaAudioTrack audioTrack = track.getAudio();
-    this.downstream = FilterChainBuilder.forFloatPcm(manager, frameConsumer, volumeLevel, audioTrack.getChannels(),
+    this.downstream = FilterChainBuilder.forFloatPcm(configuration, frameConsumer, volumeLevel, audioTrack.getChannels(),
         (int) audioTrack.getSamplingFrequency());
   }
 

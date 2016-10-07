@@ -15,7 +15,7 @@ public class LocalAudioSourceManager implements AudioSourceManager {
   @Override
   public InternalAudioTrack loadItem(AudioPlayerManager manager, String identifier) {
     if (new File(identifier).exists()) {
-      return new LocalAudioTrack(manager, new AudioTrackExecutor(identifier), new AudioTrackInfo(identifier, "Unknown", 0));
+      return new LocalAudioTrack(new AudioTrackExecutor(identifier), new AudioTrackInfo(identifier, "Unknown", 0));
     } else {
       return null;
     }

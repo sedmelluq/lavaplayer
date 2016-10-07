@@ -2,7 +2,7 @@ package com.sedmelluq.discord.lavaplayer.source.local;
 
 import com.sedmelluq.discord.lavaplayer.container.matroska.MatroskaAudioTrack;
 import com.sedmelluq.discord.lavaplayer.container.mp3.Mp3AudioTrack;
-import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
+import com.sedmelluq.discord.lavaplayer.player.AudioConfiguration;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.playback.AudioTrackExecutor;
@@ -22,24 +22,23 @@ public class LocalAudioTrack extends DelegatedAudioTrack {
   private final File file;
 
   /**
-   * @param manager Audio player manager which created the track
    * @param executor Track executor
    * @param trackInfo Track info
    */
-  public LocalAudioTrack(AudioPlayerManager manager, AudioTrackExecutor executor, AudioTrackInfo trackInfo) {
-    super(manager, executor, trackInfo);
+  public LocalAudioTrack(AudioTrackExecutor executor, AudioTrackInfo trackInfo) {
+    super(executor, trackInfo);
 
     this.file = new File(executor.getIdentifier());
   }
 
   @Override
-  public void process(AtomicInteger volumeLevel) throws Exception {
+  public void process(AudioConfiguration configuration, AtomicInteger volumeLevel) throws Exception {
     if (executor.getIdentifier().endsWith(".mp4") || executor.getIdentifier().endsWith(".m4a")) {
-      processDelegate(new MpegAudioTrack(manager, executor, trackInfo, new LocalSeekableInputStream(file)), volumeLevel);
+      processDelegate(new MpegAudioTrack(executor, trackInfo, new LocalSeekableInputStream(file)), configuration, volumeLevel);
     } else if (executor.getIdentifier().endsWith(".webm") || executor.getIdentifier().endsWith(".mkv")) {
-      processDelegate(new MatroskaAudioTrack(manager, executor, trackInfo, new LocalSeekableInputStream(file)), volumeLevel);
+      processDelegate(new MatroskaAudioTrack(executor, trackInfo, new LocalSeekableInputStream(file)), configuration, volumeLevel);
     } else if (executor.getIdentifier().endsWith(".mp3")) {
-      processDelegate(new Mp3AudioTrack(manager, executor, trackInfo, new LocalSeekableInputStream(file)), volumeLevel);
+      processDelegate(new Mp3AudioTrack(executor, trackInfo, new LocalSeekableInputStream(file)), configuration, volumeLevel);
     } else {
       throw new FriendlyException("Unknown file extension.", COMMON, null);
     }
@@ -47,6 +46,6 @@ public class LocalAudioTrack extends DelegatedAudioTrack {
 
   @Override
   public AudioTrack makeClone() {
-    return new LocalAudioTrack(manager, new AudioTrackExecutor(getIdentifier()), trackInfo);
+    return new LocalAudioTrack(new AudioTrackExecutor(getIdentifier()), trackInfo);
   }
 }

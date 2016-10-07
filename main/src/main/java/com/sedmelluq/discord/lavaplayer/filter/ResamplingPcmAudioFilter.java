@@ -1,7 +1,7 @@
 package com.sedmelluq.discord.lavaplayer.filter;
 
 import com.sedmelluq.discord.lavaplayer.natives.samplerate.SampleRateConverter;
-import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
+import com.sedmelluq.discord.lavaplayer.player.AudioConfiguration;
 
 /**
  * Filter which resamples audio to the specified sample rate
@@ -15,18 +15,18 @@ public class ResamplingPcmAudioFilter implements FloatPcmAudioFilter {
   private final float[][] outputSegments;
 
   /**
-   * @param manager Audio player manager which is used for configuration
+   * @param configuration Configuration to use
    * @param channels Number of channels in input data
    * @param downstream Next filter in chain
    * @param sourceRate Source sample rate
    * @param targetRate Target sample rate
    */
-  public ResamplingPcmAudioFilter(AudioPlayerManager manager, int channels, FloatPcmAudioFilter downstream, int sourceRate, int targetRate) {
+  public ResamplingPcmAudioFilter(AudioConfiguration configuration, int channels, FloatPcmAudioFilter downstream, int sourceRate, int targetRate) {
     this.downstream = downstream;
     converters = new SampleRateConverter[channels];
     outputSegments = new float[channels][];
 
-    SampleRateConverter.ResamplingType type = getResamplingType(manager.getResamplingQuality());
+    SampleRateConverter.ResamplingType type = getResamplingType(configuration.getResamplingQuality());
 
     for (int i = 0; i < channels; i++) {
       outputSegments[i] = new float[BUFFER_SIZE];
@@ -73,7 +73,7 @@ public class ResamplingPcmAudioFilter implements FloatPcmAudioFilter {
     } while (length > 0 || progress.getOutputGenerated() == BUFFER_SIZE);
   }
 
-  private static SampleRateConverter.ResamplingType getResamplingType(AudioPlayerManager.ResamplingQuality quality) {
+  private static SampleRateConverter.ResamplingType getResamplingType(AudioConfiguration.ResamplingQuality quality) {
     switch (quality) {
       case HIGH:
         return SampleRateConverter.ResamplingType.SINC_MEDIUM_QUALITY;

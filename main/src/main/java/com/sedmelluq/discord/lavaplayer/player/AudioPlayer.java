@@ -88,7 +88,7 @@ public class AudioPlayer implements AudioFrameProvider {
     }
 
     final AudioPlayer self = this;
-    manager.getExecutor().submit(() -> newTrack.getExecutor().execute(self, volumeLevel));
+    manager.getExecutor().submit(() -> newTrack.getExecutor().execute(self, manager.getConfiguration(), volumeLevel));
 
     return true;
   }

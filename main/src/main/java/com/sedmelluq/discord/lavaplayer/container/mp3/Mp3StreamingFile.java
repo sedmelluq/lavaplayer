@@ -3,7 +3,7 @@ package com.sedmelluq.discord.lavaplayer.container.mp3;
 import com.sedmelluq.discord.lavaplayer.filter.FilterChainBuilder;
 import com.sedmelluq.discord.lavaplayer.filter.ShortPcmAudioFilter;
 import com.sedmelluq.discord.lavaplayer.natives.mp3.Mp3Decoder;
-import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
+import com.sedmelluq.discord.lavaplayer.player.AudioConfiguration;
 import com.sedmelluq.discord.lavaplayer.tools.io.SeekableInputStream;
 import com.sedmelluq.discord.lavaplayer.track.playback.AudioFrameConsumer;
 
@@ -23,7 +23,7 @@ import static com.sedmelluq.discord.lavaplayer.natives.mp3.Mp3Decoder.SAMPLES_PE
 public class Mp3StreamingFile {
   private static final byte[] IDV3_TAG = new byte[] { 0x49, 0x44, 0x33 };
 
-  private final AudioPlayerManager manager;
+  private final AudioConfiguration configuration;
   private final SeekableInputStream inputStream;
   private final DataInputStream dataInput;
   private final AudioFrameConsumer frameConsumer;
@@ -34,17 +34,17 @@ public class Mp3StreamingFile {
   private final byte[] inputBufferBytes;
   private final byte[] scanBuffer;
 
-  private Configuration configuration;
+  private Configuration track;
   private int nextFrameSize;
 
   /**
-   * @param manager Audio player manager which is used for configuration
+   * @param configuration Audio configuration to use with this track
    * @param inputStream Stream to read the file from
    * @param frameConsumer The frame consumer where the audio frames are sent
    * @param volumeLevel Mutable audio level
    */
-  public Mp3StreamingFile(AudioPlayerManager manager, SeekableInputStream inputStream, AudioFrameConsumer frameConsumer, AtomicInteger volumeLevel) {
-    this.manager = manager;
+  public Mp3StreamingFile(AudioConfiguration configuration, SeekableInputStream inputStream, AudioFrameConsumer frameConsumer, AtomicInteger volumeLevel) {
+    this.configuration = configuration;
     this.inputStream = inputStream;
     this.dataInput = new DataInputStream(inputStream);
     this.frameConsumer = frameConsumer;
@@ -65,10 +65,10 @@ public class Mp3StreamingFile {
     int scanOffset = scanForFrame(headerInBuffer, 2048);
     int sampleRate = Mp3Decoder.getFrameSampleRate(scanBuffer, scanOffset);
 
-    configuration = new Configuration(
+    track = new Configuration(
         inputStream.getPosition() - 4,
         sampleRate,
-        FilterChainBuilder.forShortPcm(manager, frameConsumer, volumeLevel, 2, sampleRate, true),
+        FilterChainBuilder.forShortPcm(configuration, frameConsumer, volumeLevel, 2, sampleRate, true),
         Mp3Decoder.getAverageFrameSize(scanBuffer, scanOffset)
     );
   }
@@ -91,7 +91,7 @@ public class Mp3StreamingFile {
         int produced = mp3Decoder.decode(inputBuffer, outputBuffer);
 
         if (produced > 0) {
-          configuration.downstream.process(outputBuffer);
+          track.downstream.process(outputBuffer);
         }
 
         nextFrameSize = 0;
@@ -107,17 +107,17 @@ public class Mp3StreamingFile {
    */
   public void seekToTimecode(long timecode) {
     try {
-      long maximumFrameCount = (long) ((inputStream.getContentLength() - configuration.startPosition + 8) / configuration.averageFrameSize);
+      long maximumFrameCount = (long) ((inputStream.getContentLength() - track.startPosition + 8) / track.averageFrameSize);
 
-      long sampleIndex = timecode * configuration.sampleRate / 1000;
+      long sampleIndex = timecode * track.sampleRate / 1000;
       long frameIndex = Math.min(sampleIndex / SAMPLES_PER_FRAME, maximumFrameCount);
 
-      long seekPosition = (long) (frameIndex * configuration.averageFrameSize) - 8;
-      inputStream.seek(configuration.startPosition + seekPosition);
+      long seekPosition = (long) (frameIndex * track.averageFrameSize) - 8;
+      inputStream.seek(track.startPosition + seekPosition);
       scanForFrame(false, 16);
 
-      long actualTimecode = frameIndex * SAMPLES_PER_FRAME * 1000 / configuration.sampleRate;
-      configuration.downstream.seekPerformed(timecode, actualTimecode);
+      long actualTimecode = frameIndex * SAMPLES_PER_FRAME * 1000 / track.sampleRate;
+      track.downstream.seekPerformed(timecode, actualTimecode);
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
@@ -127,7 +127,7 @@ public class Mp3StreamingFile {
    * Closes resources.
    */
   public void close() {
-    configuration.downstream.close();
+    track.downstream.close();
     mp3Decoder.close();
   }
 
