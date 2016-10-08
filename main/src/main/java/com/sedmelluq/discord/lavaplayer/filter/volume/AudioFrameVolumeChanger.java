@@ -2,6 +2,7 @@ package com.sedmelluq.discord.lavaplayer.filter.volume;
 
 import com.sedmelluq.discord.lavaplayer.natives.opus.OpusDecoder;
 import com.sedmelluq.discord.lavaplayer.natives.opus.OpusEncoder;
+import com.sedmelluq.discord.lavaplayer.player.AudioConfiguration;
 import com.sedmelluq.discord.lavaplayer.track.playback.AudioFrame;
 import com.sedmelluq.discord.lavaplayer.track.playback.AudioFrameConsumer;
 import com.sedmelluq.discord.lavaplayer.track.playback.AudioFrameRebuilder;
@@ -18,6 +19,7 @@ import static com.sedmelluq.discord.lavaplayer.filter.OpusEncodingPcmAudioFilter
  * A frame rebuilder to apply a specific volume level to the frames.
  */
 public class AudioFrameVolumeChanger implements AudioFrameRebuilder {
+  private final AudioConfiguration configuration;
   private final int newVolume;
   private final ByteBuffer encodedBuffer;
   private final ShortBuffer sampleBuffer;
@@ -27,7 +29,8 @@ public class AudioFrameVolumeChanger implements AudioFrameRebuilder {
   private OpusDecoder decoder;
   private int frameIndex;
 
-  private AudioFrameVolumeChanger(int newVolume) {
+  private AudioFrameVolumeChanger(AudioConfiguration configuration, int newVolume) {
+    this.configuration = configuration;
     this.newVolume = newVolume;
 
     this.encodedBuffer = ByteBuffer.allocateDirect(4096);
@@ -79,7 +82,7 @@ public class AudioFrameVolumeChanger implements AudioFrameRebuilder {
   }
 
   private void setupLibraries() {
-    encoder = new OpusEncoder(FREQUENCY, CHANNEL_COUNT);
+    encoder = new OpusEncoder(FREQUENCY, CHANNEL_COUNT, configuration.getOpusEncodingQuality());
     decoder = new OpusDecoder(FREQUENCY, CHANNEL_COUNT);
   }
 
@@ -98,8 +101,8 @@ public class AudioFrameVolumeChanger implements AudioFrameRebuilder {
    * @param frameConsumer The frame consumer
    * @param newVolume New volume to apply
    */
-  public static void apply(AudioFrameConsumer frameConsumer, int newVolume) {
-    AudioFrameVolumeChanger volumeChanger = new AudioFrameVolumeChanger(newVolume);
+  public static void apply(AudioConfiguration configuration, AudioFrameConsumer frameConsumer, int newVolume) {
+    AudioFrameVolumeChanger volumeChanger = new AudioFrameVolumeChanger(configuration, newVolume);
 
     try {
       volumeChanger.setupLibraries();

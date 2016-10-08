@@ -28,7 +28,7 @@ import static com.sedmelluq.discord.lavaplayer.tools.FriendlyException.Severity.
 public class SoundCloudAudioSourceManager implements AudioSourceManager {
   private static final String CHARSET = "UTF-8";
   private static final String CLIENT_ID = "02gUJC0hH2ct1EGOcYXQIzRFU91c72Ea";
-  private static final String URL_REGEX = "^(?:http://|https://|)(?:www\\.|)soundcloud\\.com/([a-zA-Z0-9-]*)/([a-zA-Z0-9-]*)(?:\\?.*|)$";
+  private static final String URL_REGEX = "^(?:http://|https://|)(?:www\\.|)soundcloud\\.com/([a-zA-Z0-9-_]*)/([a-zA-Z0-9-_]*)(?:\\?.*|)$";
 
   private static final Pattern urlPattern = Pattern.compile(URL_REGEX);
 

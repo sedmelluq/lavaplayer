@@ -17,7 +17,7 @@ class OpusEncoderLibrary {
     return new OpusEncoderLibrary();
   }
 
-  native long create(int sampleRate, int channels, int application);
+  native long create(int sampleRate, int channels, int application, int quality);
 
   native void destroy(long instance);
 

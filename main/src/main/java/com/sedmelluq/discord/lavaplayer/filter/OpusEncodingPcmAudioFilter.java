@@ -2,6 +2,7 @@ package com.sedmelluq.discord.lavaplayer.filter;
 
 import com.sedmelluq.discord.lavaplayer.filter.volume.PcmVolumeProcessor;
 import com.sedmelluq.discord.lavaplayer.natives.opus.OpusEncoder;
+import com.sedmelluq.discord.lavaplayer.player.AudioConfiguration;
 import com.sedmelluq.discord.lavaplayer.track.playback.AudioFrame;
 import com.sedmelluq.discord.lavaplayer.track.playback.AudioFrameConsumer;
 import com.sedmelluq.discord.lavaplayer.filter.volume.AudioFrameVolumeChanger;
@@ -27,6 +28,7 @@ public class OpusEncodingPcmAudioFilter implements FloatPcmAudioFilter, ShortPcm
   private static final int CHUNK_LENGTH_MS = 20;
   private static final int SAMPLES_PER_MS = 48;
 
+  private final AudioConfiguration configuration;
   private final AudioFrameConsumer frameConsumer;
   private final ShortBuffer frameBuffer;
   private final ByteBuffer encoded;
@@ -41,7 +43,8 @@ public class OpusEncodingPcmAudioFilter implements FloatPcmAudioFilter, ShortPcm
    * @param frameConsumer Frame consumer where to pass the encoded frames to
    * @param volumeLevel Mutable volume level
    */
-  public OpusEncodingPcmAudioFilter(AudioFrameConsumer frameConsumer, AtomicInteger volumeLevel) {
+  public OpusEncodingPcmAudioFilter(AudioConfiguration configuration, AudioFrameConsumer frameConsumer, AtomicInteger volumeLevel) {
+    this.configuration = configuration;
     this.frameConsumer = frameConsumer;
     this.frameBuffer = ByteBuffer.allocateDirect(CHUNK_LENGTH_MS * SAMPLES_PER_MS * CHANNEL_COUNT * 2).
         order(ByteOrder.LITTLE_ENDIAN).asShortBuffer();
@@ -49,7 +52,7 @@ public class OpusEncodingPcmAudioFilter implements FloatPcmAudioFilter, ShortPcm
     this.volumeLevel = volumeLevel;
     this.volumeProcessor = new PcmVolumeProcessor(volumeLevel.get());
 
-    opusEncoder = new OpusEncoder(48000, 2);
+    opusEncoder = new OpusEncoder(FREQUENCY, CHANNEL_COUNT, configuration.getOpusEncodingQuality());
     nextTimecode = 0;
   }
 
@@ -145,7 +148,7 @@ public class OpusEncodingPcmAudioFilter implements FloatPcmAudioFilter, ShortPcm
       int currentVolume = volumeLevel.get();
 
       if (currentVolume != volumeProcessor.getLastVolume()) {
-        AudioFrameVolumeChanger.apply(frameConsumer, currentVolume);
+        AudioFrameVolumeChanger.apply(configuration, frameConsumer, currentVolume);
       }
 
       frameBuffer.clear();

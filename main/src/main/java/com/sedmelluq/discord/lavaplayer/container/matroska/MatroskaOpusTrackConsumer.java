@@ -156,7 +156,7 @@ public class MatroskaOpusTrackConsumer implements MatroskaTrackConsumer {
 
         initialiseDecoder();
 
-        AudioFrameVolumeChanger.apply(frameConsumer, volumeLevel.get());
+        AudioFrameVolumeChanger.apply(configuration, frameConsumer, volumeLevel.get());
       }
     } else {
       if (opusDecoder != null) {
@@ -164,7 +164,7 @@ public class MatroskaOpusTrackConsumer implements MatroskaTrackConsumer {
 
         destroyDecoder();
 
-        AudioFrameVolumeChanger.apply(frameConsumer, volumeLevel.get());
+        AudioFrameVolumeChanger.apply(configuration, frameConsumer, volumeLevel.get());
       }
     }
   }

@@ -3,6 +3,7 @@ package com.sedmelluq.discord.lavaplayer.player;
 import com.sedmelluq.discord.lavaplayer.source.AudioSourceManager;
 import com.sedmelluq.discord.lavaplayer.tools.ExceptionTools;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
+import com.sedmelluq.discord.lavaplayer.tools.OrderedExecutor;
 import com.sedmelluq.discord.lavaplayer.track.AudioItem;
 import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
@@ -28,6 +29,7 @@ public class AudioPlayerManager {
   private final List<AudioSourceManager> sourceManagers;
   private final ExecutorService trackPlaybackExecutorService;
   private final ExecutorService trackInfoExecutorService;
+  private final OrderedExecutor orderedInfoExecutor;
   private volatile long trackStuckThreshold;
   private volatile AudioConfiguration configuration;
 
@@ -40,6 +42,7 @@ public class AudioPlayerManager {
     trackInfoExecutorService = new ThreadPoolExecutor(1, 5, 30, TimeUnit.SECONDS, new LinkedBlockingDeque<>());
     trackStuckThreshold = TimeUnit.MILLISECONDS.toNanos(10000);
     configuration = new AudioConfiguration();
+    orderedInfoExecutor = new OrderedExecutor(trackInfoExecutorService);
   }
 
   /**
@@ -57,7 +60,24 @@ public class AudioPlayerManager {
    *                      finding a playlist, finding nothing or terminating with an exception.
    */
   public void loadItem(final String identifier, final AudioLoadResultHandler resultHandler) {
-    trackInfoExecutorService.submit(() -> {
+    trackInfoExecutorService.submit(createItemLoader(identifier, resultHandler));
+  }
+
+  /**
+   * Schedules loading a track or playlist with the specified identifier with an ordering key so that items with the
+   * same ordering key are handled sequentially in the order of calls to this method.
+   *
+   * @param orderingKey   Object to use as the key for the ordering channel
+   * @param identifier    The identifier that a specific source manager should be able to find the track with.
+   * @param resultHandler A handler to process the result of this operation. It can either end by finding a track,
+   *                      finding a playlist, finding nothing or terminating with an exception.
+   */
+  public void loadItemOrdered(Object orderingKey, final String identifier, final AudioLoadResultHandler resultHandler) {
+    orderedInfoExecutor.submit(orderingKey, createItemLoader(identifier, resultHandler));
+  }
+
+  private Runnable createItemLoader(final String identifier, final AudioLoadResultHandler resultHandler) {
+    return () -> {
       try {
         if (!checkSourcesForItem(identifier, resultHandler)) {
           log.debug("No matches for track with identifier {}.", identifier);
@@ -71,7 +91,7 @@ public class AudioPlayerManager {
 
         ExceptionTools.rethrowErrors(throwable);
       }
-    });
+    };
   }
 
   public void setTrackStuckThreshold(long trackStuckThreshold) {

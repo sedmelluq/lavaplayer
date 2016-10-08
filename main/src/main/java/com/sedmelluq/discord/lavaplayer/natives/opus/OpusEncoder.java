@@ -15,10 +15,11 @@ public class OpusEncoder extends NativeResourceHolder {
   /**
    * @param sampleRate Input sample rate
    * @param channels Channel count
+   * @param quality Encoding quality (0-10)
    */
-  public OpusEncoder(int sampleRate, int channels) {
+  public OpusEncoder(int sampleRate, int channels, int quality) {
     library = OpusEncoderLibrary.getInstance();
-    instance = library.create(sampleRate, channels, OpusEncoderLibrary.APPLICATION_AUDIO);
+    instance = library.create(sampleRate, channels, OpusEncoderLibrary.APPLICATION_AUDIO, quality);
 
     if (instance == 0) {
       throw new IllegalStateException("Failed to create an encoder instance");
