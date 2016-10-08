@@ -98,6 +98,7 @@ public class AudioFrameVolumeChanger implements AudioFrameRebuilder {
 
   /**
    * Applies a volume level to the buffered frames of a frame consumer
+   * @param configuration Audio configuration to use encoding
    * @param frameConsumer The frame consumer
    * @param newVolume New volume to apply
    */

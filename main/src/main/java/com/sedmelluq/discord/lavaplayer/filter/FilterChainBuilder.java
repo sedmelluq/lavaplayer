@@ -22,7 +22,7 @@ public class FilterChainBuilder {
                                                 AtomicInteger volumeLevel, int channels,
                                                 int frequency, boolean noPartialFrames) {
 
-    OpusEncodingPcmAudioFilter opusEncoder = new OpusEncodingPcmAudioFilter(frameConsumer, volumeLevel);
+    OpusEncodingPcmAudioFilter opusEncoder = new OpusEncodingPcmAudioFilter(configuration, frameConsumer, volumeLevel);
     ShortPcmAudioFilter filter;
 
     int outChannels = OpusEncodingPcmAudioFilter.CHANNEL_COUNT;
@@ -52,7 +52,7 @@ public class FilterChainBuilder {
   public static FloatPcmAudioFilter forFloatPcm(AudioConfiguration configuration, AudioFrameConsumer frameConsumer,
                                                 AtomicInteger volumeLevel, int channels, int frequency) {
 
-    FloatPcmAudioFilter filter = new OpusEncodingPcmAudioFilter(frameConsumer, volumeLevel);
+    FloatPcmAudioFilter filter = new OpusEncodingPcmAudioFilter(configuration, frameConsumer, volumeLevel);
 
     if (frequency != OpusEncodingPcmAudioFilter.FREQUENCY) {
       filter = new ResamplingPcmAudioFilter(configuration, channels, filter, frequency, OpusEncodingPcmAudioFilter.FREQUENCY);

@@ -40,6 +40,7 @@ public class OpusEncodingPcmAudioFilter implements FloatPcmAudioFilter, ShortPcm
   private long nextTimecode;
 
   /**
+   * @param configuration Audio configuration to use encoding
    * @param frameConsumer Frame consumer where to pass the encoded frames to
    * @param volumeLevel Mutable volume level
    */
