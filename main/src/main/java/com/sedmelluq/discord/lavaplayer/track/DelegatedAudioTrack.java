@@ -1,9 +1,6 @@
 package com.sedmelluq.discord.lavaplayer.track;
 
-import com.sedmelluq.discord.lavaplayer.player.AudioConfiguration;
-import com.sedmelluq.discord.lavaplayer.track.playback.AudioTrackExecutor;
-
-import java.util.concurrent.atomic.AtomicInteger;
+import com.sedmelluq.discord.lavaplayer.track.playback.LocalAudioTrackExecutor;
 
 /**
  * Audio track which delegates its processing to another track. The delegate does not have to be known when the
@@ -13,21 +10,20 @@ public abstract class DelegatedAudioTrack extends BaseAudioTrack {
   private InternalAudioTrack delegate;
 
   /**
-   * @param executor Track executor
    * @param trackInfo Track info
    */
-  public DelegatedAudioTrack(AudioTrackExecutor executor, AudioTrackInfo trackInfo) {
-    super(executor, trackInfo);
+  public DelegatedAudioTrack(AudioTrackInfo trackInfo) {
+    super(trackInfo);
   }
 
-  protected synchronized void processDelegate(InternalAudioTrack delegate, AudioConfiguration configuration, AtomicInteger volumeLevel) throws Exception {
+  protected synchronized void processDelegate(InternalAudioTrack delegate, LocalAudioTrackExecutor localExecutor) throws Exception {
     if (this.delegate != null) {
       throw new IllegalStateException("Cannot assign delegate twice.");
     }
 
     this.delegate = delegate;
 
-    delegate.process(configuration, volumeLevel);
+    delegate.process(localExecutor);
   }
 
   @Override

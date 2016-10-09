@@ -6,9 +6,6 @@ plugins {
 
 version = '0.1.9'
 
-sourceCompatibility = 1.8
-targetCompatibility = 1.8
-
 dependencies {
   compile project(':jebml')
 

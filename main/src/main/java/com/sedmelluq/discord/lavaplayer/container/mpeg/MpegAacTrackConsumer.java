@@ -1,10 +1,9 @@
 package com.sedmelluq.discord.lavaplayer.container.mpeg;
 
 import com.sedmelluq.discord.lavaplayer.filter.FilterChainBuilder;
-import com.sedmelluq.discord.lavaplayer.player.AudioConfiguration;
-import com.sedmelluq.discord.lavaplayer.track.playback.AudioFrameConsumer;
 import com.sedmelluq.discord.lavaplayer.natives.aac.AacDecoder;
 import com.sedmelluq.discord.lavaplayer.filter.ShortPcmAudioFilter;
+import com.sedmelluq.discord.lavaplayer.track.playback.AudioProcessingContext;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,7 +14,6 @@ import java.nio.ByteOrder;
 import java.nio.ShortBuffer;
 import java.nio.channels.ClosedByInterruptException;
 import java.nio.channels.ReadableByteChannel;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Handles processing MP4 AAC frames. Passes the decoded frames to the specified frame consumer. Currently only AAC LC
@@ -32,17 +30,15 @@ public class MpegAacTrackConsumer implements MpegTrackConsumer {
   private AacDecoder decoder;
 
   /**
-   * @param configuration Audio configuration to use with this track
+   * @param context Configuration and output information for processing
    * @param track The MP4 audio track descriptor
-   * @param frameConsumer Consumer of the decoded frames
-   * @param volumeLevel Mutable volume level
    */
-  public MpegAacTrackConsumer(AudioConfiguration configuration, MpegTrackInfo track, AudioFrameConsumer frameConsumer, AtomicInteger volumeLevel) {
+  public MpegAacTrackConsumer(AudioProcessingContext context, MpegTrackInfo track) {
     this.track = track;
     this.decoder = new AacDecoder();
     this.inputBuffer = ByteBuffer.allocateDirect(4096);
     this.outputBuffer = ByteBuffer.allocateDirect(2048 * track.channelCount).order(ByteOrder.LITTLE_ENDIAN).asShortBuffer();
-    this.downstream = FilterChainBuilder.forShortPcm(configuration, frameConsumer, volumeLevel, track.channelCount, track.sampleRate, true);
+    this.downstream = FilterChainBuilder.forShortPcm(context, track.channelCount, track.sampleRate, true);
   }
 
   @Override

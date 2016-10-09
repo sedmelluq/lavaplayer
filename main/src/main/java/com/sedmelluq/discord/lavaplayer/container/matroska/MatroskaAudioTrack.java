@@ -1,15 +1,13 @@
 package com.sedmelluq.discord.lavaplayer.container.matroska;
 
-import com.sedmelluq.discord.lavaplayer.player.AudioConfiguration;
 import com.sedmelluq.discord.lavaplayer.tools.io.SeekableInputStream;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo;
 import com.sedmelluq.discord.lavaplayer.track.BaseAudioTrack;
-import com.sedmelluq.discord.lavaplayer.track.playback.AudioTrackExecutor;
+import com.sedmelluq.discord.lavaplayer.track.playback.AudioProcessingContext;
+import com.sedmelluq.discord.lavaplayer.track.playback.LocalAudioTrackExecutor;
 import org.ebml.matroska.MatroskaFileTrack;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Audio track that handles the processing of MKV and WEBM formats
@@ -24,23 +22,22 @@ public class MatroskaAudioTrack extends BaseAudioTrack {
   private final SeekableInputStream inputStream;
 
   /**
-   * @param executor Track executor
    * @param trackInfo Track info
    * @param inputStream Input stream for the file
    */
-  public MatroskaAudioTrack(AudioTrackExecutor executor, AudioTrackInfo trackInfo, SeekableInputStream inputStream) {
-    super(executor, trackInfo);
+  public MatroskaAudioTrack(AudioTrackInfo trackInfo, SeekableInputStream inputStream) {
+    super(trackInfo);
 
     this.inputStream = inputStream;
   }
 
   @Override
-  public void process(AudioConfiguration configuration, AtomicInteger volumeLevel) {
+  public void process(LocalAudioTrackExecutor localExecutor) {
     MatroskaStreamingFile file = loadMatroskaFile();
-    MatroskaTrackConsumer trackConsumer = loadAudioTrack(file, configuration, volumeLevel);
+    MatroskaTrackConsumer trackConsumer = loadAudioTrack(file, localExecutor.getProcessingContext());
 
     try {
-      executor.executeProcessingLoop(() -> {
+      localExecutor.executeProcessingLoop(() -> {
         file.provideFrames(trackConsumer);
       }, position -> {
         file.seekToTimecode(trackConsumer.getTrack().getTrackNo(), position);
@@ -61,12 +58,12 @@ public class MatroskaAudioTrack extends BaseAudioTrack {
     return file;
   }
 
-  private MatroskaTrackConsumer loadAudioTrack(MatroskaStreamingFile file, AudioConfiguration configuration, AtomicInteger volumeLevel) {
+  private MatroskaTrackConsumer loadAudioTrack(MatroskaStreamingFile file, AudioProcessingContext context) {
     MatroskaTrackConsumer trackConsumer = null;
     boolean success = false;
 
     try {
-      trackConsumer = selectAudioTrack(file.getTrackList(), configuration, volumeLevel);
+      trackConsumer = selectAudioTrack(file.getTrackList(), context);
 
       if (trackConsumer == null) {
         throw new IllegalStateException("No supported audio tracks in the file.");
@@ -85,18 +82,18 @@ public class MatroskaAudioTrack extends BaseAudioTrack {
     return trackConsumer;
   }
 
-  private MatroskaTrackConsumer selectAudioTrack(MatroskaFileTrack[] tracks, AudioConfiguration configuration, AtomicInteger volumeLevel) {
+  private MatroskaTrackConsumer selectAudioTrack(MatroskaFileTrack[] tracks, AudioProcessingContext context) {
     MatroskaTrackConsumer trackConsumer = null;
 
     for (MatroskaFileTrack track : tracks) {
       if (track.getTrackType() == MatroskaFileTrack.TrackType.AUDIO) {
         if (OPUS_CODEC.equals(track.getCodecID())) {
-          trackConsumer = new MatroskaOpusTrackConsumer(configuration, executor.getFrameConsumer(), track, volumeLevel);
+          trackConsumer = new MatroskaOpusTrackConsumer(context, track);
           break;
         } else if (VORBIS_CODEC.equals(track.getCodecID())) {
-          trackConsumer = new MatroskaVorbisTrackConsumer(configuration, executor.getFrameConsumer(), track, volumeLevel);
+          trackConsumer = new MatroskaVorbisTrackConsumer(context, track);
         } else if (AAC_CODEC.equals(track.getCodecID())) {
-          trackConsumer = new MatroskaAacTrackConsumer(configuration, executor.getFrameConsumer(), track, volumeLevel);
+          trackConsumer = new MatroskaAacTrackConsumer(context, track);
         }
       }
     }

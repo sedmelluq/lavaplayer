@@ -3,16 +3,14 @@ package com.sedmelluq.discord.lavaplayer.container.mp3;
 import com.sedmelluq.discord.lavaplayer.filter.FilterChainBuilder;
 import com.sedmelluq.discord.lavaplayer.filter.ShortPcmAudioFilter;
 import com.sedmelluq.discord.lavaplayer.natives.mp3.Mp3Decoder;
-import com.sedmelluq.discord.lavaplayer.player.AudioConfiguration;
 import com.sedmelluq.discord.lavaplayer.tools.io.SeekableInputStream;
-import com.sedmelluq.discord.lavaplayer.track.playback.AudioFrameConsumer;
+import com.sedmelluq.discord.lavaplayer.track.playback.AudioProcessingContext;
 
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.ShortBuffer;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.sedmelluq.discord.lavaplayer.natives.mp3.Mp3Decoder.HEADER_SIZE;
 import static com.sedmelluq.discord.lavaplayer.natives.mp3.Mp3Decoder.SAMPLES_PER_FRAME;
@@ -23,11 +21,9 @@ import static com.sedmelluq.discord.lavaplayer.natives.mp3.Mp3Decoder.SAMPLES_PE
 public class Mp3StreamingFile {
   private static final byte[] IDV3_TAG = new byte[] { 0x49, 0x44, 0x33 };
 
-  private final AudioConfiguration configuration;
+  private final AudioProcessingContext context;
   private final SeekableInputStream inputStream;
   private final DataInputStream dataInput;
-  private final AudioFrameConsumer frameConsumer;
-  private final AtomicInteger volumeLevel;
   private final Mp3Decoder mp3Decoder;
   private final ShortBuffer outputBuffer;
   private final ByteBuffer inputBuffer;
@@ -38,17 +34,13 @@ public class Mp3StreamingFile {
   private int nextFrameSize;
 
   /**
-   * @param configuration Audio configuration to use with this track
+   * @param context Configuration and output information for processing
    * @param inputStream Stream to read the file from
-   * @param frameConsumer The frame consumer where the audio frames are sent
-   * @param volumeLevel Mutable audio level
    */
-  public Mp3StreamingFile(AudioConfiguration configuration, SeekableInputStream inputStream, AudioFrameConsumer frameConsumer, AtomicInteger volumeLevel) {
-    this.configuration = configuration;
+  public Mp3StreamingFile(AudioProcessingContext context, SeekableInputStream inputStream) {
+    this.context = context;
     this.inputStream = inputStream;
     this.dataInput = new DataInputStream(inputStream);
-    this.frameConsumer = frameConsumer;
-    this.volumeLevel = volumeLevel;
     this.outputBuffer = ByteBuffer.allocateDirect(SAMPLES_PER_FRAME * 4).order(ByteOrder.nativeOrder()).asShortBuffer();
     this.inputBuffer = ByteBuffer.allocateDirect(Mp3Decoder.getMaximumFrameSize());
     this.inputBufferBytes = new byte[Mp3Decoder.getMaximumFrameSize()];
@@ -68,7 +60,7 @@ public class Mp3StreamingFile {
     track = new Configuration(
         inputStream.getPosition() - 4,
         sampleRate,
-        FilterChainBuilder.forShortPcm(configuration, frameConsumer, volumeLevel, 2, sampleRate, true),
+        FilterChainBuilder.forShortPcm(context, 2, sampleRate, true),
         Mp3Decoder.getAverageFrameSize(scanBuffer, scanOffset)
     );
   }

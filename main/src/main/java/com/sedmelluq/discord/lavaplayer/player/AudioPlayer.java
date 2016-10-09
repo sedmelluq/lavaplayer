@@ -87,9 +87,7 @@ public class AudioPlayer implements AudioFrameProvider {
       shadowTrack = previousTrack;
     }
 
-    final AudioPlayer self = this;
-    manager.getExecutor().submit(() -> newTrack.getExecutor().execute(self, manager.getConfiguration(), volumeLevel));
-
+    manager.executeTrack(this, newTrack, volumeLevel);
     return true;
   }
 

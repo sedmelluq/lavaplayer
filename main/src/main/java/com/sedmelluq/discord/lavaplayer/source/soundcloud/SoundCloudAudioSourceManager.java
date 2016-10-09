@@ -8,7 +8,6 @@ import com.sedmelluq.discord.lavaplayer.tools.JsonBrowser;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpClientTools;
 import com.sedmelluq.discord.lavaplayer.track.AudioItem;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo;
-import com.sedmelluq.discord.lavaplayer.track.playback.AudioTrackExecutor;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
@@ -57,16 +56,17 @@ public class SoundCloudAudioSourceManager implements AudioSourceManager {
     try (CloseableHttpClient httpClient = httpClientBuilder.build()) {
       JsonBrowser trackJson = loadTrackInfoFromUrl(httpClient, identifier);
 
-      AudioTrackInfo trackInfo = new AudioTrackInfo(
-          trackJson.get("title").text(),
-          trackJson.get("user").get("username").text(),
-          trackJson.get("full_duration").as(Integer.class)
-      );
-
       String trackId = trackJson.get("id").text();
       String trackUrl = "https://api.soundcloud.com/tracks/" + trackId + "/stream?client_id=" + CLIENT_ID;
 
-      return new SoundCloudAudioTrack(new AudioTrackExecutor(trackId), trackInfo, this, trackUrl);
+      AudioTrackInfo trackInfo = new AudioTrackInfo(
+          trackJson.get("title").text(),
+          trackJson.get("user").get("username").text(),
+          trackJson.get("full_duration").as(Integer.class),
+          trackId
+      );
+
+      return new SoundCloudAudioTrack(trackInfo, this, trackUrl);
     } catch (IOException e) {
       throw new FriendlyException("Reading page from SoundCloud failed.", SUSPICIOUS, e);
     }

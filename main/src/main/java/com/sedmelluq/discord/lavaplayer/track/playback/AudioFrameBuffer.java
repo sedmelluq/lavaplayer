@@ -6,7 +6,6 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
 
 /**
  * A frame buffer. Stores the specified duration worth of frames in the internal buffer.
@@ -18,7 +17,7 @@ public class AudioFrameBuffer implements AudioFrameConsumer, AudioFrameProvider 
   private static final byte[] SILENT_OPUS_FRAME = new byte[] {(byte) 0xFC, (byte) 0xFF, (byte) 0xFE};
 
   private final Object synchronizer;
-  private final BlockingQueue<AudioFrame> audioFrames;
+  private final ArrayBlockingQueue<AudioFrame> audioFrames;
   private boolean terminated;
   private boolean terminateOnEmpty;
   private boolean clearOnInsert;
@@ -42,6 +41,10 @@ public class AudioFrameBuffer implements AudioFrameConsumer, AudioFrameProvider 
     }
 
     audioFrames.put(frame);
+  }
+
+  public int getRemainingCapacity() {
+    return audioFrames.remainingCapacity();
   }
 
   /**

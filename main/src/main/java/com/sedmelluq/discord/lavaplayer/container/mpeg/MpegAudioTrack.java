@@ -1,17 +1,16 @@
 package com.sedmelluq.discord.lavaplayer.container.mpeg;
 
-import com.sedmelluq.discord.lavaplayer.player.AudioConfiguration;
 import com.sedmelluq.discord.lavaplayer.tools.ExceptionTools;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.tools.io.SeekableInputStream;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo;
 import com.sedmelluq.discord.lavaplayer.track.BaseAudioTrack;
-import com.sedmelluq.discord.lavaplayer.track.playback.AudioTrackExecutor;
+import com.sedmelluq.discord.lavaplayer.track.playback.AudioProcessingContext;
+import com.sedmelluq.discord.lavaplayer.track.playback.LocalAudioTrackExecutor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.sedmelluq.discord.lavaplayer.tools.FriendlyException.Severity.FAULT;
 import static com.sedmelluq.discord.lavaplayer.tools.FriendlyException.Severity.SUSPICIOUS;
@@ -25,23 +24,22 @@ public class MpegAudioTrack extends BaseAudioTrack {
   private final SeekableInputStream inputStream;
 
   /**
-   * @param executor Track executor associated with the current track
    * @param trackInfo Track info
    * @param inputStream Input stream for the MP4 file
    */
-  public MpegAudioTrack(AudioTrackExecutor executor, AudioTrackInfo trackInfo, SeekableInputStream inputStream) {
-    super(executor, trackInfo);
+  public MpegAudioTrack(AudioTrackInfo trackInfo, SeekableInputStream inputStream) {
+    super(trackInfo);
 
     this.inputStream = inputStream;
   }
 
   @Override
-  public void process(AudioConfiguration configuration, AtomicInteger volumeLevel) {
+  public void process(LocalAudioTrackExecutor localExecutor) {
     MpegStreamingFile file = loadMp4File();
-    MpegTrackConsumer trackConsumer = loadAudioTrack(file, configuration, volumeLevel);
+    MpegTrackConsumer trackConsumer = loadAudioTrack(file, localExecutor.getProcessingContext());
 
     try {
-      executor.executeProcessingLoop(() -> file.provideFrames(trackConsumer), file::seekToTimecode);
+      localExecutor.executeProcessingLoop(() -> file.provideFrames(trackConsumer), file::seekToTimecode);
     } finally {
       trackConsumer.close();
     }
@@ -61,12 +59,12 @@ public class MpegAudioTrack extends BaseAudioTrack {
     return file;
   }
 
-  private MpegTrackConsumer loadAudioTrack(MpegStreamingFile file, AudioConfiguration configuration, AtomicInteger volumeLevel) {
+  private MpegTrackConsumer loadAudioTrack(MpegStreamingFile file, AudioProcessingContext context) {
     MpegTrackConsumer trackConsumer = null;
     boolean success = false;
 
     try {
-      trackConsumer = selectAudioTrack(file.getTrackList(), configuration, volumeLevel);
+      trackConsumer = selectAudioTrack(file.getTrackList(), context);
 
       if (trackConsumer == null) {
         throw new FriendlyException("The audio codec used in the track is not supported.", SUSPICIOUS, null);
@@ -86,10 +84,10 @@ public class MpegAudioTrack extends BaseAudioTrack {
     }
   }
 
-  private MpegTrackConsumer selectAudioTrack(List<MpegTrackInfo> tracks, AudioConfiguration configuration, AtomicInteger volumeLevel) {
+  private MpegTrackConsumer selectAudioTrack(List<MpegTrackInfo> tracks, AudioProcessingContext context) {
     for (MpegTrackInfo track : tracks) {
       if ("soun".equals(track.handler) && "mp4a".equals(track.codecName)) {
-        return new MpegAacTrackConsumer(configuration, track, executor.getFrameConsumer(), volumeLevel);
+        return new MpegAacTrackConsumer(context, track);
       }
     }
 

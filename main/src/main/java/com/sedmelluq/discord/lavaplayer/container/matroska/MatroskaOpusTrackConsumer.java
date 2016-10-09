@@ -4,10 +4,9 @@ import com.sedmelluq.discord.lavaplayer.filter.FilterChainBuilder;
 import com.sedmelluq.discord.lavaplayer.filter.OpusEncodingPcmAudioFilter;
 import com.sedmelluq.discord.lavaplayer.filter.ShortPcmAudioFilter;
 import com.sedmelluq.discord.lavaplayer.natives.opus.OpusDecoder;
-import com.sedmelluq.discord.lavaplayer.player.AudioConfiguration;
 import com.sedmelluq.discord.lavaplayer.track.playback.AudioFrame;
-import com.sedmelluq.discord.lavaplayer.track.playback.AudioFrameConsumer;
 import com.sedmelluq.discord.lavaplayer.filter.volume.AudioFrameVolumeChanger;
+import com.sedmelluq.discord.lavaplayer.track.playback.AudioProcessingContext;
 import org.ebml.matroska.MatroskaFileFrame;
 import org.ebml.matroska.MatroskaFileTrack;
 import org.slf4j.Logger;
@@ -16,7 +15,6 @@ import org.slf4j.LoggerFactory;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.ShortBuffer;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Consumes OPUS track data from a matroska file.
@@ -24,10 +22,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class MatroskaOpusTrackConsumer implements MatroskaTrackConsumer {
   private static final Logger log = LoggerFactory.getLogger(MatroskaOpusTrackConsumer.class);
 
-  private final AudioConfiguration configuration;
-  private final AudioFrameConsumer frameConsumer;
+  private final AudioProcessingContext context;
   private final MatroskaFileTrack track;
-  private final AtomicInteger volumeLevel;
   private final boolean hasStandardInput;
   private final int inputFrequency;
   private final int inputChannels;
@@ -40,16 +36,12 @@ public class MatroskaOpusTrackConsumer implements MatroskaTrackConsumer {
   private ShortBuffer frameBuffer;
 
   /**
-   * @param configuration Audio configuration to use with this track
-   * @param frameConsumer The consumer of the audio frames created from this track
+   * @param context Configuration and output information for processing
    * @param track The associated matroska track
-   * @param volumeLevel Mutable volume level
    */
-  public MatroskaOpusTrackConsumer(AudioConfiguration configuration, AudioFrameConsumer frameConsumer, MatroskaFileTrack track, AtomicInteger volumeLevel) {
-    this.configuration = configuration;
-    this.frameConsumer = frameConsumer;
+  public MatroskaOpusTrackConsumer(AudioProcessingContext context, MatroskaFileTrack track) {
+    this.context = context;
     this.track = track;
-    this.volumeLevel = volumeLevel;
     this.inputFrequency = (int) track.getAudio().getSamplingFrequency();
     this.inputChannels = track.getAudio().getChannels();
     this.hasStandardInput = inputFrequency == OpusEncodingPcmAudioFilter.FREQUENCY && inputChannels == OpusEncodingPcmAudioFilter.CHANNEL_COUNT;
@@ -142,11 +134,11 @@ public class MatroskaOpusTrackConsumer implements MatroskaTrackConsumer {
     byte[] bytes = new byte[buffer.remaining()];
     buffer.get(bytes);
 
-    frameConsumer.consume(new AudioFrame(currentTimecode, bytes, 100));
+    context.frameConsumer.consume(new AudioFrame(currentTimecode, bytes, 100));
   }
 
   private boolean needsDecoding() {
-    return volumeLevel.get() != 100 || !hasStandardSize || !hasStandardInput;
+    return context.volumeLevel.get() != 100 || !hasStandardSize || !hasStandardInput;
   }
 
   private void checkDecoderNecessity() {
@@ -156,7 +148,7 @@ public class MatroskaOpusTrackConsumer implements MatroskaTrackConsumer {
 
         initialiseDecoder();
 
-        AudioFrameVolumeChanger.apply(configuration, frameConsumer, volumeLevel.get());
+        AudioFrameVolumeChanger.apply(context.configuration, context.frameConsumer, context.volumeLevel.get());
       }
     } else {
       if (opusDecoder != null) {
@@ -164,14 +156,14 @@ public class MatroskaOpusTrackConsumer implements MatroskaTrackConsumer {
 
         destroyDecoder();
 
-        AudioFrameVolumeChanger.apply(configuration, frameConsumer, volumeLevel.get());
+        AudioFrameVolumeChanger.apply(context.configuration, context.frameConsumer, context.volumeLevel.get());
       }
     }
   }
 
   private void initialiseDecoder() {
     opusDecoder = new OpusDecoder(inputFrequency, inputChannels);
-    downstream = FilterChainBuilder.forShortPcm(configuration, frameConsumer, volumeLevel, inputChannels, inputFrequency, true);
+    downstream = FilterChainBuilder.forShortPcm(context, inputChannels, inputFrequency, true);
     downstream.seekPerformed(currentTimecode, currentTimecode);
   }
 

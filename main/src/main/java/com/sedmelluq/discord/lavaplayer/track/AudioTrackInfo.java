@@ -16,15 +16,21 @@ public class AudioTrackInfo {
    * Length of the track in milliseconds
    */
   public final int length;
+  /**
+   * Audio source specific track identifier
+   */
+  public final String identifier;
 
   /**
    * @param title Track title
    * @param author Track author, if known
    * @param length Length of the track in milliseconds
+   * @param identifier Audio source specific track identifier
    */
-  public AudioTrackInfo(String title, String author, int length) {
+  public AudioTrackInfo(String title, String author, int length, String identifier) {
     this.title = title;
     this.author = author;
     this.length = length;
+    this.identifier = identifier;
   }
 }

@@ -1,24 +1,26 @@
 package com.sedmelluq.discord.lavaplayer.track;
 
-import com.sedmelluq.discord.lavaplayer.player.AudioConfiguration;
 import com.sedmelluq.discord.lavaplayer.track.playback.AudioFrameProvider;
 import com.sedmelluq.discord.lavaplayer.track.playback.AudioTrackExecutor;
-
-import java.util.concurrent.atomic.AtomicInteger;
+import com.sedmelluq.discord.lavaplayer.track.playback.LocalAudioTrackExecutor;
 
 /**
  * Methods of an audio track that should not be visible outside of the library
  */
 public interface InternalAudioTrack extends AudioTrack, AudioFrameProvider {
   /**
-   * @return Get the associated executor
+   * @param executor Executor to assign to the track
    */
-  AudioTrackExecutor getExecutor();
+  void assignExecutor(AudioTrackExecutor executor);
+
+  /**
+   * @return Get the active track executor
+   */
+  AudioTrackExecutor getActiveExecutor();
 
   /**
    * Perform any necessary loading and then enter the read/seek loop
-   * @param configuration Audio configuration for playback
-   * @param volumeLevel Mutable volume level to use when processing the track
+   * @param executor The local executor which processes this track
    */
-  void process(AudioConfiguration configuration, AtomicInteger volumeLevel) throws Exception;
+  void process(LocalAudioTrackExecutor executor) throws Exception;
 }

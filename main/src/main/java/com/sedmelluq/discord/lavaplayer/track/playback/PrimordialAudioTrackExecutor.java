@@ -1,0 +1,82 @@
+package com.sedmelluq.discord.lavaplayer.track.playback;
+
+import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
+import com.sedmelluq.discord.lavaplayer.track.AudioLoop;
+import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo;
+import com.sedmelluq.discord.lavaplayer.track.AudioTrackState;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+/**
+ * Executor implementation which is used before a track has actually been executed. Saves the position and loop
+ * information, which is applied to the actual executor when one is attached.
+ */
+public class PrimordialAudioTrackExecutor implements AudioTrackExecutor {
+  private static final Logger log = LoggerFactory.getLogger(LocalAudioTrackExecutor.class);
+
+  private final AudioTrackInfo trackInfo;
+
+  private volatile long position;
+  private volatile AudioLoop loop;
+
+  /**
+   * @param trackInfo Information of the track this executor is used with
+   */
+  public PrimordialAudioTrackExecutor(AudioTrackInfo trackInfo) {
+    this.trackInfo = trackInfo;
+  }
+
+  @Override
+  public AudioFrameBuffer getAudioBuffer() {
+    return null;
+  }
+
+  @Override
+  public void execute(AudioPlayer audioPlayer) {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public void stop() {
+    log.info("Tried to stop track {} which is not playing.", trackInfo.identifier);
+  }
+
+  @Override
+  public long getPosition() {
+    return position;
+  }
+
+  @Override
+  public void setPosition(long timecode) {
+    loop = null;
+    position = timecode;
+  }
+
+  @Override
+  public AudioTrackState getState() {
+    return AudioTrackState.INACTIVE;
+  }
+
+  @Override
+  public void setLoop(AudioLoop loop) {
+    this.loop = loop;
+    this.position = 0;
+  }
+
+  @Override
+  public AudioFrame provide() {
+    return null;
+  }
+
+  /**
+   * Apply the position and loop state that had been set on this executor to an actual executor.
+   * @param executor The executor to apply the state to
+   */
+  public void applyStateToExecutor(AudioTrackExecutor executor) {
+    if (loop != null) {
+      executor.setLoop(loop);
+    } else if (position != 0) {
+      executor.setPosition(0);
+    }
+  }
+}

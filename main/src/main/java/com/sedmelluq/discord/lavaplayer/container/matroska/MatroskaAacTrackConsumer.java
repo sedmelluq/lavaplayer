@@ -4,8 +4,7 @@ import com.sedmelluq.discord.lavaplayer.container.mpeg.MpegAacTrackConsumer;
 import com.sedmelluq.discord.lavaplayer.filter.FilterChainBuilder;
 import com.sedmelluq.discord.lavaplayer.filter.ShortPcmAudioFilter;
 import com.sedmelluq.discord.lavaplayer.natives.aac.AacDecoder;
-import com.sedmelluq.discord.lavaplayer.player.AudioConfiguration;
-import com.sedmelluq.discord.lavaplayer.track.playback.AudioFrameConsumer;
+import com.sedmelluq.discord.lavaplayer.track.playback.AudioProcessingContext;
 import org.ebml.matroska.MatroskaFileFrame;
 import org.ebml.matroska.MatroskaFileTrack;
 import org.slf4j.Logger;
@@ -14,7 +13,6 @@ import org.slf4j.LoggerFactory;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.ShortBuffer;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Consumes AAC track data from a matroska file.
@@ -30,17 +28,15 @@ public class MatroskaAacTrackConsumer implements MatroskaTrackConsumer {
   private AacDecoder decoder;
 
   /**
-   * @param configuration Audio configuration to use with this track
+   * @param context Configuration and output information for processing
    * @param track The MP4 audio track descriptor
-   * @param frameConsumer Consumer of the decoded frames
-   * @param volumeLevel Mutable volume level
    */
-  public MatroskaAacTrackConsumer(AudioConfiguration configuration, AudioFrameConsumer frameConsumer, MatroskaFileTrack track, AtomicInteger volumeLevel) {
+  public MatroskaAacTrackConsumer(AudioProcessingContext context, MatroskaFileTrack track) {
     this.track = track;
     this.decoder = new AacDecoder();
     this.inputBuffer = ByteBuffer.allocateDirect(4096);
     this.outputBuffer = ByteBuffer.allocateDirect(2048 * track.getAudio().getChannels()).order(ByteOrder.LITTLE_ENDIAN).asShortBuffer();
-    this.downstream = FilterChainBuilder.forShortPcm(configuration, frameConsumer, volumeLevel, track.getAudio().getChannels(),
+    this.downstream = FilterChainBuilder.forShortPcm(context, track.getAudio().getChannels(),
         (int) track.getAudio().getSamplingFrequency(), true);
   }
 

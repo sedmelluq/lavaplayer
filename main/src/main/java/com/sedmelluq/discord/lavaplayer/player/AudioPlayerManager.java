@@ -7,16 +7,22 @@ import com.sedmelluq.discord.lavaplayer.tools.OrderedExecutor;
 import com.sedmelluq.discord.lavaplayer.track.AudioItem;
 import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
+import com.sedmelluq.discord.lavaplayer.track.InternalAudioTrack;
+import com.sedmelluq.discord.lavaplayer.track.playback.AudioTrackExecutor;
+import com.sedmelluq.discord.lavaplayer.track.playback.LocalAudioTrackExecutor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.sedmelluq.discord.lavaplayer.tools.FriendlyException.Severity.FAULT;
 
@@ -54,13 +60,13 @@ public class AudioPlayerManager {
 
   /**
    * Schedules loading a track or playlist with the specified identifier.
-   *
    * @param identifier    The identifier that a specific source manager should be able to find the track with.
    * @param resultHandler A handler to process the result of this operation. It can either end by finding a track,
    *                      finding a playlist, finding nothing or terminating with an exception.
+   * @return A future for this operation
    */
-  public void loadItem(final String identifier, final AudioLoadResultHandler resultHandler) {
-    trackInfoExecutorService.submit(createItemLoader(identifier, resultHandler));
+  public Future<Void> loadItem(final String identifier, final AudioLoadResultHandler resultHandler) {
+    return trackInfoExecutorService.submit(createItemLoader(identifier, resultHandler));
   }
 
   /**
@@ -71,12 +77,13 @@ public class AudioPlayerManager {
    * @param identifier    The identifier that a specific source manager should be able to find the track with.
    * @param resultHandler A handler to process the result of this operation. It can either end by finding a track,
    *                      finding a playlist, finding nothing or terminating with an exception.
+   * @return A future for this operation
    */
-  public void loadItemOrdered(Object orderingKey, final String identifier, final AudioLoadResultHandler resultHandler) {
-    orderedInfoExecutor.submit(orderingKey, createItemLoader(identifier, resultHandler));
+  public Future<Void> loadItemOrdered(Object orderingKey, final String identifier, final AudioLoadResultHandler resultHandler) {
+    return orderedInfoExecutor.submit(orderingKey, createItemLoader(identifier, resultHandler));
   }
 
-  private Runnable createItemLoader(final String identifier, final AudioLoadResultHandler resultHandler) {
+  private Callable<Void> createItemLoader(final String identifier, final AudioLoadResultHandler resultHandler) {
     return () -> {
       try {
         if (!checkSourcesForItem(identifier, resultHandler)) {
@@ -91,7 +98,26 @@ public class AudioPlayerManager {
 
         ExceptionTools.rethrowErrors(throwable);
       }
+
+      return null;
     };
+  }
+
+  /**
+   * Executes an audio track with the given player and volume.
+   * @param player The associated player where track events go to
+   * @param track The audio track to execute
+   * @param volumeLevel The mutable volume level to use
+   */
+  public void executeTrack(final AudioPlayer player, InternalAudioTrack track, AtomicInteger volumeLevel) {
+    final AudioTrackExecutor executor = createExecutorForTrack(track, volumeLevel);
+    track.assignExecutor(executor);
+
+    trackPlaybackExecutorService.execute(() -> executor.execute(player));
+  }
+
+  private AudioTrackExecutor createExecutorForTrack(InternalAudioTrack track, AtomicInteger volumeLevel) {
+    return new LocalAudioTrackExecutor(track, configuration, volumeLevel);
   }
 
   public void setTrackStuckThreshold(long trackStuckThreshold) {
@@ -123,10 +149,6 @@ public class AudioPlayerManager {
     }
 
     return false;
-  }
-
-  ExecutorService getExecutor() {
-    return trackPlaybackExecutorService;
   }
 
   /**

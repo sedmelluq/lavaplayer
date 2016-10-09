@@ -2,14 +2,13 @@ package com.sedmelluq.discord.lavaplayer.source.youtube;
 
 import com.sedmelluq.discord.lavaplayer.container.matroska.MatroskaAudioTrack;
 import com.sedmelluq.discord.lavaplayer.container.mpeg.MpegAudioTrack;
-import com.sedmelluq.discord.lavaplayer.player.AudioConfiguration;
 import com.sedmelluq.discord.lavaplayer.tools.DataFormatTools;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.tools.JsonBrowser;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo;
 import com.sedmelluq.discord.lavaplayer.track.DelegatedAudioTrack;
-import com.sedmelluq.discord.lavaplayer.track.playback.AudioTrackExecutor;
+import com.sedmelluq.discord.lavaplayer.track.playback.LocalAudioTrackExecutor;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.utils.URLEncodedUtils;
@@ -29,7 +28,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.StringJoiner;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.sedmelluq.discord.lavaplayer.container.Formats.MIME_AUDIO_WEBM;
 import static com.sedmelluq.discord.lavaplayer.source.youtube.YoutubeAudioSourceManager.CHARSET;
@@ -45,18 +43,17 @@ public class YoutubeAudioTrack extends DelegatedAudioTrack {
   private final YoutubeAudioSourceManager sourceManager;
 
   /**
-   * @param executor Track executor
    * @param trackInfo Track info
    * @param sourceManager Source manager which was used to find this track
    */
-  public YoutubeAudioTrack(AudioTrackExecutor executor, AudioTrackInfo trackInfo, YoutubeAudioSourceManager sourceManager) {
-    super(executor, trackInfo);
+  public YoutubeAudioTrack(AudioTrackInfo trackInfo, YoutubeAudioSourceManager sourceManager) {
+    super(trackInfo);
 
     this.sourceManager = sourceManager;
   }
 
   @Override
-  public void process(AudioConfiguration configuration, AtomicInteger volumeLevel) throws Exception {
+  public void process(LocalAudioTrackExecutor localExecutor) throws Exception {
     try (CloseableHttpClient httpClient = sourceManager.createHttpClient()) {
       JsonBrowser info = getTrackInfo(httpClient);
 
@@ -69,9 +66,9 @@ public class YoutubeAudioTrack extends DelegatedAudioTrack {
 
       try (YoutubePersistentHttpStream stream = new YoutubePersistentHttpStream(httpClient, signedUrl, format.getContentLength())) {
         if (MIME_AUDIO_WEBM.equals(format.getType().getMimeType())) {
-          processDelegate(new MatroskaAudioTrack(executor, trackInfo, stream), configuration, volumeLevel);
+          processDelegate(new MatroskaAudioTrack(trackInfo, stream), localExecutor);
         } else {
-          processDelegate(new MpegAudioTrack(executor, trackInfo, stream), configuration, volumeLevel);
+          processDelegate(new MpegAudioTrack(trackInfo, stream), localExecutor);
         }
       }
     }
@@ -79,7 +76,7 @@ public class YoutubeAudioTrack extends DelegatedAudioTrack {
 
   @Override
   public AudioTrack makeClone() {
-    return new YoutubeAudioTrack(new AudioTrackExecutor(getIdentifier()), trackInfo, sourceManager);
+    return new YoutubeAudioTrack(trackInfo, sourceManager);
   }
 
   private JsonBrowser getTrackInfo(CloseableHttpClient httpClient) throws Exception {

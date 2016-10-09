@@ -8,7 +8,6 @@ import com.sedmelluq.discord.lavaplayer.source.AudioSourceManager;
 import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.BasicAudioPlaylist;
-import com.sedmelluq.discord.lavaplayer.track.playback.AudioTrackExecutor;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo;
 import com.sedmelluq.discord.lavaplayer.tools.JsonBrowser;
 import com.sedmelluq.discord.lavaplayer.tools.DataFormatTools;
@@ -146,10 +145,10 @@ public class YoutubeAudioSourceManager implements AudioSourceManager {
 
       JsonBrowser args = info.get("args");
       AudioTrackInfo trackInfo = new AudioTrackInfo(
-          args.get("title").text(), args.get("author").text(), args.get("length_seconds").as(Integer.class) * 1000
+          args.get("title").text(), args.get("author").text(), args.get("length_seconds").as(Integer.class) * 1000, videoId
       );
 
-      return new YoutubeAudioTrack(new AudioTrackExecutor(videoId), trackInfo, this);
+      return new YoutubeAudioTrack(trackInfo, this);
     } catch (Exception e) {
       throw ExceptionTools.wrapUnfriendlyExceptions("Loading information for a YouTube track failed.", FAULT, e);
     }
@@ -280,8 +279,8 @@ public class YoutubeAudioSourceManager implements AudioSourceManager {
 
         int lengthInSeconds = lengthTextToSeconds(lengthElements.get(0).text());
 
-        AudioTrackInfo info = new AudioTrackInfo(title, author, lengthInSeconds * 1000);
-        tracks.add(new YoutubeAudioTrack(new AudioTrackExecutor(videoId), info, this));
+        AudioTrackInfo info = new AudioTrackInfo(title, author, lengthInSeconds * 1000, videoId);
+        tracks.add(new YoutubeAudioTrack(info, this));
       }
     }
 
