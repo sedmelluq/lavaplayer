@@ -3,10 +3,13 @@ project(connector C)
 
 if(${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
 	include_directories("$ENV{JAVA_HOME}/include/win32")
+	set(SYSNAME "win")
 elseif(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
 	include_directories("$ENV{JAVA_HOME}/include/linux")
+	set(SYSNAME "linux")
 else()
 	include_directories("$ENV{JAVA_HOME}/include/darwin")
+	set(SYSNAME "darwin")
 endif()
 
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
@@ -29,7 +32,7 @@ if (DEFINED ENV{DIST_DIR})
 	set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE "$ENV{DIST_DIR}")
 endif()
 
-add_library(connector SHARED samplerate.c fdk-aac.c vorbis.c opus.c mpg123.c)
+add_library(connector SHARED samplerate.c fdk-aac.c vorbis.c opus.c mpg123.c ${SYSNAME}/statistics.c)
 target_link_libraries(connector samplerate fdk-aac vorbis opus mpg123)
 
 if ("${CMAKE_C_COMPILER_ID}" STREQUAL "MSVC")

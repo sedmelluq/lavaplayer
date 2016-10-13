@@ -7,6 +7,7 @@ import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.tools.JsonBrowser;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpClientTools;
 import com.sedmelluq.discord.lavaplayer.track.AudioItem;
+import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -14,6 +15,8 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 
+import java.io.DataInput;
+import java.io.DataOutput;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.regex.Pattern;
@@ -40,11 +43,9 @@ public class SoundCloudAudioSourceManager implements AudioSourceManager {
     httpClientBuilder = HttpClientTools.createSharedCookiesHttpBuilder();
   }
 
-  /**
-   * @return New HttpClient instance.
-   */
-  public CloseableHttpClient createHttpClient() {
-    return httpClientBuilder.build();
+  @Override
+  public String getSourceName() {
+    return "soundcloud";
   }
 
   @Override
@@ -70,6 +71,30 @@ public class SoundCloudAudioSourceManager implements AudioSourceManager {
     } catch (IOException e) {
       throw new FriendlyException("Reading page from SoundCloud failed.", SUSPICIOUS, e);
     }
+  }
+
+  @Override
+  public boolean isTrackEncodable(AudioTrack track) {
+    return true;
+  }
+
+  @Override
+  public void encodeTrack(AudioTrack track, DataOutput output) throws IOException {
+    output.writeUTF(((SoundCloudAudioTrack) track).getTrackUrl());
+  }
+
+  @Override
+  public AudioTrack decodeTrack(AudioTrackInfo trackInfo, DataInput input) throws IOException {
+    String trackUrl = input.readUTF();
+
+    return new SoundCloudAudioTrack(trackInfo, this, trackUrl);
+  }
+
+  /**
+   * @return A new HttpClient instance. All instances returned from this method use the same cookie jar.
+   */
+  public CloseableHttpClient createHttpClient() {
+    return httpClientBuilder.build();
   }
 
   private JsonBrowser loadTrackInfoFromUrl(CloseableHttpClient httpClient, String url) throws IOException {

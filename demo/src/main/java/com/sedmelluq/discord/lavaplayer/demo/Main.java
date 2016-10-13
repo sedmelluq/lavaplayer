@@ -29,6 +29,7 @@ public class Main {
 
   public static void main(String[] args) throws Exception {
     AudioPlayerManager playerManager = new AudioPlayerManager();
+    //playerManager.useRemoteNodes("localhost:8080");
     playerManager.getConfiguration().setResamplingQuality(AudioConfiguration.ResamplingQuality.LOW);
     playerManager.registerSourceManager(new YoutubeAudioSourceManager());
     playerManager.registerSourceManager(new LocalAudioSourceManager());
@@ -60,8 +61,10 @@ public class Main {
           String[] parts = message.substring(1).split(" ");
 
           if ("next".equals(parts[0]) && parts.length > 1) {
+            scheduler.setChannel(event.getTextChannel());
             executePlayCommand(event, message.split(" ", 2)[1], true);
           } else if ("add".equals(parts[0]) && parts.length > 1) {
+            scheduler.setChannel(event.getTextChannel());
             executePlayCommand(event, message.split(" ", 2)[1], false);
           } else if ("volume".equals(parts[0]) && parts.length == 2) {
             player.setVolume(Integer.parseInt(parts[1]));

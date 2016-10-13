@@ -1,5 +1,7 @@
 package com.sedmelluq.discord.lavaplayer.track;
 
+import com.sedmelluq.discord.lavaplayer.source.AudioSourceManager;
+
 /**
  * A playable audio track
  */
@@ -50,4 +52,9 @@ public interface AudioTrack extends AudioItem {
    * @return Clone of this track which does not share the execution state of this track
    */
   AudioTrack makeClone();
+
+  /**
+   * @return The source manager which created this track. Null if not created by a source manager directly.
+   */
+  AudioSourceManager getSourceManager();
 }

@@ -2,6 +2,7 @@ package com.sedmelluq.discord.lavaplayer.source.local;
 
 import com.sedmelluq.discord.lavaplayer.container.matroska.MatroskaAudioTrack;
 import com.sedmelluq.discord.lavaplayer.container.mp3.Mp3AudioTrack;
+import com.sedmelluq.discord.lavaplayer.source.AudioSourceManager;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.playback.LocalAudioTrackExecutor;
@@ -18,14 +19,17 @@ import static com.sedmelluq.discord.lavaplayer.tools.FriendlyException.Severity.
  */
 public class LocalAudioTrack extends DelegatedAudioTrack {
   private final File file;
+  private final LocalAudioSourceManager sourceManager;
 
   /**
    * @param trackInfo Track info
+   * @param sourceManager Source manager used to load this track
    */
-  public LocalAudioTrack(AudioTrackInfo trackInfo) {
+  public LocalAudioTrack(AudioTrackInfo trackInfo, LocalAudioSourceManager sourceManager) {
     super(trackInfo);
 
     this.file = new File(trackInfo.identifier);
+    this.sourceManager = sourceManager;
   }
 
   @Override
@@ -43,6 +47,11 @@ public class LocalAudioTrack extends DelegatedAudioTrack {
 
   @Override
   public AudioTrack makeClone() {
-    return new LocalAudioTrack(trackInfo);
+    return new LocalAudioTrack(trackInfo, sourceManager);
+  }
+
+  @Override
+  public AudioSourceManager getSourceManager() {
+    return sourceManager;
   }
 }

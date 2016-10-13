@@ -1,9 +1,9 @@
 package com.sedmelluq.discord.lavaplayer.track.playback;
 
-import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
 import com.sedmelluq.discord.lavaplayer.track.AudioLoop;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackState;
+import com.sedmelluq.discord.lavaplayer.track.TrackStateListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,7 +32,7 @@ public class PrimordialAudioTrackExecutor implements AudioTrackExecutor {
   }
 
   @Override
-  public void execute(AudioPlayer audioPlayer) {
+  public void execute(TrackStateListener listener) {
     throw new UnsupportedOperationException();
   }
 

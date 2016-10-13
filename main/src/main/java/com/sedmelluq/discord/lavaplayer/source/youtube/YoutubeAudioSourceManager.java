@@ -1,6 +1,7 @@
 package com.sedmelluq.discord.lavaplayer.source.youtube;
 
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
+import com.sedmelluq.discord.lavaplayer.tools.DaemonThreadFactory;
 import com.sedmelluq.discord.lavaplayer.tools.ExceptionTools;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.track.AudioItem;
@@ -26,6 +27,8 @@ import org.jsoup.select.Elements;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.DataInput;
+import java.io.DataOutput;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
@@ -83,11 +86,42 @@ public class YoutubeAudioSourceManager implements AudioSourceManager {
   public YoutubeAudioSourceManager() {
     httpClientBuilder = createSharedCookiesHttpBuilder();
     signatureCipherManager = new YoutubeSignatureCipherManager();
-    mixLoadingExecutor = new ThreadPoolExecutor(0, 10, 5, TimeUnit.SECONDS, new LinkedBlockingQueue<>());
+    mixLoadingExecutor = new ThreadPoolExecutor(0, 10, 5, TimeUnit.SECONDS, new LinkedBlockingQueue<>(), new DaemonThreadFactory("yt-mix"));
+  }
+
+  @Override
+  public String getSourceName() {
+    return "youtube";
+  }
+
+  @Override
+  public AudioItem loadItem(AudioPlayerManager manager, String identifier) {
+    AudioItem result;
+
+    if ((result = loadTrack(identifier)) == null) {
+      result = loadPlaylist(identifier);
+    }
+
+    return result;
+  }
+
+  @Override
+  public boolean isTrackEncodable(AudioTrack track) {
+    return true;
+  }
+
+  @Override
+  public void encodeTrack(AudioTrack track, DataOutput output) {
+    // No custom values that need saving
+  }
+
+  @Override
+  public AudioTrack decodeTrack(AudioTrackInfo trackInfo, DataInput input) {
+    return new YoutubeAudioTrack(trackInfo, this);
   }
 
   /**
-   * @return New HttpClient instance.
+   * @return A new HttpClient instance. All instances returned from this method use the same cookie jar.
    */
   public CloseableHttpClient createHttpClient() {
     return httpClientBuilder.build();
@@ -102,17 +136,6 @@ public class YoutubeAudioSourceManager implements AudioSourceManager {
     HttpClientBuilder httpClientBuilder = HttpClientBuilder.create();
     httpClientBuilder.setDefaultCookieStore(cookieStore);
     return httpClientBuilder;
-  }
-
-  @Override
-  public AudioItem loadItem(AudioPlayerManager manager, String identifier) {
-    AudioItem result;
-
-    if ((result = loadTrack(identifier)) == null) {
-      result = loadPlaylist(identifier);
-    }
-
-    return result;
   }
 
   private AudioItem loadTrack(String identifier) {

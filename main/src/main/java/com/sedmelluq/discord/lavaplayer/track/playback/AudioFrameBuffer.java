@@ -17,7 +17,9 @@ public class AudioFrameBuffer implements AudioFrameConsumer, AudioFrameProvider 
   private static final byte[] SILENT_OPUS_FRAME = new byte[] {(byte) 0xFC, (byte) 0xFF, (byte) 0xFE};
 
   private final Object synchronizer;
+  private final int fullCapacity;
   private final ArrayBlockingQueue<AudioFrame> audioFrames;
+  private volatile boolean locked;
   private boolean terminated;
   private boolean terminateOnEmpty;
   private boolean clearOnInsert;
@@ -27,7 +29,8 @@ public class AudioFrameBuffer implements AudioFrameConsumer, AudioFrameProvider 
    */
   public AudioFrameBuffer(int bufferDuration) {
     synchronizer = new Object();
-    audioFrames = new ArrayBlockingQueue<>(bufferDuration / 20 + 1);
+    fullCapacity = bufferDuration / 20 + 1;
+    audioFrames = new ArrayBlockingQueue<>(fullCapacity);
     terminated = false;
     terminateOnEmpty = false;
     clearOnInsert = false;
@@ -35,16 +38,28 @@ public class AudioFrameBuffer implements AudioFrameConsumer, AudioFrameProvider 
 
   @Override
   public void consume(AudioFrame frame) throws InterruptedException {
-    if (clearOnInsert) {
-      audioFrames.clear();
-      clearOnInsert = false;
-    }
+    if (!locked) {
+      if (clearOnInsert) {
+        audioFrames.clear();
+        clearOnInsert = false;
+      }
 
-    audioFrames.put(frame);
+      audioFrames.put(frame);
+    }
   }
 
+  /**
+   * @return Number of frames that can be added to the buffer without blocking.
+   */
   public int getRemainingCapacity() {
     return audioFrames.remainingCapacity();
+  }
+
+  /**
+   * @return Total number of frames that the buffer can hold.
+   */
+  public int getFullCapacity() {
+    return fullCapacity;
   }
 
   /**
@@ -97,7 +112,9 @@ public class AudioFrameBuffer implements AudioFrameConsumer, AudioFrameProvider 
   }
 
   /**
-   * Signal that the next frame provided to the buffer will clear the frames before it.
+   * Signal that the next frame provided to the buffer will clear the frames before it. This is useful when the next
+   * data is not contiguous with the current frame buffer, but the remaining frames in the buffer should be used until
+   * the next data arrives to prevent a situation where the buffer cannot provide any frames for a while.
    */
   public void setClearOnInsert() {
     synchronized (synchronizer) {
@@ -118,6 +135,13 @@ public class AudioFrameBuffer implements AudioFrameConsumer, AudioFrameProvider 
    */
   public void clear() {
     audioFrames.clear();
+  }
+
+  /**
+   * Lock the buffer so no more incoming frames are accepted.
+   */
+  public void lockBuffer() {
+    locked = true;
   }
 
   @Override

@@ -5,8 +5,11 @@ import com.sedmelluq.discord.lavaplayer.player.event.AudioEventListener;
 import com.sedmelluq.discord.lavaplayer.player.event.PlayerPauseEvent;
 import com.sedmelluq.discord.lavaplayer.player.event.PlayerResumeEvent;
 import com.sedmelluq.discord.lavaplayer.player.event.TrackEndEvent;
+import com.sedmelluq.discord.lavaplayer.player.event.TrackExceptionEvent;
 import com.sedmelluq.discord.lavaplayer.player.event.TrackStuckEvent;
+import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.track.InternalAudioTrack;
+import com.sedmelluq.discord.lavaplayer.track.TrackStateListener;
 import com.sedmelluq.discord.lavaplayer.track.playback.AudioFrame;
 import com.sedmelluq.discord.lavaplayer.track.playback.AudioFrameProvider;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
@@ -23,7 +26,7 @@ import java.util.concurrent.atomic.AtomicReference;
 /**
  * An audio player that is capable of playing audio tracks and provides audio frames from the currently playing track.
  */
-public class AudioPlayer implements AudioFrameProvider {
+public class AudioPlayer implements AudioFrameProvider, TrackStateListener {
   private static final Logger log = LoggerFactory.getLogger(AudioPlayer.class);
 
   private final AtomicReference<InternalAudioTrack> activeTrack;
@@ -87,7 +90,7 @@ public class AudioPlayer implements AudioFrameProvider {
       shadowTrack = previousTrack;
     }
 
-    manager.executeTrack(this, newTrack, volumeLevel);
+    manager.executeTrack(this, newTrack, manager.getConfiguration(), volumeLevel);
     return true;
   }
 
@@ -215,11 +218,7 @@ public class AudioPlayer implements AudioFrameProvider {
     }
   }
 
-  /**
-   * Dispatch event to listeners.
-   * @param event Event to dispatch
-   */
-  public void dispatchEvent(AudioEvent event) {
+  private void dispatchEvent(AudioEvent event) {
     log.debug("Firing an event with class {}", event.getClass().getSimpleName());
 
     synchronized (listeners) {
@@ -227,5 +226,10 @@ public class AudioPlayer implements AudioFrameProvider {
         listener.onEvent(event);
       }
     }
+  }
+
+  @Override
+  public void onTrackException(AudioTrack track, FriendlyException exception) {
+    dispatchEvent(new TrackExceptionEvent(this, track, exception));
   }
 }

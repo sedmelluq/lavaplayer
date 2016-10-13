@@ -1,0 +1,59 @@
+buildscript {
+  repositories {
+    mavenCentral()
+  }
+
+  dependencies {
+    classpath("org.springframework.boot:spring-boot-gradle-plugin:1.4.1.RELEASE")
+  }
+}
+
+plugins {
+  id 'java'
+  id 'org.sonarqube' version '2.1'
+}
+
+apply plugin: 'spring-boot'
+
+version = '1.0.0'
+
+dependencies {
+  compile project(':main')
+
+  compile 'org.springframework.boot:spring-boot-starter-web:1.4.1.RELEASE'
+}
+
+springBoot {
+  classifier = 'boot'
+}
+
+bootRepackage {
+  mainClass = 'com.sedmelluq.discord.lavaplayer.node.NodeApplication'
+}
+
+publish {
+  dependsOn assemble
+}
+
+task sourceJar(type: Jar) {
+  from sourceSets.main.allJava
+}
+
+publishing {
+  publications {
+    mavenJava(MavenPublication) {
+      groupId 'com.sedmelluq'
+      artifactId 'lavaplayer-node'
+
+      from components.java
+
+      artifact sourceJar {
+        classifier "sources"
+      }
+
+      artifact ("$buildDir/libs/$project.name-$version-boot.jar") {
+        classifier = 'boot'
+      }
+    }
+  }
+}

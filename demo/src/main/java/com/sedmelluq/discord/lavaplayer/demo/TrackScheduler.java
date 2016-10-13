@@ -3,7 +3,9 @@ package com.sedmelluq.discord.lavaplayer.demo;
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
 import com.sedmelluq.discord.lavaplayer.player.event.AudioEventAdapter;
 
+import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
+import net.dv8tion.jda.entities.TextChannel;
 
 import java.util.Queue;
 import java.util.concurrent.LinkedBlockingDeque;
@@ -12,6 +14,7 @@ public class TrackScheduler extends AudioEventAdapter {
   private final Queue<AudioTrack> tracks = new LinkedBlockingDeque<>();
 
   public final AudioPlayer player;
+  private volatile TextChannel textChannel;
 
   public TrackScheduler(AudioPlayer player) {
     this.player = player;
@@ -48,11 +51,24 @@ public class TrackScheduler extends AudioEventAdapter {
     playNextTrack();
   }
 
+  @Override
+  public void onTrackException(AudioPlayer player, AudioTrack track, FriendlyException exception) {
+    TextChannel channel = textChannel;
+
+    if (channel != null) {
+      channel.sendMessage(exception.getMessage());
+    }
+  }
+
   private void playNextTrack() {
     AudioTrack nextTrack = tracks.poll();
 
     if (nextTrack != null) {
       player.playTrack(nextTrack);
     }
+  }
+
+  public void setChannel(TextChannel textChannel) {
+    this.textChannel = textChannel;
   }
 }

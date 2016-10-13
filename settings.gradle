@@ -1,1 +1,2 @@
-include 'main', 'jebml', 'natives', 'demo'
+include 'main', 'jebml', 'natives', 'demo', 'node'
+
