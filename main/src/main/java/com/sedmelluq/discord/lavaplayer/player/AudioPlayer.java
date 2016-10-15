@@ -64,7 +64,7 @@ public class AudioPlayer implements AudioFrameProvider, TrackStateListener {
   }
 
   /**
-   * @param track The track to start playing
+   * @param track The track to start playing, passing null will stop the current track and return false
    * @param noInterrupt Whether to only start if nothing else is playing
    * @return True if the track was started
    */
@@ -88,6 +88,11 @@ public class AudioPlayer implements AudioFrameProvider, TrackStateListener {
       dispatchEvent(new TrackEndEvent(this, previousTrack, true));
 
       shadowTrack = previousTrack;
+    }
+
+    if (newTrack == null) {
+      shadowTrack = null;
+      return false;
     }
 
     manager.executeTrack(this, newTrack, manager.getConfiguration(), volumeLevel);
