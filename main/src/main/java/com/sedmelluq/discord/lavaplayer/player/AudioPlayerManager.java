@@ -7,6 +7,7 @@ import com.sedmelluq.discord.lavaplayer.tools.DaemonThreadFactory;
 import com.sedmelluq.discord.lavaplayer.tools.ExceptionTools;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.tools.OrderedExecutor;
+import com.sedmelluq.discord.lavaplayer.tools.GarbageCollectionMonitor;
 import com.sedmelluq.discord.lavaplayer.track.AudioItem;
 import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
@@ -52,6 +53,7 @@ public class AudioPlayerManager {
   private final ExecutorService trackInfoExecutorService;
   private final OrderedExecutor orderedInfoExecutor;
   private final RemoteNodeManager remoteNodeManager;
+  private final GarbageCollectionMonitor garbageCollectionMonitor;
   private volatile boolean useSeekGhosting;
   private volatile int frameBufferDuration;
   private volatile long trackStuckThreshold;
@@ -70,6 +72,7 @@ public class AudioPlayerManager {
     configuration = new AudioConfiguration();
     orderedInfoExecutor = new OrderedExecutor(trackInfoExecutorService);
     remoteNodeManager = new RemoteNodeManager(this);
+    garbageCollectionMonitor = new GarbageCollectionMonitor();
     useSeekGhosting = true;
     frameBufferDuration = DEFAULT_FRAME_BUFFER_DURATION;
   }
@@ -80,6 +83,13 @@ public class AudioPlayerManager {
    */
   public void useRemoteNodes(String... nodeAddresses) {
     remoteNodeManager.initialise(Arrays.asList(nodeAddresses));
+  }
+
+  /**
+   * Enable reporting GC pause length statistics to log (warn level with lengths bad for latency, debug level otherwise)
+   */
+  public void enableGcMonitoring() {
+    garbageCollectionMonitor.enable();
   }
 
   /**

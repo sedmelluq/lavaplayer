@@ -30,6 +30,7 @@ public class Main {
   public static void main(String[] args) throws Exception {
     AudioPlayerManager playerManager = new AudioPlayerManager();
     //playerManager.useRemoteNodes("localhost:8080");
+    playerManager.enableGcMonitoring();
     playerManager.getConfiguration().setResamplingQuality(AudioConfiguration.ResamplingQuality.LOW);
     playerManager.registerSourceManager(new YoutubeAudioSourceManager());
     playerManager.registerSourceManager(new LocalAudioSourceManager());
