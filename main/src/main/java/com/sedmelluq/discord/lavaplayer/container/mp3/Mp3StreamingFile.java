@@ -119,7 +119,9 @@ public class Mp3StreamingFile {
    * Closes resources.
    */
   public void close() {
-    track.downstream.close();
+    if (track != null) {
+      track.downstream.close();
+    }
     mp3Decoder.close();
   }
 
