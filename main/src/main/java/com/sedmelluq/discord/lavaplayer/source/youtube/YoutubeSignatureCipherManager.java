@@ -49,6 +49,8 @@ public class YoutubeSignatureCipherManager {
   private static final Pattern splicePattern = Pattern.compile(PATTERN_PREFIX + SPLICE_PART, Pattern.MULTILINE);
   private static final Pattern swapPattern = Pattern.compile(PATTERN_PREFIX + SWAP_PART, Pattern.MULTILINE);
 
+  private static final Pattern signatureExtraction = Pattern.compile("/s/([^/]+)/");
+
   private final ConcurrentMap<String, YoutubeSignatureCipher> cipherCache;
   private final Object cipherLoadLock;
 
@@ -86,6 +88,25 @@ public class YoutubeSignatureCipherManager {
     } catch (URISyntaxException e) {
       throw new RuntimeException(e);
     }
+  }
+
+  /**
+   * Produces a valid dash XML URL from the possibly ciphered URL.
+   * @param httpClient HttpClient instance to use
+   * @param playerScript Address of the script which is used to decipher signatures
+   * @param dashUrl URL of the dash XML, possibly with a ciphered signature
+   * @return Valid dash XML URL
+   * @throws IOException On network IO error
+   */
+  public String getValidDashUrl(CloseableHttpClient httpClient, String playerScript, String dashUrl) throws IOException {
+    Matcher matcher = signatureExtraction.matcher(dashUrl);
+
+    if (!matcher.find()) {
+      return dashUrl;
+    }
+
+    YoutubeSignatureCipher cipher = getCipherKeyFromScript(httpClient, playerScript);
+    return matcher.replaceFirst("/signature/" + cipher.apply(matcher.group(1)) + "/");
   }
 
   private YoutubeSignatureCipher getCipherKeyFromScript(CloseableHttpClient httpClient, String cipherScriptUrl) throws IOException {

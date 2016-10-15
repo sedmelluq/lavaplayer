@@ -73,10 +73,11 @@ public class YoutubeAudioTrack extends DelegatedAudioTrack {
   private FormatWithUrl loadBestFormatWithUrl(CloseableHttpClient httpClient) throws Exception {
     JsonBrowser info = getTrackInfo(httpClient);
 
-    List<YoutubeTrackFormat> formats = loadTrackFormats(info, httpClient);
+    String playerScript = extractPlayerScriptFromInfo(info);
+    List<YoutubeTrackFormat> formats = loadTrackFormats(info, httpClient, playerScript);
     YoutubeTrackFormat format = findBestSupportedFormat(formats);
 
-    URI signedUrl = sourceManager.getCipherManager().getValidUrl(httpClient, extractPlayerScriptFromInfo(info), format);
+    URI signedUrl = sourceManager.getCipherManager().getValidUrl(httpClient, playerScript, format);
 
     return new FormatWithUrl(format, signedUrl);
   }
@@ -95,7 +96,7 @@ public class YoutubeAudioTrack extends DelegatedAudioTrack {
     return sourceManager.getTrackInfoFromMainPage(httpClient, getIdentifier(), true);
   }
 
-  private List<YoutubeTrackFormat> loadTrackFormats(JsonBrowser info, CloseableHttpClient httpClient) throws Exception {
+  private List<YoutubeTrackFormat> loadTrackFormats(JsonBrowser info, CloseableHttpClient httpClient, String playerScript) throws Exception {
     String adaptiveFormats = info.safeGet("args").safeGet("adaptive_fmts").text();
     if (adaptiveFormats != null) {
       return loadTrackFormatsFromAdaptive(adaptiveFormats);
@@ -103,7 +104,7 @@ public class YoutubeAudioTrack extends DelegatedAudioTrack {
 
     String dashUrl = info.safeGet("args").safeGet("dashmpd").text();
     if (dashUrl != null) {
-      return loadTrackFormatsFromDash(dashUrl, httpClient);
+      return loadTrackFormatsFromDash(dashUrl, httpClient, playerScript);
     }
 
     throw new FriendlyException("Unable to play this YouTube track.", SUSPICIOUS,
@@ -128,8 +129,10 @@ public class YoutubeAudioTrack extends DelegatedAudioTrack {
     return tracks;
   }
 
-  private List<YoutubeTrackFormat> loadTrackFormatsFromDash(String dashUrl, CloseableHttpClient httpClient) throws Exception {
-    try (CloseableHttpResponse response = httpClient.execute(new HttpGet(dashUrl))) {
+  private List<YoutubeTrackFormat> loadTrackFormatsFromDash(String dashUrl, CloseableHttpClient httpClient, String playerScript) throws Exception {
+    String resolvedDashUrl = sourceManager.getCipherManager().getValidDashUrl(httpClient, playerScript, dashUrl);
+
+    try (CloseableHttpResponse response = httpClient.execute(new HttpGet(resolvedDashUrl))) {
       if (response.getStatusLine().getStatusCode() != 200) {
         throw new IOException("Invalid status code for track info page response.");
       }
