@@ -25,5 +25,6 @@ natives/libs
 natives/opus/opus*
 natives/samplerate/src
 natives/vorbis/*/
+udpqueue-natives/dist
 
 *.log
