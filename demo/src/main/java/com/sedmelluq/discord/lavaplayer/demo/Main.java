@@ -1,5 +1,6 @@
 package com.sedmelluq.discord.lavaplayer.demo;
 
+import com.sedmelluq.discord.lavaplayer.jdaudp.JdaUdpQueueingHookManager;
 import com.sedmelluq.discord.lavaplayer.player.AudioConfiguration;
 import com.sedmelluq.discord.lavaplayer.player.AudioLoadResultHandler;
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
@@ -11,6 +12,7 @@ import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.track.AudioLoop;
 import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
+import com.sedmelluq.discord.lavaplayer.udpqueue.natives.UdpQueueManager;
 import net.dv8tion.jda.JDA;
 import net.dv8tion.jda.JDABuilder;
 import net.dv8tion.jda.entities.Guild;
@@ -31,6 +33,9 @@ public class Main {
     AudioPlayerManager playerManager = new AudioPlayerManager();
     //playerManager.useRemoteNodes("localhost:8080");
     playerManager.enableGcMonitoring();
+    JdaUdpQueueingHookManager jdaUdpQueueingHookManager = new JdaUdpQueueingHookManager();
+    //playerManager.setOutputHookFactory(jdaUdpQueueingHookManager);
+    jdaUdpQueueingHookManager.startDispatcher();
     playerManager.getConfiguration().setResamplingQuality(AudioConfiguration.ResamplingQuality.LOW);
     playerManager.registerSourceManager(new YoutubeAudioSourceManager());
     playerManager.registerSourceManager(new LocalAudioSourceManager());
@@ -69,6 +74,8 @@ public class Main {
             executePlayCommand(event, message.split(" ", 2)[1], false);
           } else if ("volume".equals(parts[0]) && parts.length == 2) {
             player.setVolume(Integer.parseInt(parts[1]));
+          } else if ("gc".equals(parts[0]) && parts.length == 2) {
+            UdpQueueManager.pauseDemo(Integer.parseInt(parts[1]));
           } else if ("skip".equals(parts[0])) {
             scheduler.skipTrack();
           } else if ("ahead".equals(parts[0])) {

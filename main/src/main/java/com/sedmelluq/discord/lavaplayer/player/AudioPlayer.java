@@ -7,6 +7,7 @@ import com.sedmelluq.discord.lavaplayer.player.event.PlayerResumeEvent;
 import com.sedmelluq.discord.lavaplayer.player.event.TrackEndEvent;
 import com.sedmelluq.discord.lavaplayer.player.event.TrackExceptionEvent;
 import com.sedmelluq.discord.lavaplayer.player.event.TrackStuckEvent;
+import com.sedmelluq.discord.lavaplayer.player.hook.AudioOutputHook;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.track.InternalAudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.TrackStateListener;
@@ -37,14 +38,17 @@ public class AudioPlayer implements AudioFrameProvider, TrackStateListener {
   private final AudioPlayerManager manager;
   private final List<AudioEventListener> listeners;
   private final AtomicInteger volumeLevel;
+  private final AudioOutputHook outputHook;
 
   /**
    * @param manager Audio player manager which this player is attached to
+   * @param outputHook Hook which can intercept outgoing audio frames
    */
-  public AudioPlayer(AudioPlayerManager manager) {
+  public AudioPlayer(AudioPlayerManager manager, AudioOutputHook outputHook) {
+    this.manager = manager;
+    this.outputHook = outputHook;
     activeTrack = new AtomicReference<>();
     paused = new AtomicBoolean();
-    this.manager = manager;
     listeners = new ArrayList<>();
     volumeLevel = new AtomicInteger(100);
   }
@@ -130,6 +134,18 @@ public class AudioPlayer implements AudioFrameProvider, TrackStateListener {
 
   @Override
   public AudioFrame provide() {
+    AudioFrame frame = provideDirectly();
+    if (outputHook != null) {
+      frame = outputHook.outgoingFrame(this, frame);
+    }
+    return frame;
+  }
+
+  /**
+   * Provide an audio frame bypassing hooks.
+   * @return An audio frame if available, otherwise null
+   */
+  public AudioFrame provideDirectly() {
     InternalAudioTrack track;
 
     if (paused.get()) {

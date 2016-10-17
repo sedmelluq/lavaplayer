@@ -10,8 +10,9 @@ ext.logbackVersion = '1.1.7'
 
 dependencies {
   compile project(':main')
+  compile project(':jda-udp')
   
-  compile 'net.dv8tion:JDA:2.2.1_353'
+  compile 'net.dv8tion:JDA:2.2.1_375'
 
   runtime "ch.qos.logback:logback-classic:$logbackVersion"
   runtime "ch.qos.logback:logback-core:$logbackVersion"

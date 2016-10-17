@@ -90,7 +90,7 @@ public abstract class BaseAudioTrack implements InternalAudioTrack {
     long accurate = accurateDuration.get();
 
     if (accurate == 0) {
-      return trackInfo.length * 1000L;
+      return trackInfo.length;
     } else {
       return accurate;
     }

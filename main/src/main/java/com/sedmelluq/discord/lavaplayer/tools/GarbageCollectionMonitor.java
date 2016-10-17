@@ -37,7 +37,7 @@ public class GarbageCollectionMonitor implements NotificationListener, Runnable 
    * Create an instance of GC monitor. Does nothing until enabled.
    */
   public GarbageCollectionMonitor() {
-    reportingExecutor = Executors.newScheduledThreadPool(0, new DaemonThreadFactory("gc-report"));
+    reportingExecutor = Executors.newScheduledThreadPool(1, new DaemonThreadFactory("gc-report"));
     bucketCounters = new int[BUCKETS.length];
     enabled = new AtomicBoolean();
   }

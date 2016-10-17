@@ -4,23 +4,15 @@ plugins {
   id 'org.sonarqube' version '2.1'
 }
 
-version = '1.0.6'
+version = '1.0.0'
 
 dependencies {
-  compile project(':jebml')
+  compile project(':main')
 
   compile "org.slf4j:slf4j-api:$slf4jVersion"
-
-  compile 'org.apache.httpcomponents:httpclient:4.5.2'
-  compile 'commons-io:commons-io:2.5'
-
-  compile 'com.fasterxml.jackson.core:jackson-core:2.8.1'
-  compile 'com.fasterxml.jackson.core:jackson-databind:2.8.1'
-
-  compile 'org.jsoup:jsoup:1.9.2'
 }
 
-compileJava.dependsOn(':natives:checkNatives')
+compileJava.dependsOn(':udpqueue-natives:checkNatives')
 
 task sourceJar(type: Jar) {
   from sourceSets.main.allJava
@@ -30,7 +22,7 @@ publishing {
   publications {
     mavenJava(MavenPublication) {
       groupId 'com.sedmelluq'
-      artifactId 'lavaplayer'
+      artifactId 'lavaplayer-udp-scheduler'
 
       from components.java
 

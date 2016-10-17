@@ -25,3 +25,5 @@ natives/libs
 natives/opus/opus*
 natives/samplerate/src
 natives/vorbis/*/
+
+*.log

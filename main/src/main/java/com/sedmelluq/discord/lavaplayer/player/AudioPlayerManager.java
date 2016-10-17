@@ -1,5 +1,7 @@
 package com.sedmelluq.discord.lavaplayer.player;
 
+import com.sedmelluq.discord.lavaplayer.player.hook.AudioOutputHook;
+import com.sedmelluq.discord.lavaplayer.player.hook.AudioOutputHookFactory;
 import com.sedmelluq.discord.lavaplayer.remote.RemoteAudioTrackExecutor;
 import com.sedmelluq.discord.lavaplayer.remote.RemoteNodeManager;
 import com.sedmelluq.discord.lavaplayer.source.AudioSourceManager;
@@ -58,6 +60,7 @@ public class AudioPlayerManager {
   private volatile int frameBufferDuration;
   private volatile long trackStuckThreshold;
   private volatile AudioConfiguration configuration;
+  private volatile AudioOutputHookFactory outputHookFactory;
 
   /**
    * Create a new instance
@@ -75,6 +78,11 @@ public class AudioPlayerManager {
     garbageCollectionMonitor = new GarbageCollectionMonitor();
     useSeekGhosting = true;
     frameBufferDuration = DEFAULT_FRAME_BUFFER_DURATION;
+    outputHookFactory = null;
+  }
+
+  public void setOutputHookFactory(AudioOutputHookFactory outputHookFactory) {
+    this.outputHookFactory = outputHookFactory;
   }
 
   /**
@@ -268,7 +276,8 @@ public class AudioPlayerManager {
    * @return The new audio player instance.
    */
   public AudioPlayer createPlayer() {
-    AudioPlayer player = new AudioPlayer(this);
+    AudioOutputHook outputHook = outputHookFactory != null ? outputHookFactory.createOutputHook() : null;
+    AudioPlayer player = new AudioPlayer(this, outputHook);
 
     if (remoteNodeManager.isEnabled()) {
       player.addListener(remoteNodeManager);

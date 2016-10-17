@@ -1,0 +1,14 @@
+task compileNatives() { }
+task checkNatives() { }
+
+def buildTaskConfig = [
+    buildBase: buildDir,
+    projectBase: projectDir,
+    deployBase: project(':udpqueue').projectDir,
+    compileTask: tasks.compileNatives,
+    checkTask: tasks.checkNatives,
+    name: 'udpqueue'
+]
+
+createBuildTask(tasks, buildTaskConfig, 32)
+createBuildTask(tasks, buildTaskConfig, 64)

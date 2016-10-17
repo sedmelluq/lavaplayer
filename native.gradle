@@ -1,24 +1,3 @@
-wrapper {
-  gradleVersion '2.9'
-}
-
-allprojects {
-  repositories {
-    mavenCentral()
-    jcenter()
-    mavenLocal()
-  }
-
-  apply plugin: 'java'
-  apply plugin: 'idea'
-  apply plugin: 'maven-publish'
-
-  sourceCompatibility = 1.8
-  targetCompatibility = 1.8
-}
-
-ext.slf4jVersion = '1.7.21'
-
 import org.apache.tools.ant.taskdefs.condition.Os
 
 def getBuildParameters(base, bits) {
@@ -56,12 +35,12 @@ def getHomeDirectory() {
   return directory.name == 'jre' ? directory.parentFile.absolutePath : directory.absolutePath
 }
 
-def createBuildTask(tasksHolder, config, bits) {
-  def parameters = getBuildParameters(config.name, bits)
-  def buildDirectory = "${config.buildBase}/${parameters.identifier}"
-  def distDirectory = "${config.projectBase}/dist/${parameters.identifier}"
-  def deployDirectory = "${config.deployBase}/src/main/resources/natives/${parameters.identifier}"
-  def taskBase = "${config.name}-${bits}"
+def createBuildTask(buildBase, projectBase, deployBase, compileTask, checkTask, base, bits) {
+  def parameters = getBuildParameters(base, bits)
+  def buildDirectory = "$buildBase/${parameters.identifier}"
+  def distDirectory = "$projectBase/dist/${parameters.identifier}"
+  def deployDirectory = "$deployBase/src/main/resources/natives/${parameters.identifier}"
+  def taskBase = "${base}-${bits}"
 
   if (Os.isFamily(Os.FAMILY_MAC) && bits != 64) {
     return
@@ -70,11 +49,9 @@ def createBuildTask(tasksHolder, config, bits) {
   parameters.env.put('DIST_DIR', distDirectory)
   parameters.env.put('JAVA_HOME', getHomeDirectory())
 
-  def setupTask = tasksHolder.create("${taskBase}-setup", Exec) {
+  def setupTask = tasks.create("${taskBase}-setup", Exec) {
     doFirst {
-      if (config.setupDoFirst) {
-        config.setupDoFirst(config, bits)
-      }
+      buildOpus(bits, false)
 
       file(buildDirectory).with {
         it.deleteDir()
@@ -88,36 +65,33 @@ def createBuildTask(tasksHolder, config, bits) {
     environment parameters.env
   }
 
-  def buildTask = tasksHolder.create("${taskBase}-build", Exec) {
+  def buildTask = tasks.create("${taskBase}-build", Exec) {
     workingDir buildDirectory
     executable 'cmake'
     args(['--build', '.'] + parameters.buildArguments)
     environment parameters.env
   }
 
-  def deployTask = tasksHolder.create("${taskBase}-deploy") << {
+  def deployTask = tasks.create("${taskBase}-deploy") << {
     copy {
       from distDirectory
       into deployDirectory
     }
-  }
-
-  tasksHolder.create("${taskBase}-deploy-only") << {
-    copy {
-      from distDirectory
-      into deployDirectory
-    }
-  }
-
-  if (config.setupDependency) {
-    setupTask.dependsOn(config.setupDependency)
   }
   
+  tasks.create("${taskBase}-deploy-only") << {
+    copy {
+      from distDirectory
+      into deployDirectory
+    }
+  }
+
+  setupTask.dependsOn(tasks.load)
   buildTask.dependsOn(setupTask)
   deployTask.dependsOn(buildTask)
-  config.compileTask.dependsOn(deployTask)
+  compileTask.dependsOn(deployTask)
 
   if (!file("${deployDirectory}/${parameters.library}").exists()) {
-    config.checkTask.dependsOn(deployTask)
+    checkTask.dependsOn(deployTask)
   }
 }

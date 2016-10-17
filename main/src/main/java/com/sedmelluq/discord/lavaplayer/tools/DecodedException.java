@@ -20,7 +20,7 @@ public class DecodedException extends Exception {
    * @param cause Cause of this exception
    */
   public DecodedException(String className, String originalMessage, DecodedException cause) {
-    super(className + ": " + originalMessage, cause);
+    super(className + ": " + originalMessage, cause, true, true);
 
     this.className = className;
     this.originalMessage = originalMessage;

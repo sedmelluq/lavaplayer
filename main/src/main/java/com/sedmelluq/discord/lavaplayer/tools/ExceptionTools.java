@@ -72,8 +72,9 @@ public class ExceptionTools {
     List<Throwable> causes = new ArrayList<>();
     Throwable next = exception.getCause();
 
-    while(next != null) {
+    while (next != null) {
       causes.add(next);
+      next = next.getCause();
     }
 
     for (int i = causes.size() - 1; i >= 0; i--) {
@@ -94,11 +95,32 @@ public class ExceptionTools {
       if (message != null) {
         output.writeUTF(message);
       }
+
+      encodeStackTrace(output, cause);
     }
 
     output.writeBoolean(false);
-    output.writeInt(exception.severity.ordinal());
     output.writeUTF(exception.getMessage());
+    output.writeInt(exception.severity.ordinal());
+
+    encodeStackTrace(output, exception);
+  }
+
+  private static void encodeStackTrace(DataOutput output, Throwable throwable) throws IOException {
+    StackTraceElement[] trace = throwable.getStackTrace();
+    output.writeInt(trace.length);
+
+    for (StackTraceElement element : trace) {
+      output.writeUTF(element.getClassName());
+      output.writeUTF(element.getMethodName());
+
+      String fileName = element.getFileName();
+      output.writeBoolean(fileName != null);
+      if (fileName != null) {
+        output.writeUTF(fileName);
+      }
+      output.writeInt(element.getLineNumber());
+    }
   }
 
   /**
@@ -112,8 +134,21 @@ public class ExceptionTools {
 
     while (input.readBoolean()) {
       cause = new DecodedException(input.readUTF(), input.readBoolean() ? input.readUTF() : null, cause);
+      cause.setStackTrace(decodeStackTrace(input));
     }
 
-    return new FriendlyException(input.readUTF(), Severity.class.getEnumConstants()[input.readInt()], cause);
+    FriendlyException exception = new FriendlyException(input.readUTF(), Severity.class.getEnumConstants()[input.readInt()], cause);
+    exception.setStackTrace(decodeStackTrace(input));
+    return exception;
+  }
+
+  private static StackTraceElement[] decodeStackTrace(DataInput input) throws IOException {
+    StackTraceElement[] trace = new StackTraceElement[input.readInt()];
+
+    for (int i = 0; i < trace.length; i++) {
+      trace[i] = new StackTraceElement(input.readUTF(), input.readUTF(), input.readBoolean() ? input.readUTF() : null, input.readInt());
+    }
+
+    return trace;
   }
 }

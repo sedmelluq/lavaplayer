@@ -37,7 +37,7 @@ public abstract class NativeResourceHolder {
   private synchronized void closeInternal(boolean inFinalizer) {
     if (released.compareAndSet(false, true)) {
       if (inFinalizer) {
-        log.warn("Should have been closed before finalization.");
+        log.warn("Should have been closed before finalization ({}).", this.getClass().getName());
       }
 
       freeResources();
