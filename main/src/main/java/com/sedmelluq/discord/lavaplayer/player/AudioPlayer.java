@@ -6,6 +6,7 @@ import com.sedmelluq.discord.lavaplayer.player.event.PlayerPauseEvent;
 import com.sedmelluq.discord.lavaplayer.player.event.PlayerResumeEvent;
 import com.sedmelluq.discord.lavaplayer.player.event.TrackEndEvent;
 import com.sedmelluq.discord.lavaplayer.player.event.TrackExceptionEvent;
+import com.sedmelluq.discord.lavaplayer.player.event.TrackStartEvent;
 import com.sedmelluq.discord.lavaplayer.player.event.TrackStuckEvent;
 import com.sedmelluq.discord.lavaplayer.player.hook.AudioOutputHook;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
@@ -98,6 +99,8 @@ public class AudioPlayer implements AudioFrameProvider, TrackStateListener {
       shadowTrack = null;
       return false;
     }
+
+    dispatchEvent(new TrackStartEvent(this, newTrack));
 
     manager.executeTrack(this, newTrack, manager.getConfiguration(), volumeLevel);
     return true;
