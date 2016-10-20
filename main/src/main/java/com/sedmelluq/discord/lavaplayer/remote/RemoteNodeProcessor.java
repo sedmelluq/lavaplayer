@@ -1,6 +1,6 @@
 package com.sedmelluq.discord.lavaplayer.remote;
 
-import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
+import com.sedmelluq.discord.lavaplayer.player.DefaultAudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.remote.message.NodeStatisticsMessage;
 import com.sedmelluq.discord.lavaplayer.remote.message.RemoteMessage;
 import com.sedmelluq.discord.lavaplayer.remote.message.RemoteMessageMapper;
@@ -52,7 +52,7 @@ public class RemoteNodeProcessor implements Runnable {
   private static final int SOCKET_TIMEOUT = 2000;
   private static final int TRACK_KILL_THRESHOLD = 5000;
 
-  private final AudioPlayerManager playerManager;
+  private final DefaultAudioPlayerManager playerManager;
   private final String nodeAddress;
   private final ScheduledThreadPoolExecutor scheduledExecutor;
   private final BlockingQueue<RemoteMessage> queuedMessages;
@@ -70,7 +70,7 @@ public class RemoteNodeProcessor implements Runnable {
    * @param nodeAddress Address of this node
    * @param scheduledExecutor Scheduler to use to schedule reconnects
    */
-  public RemoteNodeProcessor(AudioPlayerManager playerManager, String nodeAddress, ScheduledThreadPoolExecutor scheduledExecutor) {
+  public RemoteNodeProcessor(DefaultAudioPlayerManager playerManager, String nodeAddress, ScheduledThreadPoolExecutor scheduledExecutor) {
     this.playerManager = playerManager;
     this.nodeAddress = nodeAddress;
     this.scheduledExecutor = scheduledExecutor;
@@ -308,9 +308,11 @@ public class RemoteNodeProcessor implements Runnable {
   /**
    * Check if there are any playing tracks on a node that has not shown signs of life in too long. In that case its
    * playing tracks will also be marked dead.
+   *
+   * @param terminate Whether to terminate without checking the threshold
    */
-  public synchronized void processHealthCheck() {
-    if (playingTracks.isEmpty() || lastAliveTime >= System.currentTimeMillis() - TRACK_KILL_THRESHOLD) {
+  public synchronized void processHealthCheck(boolean terminate) {
+    if (playingTracks.isEmpty() || (!terminate && lastAliveTime >= System.currentTimeMillis() - TRACK_KILL_THRESHOLD)) {
       return;
     }
 

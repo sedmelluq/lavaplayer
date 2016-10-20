@@ -1,6 +1,6 @@
 package com.sedmelluq.discord.lavaplayer.source;
 
-import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
+import com.sedmelluq.discord.lavaplayer.player.DefaultAudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.track.AudioItem;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo;
@@ -30,7 +30,7 @@ public interface AudioSourceManager {
    * @param identifier The identifier which the source manager should find the track with
    * @return The loaded item or null on unrecognized identifier
    */
-  AudioItem loadItem(AudioPlayerManager manager, String identifier);
+  AudioItem loadItem(DefaultAudioPlayerManager manager, String identifier);
 
   /**
    * Returns whether the specified track can be encoded. The argument is always a track created by this manager. Being
@@ -60,4 +60,10 @@ public interface AudioSourceManager {
    * @return The decoded track
    */
   AudioTrack decodeTrack(AudioTrackInfo trackInfo, DataInput input) throws IOException;
+
+  /**
+   * Shut down the source manager, freeing all associated resources and threads. A source manager is not responsible for
+   * terminating the tracks that it has created.
+   */
+  void shutdown();
 }

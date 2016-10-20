@@ -7,6 +7,7 @@ import com.sedmelluq.discord.lavaplayer.demo.music.MusicController;
 import com.sedmelluq.discord.lavaplayer.jdaudp.JdaUdpQueueingHookManager;
 import com.sedmelluq.discord.lavaplayer.player.AudioConfiguration;
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
+import com.sedmelluq.discord.lavaplayer.player.DefaultAudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.source.local.LocalAudioSourceManager;
 import com.sedmelluq.discord.lavaplayer.source.soundcloud.SoundCloudAudioSourceManager;
 import com.sedmelluq.discord.lavaplayer.source.youtube.YoutubeAudioSourceManager;
@@ -38,7 +39,7 @@ public class BotApplicationManager extends ListenerAdapter {
 
     controllerManager.registerController(new MusicController.Factory());
 
-    playerManager = new AudioPlayerManager();
+    playerManager = new DefaultAudioPlayerManager();
     //playerManager.useRemoteNodes("localhost:8080");
     playerManager.enableGcMonitoring();
     JdaUdpQueueingHookManager jdaUdpQueueingHookManager = new JdaUdpQueueingHookManager();
@@ -46,8 +47,8 @@ public class BotApplicationManager extends ListenerAdapter {
     jdaUdpQueueingHookManager.startDispatcher();
     playerManager.getConfiguration().setResamplingQuality(AudioConfiguration.ResamplingQuality.LOW);
     playerManager.registerSourceManager(new YoutubeAudioSourceManager());
-    playerManager.registerSourceManager(new LocalAudioSourceManager());
     playerManager.registerSourceManager(new SoundCloudAudioSourceManager());
+    playerManager.registerSourceManager(new LocalAudioSourceManager());
 
     executorService = Executors.newScheduledThreadPool(1, new DaemonThreadFactory("bot"));
   }

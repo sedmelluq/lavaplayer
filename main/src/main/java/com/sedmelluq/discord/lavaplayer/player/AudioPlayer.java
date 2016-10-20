@@ -10,6 +10,7 @@ import com.sedmelluq.discord.lavaplayer.player.event.TrackStartEvent;
 import com.sedmelluq.discord.lavaplayer.player.event.TrackStuckEvent;
 import com.sedmelluq.discord.lavaplayer.player.hook.AudioOutputHook;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
+import com.sedmelluq.discord.lavaplayer.track.AudioTrackEndReason;
 import com.sedmelluq.discord.lavaplayer.track.InternalAudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.TrackStateListener;
 import com.sedmelluq.discord.lavaplayer.track.playback.AudioFrame;
@@ -19,11 +20,17 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+
+import static com.sedmelluq.discord.lavaplayer.track.AudioTrackEndReason.CLEANUP;
+import static com.sedmelluq.discord.lavaplayer.track.AudioTrackEndReason.FINISHED;
+import static com.sedmelluq.discord.lavaplayer.track.AudioTrackEndReason.REPLACED;
+import static com.sedmelluq.discord.lavaplayer.track.AudioTrackEndReason.STOPPED;
 
 /**
  * An audio player that is capable of playing audio tracks and provides audio frames from the currently playing track.
@@ -32,11 +39,12 @@ public class AudioPlayer implements AudioFrameProvider, TrackStateListener {
   private static final Logger log = LoggerFactory.getLogger(AudioPlayer.class);
 
   private final AtomicReference<InternalAudioTrack> activeTrack;
+  private volatile long lastRequestTime;
   private volatile long lastReceiveTime;
   private volatile boolean stuckEventSent;
   private volatile InternalAudioTrack shadowTrack;
   private final AtomicBoolean paused;
-  private final AudioPlayerManager manager;
+  private final DefaultAudioPlayerManager manager;
   private final List<AudioEventListener> listeners;
   private final AtomicInteger volumeLevel;
   private final AudioOutputHook outputHook;
@@ -45,7 +53,7 @@ public class AudioPlayer implements AudioFrameProvider, TrackStateListener {
    * @param manager Audio player manager which this player is attached to
    * @param outputHook Hook which can intercept outgoing audio frames
    */
-  public AudioPlayer(AudioPlayerManager manager, AudioOutputHook outputHook) {
+  public AudioPlayer(DefaultAudioPlayerManager manager, AudioOutputHook outputHook) {
     this.manager = manager;
     this.outputHook = outputHook;
     activeTrack = new AtomicReference<>();
@@ -90,7 +98,7 @@ public class AudioPlayer implements AudioFrameProvider, TrackStateListener {
 
     if (previousTrack != null) {
       previousTrack.stop();
-      dispatchEvent(new TrackEndEvent(this, previousTrack, true));
+      dispatchEvent(new TrackEndEvent(this, previousTrack, newTrack == null ? STOPPED : REPLACED));
 
       shadowTrack = previousTrack;
     }
@@ -110,12 +118,16 @@ public class AudioPlayer implements AudioFrameProvider, TrackStateListener {
    * Stop currently playing track.
    */
   public void stopTrack() {
+    stopWithReason(STOPPED);
+  }
+
+  private void stopWithReason(AudioTrackEndReason reason) {
     shadowTrack = null;
 
     InternalAudioTrack previousTrack = activeTrack.getAndSet(null);
     if (previousTrack != null) {
       previousTrack.stop();
-      dispatchEvent(new TrackEndEvent(this, previousTrack, true));
+      dispatchEvent(new TrackEndEvent(this, previousTrack, reason));
     }
   }
 
@@ -151,6 +163,8 @@ public class AudioPlayer implements AudioFrameProvider, TrackStateListener {
   public AudioFrame provideDirectly() {
     InternalAudioTrack track;
 
+    lastRequestTime = System.currentTimeMillis();
+
     if (paused.get()) {
       return null;
     }
@@ -183,7 +197,7 @@ public class AudioPlayer implements AudioFrameProvider, TrackStateListener {
 
   private void handleTerminator(InternalAudioTrack track) {
     if (activeTrack.compareAndSet(track, null)) {
-      dispatchEvent(new TrackEndEvent(this, track, false));
+      dispatchEvent(new TrackEndEvent(this, track, FINISHED));
     }
   }
 
@@ -217,7 +231,7 @@ public class AudioPlayer implements AudioFrameProvider, TrackStateListener {
   }
 
   /**
-   * Destroy the player and stop all playing tracks.
+   * Destroy the player and stop playing track.
    */
   public void destroy() {
     stopTrack();
@@ -234,11 +248,16 @@ public class AudioPlayer implements AudioFrameProvider, TrackStateListener {
   }
 
   /**
-   * Clear the list of attached event listeners.
+   * Remove an attached listener using identity comparison.
+   * @param listener The listener to remove
    */
-  public void clearListeners() {
+  public void removeListener(AudioEventListener listener) {
     synchronized (listeners) {
-      listeners.clear();
+      for (Iterator<AudioEventListener> iterator = listeners.iterator(); iterator.hasNext(); ) {
+        if (iterator.next() == listener) {
+          iterator.remove();
+        }
+      }
     }
   }
 
@@ -247,7 +266,11 @@ public class AudioPlayer implements AudioFrameProvider, TrackStateListener {
 
     synchronized (listeners) {
       for (AudioEventListener listener : listeners) {
-        listener.onEvent(event);
+        try {
+          listener.onEvent(event);
+        } catch (Exception e) {
+          log.error("Handler of event {} threw an exception.", event, e);
+        }
       }
     }
   }
@@ -255,5 +278,18 @@ public class AudioPlayer implements AudioFrameProvider, TrackStateListener {
   @Override
   public void onTrackException(AudioTrack track, FriendlyException exception) {
     dispatchEvent(new TrackExceptionEvent(this, track, exception));
+  }
+
+  /**
+   * Check if the player should be "cleaned up" - stopped due to nothing using it, with the given threshold.
+   * @param threshold Threshold in milliseconds to use
+   */
+  public void checkCleanup(long threshold) {
+    AudioTrack track = getPlayingTrack();
+    if (track != null && System.currentTimeMillis() - lastRequestTime >= threshold) {
+      log.debug("Triggering cleanup on an audio player playing track {}", track);
+
+      stopWithReason(CLEANUP);
+    }
   }
 }

@@ -26,6 +26,10 @@ public abstract class SeekableInputStream extends InputStream {
     return contentLength;
   }
 
+  public long getMaxSkipDistance() {
+    return maxSkipDistance;
+  }
+
   /**
    * @return Current position in the stream
    */

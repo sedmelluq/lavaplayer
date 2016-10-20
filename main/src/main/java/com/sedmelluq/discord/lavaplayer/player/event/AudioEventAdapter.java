@@ -3,6 +3,7 @@ package com.sedmelluq.discord.lavaplayer.player.event;
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
+import com.sedmelluq.discord.lavaplayer.track.AudioTrackEndReason;
 
 /**
  * Adapter for different event handlers as method overrides
@@ -33,9 +34,9 @@ public abstract class AudioEventAdapter implements AudioEventListener {
   /**
    * @param player Audio player
    * @param track Audio track that ended
-   * @param interrupted Whether the track was interrupted via stop or new track
+   * @param endReason The reason why the track stopped playing
    */
-  public void onTrackEnd(AudioPlayer player, AudioTrack track, boolean interrupted) {
+  public void onTrackEnd(AudioPlayer player, AudioTrack track, AudioTrackEndReason endReason) {
     // Adapter dummy method
   }
 
@@ -66,7 +67,7 @@ public abstract class AudioEventAdapter implements AudioEventListener {
     } else if (event instanceof TrackStartEvent) {
       onTrackStart(event.player, ((TrackStartEvent) event).track);
     } else if (event instanceof TrackEndEvent) {
-      onTrackEnd(event.player, ((TrackEndEvent) event).track, ((TrackEndEvent) event).interrupted);
+      onTrackEnd(event.player, ((TrackEndEvent) event).track, ((TrackEndEvent) event).endReason);
     } else if (event instanceof TrackExceptionEvent) {
       onTrackException(event.player, ((TrackExceptionEvent) event).track, ((TrackExceptionEvent) event).exception);
     } else if (event instanceof TrackStuckEvent) {

@@ -3,8 +3,8 @@ package com.sedmelluq.discord.lavaplayer.demo.music;
 import com.sedmelluq.discord.lavaplayer.demo.MessageDispatcher;
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
 import com.sedmelluq.discord.lavaplayer.player.event.AudioEventAdapter;
-import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
+import com.sedmelluq.discord.lavaplayer.track.AudioTrackEndReason;
 import net.dv8tion.jda.entities.Message;
 
 import java.util.concurrent.BlockingDeque;
@@ -68,8 +68,8 @@ public class MusicScheduler extends AudioEventAdapter implements Runnable {
   }
 
   @Override
-  public void onTrackEnd(AudioPlayer player, AudioTrack track, boolean interrupted) {
-    if (!interrupted) {
+  public void onTrackEnd(AudioPlayer player, AudioTrack track, AudioTrackEndReason endReason) {
+    if (endReason == AudioTrackEndReason.FINISHED) {
       messageDispatcher.sendMessage(String.format("Track %s finished.", track.getInfo().title));
       startNextTrack(true);
     }

@@ -5,6 +5,7 @@ import com.sedmelluq.discord.lavaplayer.tools.ExceptionTools;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.track.AudioLoop;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
+import com.sedmelluq.discord.lavaplayer.track.AudioTrackEndReason;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackState;
 import com.sedmelluq.discord.lavaplayer.track.TrackStateListener;
 import com.sedmelluq.discord.lavaplayer.track.playback.AudioFrame;
@@ -150,7 +151,7 @@ public class RemoteAudioTrackExecutor implements AudioTrackExecutor {
     frameBuffer.setTerminateOnEmpty();
     frameBuffer.clear();
 
-    remoteNodeManager.onTrackEnd(null, track, true);
+    remoteNodeManager.onTrackEnd(null, track, AudioTrackEndReason.STOPPED);
   }
 
   @Override

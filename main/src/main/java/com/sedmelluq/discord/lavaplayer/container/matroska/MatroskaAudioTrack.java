@@ -15,10 +15,6 @@ import org.slf4j.LoggerFactory;
 public class MatroskaAudioTrack extends BaseAudioTrack {
   private static final Logger log = LoggerFactory.getLogger(MatroskaAudioTrack.class);
 
-  private static final String OPUS_CODEC = "A_OPUS";
-  private static final String VORBIS_CODEC = "A_VORBIS";
-  private static final String AAC_CODEC = "A_AAC";
-
   private final SeekableInputStream inputStream;
 
   /**
@@ -87,12 +83,12 @@ public class MatroskaAudioTrack extends BaseAudioTrack {
 
     for (MatroskaFileTrack track : tracks) {
       if (track.getTrackType() == MatroskaFileTrack.TrackType.AUDIO) {
-        if (OPUS_CODEC.equals(track.getCodecID())) {
+        if (MatroskaContainerProbe.OPUS_CODEC.equals(track.getCodecID())) {
           trackConsumer = new MatroskaOpusTrackConsumer(context, track);
           break;
-        } else if (VORBIS_CODEC.equals(track.getCodecID())) {
+        } else if (MatroskaContainerProbe.VORBIS_CODEC.equals(track.getCodecID())) {
           trackConsumer = new MatroskaVorbisTrackConsumer(context, track);
-        } else if (AAC_CODEC.equals(track.getCodecID())) {
+        } else if (MatroskaContainerProbe.AAC_CODEC.equals(track.getCodecID())) {
           trackConsumer = new MatroskaAacTrackConsumer(context, track);
         }
       }

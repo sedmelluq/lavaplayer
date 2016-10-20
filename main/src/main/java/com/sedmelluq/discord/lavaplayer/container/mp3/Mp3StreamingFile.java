@@ -34,7 +34,8 @@ public class Mp3StreamingFile {
   private int nextFrameSize;
 
   /**
-   * @param context Configuration and output information for processing
+   * @param context Configuration and output information for processing. May be null in case no frames are read and this
+   *                instance is only used to retrieve information about the track.
    * @param inputStream Stream to read the file from
    */
   public Mp3StreamingFile(AudioProcessingContext context, SeekableInputStream inputStream) {
@@ -60,7 +61,7 @@ public class Mp3StreamingFile {
     track = new Configuration(
         inputStream.getPosition() - 4,
         sampleRate,
-        FilterChainBuilder.forShortPcm(context, 2, sampleRate, true),
+        context != null ? FilterChainBuilder.forShortPcm(context, 2, sampleRate, true) : null,
         Mp3Decoder.getAverageFrameSize(scanBuffer, scanOffset)
     );
   }
@@ -99,7 +100,7 @@ public class Mp3StreamingFile {
    */
   public void seekToTimecode(long timecode) {
     try {
-      long maximumFrameCount = (long) ((inputStream.getContentLength() - track.startPosition + 8) / track.averageFrameSize);
+      long maximumFrameCount = getMaximumFrameCount();
 
       long sampleIndex = timecode * track.sampleRate / 1000;
       long frameIndex = Math.min(sampleIndex / SAMPLES_PER_FRAME, maximumFrameCount);
@@ -113,6 +114,17 @@ public class Mp3StreamingFile {
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
+  }
+
+  /**
+   * @return An estimated duration of the file in milliseconds
+   */
+  public long estimateDuration() {
+    return getMaximumFrameCount() * SAMPLES_PER_FRAME * 1000 / track.sampleRate;
+  }
+
+  private long getMaximumFrameCount() {
+    return (long) ((inputStream.getContentLength() - track.startPosition + 8) / track.averageFrameSize);
   }
 
   /**

@@ -1,8 +1,9 @@
 package com.sedmelluq.discord.lavaplayer.source.youtube;
 
-import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
+import com.sedmelluq.discord.lavaplayer.player.DefaultAudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.tools.DaemonThreadFactory;
 import com.sedmelluq.discord.lavaplayer.tools.ExceptionTools;
+import com.sedmelluq.discord.lavaplayer.tools.ExecutorTools;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.track.AudioItem;
 import com.sedmelluq.discord.lavaplayer.source.AudioSourceManager;
@@ -95,7 +96,7 @@ public class YoutubeAudioSourceManager implements AudioSourceManager {
   }
 
   @Override
-  public AudioItem loadItem(AudioPlayerManager manager, String identifier) {
+  public AudioItem loadItem(DefaultAudioPlayerManager manager, String identifier) {
     AudioItem result;
 
     if ((result = loadTrack(identifier)) == null) {
@@ -118,6 +119,11 @@ public class YoutubeAudioSourceManager implements AudioSourceManager {
   @Override
   public AudioTrack decodeTrack(AudioTrackInfo trackInfo, DataInput input) {
     return new YoutubeAudioTrack(trackInfo, this);
+  }
+
+  @Override
+  public void shutdown() {
+    ExecutorTools.shutdownExecutor(mixLoadingExecutor, "youtube mix");
   }
 
   /**

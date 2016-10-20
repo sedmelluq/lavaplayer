@@ -1,6 +1,6 @@
 package com.sedmelluq.discord.lavaplayer.source.soundcloud;
 
-import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
+import com.sedmelluq.discord.lavaplayer.player.DefaultAudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.source.AudioSourceManager;
 import com.sedmelluq.discord.lavaplayer.tools.DataFormatTools;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
@@ -63,7 +63,7 @@ public class SoundCloudAudioSourceManager implements AudioSourceManager {
   }
 
   @Override
-  public AudioItem loadItem(AudioPlayerManager manager, String identifier) {
+  public AudioItem loadItem(DefaultAudioPlayerManager manager, String identifier) {
     if (trackUrlPattern.matcher(identifier).matches()) {
       return loadFromTrackPage(identifier);
     } else if (playlistUrlPattern.matcher(identifier).matches()) {
@@ -87,6 +87,11 @@ public class SoundCloudAudioSourceManager implements AudioSourceManager {
     String trackUrl = input.readUTF();
 
     return new SoundCloudAudioTrack(trackInfo, this, trackUrl);
+  }
+
+  @Override
+  public void shutdown() {
+    // Nothing to shut down
   }
 
   /**

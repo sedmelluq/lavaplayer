@@ -1,11 +1,13 @@
 package com.sedmelluq.discord.lavaplayer.remote;
 
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
-import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
+import com.sedmelluq.discord.lavaplayer.player.DefaultAudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.player.event.AudioEventAdapter;
 import com.sedmelluq.discord.lavaplayer.tools.DaemonThreadFactory;
+import com.sedmelluq.discord.lavaplayer.tools.ExecutorTools;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
+import com.sedmelluq.discord.lavaplayer.track.AudioTrackEndReason;
 import com.sedmelluq.discord.lavaplayer.track.InternalAudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.playback.AudioTrackExecutor;
 
@@ -21,14 +23,15 @@ import static com.sedmelluq.discord.lavaplayer.tools.FriendlyException.Severity.
  * Manager of remote nodes for audio processing.
  */
 public class RemoteNodeManager extends AudioEventAdapter implements Runnable {
-  private final AudioPlayerManager playerManager;
+  private final DefaultAudioPlayerManager playerManager;
   private final List<RemoteNodeProcessor> processors;
   private final AtomicBoolean enabled;
+  private volatile ScheduledThreadPoolExecutor scheduler;
 
   /**
    * @param playerManager Audio player manager
    */
-  public RemoteNodeManager(AudioPlayerManager playerManager) {
+  public RemoteNodeManager(DefaultAudioPlayerManager playerManager) {
     this.playerManager = playerManager;
     this.processors = new ArrayList<>();
     this.enabled = new AtomicBoolean();
@@ -50,6 +53,23 @@ public class RemoteNodeManager extends AudioEventAdapter implements Runnable {
       RemoteNodeProcessor processor = new RemoteNodeProcessor(playerManager, nodeAddress, scheduledExecutor);
       scheduledExecutor.submit(processor);
       processors.add(processor);
+    }
+
+    scheduler = scheduledExecutor;
+  }
+
+  /**
+   * Shut down, freeing all threads and stopping all tracks executed on remote nodes.
+   */
+  public void shutdown() {
+    if (!enabled.compareAndSet(true, false)) {
+      return;
+    }
+
+    ExecutorTools.shutdownExecutor(scheduler, "node manager");
+
+    for (RemoteNodeProcessor processor : processors) {
+      processor.processHealthCheck(true);
     }
   }
 
@@ -91,10 +111,10 @@ public class RemoteNodeManager extends AudioEventAdapter implements Runnable {
   }
 
   @Override
-  public void onTrackEnd(AudioPlayer player, AudioTrack track, boolean interrupted) {
+  public void onTrackEnd(AudioPlayer player, AudioTrack track, AudioTrackEndReason endReason) {
     AudioTrackExecutor executor = ((InternalAudioTrack) track).getActiveExecutor();
 
-    if (interrupted && executor instanceof RemoteAudioTrackExecutor) {
+    if (endReason != AudioTrackEndReason.FINISHED && executor instanceof RemoteAudioTrackExecutor) {
       for (RemoteNodeProcessor processor : processors) {
         processor.trackEnded((RemoteAudioTrackExecutor) executor, true);
       }
@@ -104,7 +124,7 @@ public class RemoteNodeManager extends AudioEventAdapter implements Runnable {
   @Override
   public void run() {
     for (RemoteNodeProcessor processor : processors) {
-      processor.processHealthCheck();
+      processor.processHealthCheck(false);
     }
   }
 }

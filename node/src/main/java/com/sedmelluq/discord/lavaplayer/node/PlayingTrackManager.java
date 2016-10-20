@@ -2,7 +2,7 @@ package com.sedmelluq.discord.lavaplayer.node;
 
 import com.sedmelluq.discord.lavaplayer.node.message.MessageHandler;
 import com.sedmelluq.discord.lavaplayer.node.message.MessageOutput;
-import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
+import com.sedmelluq.discord.lavaplayer.player.DefaultAudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.remote.message.TrackExceptionMessage;
 import com.sedmelluq.discord.lavaplayer.remote.message.TrackStartRequestMessage;
 import com.sedmelluq.discord.lavaplayer.remote.message.TrackStartResponseMessage;
@@ -39,13 +39,13 @@ public class PlayingTrackManager {
   private static final Logger log = LoggerFactory.getLogger(PlayingTrackManager.class);
 
   private final StatisticsManager statisticsManager;
-  private final AudioPlayerManager manager;
+  private final DefaultAudioPlayerManager manager;
   private final ConcurrentMap<Long, PlayingTrack> tracks;
 
   @Autowired
   public PlayingTrackManager(StatisticsManager statisticsManager) {
     this.statisticsManager = statisticsManager;
-    manager = new AudioPlayerManager();
+    manager = new DefaultAudioPlayerManager();
     tracks = new ConcurrentHashMap<>();
 
     manager.setUseSeekGhosting(false);

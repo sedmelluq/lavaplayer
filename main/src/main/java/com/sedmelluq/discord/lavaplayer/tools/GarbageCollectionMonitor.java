@@ -5,16 +5,18 @@ import com.sun.management.GcInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.management.ListenerNotFoundException;
 import javax.management.Notification;
 import javax.management.NotificationEmitter;
 import javax.management.NotificationListener;
 import javax.management.openmbean.CompositeData;
 import java.lang.management.GarbageCollectorMXBean;
 import java.lang.management.ManagementFactory;
-import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static com.sun.management.GarbageCollectionNotificationInfo.GARBAGE_COLLECTION_NOTIFICATION;
 import static com.sun.management.GarbageCollectionNotificationInfo.from;
@@ -32,14 +34,17 @@ public class GarbageCollectionMonitor implements NotificationListener, Runnable 
   private final ScheduledExecutorService reportingExecutor;
   private final int[] bucketCounters;
   private final AtomicBoolean enabled;
+  private final AtomicReference<ScheduledFuture<?>> executorFuture;
 
   /**
    * Create an instance of GC monitor. Does nothing until enabled.
+   * @param reportingExecutor Executor to use for scheduling reporting task
    */
-  public GarbageCollectionMonitor() {
-    reportingExecutor = Executors.newScheduledThreadPool(1, new DaemonThreadFactory("gc-report"));
+  public GarbageCollectionMonitor(ScheduledExecutorService reportingExecutor) {
+    this.reportingExecutor = reportingExecutor;
     bucketCounters = new int[BUCKETS.length];
     enabled = new AtomicBoolean();
+    executorFuture = new AtomicReference<>();
   }
 
   /**
@@ -47,15 +52,47 @@ public class GarbageCollectionMonitor implements NotificationListener, Runnable 
    */
   public void enable() {
     if (enabled.compareAndSet(false, true)) {
-      for (GarbageCollectorMXBean gcBean : ManagementFactory.getGarbageCollectorMXBeans()) {
-        if (gcBean instanceof NotificationEmitter) {
-          ((NotificationEmitter) gcBean).addNotificationListener(this, null, gcBean);
-        }
-      }
+      registerBeanListener();
 
-      reportingExecutor.scheduleAtFixedRate(this, REPORTING_FREQUENCY, REPORTING_FREQUENCY, TimeUnit.MILLISECONDS);
+      executorFuture.set(reportingExecutor.scheduleAtFixedRate(this, REPORTING_FREQUENCY, REPORTING_FREQUENCY, TimeUnit.MILLISECONDS));
 
       log.info("GC monitoring enabled, reporting results every 2 minutes.");
+    }
+  }
+
+  /**
+   * Disable GC monitoring and reporting.
+   */
+  public void disable() {
+    if (enabled.compareAndSet(true, false)) {
+      unregisterBeanListener();
+
+      ScheduledFuture<?> scheduledTask = executorFuture.getAndSet(null);
+      if (scheduledTask != null) {
+        scheduledTask.cancel(false);
+      }
+
+      log.info("GC monitoring disabled.");
+    }
+  }
+
+  private void registerBeanListener() {
+    for (GarbageCollectorMXBean gcBean : ManagementFactory.getGarbageCollectorMXBeans()) {
+      if (gcBean instanceof NotificationEmitter) {
+        ((NotificationEmitter) gcBean).addNotificationListener(this, null, gcBean);
+      }
+    }
+  }
+
+  private void unregisterBeanListener() {
+    for (GarbageCollectorMXBean gcBean : ManagementFactory.getGarbageCollectorMXBeans()) {
+      if (gcBean instanceof NotificationEmitter) {
+        try {
+          ((NotificationEmitter) gcBean).removeNotificationListener(this);
+        } catch (ListenerNotFoundException e) {
+          log.debug("No listener found on bean {}, should have been there.", gcBean, e);
+        }
+      }
     }
   }
 
