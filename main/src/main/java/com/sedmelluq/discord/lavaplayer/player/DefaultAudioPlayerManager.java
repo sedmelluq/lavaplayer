@@ -11,10 +11,13 @@ import com.sedmelluq.discord.lavaplayer.tools.ExecutorTools;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.tools.OrderedExecutor;
 import com.sedmelluq.discord.lavaplayer.tools.GarbageCollectionMonitor;
+import com.sedmelluq.discord.lavaplayer.tools.io.MessageInput;
+import com.sedmelluq.discord.lavaplayer.tools.io.MessageOutput;
 import com.sedmelluq.discord.lavaplayer.track.AudioItem;
 import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo;
+import com.sedmelluq.discord.lavaplayer.track.DecodedTrackHolder;
 import com.sedmelluq.discord.lavaplayer.track.InternalAudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.TrackStateListener;
 import com.sedmelluq.discord.lavaplayer.track.playback.AudioTrackExecutor;
@@ -36,7 +39,6 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -85,8 +87,7 @@ public class DefaultAudioPlayerManager implements AudioPlayerManager {
     // Executors
     trackPlaybackExecutorService = new ThreadPoolExecutor(1, Integer.MAX_VALUE, 10, TimeUnit.SECONDS,
         new SynchronousQueue<>(), new DaemonThreadFactory("playback"));
-    trackInfoExecutorService = new ThreadPoolExecutor(1, 5, 30, TimeUnit.SECONDS, new LinkedBlockingDeque<>(),
-        new DaemonThreadFactory("info-loader"));
+    trackInfoExecutorService = ExecutorTools.createEagerlyScalingExecutor(1, 10, TimeUnit.SECONDS.toMillis(30), "info-loader");
     scheduledExecutorService = Executors.newScheduledThreadPool(1, new DaemonThreadFactory("manager"));
     orderedInfoExecutor = new OrderedExecutor(trackInfoExecutorService);
 
@@ -171,24 +172,64 @@ public class DefaultAudioPlayerManager implements AudioPlayerManager {
     };
   }
 
+  @Override
+  public void encodeTrack(MessageOutput stream, AudioTrack track) throws IOException {
+    DataOutput output = stream.startMessage();
+
+    AudioTrackInfo trackInfo = track.getInfo();
+    output.writeUTF(trackInfo.title);
+    output.writeUTF(trackInfo.author);
+    output.writeInt(trackInfo.length);
+    output.writeUTF(trackInfo.identifier);
+
+    encodeTrackDetails(track, output);
+    output.writeLong(track.getPosition());
+
+    stream.commitMessage();
+  }
+
+  @Override
+  public DecodedTrackHolder decodeTrack(MessageInput stream) throws IOException {
+    DataInput input = stream.nextMessage();
+    if (input == null) {
+      return null;
+    }
+
+    AudioTrackInfo trackInfo = new AudioTrackInfo(input.readUTF(), input.readUTF(), input.readInt(), input.readUTF());
+    AudioTrack track = decodeTrackDetails(trackInfo, input);
+    long position = input.readLong();
+
+    if (track != null) {
+      track.setPosition(position);
+    }
+
+    stream.skipRemainingBytes();
+
+    return new DecodedTrackHolder(track);
+  }
+
   /**
    * Encodes an audio track to a byte array. Does not include AudioTrackInfo in the buffer.
    * @param track The track to encode
    * @return The bytes of the encoded data
    */
-  public byte[] encodeTrack(AudioTrack track) {
+  public byte[] encodeTrackDetails(AudioTrack track) {
     try {
       ByteArrayOutputStream byteOutput = new ByteArrayOutputStream();
       DataOutput output = new DataOutputStream(byteOutput);
 
-      AudioSourceManager sourceManager = track.getSourceManager();
-      output.writeUTF(sourceManager.getSourceName());
-      sourceManager.encodeTrack(track, output);
+      encodeTrackDetails(track, output);
 
       return byteOutput.toByteArray();
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
+  }
+
+  private void encodeTrackDetails(AudioTrack track, DataOutput output) throws IOException {
+    AudioSourceManager sourceManager = track.getSourceManager();
+    output.writeUTF(sourceManager.getSourceName());
+    sourceManager.encodeTrack(track, output);
   }
 
   /**
@@ -197,21 +238,25 @@ public class DefaultAudioPlayerManager implements AudioPlayerManager {
    * @param buffer Byte array containing the encoded track
    * @return Decoded audio track
    */
-  public AudioTrack decodeTrack(AudioTrackInfo trackInfo, byte[] buffer) {
+  public AudioTrack decodeTrackDetails(AudioTrackInfo trackInfo, byte[] buffer) {
     try {
       DataInput input = new DataInputStream(new ByteArrayInputStream(buffer));
-      String sourceName = input.readUTF();
-
-      for (AudioSourceManager sourceManager : sourceManagers) {
-        if (sourceName.equals(sourceManager.getSourceName())) {
-          return sourceManager.decodeTrack(trackInfo, input);
-        }
-      }
-
-      return null;
+      return decodeTrackDetails(trackInfo, input);
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
+  }
+
+  private AudioTrack decodeTrackDetails(AudioTrackInfo trackInfo, DataInput input) throws IOException {
+    String sourceName = input.readUTF();
+
+    for (AudioSourceManager sourceManager : sourceManagers) {
+      if (sourceName.equals(sourceManager.getSourceName())) {
+        return sourceManager.decodeTrack(trackInfo, input);
+      }
+    }
+
+    return null;
   }
 
   /**

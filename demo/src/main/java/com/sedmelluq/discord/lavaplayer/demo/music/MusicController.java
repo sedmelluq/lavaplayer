@@ -9,18 +9,24 @@ import com.sedmelluq.discord.lavaplayer.demo.controller.BotControllerFactory;
 import com.sedmelluq.discord.lavaplayer.player.AudioLoadResultHandler;
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
-import com.sedmelluq.discord.lavaplayer.player.DefaultAudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
+import com.sedmelluq.discord.lavaplayer.tools.io.MessageInput;
+import com.sedmelluq.discord.lavaplayer.tools.io.MessageOutput;
 import com.sedmelluq.discord.lavaplayer.track.AudioLoop;
 import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
+import com.sedmelluq.discord.lavaplayer.track.DecodedTrackHolder;
 import com.sedmelluq.discord.lavaplayer.udpqueue.natives.UdpQueueManager;
 import net.dv8tion.jda.entities.Guild;
 import net.dv8tion.jda.entities.Message;
 import net.dv8tion.jda.entities.TextChannel;
 import net.dv8tion.jda.entities.VoiceChannel;
 import net.dv8tion.jda.managers.AudioManager;
+import net.iharder.Base64;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -55,6 +61,35 @@ public class MusicController implements BotController {
   @BotCommandHandler
   private void now(Message message, String identifier) {
     addTrack(message, identifier, true);
+  }
+
+  @BotCommandHandler
+  private void serialize(Message message) throws IOException {
+    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+    MessageOutput outputStream = new MessageOutput(baos);
+
+    for (AudioTrack track : scheduler.drainQueue()) {
+      manager.encodeTrack(outputStream, track);
+    }
+
+    outputStream.finish();
+
+    message.getChannel().sendMessage(Base64.encodeBytes(baos.toByteArray()));
+  }
+
+  @BotCommandHandler
+  private void deserialize(Message message, String content) throws IOException {
+    byte[] bytes = Base64.decode(content);
+
+    MessageInput inputStream = new MessageInput(new ByteArrayInputStream(bytes));
+    DecodedTrackHolder holder;
+
+    while ((holder = manager.decodeTrack(inputStream)) != null) {
+      if (holder.decodedTrack != null) {
+        System.out.println("Deserialized " + holder.decodedTrack.getInfo().title);
+        scheduler.addToQueue(holder.decodedTrack);
+      }
+    }
   }
 
   @BotCommandHandler

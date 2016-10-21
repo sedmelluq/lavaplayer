@@ -2,7 +2,12 @@ package com.sedmelluq.discord.lavaplayer.player;
 
 import com.sedmelluq.discord.lavaplayer.player.hook.AudioOutputHookFactory;
 import com.sedmelluq.discord.lavaplayer.source.AudioSourceManager;
+import com.sedmelluq.discord.lavaplayer.tools.io.MessageInput;
+import com.sedmelluq.discord.lavaplayer.tools.io.MessageOutput;
+import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
+import com.sedmelluq.discord.lavaplayer.track.DecodedTrackHolder;
 
+import java.io.IOException;
 import java.util.concurrent.Future;
 
 /**
@@ -69,7 +74,28 @@ public interface AudioPlayerManager {
   Future<Void> loadItemOrdered(Object orderingKey, final String identifier, final AudioLoadResultHandler resultHandler);
 
   /**
-   * @return Audio processing configuration used for tracks executor by this manager.
+   * Encode a track into an output stream. If the decoder is not supposed to know the number of tracks in advance, then
+   * the encoder should call MessageOutput#finish() after all the tracks it wanted to write have been written. This will
+   * make decodeTrack() return null at that position
+   *
+   * @param stream The message stream to write it to.
+   * @param track The track to encode.
+   * @throws IOException On IO error.
+   */
+  void encodeTrack(MessageOutput stream, AudioTrack track) throws IOException;
+
+  /**
+   * Decode a track from an input stream. Null returns value indicates reaching the position where the decoder had
+   * called MessageOutput#finish().
+   *
+   * @param stream The message stream to read it from.
+   * @return Holder containing the track if it was successfully decoded.
+   * @throws IOException On IO error.
+   */
+  DecodedTrackHolder decodeTrack(MessageInput stream) throws IOException;
+
+  /**
+   * @return Audio processing configuration used for tracks executed by this manager.
    */
   AudioConfiguration getConfiguration();
 

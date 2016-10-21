@@ -55,7 +55,7 @@ public class PlayingTrackManager {
 
   @MessageHandler
   private void handleTrackStart(TrackStartRequestMessage message, MessageOutput output) {
-    InternalAudioTrack audioTrack = (InternalAudioTrack) manager.decodeTrack(message.trackInfo, message.encodedTrack);
+    InternalAudioTrack audioTrack = (InternalAudioTrack) manager.decodeTrackDetails(message.trackInfo, message.encodedTrack);
     String failureReason = null;
 
     if (audioTrack != null) {

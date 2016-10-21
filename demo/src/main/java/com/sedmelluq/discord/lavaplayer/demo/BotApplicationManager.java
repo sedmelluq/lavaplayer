@@ -18,6 +18,8 @@ import net.dv8tion.jda.entities.Message;
 import net.dv8tion.jda.events.guild.GuildLeaveEvent;
 import net.dv8tion.jda.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.hooks.ListenerAdapter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -25,6 +27,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 
 public class BotApplicationManager extends ListenerAdapter {
+  private static final Logger log = LoggerFactory.getLogger(BotApplicationManager.class);
+
   private final JDA jda;
   private final Map<Long, BotGuildContext> guildContexts;
   private final BotControllerManager controllerManager;
@@ -115,6 +119,8 @@ public class BotApplicationManager extends ListenerAdapter {
       @Override
       public void commandException(Message message, String name, Throwable throwable) {
         event.getTextChannel().sendMessage("Command threw an exception");
+
+        log.error("Command with content {} threw an exception.", message.getContent(), throwable);
       }
     });
   }

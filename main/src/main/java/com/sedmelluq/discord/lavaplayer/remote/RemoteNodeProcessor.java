@@ -92,7 +92,7 @@ public class RemoteNodeProcessor implements Runnable {
     if (playingTracks.putIfAbsent(executor.getExecutorId(), executor) == null) {
       log.info("Sending request to play {} {}", track.getIdentifier(), executor.getExecutorId());
 
-      queuedMessages.add(new TrackStartRequestMessage(executor.getExecutorId(), track.getInfo(), playerManager.encodeTrack(track),
+      queuedMessages.add(new TrackStartRequestMessage(executor.getExecutorId(), track.getInfo(), playerManager.encodeTrackDetails(track),
           executor.getVolume(), executor.getConfiguration()));
     }
   }
