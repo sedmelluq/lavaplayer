@@ -86,7 +86,6 @@ public class MusicController implements BotController {
 
     while ((holder = manager.decodeTrack(inputStream)) != null) {
       if (holder.decodedTrack != null) {
-        System.out.println("Deserialized " + holder.decodedTrack.getInfo().title);
         scheduler.addToQueue(holder.decodedTrack);
       }
     }
