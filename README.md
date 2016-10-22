@@ -163,7 +163,8 @@ public class TrackScheduler extends AudioEventAdapter {
     // endReason == FINISHED: A track finished (or died by an exception) - just start the next one
     // endReason == STOPPED: The player was stopped - makes no sense to start the next track
     // endReason == REPLACED: Another track started playing while this had not finished, do nothing
-    // endReason == CLEANUP: Player hasn't been queried for a while, if you want you can put a clone of this back to your queue
+    // endReason == CLEANUP: Player hasn't been queried for a while, if you want you can put a
+	                         clone of this back to your queue
   }
 
   @Override
