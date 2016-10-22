@@ -44,4 +44,16 @@ public class DataFormatTools {
     }
     return map;
   }
+
+  /**
+   * Returns the specified default value if the value itself is null.
+   *
+   * @param value Value to check
+   * @param defaultValue Default value to return if value is null
+   * @param <T> The type of the value
+   * @return Value or default value
+   */
+  public static <T> T defaultOnNull(T value, T defaultValue) {
+    return value == null ? defaultValue : value;
+  }
 }

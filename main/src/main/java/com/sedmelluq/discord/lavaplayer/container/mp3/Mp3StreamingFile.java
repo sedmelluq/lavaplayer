@@ -11,6 +11,10 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.ShortBuffer;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import static com.sedmelluq.discord.lavaplayer.natives.mp3.Mp3Decoder.HEADER_SIZE;
 import static com.sedmelluq.discord.lavaplayer.natives.mp3.Mp3Decoder.SAMPLES_PER_FRAME;
@@ -21,7 +25,10 @@ import static com.sedmelluq.discord.lavaplayer.natives.mp3.Mp3Decoder.SAMPLES_PE
 public class Mp3StreamingFile {
   private static final int HEADER_NOT_READ = 0;
 
-  private static final byte[] IDV3_TAG = new byte[] { 0x49, 0x44, 0x33 };
+  static final byte[] IDV3_TAG = new byte[] { 0x49, 0x44, 0x33 };
+  private static final int IDV3_FLAG_EXTENDED = 0x40;
+
+  private static final List<String> knownTextExtensions = Arrays.asList("TIT2", "TPE1");
 
   private final AudioProcessingContext context;
   private final SeekableInputStream inputStream;
@@ -31,6 +38,7 @@ public class Mp3StreamingFile {
   private final ByteBuffer inputBuffer;
   private final byte[] frameBuffer;
   private final byte[] scanBuffer;
+  private final Map<String, String> tags;
 
   private int frameBufferPosition;
   private int frameSize;
@@ -53,6 +61,7 @@ public class Mp3StreamingFile {
     this.frameBuffer = new byte[Mp3Decoder.getMaximumFrameSize()];
     this.mp3Decoder = new Mp3Decoder();
     this.scanBuffer = new byte[16];
+    this.tags = new HashMap<>();
   }
 
   /**
@@ -138,6 +147,16 @@ public class Mp3StreamingFile {
   }
 
   /**
+   * Gets an ID3 tag. These are loaded when parsing headers and only for a fixed list of tags.
+   *
+   * @param tagId The FourCC of the tag
+   * @return The value of the tag if present, otherwise null
+   */
+  public String getIdv3Tag(String tagId) {
+    return tags.get(tagId);
+  }
+
+  /**
    * Closes resources.
    */
   public void close() {
@@ -202,7 +221,7 @@ public class Mp3StreamingFile {
   }
 
   private boolean skipIdv3Tags() throws IOException {
-    dataInput.readFully(scanBuffer, 0, 4);
+    dataInput.readFully(scanBuffer, 0, 3);
 
     for (int i = 0; i < 3; i++) {
       if (scanBuffer[i] != IDV3_TAG[i]) {
@@ -210,18 +229,123 @@ public class Mp3StreamingFile {
       }
     }
 
-    if (scanBuffer[3] != 3 && scanBuffer[3] != 4) {
+    int majorVersion = dataInput.readByte() & 0xFF;
+    // Minor version
+    dataInput.readByte();
+
+    if (majorVersion < 3 && majorVersion > 5) {
       return false;
     }
 
-    dataInput.readShort();
+    int flags = dataInput.readByte() & 0xFF;
+    int tagsSize = readSyncProofInteger();
 
-    int tagsSize = (dataInput.readByte() & 0xFF) << 21
+    long tagsEndPosition = inputStream.getPosition() + tagsSize;
+
+    skipExtendedHeader(flags);
+
+    if (majorVersion < 5) {
+      parseIdv3Frames(tagsEndPosition);
+    }
+
+    inputStream.seek(tagsEndPosition);
+    return true;
+  }
+
+  private int readSyncProofInteger() throws IOException {
+    return (dataInput.readByte() & 0xFF) << 21
         | (dataInput.readByte() & 0xFF) << 14
         | (dataInput.readByte() & 0xFF) << 7
         | (dataInput.readByte() & 0xFF);
+  }
 
-    inputStream.seek(inputStream.getPosition() + tagsSize);
-    return true;
+  private void skipExtendedHeader(int flags) throws IOException {
+    if ((flags & IDV3_FLAG_EXTENDED) != 0) {
+      int size = readSyncProofInteger();
+
+      inputStream.seek(inputStream.getPosition() + size - 4);
+    }
+  }
+
+  private void parseIdv3Frames(long tagsEndPosition) throws IOException {
+    FrameHeader header;
+
+    while (inputStream.getPosition() + 10 <= tagsEndPosition && (header = readFrameHeader()) != null) {
+      long nextTagPosition = inputStream.getPosition() + header.size;
+
+      if (header.hasRawFormat() && knownTextExtensions.contains(header.id)) {
+        String text = parseIdv3TextContent(header.size);
+
+        if (text != null) {
+          tags.put(header.id, text);
+        }
+      }
+
+      inputStream.seek(nextTagPosition);
+    }
+  }
+
+  private String parseIdv3TextContent(int size) throws IOException {
+    int encoding = dataInput.readByte() & 0xFF;
+
+    byte[] data = new byte[size - 1];
+    dataInput.readFully(data);
+
+    boolean shortTerminator = data.length > 0 && data[data.length - 1] == 0;
+    boolean wideTerminator = data.length > 1 && data[data.length - 2] == 0 && shortTerminator;
+
+    switch (encoding) {
+      case 0:
+        return new String(data, 0, size - (shortTerminator ? 2 : 1), "ISO-8859-1");
+      case 1:
+        return new String(data, 0, size - (wideTerminator ? 3 : 1), "UTF-16");
+      case 2:
+        return new String(data, 0, size - (wideTerminator ? 3 : 1), "UTF-16BE");
+      case 3:
+        return new String(data, 0, size - (shortTerminator ? 2 : 1), "UTF-8");
+      default:
+        return null;
+    }
+  }
+
+  private FrameHeader readFrameHeader() throws IOException {
+    dataInput.readFully(scanBuffer, 0, 4);
+
+    if (scanBuffer[0] == 0) {
+      return null;
+    }
+
+    return new FrameHeader(new String(scanBuffer, 0, 4, "ISO-8859-1"), readSyncProofInteger(), dataInput.readUnsignedShort());
+  }
+
+  @SuppressWarnings("unused")
+  private static class FrameHeader {
+    private final String id;
+    private final int size;
+    private final boolean tagAlterPreservation;
+    private final boolean fileAlterPreservation;
+    private final boolean readOnly;
+    private final boolean groupingIdentity;
+    private final boolean compression;
+    private final boolean encryption;
+    private final boolean unsynchronization;
+    private final boolean dataLengthIndicator;
+
+    private FrameHeader(String id, int size, int flags) {
+      this.id = id;
+      this.size = size;
+      this.tagAlterPreservation = (flags & 0x4000) != 0;
+      this.fileAlterPreservation = (flags & 0x2000) != 0;
+      this.readOnly = (flags & 0x1000) != 0;
+      this.groupingIdentity = (flags & 0x0040) != 0;
+      this.compression = (flags & 0x0008) != 0;
+      this.encryption = (flags & 0x0004) != 0;
+      this.unsynchronization = (flags & 0x0002) != 0;
+      this.dataLengthIndicator = (flags & 0x0001) != 0;
+    }
+
+    private boolean hasRawFormat() {
+      return !compression && !encryption && !unsynchronization && !dataLengthIndicator;
+    }
   }
 }
