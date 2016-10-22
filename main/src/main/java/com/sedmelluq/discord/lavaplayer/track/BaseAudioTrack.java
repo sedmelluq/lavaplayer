@@ -1,5 +1,6 @@
 package com.sedmelluq.discord.lavaplayer.track;
 
+import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.source.AudioSourceManager;
 import com.sedmelluq.discord.lavaplayer.track.playback.AudioFrame;
 import com.sedmelluq.discord.lavaplayer.track.playback.AudioTrackExecutor;
@@ -103,6 +104,11 @@ public abstract class BaseAudioTrack implements InternalAudioTrack {
 
   @Override
   public AudioSourceManager getSourceManager() {
+    return null;
+  }
+
+  @Override
+  public AudioTrackExecutor createLocalExecutor(AudioPlayerManager playerManager) {
     return null;
   }
 }

@@ -1,5 +1,6 @@
 package com.sedmelluq.discord.lavaplayer.track;
 
+import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.track.playback.AudioFrameProvider;
 import com.sedmelluq.discord.lavaplayer.track.playback.AudioTrackExecutor;
 import com.sedmelluq.discord.lavaplayer.track.playback.LocalAudioTrackExecutor;
@@ -23,4 +24,11 @@ public interface InternalAudioTrack extends AudioTrack, AudioFrameProvider {
    * @param executor The local executor which processes this track
    */
   void process(LocalAudioTrackExecutor executor) throws Exception;
+
+  /**
+   * @param playerManager The player manager which is executing this track
+   * @return A custom local executor for this track. Unless this track requires a special executor, this should return
+   *         null as the default one will be used in that case.
+   */
+  AudioTrackExecutor createLocalExecutor(AudioPlayerManager playerManager);
 }

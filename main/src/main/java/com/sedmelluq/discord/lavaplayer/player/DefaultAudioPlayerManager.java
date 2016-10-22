@@ -279,7 +279,13 @@ public class DefaultAudioPlayerManager implements AudioPlayerManager {
     if (remoteNodeManager.isEnabled() && sourceManager != null && sourceManager.isTrackEncodable(track)) {
       return new RemoteAudioTrackExecutor(track, configuration, remoteNodeManager, volumeLevel);
     } else {
-      return new LocalAudioTrackExecutor(track, configuration, volumeLevel, useSeekGhosting, frameBufferDuration);
+      AudioTrackExecutor customExecutor = track.createLocalExecutor(this);
+
+      if (customExecutor != null) {
+        return customExecutor;
+      } else {
+        return new LocalAudioTrackExecutor(track, configuration, volumeLevel, useSeekGhosting, frameBufferDuration);
+      }
     }
   }
 
