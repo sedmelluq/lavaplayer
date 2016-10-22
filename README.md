@@ -11,7 +11,7 @@ Using in Gradle:
 ```groovy
 repositories {
   maven {
-    url "http://maven.sedmelluq.com"
+    url 'http://maven.sedmelluq.com'
   }
 }
 
