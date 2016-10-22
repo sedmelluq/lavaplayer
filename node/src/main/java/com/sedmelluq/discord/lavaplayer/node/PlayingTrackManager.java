@@ -9,6 +9,7 @@ import com.sedmelluq.discord.lavaplayer.remote.message.TrackStartResponseMessage
 import com.sedmelluq.discord.lavaplayer.remote.message.TrackFrameDataMessage;
 import com.sedmelluq.discord.lavaplayer.remote.message.TrackFrameRequestMessage;
 import com.sedmelluq.discord.lavaplayer.remote.message.TrackStoppedMessage;
+import com.sedmelluq.discord.lavaplayer.source.http.HttpAudioSourceManager;
 import com.sedmelluq.discord.lavaplayer.source.soundcloud.SoundCloudAudioSourceManager;
 import com.sedmelluq.discord.lavaplayer.source.youtube.YoutubeAudioSourceManager;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
@@ -51,6 +52,7 @@ public class PlayingTrackManager {
     manager.setUseSeekGhosting(false);
     manager.registerSourceManager(new YoutubeAudioSourceManager());
     manager.registerSourceManager(new SoundCloudAudioSourceManager());
+    manager.registerSourceManager(new HttpAudioSourceManager());
   }
 
   @MessageHandler
