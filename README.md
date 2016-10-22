@@ -173,7 +173,7 @@ In the previous example I did not actually start playing the loaded track yet, b
 player.playTrack(track);
 ```
 
-Now the track should be playing, which measn buffered for whoever needs it to poll its frames. However, you would need to somehow react to events, most notably the track finishing, so you could start the next track.
+Now the track should be playing, which means buffered for whoever needs it to poll its frames. However, you would need to somehow react to events, most notably the track finishing, so you could start the next track.
 
 #### Handling events
 
