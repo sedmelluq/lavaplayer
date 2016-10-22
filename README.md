@@ -144,7 +144,7 @@ playerManager.loadItem(identifier, new AudioLoadResultHandler() {
 
   @Override
   public void playlistLoaded(AudioPlaylist playlist) {
-    for (AudioTrack playlist : playlist.getTracks()) {
+    for (AudioTrack track : playlist.getTracks()) {
       trackScheduler.queue(track);
     }
   }
