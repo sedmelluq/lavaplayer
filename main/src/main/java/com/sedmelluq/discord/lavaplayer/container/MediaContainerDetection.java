@@ -20,7 +20,7 @@ public class MediaContainerDetection {
 
   private static final Logger log = LoggerFactory.getLogger(MediaContainerDetection.class);
 
-  private static final int HEAD_MARK_LIMIT = 128;
+  private static final int HEAD_MARK_LIMIT = 512;
 
   /**
    * @param identifier Identifier of the track, used in the AudioTrackInfo in result
@@ -66,19 +66,37 @@ public class MediaContainerDetection {
    * @throws IOException On IO error
    */
   public static boolean checkNextBytes(SeekableInputStream stream, int[] match) throws IOException {
+    return checkNextBytes(stream, match, true);
+  }
+
+  /**
+   * Checks the next bytes in the stream if they match the specified bytes. The input may contain -1 as byte value as
+   * a wildcard, which means the value of this byte does not matter.
+   *
+   * @param stream Input stream to read the bytes from
+   * @param match Bytes that the next bytes from input stream should match (-1 as wildcard
+   * @param rewind If set to true, restores the original position of the stream after checking
+   * @return True if the bytes matched
+   * @throws IOException On IO error
+   */
+  public static boolean checkNextBytes(SeekableInputStream stream, int[] match, boolean rewind) throws IOException {
     long position = stream.getPosition();
+    boolean result = true;
 
     for (int matchByte : match) {
       int inputByte = stream.read();
 
       if (inputByte == -1 || (matchByte != -1 && matchByte != inputByte)) {
-        stream.seek(position);
-        return false;
+        result = false;
+        break;
       }
     }
 
-    stream.seek(position);
-    return true;
+    if (rewind) {
+      stream.seek(position);
+    }
+
+    return result;
   }
 
   /**

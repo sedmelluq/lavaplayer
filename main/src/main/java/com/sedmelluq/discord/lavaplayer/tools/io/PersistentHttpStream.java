@@ -1,5 +1,6 @@
 package com.sedmelluq.discord.lavaplayer.tools.io;
 
+import org.apache.http.Header;
 import org.apache.http.HttpHeaders;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -94,7 +95,11 @@ public class PersistentHttpStream extends SeekableInputStream implements AutoClo
       currentContent = new BufferedInputStream(currentResponse.getEntity().getContent());
 
       if (contentLength == Long.MAX_VALUE) {
-        contentLength = Long.valueOf(currentResponse.getFirstHeader("Content-Length").getValue());
+        Header header = currentResponse.getFirstHeader("Content-Length");
+
+        if (header != null) {
+          contentLength = Long.valueOf(header.getValue());
+        }
       }
     }
   }

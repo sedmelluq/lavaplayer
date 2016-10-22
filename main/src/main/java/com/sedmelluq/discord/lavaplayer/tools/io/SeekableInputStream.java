@@ -1,5 +1,6 @@
 package com.sedmelluq.discord.lavaplayer.tools.io;
 
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -26,6 +27,9 @@ public abstract class SeekableInputStream extends InputStream {
     return contentLength;
   }
 
+  /**
+   * @return Maximum distance that this stream will skip without doing a direct seek on the underlying resource.
+   */
   public long getMaxSkipDistance() {
     return maxSkipDistance;
   }
@@ -37,7 +41,13 @@ public abstract class SeekableInputStream extends InputStream {
 
   protected abstract void seekHard(long position) throws IOException;
 
-  private void skipFully(long distance) throws IOException {
+  /**
+   * Skip the specified number of bytes in the stream. The result is either that the requested number of bytes were
+   * skipped or an EOFException was thrown.
+   * @param distance The number of bytes to skip
+   * @throws IOException On IO error
+   */
+  public void skipFully(long distance) throws IOException {
     long current = getPosition();
     long target = current + distance;
 
@@ -45,7 +55,7 @@ public abstract class SeekableInputStream extends InputStream {
       long skipped = skip(target - current);
 
       if (skipped == 0) {
-        throw new IOException("Cannot skip any further.");
+        throw new EOFException("Cannot skip any further.");
       }
 
       current += skipped;

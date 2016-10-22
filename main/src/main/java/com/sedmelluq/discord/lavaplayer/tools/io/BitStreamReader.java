@@ -38,6 +38,7 @@ public class BitStreamReader {
       value |= (currentByte >> (bitsLeft - chunk)) & mask;
 
       bitsNeeded -= chunk;
+      bitsLeft -= chunk;
     }
 
     return value;
@@ -55,12 +56,16 @@ public class BitStreamReader {
 
   private void fill() throws IOException {
     if (bitsLeft == 0) {
-      currentByte = stream.read();
+      currentByte = readByte();
       bitsLeft = 8;
 
       if (currentByte == -1) {
         throw new EOFException("Bit stream needs more bytes");
       }
     }
+  }
+
+  protected int readByte() throws IOException {
+    return stream.read();
   }
 }

@@ -16,16 +16,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static com.sedmelluq.discord.lavaplayer.natives.mp3.Mp3Decoder.HEADER_SIZE;
 import static com.sedmelluq.discord.lavaplayer.natives.mp3.Mp3Decoder.SAMPLES_PER_FRAME;
 
 /**
  * Handles parsing MP3 files, seeking and sending the decoded frames to the specified frame consumer.
  */
 public class Mp3StreamingFile {
-  private static final int HEADER_NOT_READ = 0;
-
-  static final byte[] IDV3_TAG = new byte[] { 0x49, 0x44, 0x33 };
+  private static final byte[] IDV3_TAG = new byte[] { 0x49, 0x44, 0x33 };
   private static final int IDV3_FLAG_EXTENDED = 0x40;
 
   private static final List<String> knownTextExtensions = Arrays.asList("TIT2", "TPE1");
@@ -37,11 +34,9 @@ public class Mp3StreamingFile {
   private final ShortBuffer outputBuffer;
   private final ByteBuffer inputBuffer;
   private final byte[] frameBuffer;
-  private final byte[] scanBuffer;
+  private final byte[] tagHeaderBuffer;
+  private final Mp3FrameReader frameReader;
   private final Map<String, String> tags;
-
-  private int frameBufferPosition;
-  private int frameSize;
 
   private int sampleRate;
   private ShortPcmAudioFilter downstream;
@@ -59,8 +54,9 @@ public class Mp3StreamingFile {
     this.outputBuffer = ByteBuffer.allocateDirect((int) SAMPLES_PER_FRAME * 4).order(ByteOrder.nativeOrder()).asShortBuffer();
     this.inputBuffer = ByteBuffer.allocateDirect(Mp3Decoder.getMaximumFrameSize());
     this.frameBuffer = new byte[Mp3Decoder.getMaximumFrameSize()];
+    this.tagHeaderBuffer = new byte[4];
+    this.frameReader = new Mp3FrameReader(inputStream, frameBuffer);
     this.mp3Decoder = new Mp3Decoder();
-    this.scanBuffer = new byte[16];
     this.tags = new HashMap<>();
   }
 
@@ -69,9 +65,9 @@ public class Mp3StreamingFile {
    * @throws IOException On read error
    */
   public void parseHeaders() throws IOException {
-    boolean headerInBuffer = !skipIdv3Tags();
+    skipIdv3Tags();
 
-    if (!scanForFrame(headerInBuffer, 2048)) {
+    if (!frameReader.scanForFrame(2048)) {
       throw new IllegalStateException("File ended before the first frame was found.");
     }
 
@@ -82,9 +78,8 @@ public class Mp3StreamingFile {
   }
 
   private void initialiseSeeker() throws IOException {
-    long startPosition = inputStream.getPosition() - frameBufferPosition;
-    dataInput.readFully(frameBuffer, frameBufferPosition, frameSize - frameBufferPosition);
-    frameBufferPosition = frameSize;
+    long startPosition = frameReader.getFrameStartPosition();
+    frameReader.fillFrameBuffer();
 
     seeker = Mp3XingSeeker.createFromFrame(startPosition, inputStream.getContentLength(), frameBuffer);
     if (seeker == null) {
@@ -99,14 +94,12 @@ public class Mp3StreamingFile {
   public void provideFrames() throws InterruptedException {
     try {
       while (true) {
-        if (frameSize == HEADER_NOT_READ && !scanForFrame(false, Integer.MAX_VALUE)) {
+        if (!frameReader.fillFrameBuffer()) {
           break;
         }
 
-        dataInput.readFully(frameBuffer, frameBufferPosition, frameSize - frameBufferPosition);
-
         inputBuffer.clear();
-        inputBuffer.put(frameBuffer, 0, frameSize);
+        inputBuffer.put(frameBuffer, 0, frameReader.getFrameSize());
         inputBuffer.flip();
 
         int produced = mp3Decoder.decode(inputBuffer, outputBuffer);
@@ -115,7 +108,7 @@ public class Mp3StreamingFile {
           downstream.process(outputBuffer);
         }
 
-        frameSize = HEADER_NOT_READ;
+        frameReader.nextFrame();
       }
     } catch (IOException e) {
       throw new RuntimeException(e);
@@ -132,8 +125,7 @@ public class Mp3StreamingFile {
       long actualTimecode = frameIndex * SAMPLES_PER_FRAME * 1000 / sampleRate;
       downstream.seekPerformed(timecode, actualTimecode);
 
-      frameBufferPosition = 0;
-      frameSize = HEADER_NOT_READ;
+      frameReader.nextFrame();
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
@@ -167,65 +159,13 @@ public class Mp3StreamingFile {
     mp3Decoder.close();
   }
 
-  private boolean scanForFrame(boolean headerInBuffer, int bytesToCheck) throws IOException {
-    int bytesInBuffer = headerInBuffer ? HEADER_SIZE : 0;
-
-    if (parseFrameAt(bytesInBuffer)) {
-      return true;
-    }
-
-    return runFrameScanLoop(bytesToCheck - bytesInBuffer, bytesInBuffer);
-  }
-
-  private boolean runFrameScanLoop(int bytesToCheck, int bytesInBuffer) throws IOException {
-    while (bytesToCheck > 0) {
-      for (int i = bytesInBuffer; i < scanBuffer.length && bytesToCheck > 0; i++) {
-        int next = inputStream.read();
-        if (next == -1) {
-          return false;
-        }
-
-        scanBuffer[i] = (byte) (next & 0xFF);
-        bytesToCheck--;
-
-        if (parseFrameAt(i + 1)) {
-          return true;
-        }
-      }
-
-      bytesInBuffer = copyScanBufferEndToBeginning();
-    }
-
-    throw new IllegalStateException("Mp3 frame not found.");
-  }
-
-  private int copyScanBufferEndToBeginning() {
-    for (int i = 0; i < HEADER_SIZE - 1; i++) {
-      scanBuffer[i] = scanBuffer[scanBuffer.length - HEADER_SIZE + i + 1];
-    }
-
-    return HEADER_SIZE - 1;
-  }
-
-  private boolean parseFrameAt(int scanOffset) {
-    if (scanOffset >= HEADER_SIZE && (frameSize = Mp3Decoder.getFrameSize(scanBuffer, scanOffset - HEADER_SIZE)) > 0) {
-      for (int i = 0; i < HEADER_SIZE; i++) {
-        frameBuffer[i] = scanBuffer[scanOffset - HEADER_SIZE + i];
-      }
-
-      frameBufferPosition = HEADER_SIZE;
-      return true;
-    }
-
-    return false;
-  }
-
-  private boolean skipIdv3Tags() throws IOException {
-    dataInput.readFully(scanBuffer, 0, 3);
+  private void skipIdv3Tags() throws IOException {
+    dataInput.readFully(tagHeaderBuffer, 0, 3);
 
     for (int i = 0; i < 3; i++) {
-      if (scanBuffer[i] != IDV3_TAG[i]) {
-        return false;
+      if (tagHeaderBuffer[i] != IDV3_TAG[i]) {
+        frameReader.appendToScanBuffer(tagHeaderBuffer, 0, 3);
+        return;
       }
     }
 
@@ -234,7 +174,7 @@ public class Mp3StreamingFile {
     dataInput.readByte();
 
     if (majorVersion < 3 && majorVersion > 5) {
-      return false;
+      return;
     }
 
     int flags = dataInput.readByte() & 0xFF;
@@ -249,7 +189,6 @@ public class Mp3StreamingFile {
     }
 
     inputStream.seek(tagsEndPosition);
-    return true;
   }
 
   private int readSyncProofInteger() throws IOException {
@@ -309,13 +248,13 @@ public class Mp3StreamingFile {
   }
 
   private FrameHeader readFrameHeader() throws IOException {
-    dataInput.readFully(scanBuffer, 0, 4);
+    dataInput.readFully(tagHeaderBuffer, 0, 4);
 
-    if (scanBuffer[0] == 0) {
+    if (tagHeaderBuffer[0] == 0) {
       return null;
     }
 
-    return new FrameHeader(new String(scanBuffer, 0, 4, "ISO-8859-1"), readSyncProofInteger(), dataInput.readUnsignedShort());
+    return new FrameHeader(new String(tagHeaderBuffer, 0, 4, "ISO-8859-1"), readSyncProofInteger(), dataInput.readUnsignedShort());
   }
 
   @SuppressWarnings("unused")

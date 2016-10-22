@@ -33,7 +33,13 @@ public class Mp3ContainerProbe implements MediaContainerProbe {
   @Override
   public MediaContainerDetection.Result probe(String identifier, SeekableInputStream inputStream) throws IOException {
     if (!checkNextBytes(inputStream, ID3_TAG)) {
-      return null;
+      byte[] frameHeader = new byte[4];
+      Mp3FrameReader frameReader = new Mp3FrameReader(inputStream, frameHeader);
+      if (!frameReader.scanForFrame(500)) {
+        return null;
+      }
+
+      inputStream.seek(0);
     }
 
     log.debug("Track {} is an MP3 file.", identifier);

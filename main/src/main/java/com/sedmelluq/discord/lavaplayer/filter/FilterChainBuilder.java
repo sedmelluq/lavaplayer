@@ -35,6 +35,27 @@ public class FilterChainBuilder {
 
   /**
    * @param context Configuration and output information for processing
+   * @param frequency Frequency of the input data
+   * @return Filter which accepts short PCM buffers
+   */
+  public static SplitShortPcmAudioFilter forSplitShortPcm(AudioProcessingContext context, int frequency) {
+    OpusEncodingPcmAudioFilter opusEncoder = new OpusEncodingPcmAudioFilter(context);
+    SplitShortPcmAudioFilter filter;
+
+    int outChannels = OpusEncodingPcmAudioFilter.CHANNEL_COUNT;
+
+    if (frequency != OpusEncodingPcmAudioFilter.FREQUENCY) {
+      filter = new ShortToFloatPcmAudioFilter(outChannels, new ResamplingPcmAudioFilter(context.configuration, outChannels,
+          opusEncoder, frequency, OpusEncodingPcmAudioFilter.FREQUENCY));
+    } else {
+      filter = opusEncoder;
+    }
+
+    return filter;
+  }
+
+  /**
+   * @param context Configuration and output information for processing
    * @param channels Number of channels in the input data
    * @param frequency Frequency of the input data
    * @return Filter which accepts float PCM buffers

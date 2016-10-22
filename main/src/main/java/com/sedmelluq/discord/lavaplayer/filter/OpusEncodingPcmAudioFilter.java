@@ -15,7 +15,7 @@ import java.nio.ShortBuffer;
 /**
  * Encodes the input audio samples to OPUS frames and passes them to a frame consumer.
  */
-public class OpusEncodingPcmAudioFilter implements FloatPcmAudioFilter, ShortPcmAudioFilter {
+public class OpusEncodingPcmAudioFilter implements FloatPcmAudioFilter, ShortPcmAudioFilter, SplitShortPcmAudioFilter {
   private static final Logger log = LoggerFactory.getLogger(OpusEncodingPcmAudioFilter.class);
   private static final short[] zeroPadding = new short[128];
 
@@ -94,6 +94,22 @@ public class OpusEncodingPcmAudioFilter implements FloatPcmAudioFilter, ShortPcm
         ignoredFrames--;
       } else {
         frameBuffer.put(input[offset + i]);
+
+        dispatch();
+      }
+    }
+  }
+
+  @Override
+  public void process(short[][] input, int offset, int length) throws InterruptedException {
+    int secondChannelIndex = Math.min(1, input.length - 1);
+
+    for (int i = 0; i < length; i++) {
+      if (ignoredFrames > 0) {
+        ignoredFrames -= 2;
+      } else {
+        frameBuffer.put(input[0][offset + i]);
+        frameBuffer.put(input[secondChannelIndex][offset + i]);
 
         dispatch();
       }
