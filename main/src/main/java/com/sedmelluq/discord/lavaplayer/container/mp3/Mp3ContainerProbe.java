@@ -38,7 +38,7 @@ public class Mp3ContainerProbe implements MediaContainerProbe {
     try {
       file.parseHeaders();
 
-      return new MediaContainerDetection.Result(this, new AudioTrackInfo("unknown", "unknown", (int) file.estimateDuration(), identifier));
+      return new MediaContainerDetection.Result(this, new AudioTrackInfo("unknown", "unknown", (int) file.getDuration(), identifier));
     } finally {
       file.close();
     }

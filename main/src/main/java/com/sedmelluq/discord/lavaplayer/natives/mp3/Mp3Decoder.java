@@ -9,7 +9,7 @@ import java.nio.ShortBuffer;
  * A wrapper around the native methods of OpusDecoderLibrary.
  */
 public class Mp3Decoder extends NativeResourceHolder {
-  public static final int SAMPLES_PER_FRAME = 1152;
+  public static final long SAMPLES_PER_FRAME = 1152;
   public static final int HEADER_SIZE = 4;
 
   private final Mp3DecoderLibrary library;

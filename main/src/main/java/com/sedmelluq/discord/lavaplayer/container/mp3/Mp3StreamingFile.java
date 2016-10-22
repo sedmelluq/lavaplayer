@@ -19,6 +19,8 @@ import static com.sedmelluq.discord.lavaplayer.natives.mp3.Mp3Decoder.SAMPLES_PE
  * Handles parsing MP3 files, seeking and sending the decoded frames to the specified frame consumer.
  */
 public class Mp3StreamingFile {
+  private static final int HEADER_NOT_READ = 0;
+
   private static final byte[] IDV3_TAG = new byte[] { 0x49, 0x44, 0x33 };
 
   private final AudioProcessingContext context;
@@ -27,11 +29,15 @@ public class Mp3StreamingFile {
   private final Mp3Decoder mp3Decoder;
   private final ShortBuffer outputBuffer;
   private final ByteBuffer inputBuffer;
-  private final byte[] inputBufferBytes;
+  private final byte[] frameBuffer;
   private final byte[] scanBuffer;
 
-  private Configuration track;
-  private int nextFrameSize;
+  private int frameBufferPosition;
+  private int frameSize;
+
+  private int sampleRate;
+  private ShortPcmAudioFilter downstream;
+  private Mp3Seeker seeker;
 
   /**
    * @param context Configuration and output information for processing. May be null in case no frames are read and this
@@ -42,9 +48,9 @@ public class Mp3StreamingFile {
     this.context = context;
     this.inputStream = inputStream;
     this.dataInput = new DataInputStream(inputStream);
-    this.outputBuffer = ByteBuffer.allocateDirect(SAMPLES_PER_FRAME * 4).order(ByteOrder.nativeOrder()).asShortBuffer();
+    this.outputBuffer = ByteBuffer.allocateDirect((int) SAMPLES_PER_FRAME * 4).order(ByteOrder.nativeOrder()).asShortBuffer();
     this.inputBuffer = ByteBuffer.allocateDirect(Mp3Decoder.getMaximumFrameSize());
-    this.inputBufferBytes = new byte[Mp3Decoder.getMaximumFrameSize()];
+    this.frameBuffer = new byte[Mp3Decoder.getMaximumFrameSize()];
     this.mp3Decoder = new Mp3Decoder();
     this.scanBuffer = new byte[16];
   }
@@ -55,15 +61,26 @@ public class Mp3StreamingFile {
    */
   public void parseHeaders() throws IOException {
     boolean headerInBuffer = !skipIdv3Tags();
-    int scanOffset = scanForFrame(headerInBuffer, 2048);
-    int sampleRate = Mp3Decoder.getFrameSampleRate(scanBuffer, scanOffset);
 
-    track = new Configuration(
-        inputStream.getPosition() - 4,
-        sampleRate,
-        context != null ? FilterChainBuilder.forShortPcm(context, 2, sampleRate, true) : null,
-        Mp3Decoder.getAverageFrameSize(scanBuffer, scanOffset)
-    );
+    if (!scanForFrame(headerInBuffer, 2048)) {
+      throw new IllegalStateException("File ended before the first frame was found.");
+    }
+
+    sampleRate = Mp3Decoder.getFrameSampleRate(frameBuffer, 0);
+    downstream = context != null ? FilterChainBuilder.forShortPcm(context, 2, sampleRate, true) : null;
+
+    initialiseSeeker();
+  }
+
+  private void initialiseSeeker() throws IOException {
+    long startPosition = inputStream.getPosition() - frameBufferPosition;
+    dataInput.readFully(frameBuffer, frameBufferPosition, frameSize - frameBufferPosition);
+    frameBufferPosition = frameSize;
+
+    seeker = Mp3XingSeeker.createFromFrame(startPosition, inputStream.getContentLength(), frameBuffer);
+    if (seeker == null) {
+      seeker = Mp3ConstantRateSeeker.createFromFrame(startPosition, inputStream.getContentLength(), frameBuffer);
+    }
   }
 
   /**
@@ -73,21 +90,23 @@ public class Mp3StreamingFile {
   public void provideFrames() throws InterruptedException {
     try {
       while (true) {
-        if (nextFrameSize == 0 && scanForFrame(false, 4) < 0) {
+        if (frameSize == HEADER_NOT_READ && !scanForFrame(false, Integer.MAX_VALUE)) {
           break;
         }
 
-        dataInput.readFully(inputBufferBytes, 0, nextFrameSize - 4);
-        inputBuffer.put(inputBufferBytes, 0, nextFrameSize - 4);
+        dataInput.readFully(frameBuffer, frameBufferPosition, frameSize - frameBufferPosition);
+
+        inputBuffer.clear();
+        inputBuffer.put(frameBuffer, 0, frameSize);
         inputBuffer.flip();
 
         int produced = mp3Decoder.decode(inputBuffer, outputBuffer);
 
         if (produced > 0) {
-          track.downstream.process(outputBuffer);
+          downstream.process(outputBuffer);
         }
 
-        nextFrameSize = 0;
+        frameSize = HEADER_NOT_READ;
       }
     } catch (IOException e) {
       throw new RuntimeException(e);
@@ -100,17 +119,12 @@ public class Mp3StreamingFile {
    */
   public void seekToTimecode(long timecode) {
     try {
-      long maximumFrameCount = getMaximumFrameCount();
+      long frameIndex = seeker.seekAndGetFrameIndex(timecode, inputStream);
+      long actualTimecode = frameIndex * SAMPLES_PER_FRAME * 1000 / sampleRate;
+      downstream.seekPerformed(timecode, actualTimecode);
 
-      long sampleIndex = timecode * track.sampleRate / 1000;
-      long frameIndex = Math.min(sampleIndex / SAMPLES_PER_FRAME, maximumFrameCount);
-
-      long seekPosition = (long) (frameIndex * track.averageFrameSize) - 8;
-      inputStream.seek(track.startPosition + seekPosition);
-      scanForFrame(false, 16);
-
-      long actualTimecode = frameIndex * SAMPLES_PER_FRAME * 1000 / track.sampleRate;
-      track.downstream.seekPerformed(timecode, actualTimecode);
+      frameBufferPosition = 0;
+      frameSize = HEADER_NOT_READ;
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
@@ -119,47 +133,44 @@ public class Mp3StreamingFile {
   /**
    * @return An estimated duration of the file in milliseconds
    */
-  public long estimateDuration() {
-    return getMaximumFrameCount() * SAMPLES_PER_FRAME * 1000 / track.sampleRate;
-  }
-
-  private long getMaximumFrameCount() {
-    return (long) ((inputStream.getContentLength() - track.startPosition + 8) / track.averageFrameSize);
+  public long getDuration() {
+    return seeker.getDuration();
   }
 
   /**
    * Closes resources.
    */
   public void close() {
-    if (track != null) {
-      track.downstream.close();
+    if (downstream != null) {
+      downstream.close();
     }
+
     mp3Decoder.close();
   }
 
-  private int scanForFrame(boolean headerInBuffer, int bytesToCheck) throws IOException {
+  private boolean scanForFrame(boolean headerInBuffer, int bytesToCheck) throws IOException {
     int bytesInBuffer = headerInBuffer ? HEADER_SIZE : 0;
 
     if (parseFrameAt(bytesInBuffer)) {
-      return bytesInBuffer - HEADER_SIZE;
+      return true;
     }
 
     return runFrameScanLoop(bytesToCheck - bytesInBuffer, bytesInBuffer);
   }
 
-  private int runFrameScanLoop(int bytesToCheck, int bytesInBuffer) throws IOException {
+  private boolean runFrameScanLoop(int bytesToCheck, int bytesInBuffer) throws IOException {
     while (bytesToCheck > 0) {
       for (int i = bytesInBuffer; i < scanBuffer.length && bytesToCheck > 0; i++) {
         int next = inputStream.read();
         if (next == -1) {
-          return -1;
+          return false;
         }
 
         scanBuffer[i] = (byte) (next & 0xFF);
         bytesToCheck--;
 
         if (parseFrameAt(i + 1)) {
-          return i + 1 - HEADER_SIZE;
+          return true;
         }
       }
 
@@ -178,9 +189,12 @@ public class Mp3StreamingFile {
   }
 
   private boolean parseFrameAt(int scanOffset) {
-    if (scanOffset >= HEADER_SIZE && (nextFrameSize = Mp3Decoder.getFrameSize(scanBuffer, scanOffset - HEADER_SIZE)) > 0) {
-      inputBuffer.clear();
-      inputBuffer.put(scanBuffer, scanOffset - HEADER_SIZE, HEADER_SIZE);
+    if (scanOffset >= HEADER_SIZE && (frameSize = Mp3Decoder.getFrameSize(scanBuffer, scanOffset - HEADER_SIZE)) > 0) {
+      for (int i = 0; i < HEADER_SIZE; i++) {
+        frameBuffer[i] = scanBuffer[scanOffset - HEADER_SIZE + i];
+      }
+
+      frameBufferPosition = HEADER_SIZE;
       return true;
     }
 
@@ -209,19 +223,5 @@ public class Mp3StreamingFile {
 
     inputStream.seek(inputStream.getPosition() + tagsSize);
     return true;
-  }
-
-  private static class Configuration {
-    private final long startPosition;
-    private final int sampleRate;
-    private final ShortPcmAudioFilter downstream;
-    private final double averageFrameSize;
-
-    private Configuration(long startPosition, int sampleRate, ShortPcmAudioFilter downstream, double averageFrameSize) {
-      this.startPosition = startPosition;
-      this.sampleRate = sampleRate;
-      this.downstream = downstream;
-      this.averageFrameSize = averageFrameSize;
-    }
   }
 }
