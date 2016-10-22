@@ -93,6 +93,7 @@ public class AudioPlayer implements AudioFrameProvider, TrackStateListener {
       previousTrack = activeTrack.getAndSet(newTrack);
     }
 
+    lastRequestTime = System.currentTimeMillis();
     lastReceiveTime = System.nanoTime();
     stuckEventSent = false;
 

@@ -10,6 +10,8 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 
+import static com.sedmelluq.discord.lavaplayer.container.MediaContainerDetection.UNKNOWN_ARTIST;
+import static com.sedmelluq.discord.lavaplayer.container.MediaContainerDetection.UNKNOWN_TITLE;
 import static com.sedmelluq.discord.lavaplayer.container.MediaContainerDetection.checkNextBytes;
 import static com.sedmelluq.discord.lavaplayer.tools.DataFormatTools.defaultOnNull;
 
@@ -42,8 +44,8 @@ public class Mp3ContainerProbe implements MediaContainerProbe {
       file.parseHeaders();
 
       return new MediaContainerDetection.Result(this, new AudioTrackInfo(
-          defaultOnNull(file.getIdv3Tag(TITLE_TAG), "Unknown title"),
-          defaultOnNull(file.getIdv3Tag(ARTIST_TAG), "Unknown artist"),
+          defaultOnNull(file.getIdv3Tag(TITLE_TAG), UNKNOWN_TITLE),
+          defaultOnNull(file.getIdv3Tag(ARTIST_TAG), UNKNOWN_ARTIST),
           (int) file.getDuration(),
           identifier
       ));

@@ -25,6 +25,7 @@ public class PersistentHttpStream extends SeekableInputStream implements AutoClo
 
   private final CloseableHttpClient httpClient;
   protected final URI contentUrl;
+  private int lastStatusCode;
   private CloseableHttpResponse currentResponse;
   private InputStream currentContent;
   protected long position;
@@ -40,6 +41,20 @@ public class PersistentHttpStream extends SeekableInputStream implements AutoClo
     this.httpClient = httpClient;
     this.contentUrl = contentUrl;
     this.position = 0;
+  }
+
+  /**
+   * Connect and return status code or return last status code if already connected. This causes the internal status
+   * code checker to be disabled, so non-success status codes will be returned instead of being thrown as they would
+   * be otherwise.
+   *
+   * @return The status code when connecting to the URL
+   * @throws IOException On IO error
+   */
+  public int checkStatusCode() throws IOException {
+    connect(true);
+
+    return lastStatusCode;
   }
 
   protected URI getConnectUrl() {
@@ -67,10 +82,15 @@ public class PersistentHttpStream extends SeekableInputStream implements AutoClo
     return request;
   }
 
-  private void connect() throws IOException {
+  private void connect(boolean skipStatusCheck) throws IOException {
     if (currentResponse == null) {
       currentResponse = httpClient.execute(getConnectRequest());
-      validateStatusCode(currentResponse);
+      lastStatusCode = currentResponse.getStatusLine().getStatusCode();
+
+      if (!skipStatusCheck) {
+        validateStatusCode(currentResponse);
+      }
+
       currentContent = new BufferedInputStream(currentResponse.getEntity().getContent());
 
       if (contentLength == Long.MAX_VALUE) {
@@ -88,7 +108,7 @@ public class PersistentHttpStream extends SeekableInputStream implements AutoClo
   }
 
   private int internalRead(boolean attemptReconnect) throws IOException {
-    connect();
+    connect(false);
 
     try {
       int result = currentContent.read();
@@ -108,7 +128,7 @@ public class PersistentHttpStream extends SeekableInputStream implements AutoClo
   }
 
   private int internalRead(byte[] b, int off, int len, boolean attemptReconnect) throws IOException {
-    connect();
+    connect(false);
 
     try {
       int result = currentContent.read(b, off, len);
@@ -128,7 +148,7 @@ public class PersistentHttpStream extends SeekableInputStream implements AutoClo
   }
 
   private long internalSkip(long n, boolean attemptReconnect) throws IOException {
-    connect();
+    connect(false);
 
     try {
       long result = currentContent.skip(n);
@@ -148,7 +168,7 @@ public class PersistentHttpStream extends SeekableInputStream implements AutoClo
   }
 
   private int internalAvailable(boolean attemptReconnect) throws IOException {
-    connect();
+    connect(false);
 
     try {
       return currentContent.available();

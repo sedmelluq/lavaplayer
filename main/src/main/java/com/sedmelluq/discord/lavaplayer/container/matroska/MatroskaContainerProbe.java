@@ -13,6 +13,8 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 
+import static com.sedmelluq.discord.lavaplayer.container.MediaContainerDetection.UNKNOWN_ARTIST;
+import static com.sedmelluq.discord.lavaplayer.container.MediaContainerDetection.UNKNOWN_TITLE;
 import static com.sedmelluq.discord.lavaplayer.container.MediaContainerDetection.checkNextBytes;
 
 /**
@@ -48,7 +50,7 @@ public class MatroskaContainerProbe implements MediaContainerProbe {
       return new MediaContainerDetection.Result(this, "No supported audio tracks present in the file.");
     }
 
-    return new MediaContainerDetection.Result(this, new AudioTrackInfo("unknown", "unknown", (int) file.getDuration(), identifier));
+    return new MediaContainerDetection.Result(this, new AudioTrackInfo(UNKNOWN_TITLE, UNKNOWN_ARTIST, (int) file.getDuration(), identifier));
   }
 
   private boolean hasSupportedAudioTrack(MatroskaStreamingFile file) {

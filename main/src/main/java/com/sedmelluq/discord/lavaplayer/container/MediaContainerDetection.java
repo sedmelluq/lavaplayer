@@ -15,6 +15,9 @@ import static com.sedmelluq.discord.lavaplayer.tools.FriendlyException.Severity.
  * Detects the container used by a file and whether the specific file is supported for playback.
  */
 public class MediaContainerDetection {
+  public static final String UNKNOWN_TITLE = "Unknown title";
+  public static final String UNKNOWN_ARTIST = "Unknown artist";
+
   private static final Logger log = LoggerFactory.getLogger(MediaContainerDetection.class);
 
   private static final int HEAD_MARK_LIMIT = 128;
