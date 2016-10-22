@@ -72,6 +72,8 @@ public class LocalAudioTrackExecutor implements AudioTrackExecutor {
 
         log.info("Playing track {} finished or was stopped.", audioTrack.getIdentifier());
       } catch (Throwable e) {
+        frameBuffer.setTerminateOnEmpty();
+
         FriendlyException exception = ExceptionTools.wrapUnfriendlyExceptions("Something broke when playing the track.", FAULT, e);
         ExceptionTools.log(log, exception, "playback of " + audioTrack.getIdentifier());
 
