@@ -110,10 +110,11 @@ public class FlacSubFrameReader {
         }
         break;
       case 4:
-      default:
         for (int i = order; i < sampleCount; i++) {
           buffer[i] += ((buffer[i - 1] + buffer[i - 3]) << 2) - ((buffer[i - 2] << 2) + (buffer[i - 2] << 1)) - buffer[i - 4];
         }
+        break;
+      default:
         break;
     }
   }
