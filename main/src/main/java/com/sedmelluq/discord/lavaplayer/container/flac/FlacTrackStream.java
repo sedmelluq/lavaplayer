@@ -1,5 +1,6 @@
 package com.sedmelluq.discord.lavaplayer.container.flac;
 
+import com.sedmelluq.discord.lavaplayer.container.flac.frame.FlacFrameReader;
 import com.sedmelluq.discord.lavaplayer.filter.FilterChainBuilder;
 import com.sedmelluq.discord.lavaplayer.filter.SplitShortPcmAudioFilter;
 import com.sedmelluq.discord.lavaplayer.tools.io.BitStreamReader;
@@ -16,6 +17,9 @@ public class FlacTrackStream {
   private final SeekableInputStream inputStream;
   private final SplitShortPcmAudioFilter downstream;
   private final BitStreamReader bitStreamReader;
+  private final int[] decodingBuffer;
+  private final int[][] rawSampleBuffers;
+  private final short[][] sampleBuffers;
 
   /**
    * @param context Configuration and output information for processing
@@ -27,6 +31,14 @@ public class FlacTrackStream {
     this.inputStream = inputStream;
     this.downstream = FilterChainBuilder.forSplitShortPcm(context, info.stream.sampleRate);
     this.bitStreamReader = new BitStreamReader(inputStream);
+    this.decodingBuffer = new int[FlacFrameReader.TEMPORARY_BUFFER_SIZE];
+    this.rawSampleBuffers = new int[info.stream.channelCount][];
+    this.sampleBuffers = new short[info.stream.channelCount][];
+
+    for (int i = 0; i < rawSampleBuffers.length; i++) {
+      rawSampleBuffers[i] = new int[info.stream.maximumBlockSize];
+      sampleBuffers[i] = new short[info.stream.maximumBlockSize];
+    }
   }
 
   /**
@@ -35,41 +47,18 @@ public class FlacTrackStream {
    */
   public void provideFrames() throws InterruptedException {
     try {
-      FlacFrameInfo frameInfo = parseFrameHeader();
-      if (frameInfo == null) {
-        return;
-      }
+      int sampleCount;
 
-      processFrame(frameInfo);
+      while ((sampleCount = readFlacFrame()) != 0) {
+        downstream.process(sampleBuffers, 0, sampleCount);
+      }
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
   }
 
-  private FlacFrameInfo parseFrameHeader() throws IOException {
-    if (!skipToFrameSync()) {
-      return null;
-    }
-
-    return FlacFrameHeaderReader.readFrameHeader(bitStreamReader, info.stream);
-  }
-
-  private boolean skipToFrameSync() throws IOException {
-    int lastByte = -1;
-    int currentByte;
-
-    while ((currentByte = inputStream.read()) != -1) {
-      if (lastByte == 0xFF && (currentByte & 0xFE) == 0xFE) {
-        return true;
-      }
-      lastByte = currentByte;
-    }
-
-    return false;
-  }
-
-  private void processFrame(FlacFrameInfo frameInfo) throws IOException {
-    // TODO: Finish this
+  private int readFlacFrame() throws IOException {
+    return FlacFrameReader.readFlacFrame(inputStream, bitStreamReader, info.stream, rawSampleBuffers, sampleBuffers, decodingBuffer);
   }
 
   /**

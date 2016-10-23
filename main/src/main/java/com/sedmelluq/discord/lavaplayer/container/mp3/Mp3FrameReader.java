@@ -35,11 +35,13 @@ public class Mp3FrameReader {
 
   /**
    * @param bytesToCheck The maximum number of bytes to check before throwing an IllegalStateException
+   * @param throwOnLimit Whether to throw an exception when maximum number of bytes is reached, but no frame has been
+   *                     found and EOF has not been reached.
    * @return True if a frame was found, false if EOF was encountered.
    * @throws IOException On IO error
    * @throws IllegalStateException If the maximum number of bytes to check was reached before a frame was found
    */
-  public boolean scanForFrame(int bytesToCheck) throws IOException {
+  public boolean scanForFrame(int bytesToCheck, boolean throwOnLimit) throws IOException {
     int bytesInBuffer = scanBufferPosition;
     scanBufferPosition = 0;
 
@@ -48,10 +50,10 @@ public class Mp3FrameReader {
       return true;
     }
 
-    return runFrameScanLoop(bytesToCheck - bytesInBuffer, bytesInBuffer);
+    return runFrameScanLoop(bytesToCheck - bytesInBuffer, bytesInBuffer, throwOnLimit);
   }
 
-  private boolean runFrameScanLoop(int bytesToCheck, int bytesInBuffer) throws IOException {
+  private boolean runFrameScanLoop(int bytesToCheck, int bytesInBuffer, boolean throwOnLimit) throws IOException {
     while (bytesToCheck > 0) {
       for (int i = bytesInBuffer; i < scanBuffer.length && bytesToCheck > 0; i++) {
         int next = inputStream.read();
@@ -71,7 +73,11 @@ public class Mp3FrameReader {
       bytesInBuffer = copyScanBufferEndToBeginning();
     }
 
-    throw new IllegalStateException("Mp3 frame not found.");
+    if (throwOnLimit) {
+      throw new IllegalStateException("Mp3 frame not found.");
+    }
+
+    return false;
   }
 
   private int copyScanBufferEndToBeginning() {
@@ -102,7 +108,7 @@ public class Mp3FrameReader {
    * @throws IOException On IO error
    */
   public boolean fillFrameBuffer() throws IOException {
-    if (!frameHeaderRead && !scanForFrame(Integer.MAX_VALUE)) {
+    if (!frameHeaderRead && !scanForFrame(Integer.MAX_VALUE, true)) {
       return false;
     }
 

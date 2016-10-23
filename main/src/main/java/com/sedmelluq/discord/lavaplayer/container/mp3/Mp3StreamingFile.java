@@ -67,7 +67,7 @@ public class Mp3StreamingFile {
   public void parseHeaders() throws IOException {
     skipIdv3Tags();
 
-    if (!frameReader.scanForFrame(2048)) {
+    if (!frameReader.scanForFrame(2048, true)) {
       throw new IllegalStateException("File ended before the first frame was found.");
     }
 

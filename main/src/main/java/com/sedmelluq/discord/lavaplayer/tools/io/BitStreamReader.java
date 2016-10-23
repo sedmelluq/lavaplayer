@@ -45,6 +45,22 @@ public class BitStreamReader {
   }
 
   /**
+   * Get the specific number of bits as a signed long value (highest order bit is sign)
+   * @param bitsNeeded Number of bits needed
+   * @return The signed value
+   * @throws IOException On read error
+   */
+  public long asSignedLong(int bitsNeeded) throws IOException {
+    long value = asLong(bitsNeeded);
+
+    if ((value & (1L << (bitsNeeded - 1))) != 0) {
+      return value | ~((1L << bitsNeeded) - 1);
+    } else {
+      return value;
+    }
+  }
+
+  /**
    * Get the specified number of bits as an integer value
    * @param bitsNeeded Number of bits to retrieve
    * @return The value of those bits as an integer
@@ -52,6 +68,44 @@ public class BitStreamReader {
    */
   public int asInteger(int bitsNeeded) throws IOException {
     return Math.toIntExact(asLong(bitsNeeded));
+  }
+
+  /**
+   * Get the specific number of bits as a signed integer value (highest order bit is sign)
+   * @param bitsNeeded Number of bits needed
+   * @return The signed value
+   * @throws IOException On read error
+   */
+  public int asSignedInteger(int bitsNeeded) throws IOException {
+    return Math.toIntExact(asSignedLong(bitsNeeded));
+  }
+
+  /**
+   * Reads bits from the stream until a set bit is reached.
+   * @return The number of zeroes read
+   * @throws IOException On read error
+   */
+  public int readAllZeroes() throws IOException {
+    int count = 0;
+    fill();
+
+    while ((currentByte & (1 << --bitsLeft)) == 0) {
+      count++;
+      fill();
+    }
+
+    return count;
+  }
+
+  /**
+   * Reads the number of bits it requires to make the reader align on a byte.
+   * @return The read bits as an unsigned value
+   * @throws IOException On read error
+   */
+  public int readRemainingBits() throws IOException {
+    int value = currentByte & ((1 << bitsLeft) - 1);
+    bitsLeft = 0;
+    return value;
   }
 
   private void fill() throws IOException {

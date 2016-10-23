@@ -35,7 +35,7 @@ public class Mp3ContainerProbe implements MediaContainerProbe {
     if (!checkNextBytes(inputStream, ID3_TAG)) {
       byte[] frameHeader = new byte[4];
       Mp3FrameReader frameReader = new Mp3FrameReader(inputStream, frameHeader);
-      if (!frameReader.scanForFrame(500)) {
+      if (!frameReader.scanForFrame(500, false)) {
         return null;
       }
 

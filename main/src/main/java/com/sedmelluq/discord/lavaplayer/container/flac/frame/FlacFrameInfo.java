@@ -1,4 +1,4 @@
-package com.sedmelluq.discord.lavaplayer.container.flac;
+package com.sedmelluq.discord.lavaplayer.container.flac.frame;
 
 /**
  * Information of a FLAC frame that is required for reading its subframes. Most of the fields in the frame info are not
@@ -29,9 +29,18 @@ public class FlacFrameInfo {
    * The relationship between stereo channels.
    */
   public enum ChannelDelta {
-    NONE,
-    LEFT_SIDE,
-    RIGHT_SIDE,
-    MID_SIDE
+    NONE(-1),
+    LEFT_SIDE(1),
+    RIGHT_SIDE(0),
+    MID_SIDE(1);
+
+    /**
+     * The index of the channel containing delta values.
+     */
+    public final int deltaChannel;
+
+    ChannelDelta(int deltaChannel) {
+      this.deltaChannel = deltaChannel;
+    }
   }
 }
