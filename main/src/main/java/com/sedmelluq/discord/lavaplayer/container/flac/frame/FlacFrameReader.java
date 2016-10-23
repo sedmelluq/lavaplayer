@@ -24,7 +24,8 @@ public class FlacFrameReader {
    *                         at least FlacStreamInfo#maximumBlockSize.
    * @param sampleBuffers The sample buffers where the final decoding result is written to. FlacStreamInfo#channelCount
    *                      short buffers of size at least FlacStreamInfo#maximumBlockSize.
-   * @param temporaryBuffer Temporary working buffer of size at least TEMPORARY_BUFFER_SIZE.
+   * @param temporaryBuffer Temporary working buffer of size at least TEMPORARY_BUFFER_SIZE. No state is held in this
+   *                        between separate calls.
    * @return The number of samples read, zero on EOF
    * @throws IOException On read error
    */
@@ -46,7 +47,7 @@ public class FlacFrameReader {
     applyChannelDelta(frameInfo.channelDelta, rawSampleBuffers, frameInfo.sampleCount);
     convertToShortPcm(streamInfo, frameInfo.sampleCount, rawSampleBuffers, sampleBuffers);
 
-    return  frameInfo.sampleCount;
+    return frameInfo.sampleCount;
   }
 
   private static FlacFrameInfo findAndParseFrameHeader(InputStream inputStream, BitStreamReader reader,

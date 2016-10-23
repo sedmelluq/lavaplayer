@@ -1,5 +1,6 @@
 package com.sedmelluq.discord.lavaplayer.source.local;
 
+import com.sedmelluq.discord.lavaplayer.tools.io.ExtendedBufferedInputStream;
 import com.sedmelluq.discord.lavaplayer.tools.io.SeekableInputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,6 +19,7 @@ public class LocalSeekableInputStream extends SeekableInputStream {
 
   private final FileInputStream inputStream;
   private final FileChannel channel;
+  private final ExtendedBufferedInputStream bufferedStream;
 
   /**
    * @param file File to create a stream for.
@@ -27,6 +29,7 @@ public class LocalSeekableInputStream extends SeekableInputStream {
 
     try {
       inputStream = new FileInputStream(file);
+      bufferedStream = new ExtendedBufferedInputStream(inputStream);
       channel = inputStream.getChannel();
     } catch (FileNotFoundException e) {
       throw new RuntimeException(e);
@@ -35,22 +38,22 @@ public class LocalSeekableInputStream extends SeekableInputStream {
 
   @Override
   public int read() throws IOException {
-    return inputStream.read();
+    return bufferedStream.read();
   }
 
   @Override
   public int read(byte[] b, int off, int len) throws IOException {
-    return inputStream.read(b, off, len);
+    return bufferedStream.read(b, off, len);
   }
 
   @Override
   public long skip(long n) throws IOException {
-    return inputStream.skip(n);
+    return bufferedStream.skip(n);
   }
 
   @Override
   public int available() throws IOException {
-    return inputStream.available();
+    return bufferedStream.available();
   }
 
   @Override
@@ -75,7 +78,7 @@ public class LocalSeekableInputStream extends SeekableInputStream {
   @Override
   public long getPosition() {
     try {
-      return channel.position();
+      return channel.position() - bufferedStream.getBufferedByteCount();
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
@@ -84,5 +87,6 @@ public class LocalSeekableInputStream extends SeekableInputStream {
   @Override
   protected void seekHard(long position) throws IOException {
     channel.position(position);
+    bufferedStream.discardBuffer();
   }
 }

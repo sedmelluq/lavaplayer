@@ -79,6 +79,9 @@ public class MusicController implements BotController {
 
   @BotCommandHandler
   private void deserialize(Message message, String content) throws IOException {
+    outputChannel.set((TextChannel) message.getChannel());
+    connectToFirstVoiceChannel(guild.getAudioManager());
+
     byte[] bytes = Base64.decode(content);
 
     MessageInput inputStream = new MessageInput(new ByteArrayInputStream(bytes));
