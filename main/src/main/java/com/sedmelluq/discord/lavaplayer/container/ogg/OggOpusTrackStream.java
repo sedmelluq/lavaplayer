@@ -31,7 +31,7 @@ public class OggOpusTrackStream implements OggTrackStream {
   public void initialise(AudioProcessingContext context) throws IOException {
     ByteBuffer buffer = broker.getBuffer();
 
-    if (buffer.getInt(0) != HEAD_TAG_HALF) {
+    if (buffer.getInt(4) != HEAD_TAG_HALF) {
       throw new IllegalStateException("First packet is not an OpusHead.");
     }
 
