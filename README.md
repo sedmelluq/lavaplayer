@@ -5,7 +5,7 @@ LavaPlayer is an audio player library written in Java which can load audio track
 #### Maven package
 
 * Repository: **http://maven.sedmelluq.com**
-* Artifact: **com.sedmelluq:lavaplayer:1.0.13**
+* Artifact: **com.sedmelluq:lavaplayer:1.1.0**
 
 Using in Gradle:
 ```groovy
@@ -16,7 +16,7 @@ repositories {
 }
 
 dependencies {
-  compile 'com.sedmelluq:lavaplayer:1.0.13'
+  compile 'com.sedmelluq:lavaplayer:1.1.0'
 }
 ```
 
@@ -34,7 +34,7 @@ Using in Maven:
   <dependency>
     <groupId>com.sedmelluq</groupId>
     <artifactId>lavaplayer</artifactId>
-    <version>1.0.13</version>
+    <version>1.1.0</version>
   </dependency>
 </dependencies>
 ```
@@ -55,6 +55,7 @@ The file formats that LavaPlayer can currently handle are (relevant for file/url
 * FLAC
 * Matroska/WebM (AAC, Opus or Vorbis codecs)
 * MP4/M4A (AAC codec, only fragmented file format supported)
+* OGG streams (Opus, Vorbis and FLAC codecs)
 
 ## Resource usage
 
@@ -68,7 +69,7 @@ What makes LavaPlayer unique is that it handles everything in the same process. 
 
 #### Precise seeking support
 
-Seeking is supported on all formats and sources. When a seek is performed on a playing track, the previously buffered audio samples will be provided until the seek is finished (this is configurable). When a seek is performed on a track which has not yet started, it will start immediately from the chosen position.
+Seeking is supported on all non-stream formats and sources. When a seek is performed on a playing track, the previously buffered audio samples will be provided until the seek is finished (this is configurable). When a seek is performed on a track which has not yet started, it will start immediately from the chosen position.
 
 Due to media containers supporting seeking at different resolutions, the position that a media player can start reading data from might be several seconds from the location that the user actually wanted to seek to. LavaPlayer handles it by remembering the position where it was requested to seek to, jumping to the highest position which is not after that and then ignoring the audio until the actual position that was requested. This provides a millisecond accuracy on seeking.
 
