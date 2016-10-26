@@ -14,6 +14,11 @@ public interface Mp3Seeker {
   long getDuration();
 
   /**
+   * @return True if the track is seekable.
+   */
+  boolean isSeekable();
+
+  /**
    * @param timecode The timecode that the seek is requested to
    * @param inputStream The input stream to perform the seek on
    * @return The index of the frame that the seek was performed to

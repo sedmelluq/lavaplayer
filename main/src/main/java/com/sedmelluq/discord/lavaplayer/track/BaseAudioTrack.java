@@ -62,6 +62,11 @@ public abstract class BaseAudioTrack implements InternalAudioTrack {
   }
 
   @Override
+  public boolean isSeekable() {
+    return !trackInfo.isStream;
+  }
+
+  @Override
   public long getPosition() {
     return getActiveExecutor().getPosition();
   }

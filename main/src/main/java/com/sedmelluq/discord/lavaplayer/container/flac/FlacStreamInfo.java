@@ -55,11 +55,16 @@ public class FlacStreamInfo {
    * data even when the error does not result in an invalid bitstream.
    */
   public final byte[] md5Signature;
+  /**
+   * Whether the file has any metadata blocks after the stream info.
+   */
+  public final boolean hasMetadataBlocks;
 
   /**
    * @param blockData The raw block data.
+   * @param hasMetadataBlocks Whether the file has any metadata blocks after the stream info.
    */
-  public FlacStreamInfo(byte[] blockData) {
+  public FlacStreamInfo(byte[] blockData, boolean hasMetadataBlocks) {
     BitBufferReader bitReader = new BitBufferReader(ByteBuffer.wrap(blockData));
     minimumBlockSize = bitReader.asInteger(16);
     maximumBlockSize = bitReader.asInteger(16);
@@ -72,5 +77,7 @@ public class FlacStreamInfo {
 
     md5Signature = new byte[16];
     System.arraycopy(blockData, 18, md5Signature, 0, 16);
+
+    this.hasMetadataBlocks = hasMetadataBlocks;
   }
 }

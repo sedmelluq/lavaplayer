@@ -27,6 +27,11 @@ public interface AudioTrack extends AudioItem {
   void stop();
 
   /**
+   * @return True if the track is seekable.
+   */
+  boolean isSeekable();
+
+  /**
    * @return Get the current position of the track in milliseconds
    */
   long getPosition();

@@ -17,10 +17,11 @@ import static com.sedmelluq.discord.lavaplayer.tools.FriendlyException.Severity.
 public class MediaContainerDetection {
   public static final String UNKNOWN_TITLE = "Unknown title";
   public static final String UNKNOWN_ARTIST = "Unknown artist";
+  public static final int STREAM_SCAN_DISTANCE = 1000;
 
   private static final Logger log = LoggerFactory.getLogger(MediaContainerDetection.class);
 
-  private static final int HEAD_MARK_LIMIT = 512;
+  private static final int HEAD_MARK_LIMIT = 1024;
 
   /**
    * @param identifier Identifier of the track, used in the AudioTrackInfo in result

@@ -21,8 +21,9 @@ public class TrackStartRequestCodec implements RemoteMessageCodec<TrackStartRequ
     out.writeLong(message.executorId);
     out.writeUTF(message.trackInfo.title);
     out.writeUTF(message.trackInfo.author);
-    out.writeInt(message.trackInfo.length);
+    out.writeLong(message.trackInfo.length);
     out.writeUTF(message.trackInfo.identifier);
+    out.writeBoolean(message.trackInfo.isStream);
     out.writeInt(message.encodedTrack.length);
     out.write(message.encodedTrack);
     out.writeInt(message.volume);
@@ -33,7 +34,7 @@ public class TrackStartRequestCodec implements RemoteMessageCodec<TrackStartRequ
   @Override
   public TrackStartRequestMessage decode(DataInput in) throws IOException {
     long executorId = in.readLong();
-    AudioTrackInfo trackInfo = new AudioTrackInfo(in.readUTF(), in.readUTF(), in.readInt(), in.readUTF());
+    AudioTrackInfo trackInfo = new AudioTrackInfo(in.readUTF(), in.readUTF(), in.readLong(), in.readUTF(), in.readBoolean());
 
     byte[] encodedTrack = new byte[in.readInt()];
     in.readFully(encodedTrack);

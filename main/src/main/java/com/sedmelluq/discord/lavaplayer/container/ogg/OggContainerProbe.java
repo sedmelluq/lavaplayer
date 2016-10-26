@@ -1,4 +1,4 @@
-package com.sedmelluq.discord.lavaplayer.container.flac;
+package com.sedmelluq.discord.lavaplayer.container.ogg;
 
 import com.sedmelluq.discord.lavaplayer.container.MediaContainerDetection;
 import com.sedmelluq.discord.lavaplayer.container.MediaContainerProbe;
@@ -13,43 +13,38 @@ import java.io.IOException;
 import static com.sedmelluq.discord.lavaplayer.container.MediaContainerDetection.UNKNOWN_ARTIST;
 import static com.sedmelluq.discord.lavaplayer.container.MediaContainerDetection.UNKNOWN_TITLE;
 import static com.sedmelluq.discord.lavaplayer.container.MediaContainerDetection.checkNextBytes;
-import static com.sedmelluq.discord.lavaplayer.tools.DataFormatTools.defaultOnNull;
+import static com.sedmelluq.discord.lavaplayer.container.ogg.OggPacketInputStream.OGG_PAGE_HEADER;
 
 /**
- * Container detection probe for MP3 format.
+ * Container detection probe for OGG stream.
  */
-public class FlacContainerProbe implements MediaContainerProbe {
-  private static final Logger log = LoggerFactory.getLogger(FlacContainerProbe.class);
-
-  private static final String TITLE_TAG = "TITLE";
-  private static final String ARTIST_TAG = "ARTIST";
+public class OggContainerProbe implements MediaContainerProbe {
+  private static final Logger log = LoggerFactory.getLogger(OggContainerProbe.class);
 
   @Override
   public String getName() {
-    return "flac";
+    return "ogg";
   }
 
   @Override
-  public MediaContainerDetection.Result probe(String identifier, SeekableInputStream inputStream) throws IOException {
-    if (!checkNextBytes(inputStream, FlacFileLoader.FLAC_CC)) {
+  public MediaContainerDetection.Result probe(String identifier, SeekableInputStream stream) throws IOException {
+    if (!checkNextBytes(stream, OGG_PAGE_HEADER)) {
       return null;
     }
 
-    log.debug("Track {} is a FLAC file.", identifier);
-
-    FlacTrackInfo trackInfo = new FlacFileLoader(inputStream).parseHeaders();
+    log.debug("Track {} is an OGG stream.", identifier);
 
     return new MediaContainerDetection.Result(this, new AudioTrackInfo(
-        defaultOnNull(trackInfo.tags.get(TITLE_TAG), UNKNOWN_TITLE),
-        defaultOnNull(trackInfo.tags.get(ARTIST_TAG), UNKNOWN_ARTIST),
-        trackInfo.duration,
+        UNKNOWN_TITLE,
+        UNKNOWN_ARTIST,
+        Long.MAX_VALUE,
         identifier,
-        false
+        true
     ));
   }
 
   @Override
   public AudioTrack createTrack(AudioTrackInfo trackInfo, SeekableInputStream inputStream) {
-    return new FlacAudioTrack(trackInfo, inputStream);
+    return new OggAudioTrack(trackInfo, inputStream);
   }
 }

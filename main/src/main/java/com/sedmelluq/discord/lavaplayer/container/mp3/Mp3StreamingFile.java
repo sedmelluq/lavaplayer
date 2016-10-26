@@ -82,8 +82,13 @@ public class Mp3StreamingFile {
     frameReader.fillFrameBuffer();
 
     seeker = Mp3XingSeeker.createFromFrame(startPosition, inputStream.getContentLength(), frameBuffer);
+
     if (seeker == null) {
-      seeker = Mp3ConstantRateSeeker.createFromFrame(startPosition, inputStream.getContentLength(), frameBuffer);
+      if (inputStream.getContentLength() == Long.MAX_VALUE) {
+        seeker = new Mp3StreamSeeker();
+      } else {
+        seeker = Mp3ConstantRateSeeker.createFromFrame(startPosition, inputStream.getContentLength(), frameBuffer);
+      }
     }
   }
 
@@ -129,6 +134,13 @@ public class Mp3StreamingFile {
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
+  }
+
+  /**
+   * @return True if the track is seekable (false for streams for example).
+   */
+  public boolean isSeekable() {
+    return seeker.isSeekable();
   }
 
   /**

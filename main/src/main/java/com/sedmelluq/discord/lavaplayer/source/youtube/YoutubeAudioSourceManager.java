@@ -174,7 +174,7 @@ public class YoutubeAudioSourceManager implements AudioSourceManager {
 
       JsonBrowser args = info.get("args");
       AudioTrackInfo trackInfo = new AudioTrackInfo(
-          args.get("title").text(), args.get("author").text(), args.get("length_seconds").as(Integer.class) * 1000, videoId
+          args.get("title").text(), args.get("author").text(), args.get("length_seconds").as(Integer.class) * 1000, videoId, false
       );
 
       return new YoutubeAudioTrack(trackInfo, this);
@@ -197,30 +197,74 @@ public class YoutubeAudioSourceManager implements AudioSourceManager {
       }
     }
 
-    determineFailureReason(httpClient, videoId, mustExist);
-    return null;
+    if (determineFailureReason(httpClient, videoId, mustExist)) {
+      return null;
+    }
+
+    // In case main page does not give player configuration, but info page indicates an OK result, it is probably an
+    // age-restricted video for which the complete track info can be combined from the embed page and the info page.
+    return getTrackInfoFromEmbedPage(httpClient, videoId);
   }
 
-  private void determineFailureReason(CloseableHttpClient httpClient, String videoId, boolean mustExist) throws Exception {
+  private boolean determineFailureReason(CloseableHttpClient httpClient, String videoId, boolean mustExist) throws Exception {
     try (CloseableHttpResponse response = httpClient.execute(new HttpGet("https://www.youtube.com/get_video_info?hl=en_GB&video_id=" + videoId))) {
       if (response.getStatusLine().getStatusCode() != 200) {
         throw new IOException("Invalid status code for video info response.");
       }
 
       Map<String, String> format = convertToMapLayout(URLEncodedUtils.parse(response.getEntity()));
+      return determineFailureReasonFromStatus(format.get("status"), format.get("reason"), mustExist);
+    }
+  }
 
-      if ("fail".equals(format.get("status"))) {
-        String reason = format.get("reason");
+  private boolean determineFailureReasonFromStatus(String status, String reason, boolean mustExist) {
+    if ("fail".equals(status)) {
+      if ("This video does not exist.".equals(reason) && !mustExist) {
+        return true;
+      } else if (reason != null) {
+        throw new FriendlyException(reason, COMMON, null);
+      }
+    } else if ("ok".equals(status)) {
+      return false;
+    }
 
-        if ("This video does not exist.".equals(reason) && !mustExist) {
-          return;
-        } else if (reason != null) {
-          throw new FriendlyException(reason, COMMON, null);
-        }
+    throw new FriendlyException("Track is unavailable for an unknown reason.", SUSPICIOUS,
+        new IllegalStateException("Main page had no video, but video info has no error."));
+  }
+
+  private JsonBrowser getTrackInfoFromEmbedPage(CloseableHttpClient httpClient, String videoId) throws Exception {
+    JsonBrowser basicInfo = loadTrackBaseInfoFromEmbedPage(httpClient, videoId);
+    basicInfo.put("args", loadTrackArgsFromVideoInfoPage(httpClient, videoId, basicInfo.get("sts").text()));
+    return basicInfo;
+  }
+
+  private JsonBrowser loadTrackBaseInfoFromEmbedPage(CloseableHttpClient httpClient, String videoId) throws Exception {
+    try (CloseableHttpResponse response = httpClient.execute(new HttpGet("https://www.youtube.com/embed/" + videoId))) {
+      if (response.getStatusLine().getStatusCode() != 200) {
+        throw new IOException("Invalid status code for embed video page response.");
       }
 
-      throw new FriendlyException("Track is unavailable for an unknown reason.", SUSPICIOUS,
-          new IllegalStateException("Main page had no video, but video info has no error."));
+      String html = IOUtils.toString(response.getEntity().getContent(), Charset.forName(CHARSET));
+      String configJson = DataFormatTools.extractBetween(html, "'PLAYER_CONFIG': ", ",'EXPERIMENT_FLAGS'");
+
+      if (configJson != null) {
+        return JsonBrowser.parse(configJson);
+      }
+    }
+
+    throw new FriendlyException("Track information is unavailable.", SUSPICIOUS,
+        new IllegalStateException("Expected player config is not present in embed page."));
+  }
+
+  private Map<String, String> loadTrackArgsFromVideoInfoPage(CloseableHttpClient httpClient, String videoId, String sts) throws Exception {
+    String url = "https://www.youtube.com/get_video_info?hl=en_GB&video_id=" + videoId + "&sts=" + sts;
+
+    try (CloseableHttpResponse response = httpClient.execute(new HttpGet(url))) {
+      if (response.getStatusLine().getStatusCode() != 200) {
+        throw new IOException("Invalid status code for video info response.");
+      }
+
+      return convertToMapLayout(URLEncodedUtils.parse(response.getEntity()));
     }
   }
 
@@ -254,7 +298,6 @@ public class YoutubeAudioSourceManager implements AudioSourceManager {
   }
 
   private AudioPlaylist buildPlaylist(CloseableHttpClient httpClient, Document document, String selectedVideoId) throws IOException {
-
     Element container = document.select("#pl-header").get(0).parent();
 
     String playlistName = container.select(".pl-header-title").get(0).text();
@@ -308,7 +351,7 @@ public class YoutubeAudioSourceManager implements AudioSourceManager {
 
         int lengthInSeconds = lengthTextToSeconds(lengthElements.get(0).text());
 
-        AudioTrackInfo info = new AudioTrackInfo(title, author, lengthInSeconds * 1000, videoId);
+        AudioTrackInfo info = new AudioTrackInfo(title, author, lengthInSeconds * 1000, videoId, false);
         tracks.add(new YoutubeAudioTrack(info, this));
       }
     }

@@ -69,6 +69,11 @@ public class Mp3XingSeeker implements Mp3Seeker {
   }
 
   @Override
+  public boolean isSeekable() {
+    return true;
+  }
+
+  @Override
   public long seekAndGetFrameIndex(long timecode, SeekableInputStream inputStream) throws IOException {
     int percentile = (int) (timecode * 100L / duration);
     long frameIndex = frameCount * percentile / 100L;

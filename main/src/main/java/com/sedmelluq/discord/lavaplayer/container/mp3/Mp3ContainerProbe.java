@@ -10,6 +10,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 
+import static com.sedmelluq.discord.lavaplayer.container.MediaContainerDetection.STREAM_SCAN_DISTANCE;
 import static com.sedmelluq.discord.lavaplayer.container.MediaContainerDetection.UNKNOWN_ARTIST;
 import static com.sedmelluq.discord.lavaplayer.container.MediaContainerDetection.UNKNOWN_TITLE;
 import static com.sedmelluq.discord.lavaplayer.container.MediaContainerDetection.checkNextBytes;
@@ -35,7 +36,7 @@ public class Mp3ContainerProbe implements MediaContainerProbe {
     if (!checkNextBytes(inputStream, ID3_TAG)) {
       byte[] frameHeader = new byte[4];
       Mp3FrameReader frameReader = new Mp3FrameReader(inputStream, frameHeader);
-      if (!frameReader.scanForFrame(500, false)) {
+      if (!frameReader.scanForFrame(STREAM_SCAN_DISTANCE, false)) {
         return null;
       }
 
@@ -52,8 +53,9 @@ public class Mp3ContainerProbe implements MediaContainerProbe {
       return new MediaContainerDetection.Result(this, new AudioTrackInfo(
           defaultOnNull(file.getIdv3Tag(TITLE_TAG), UNKNOWN_TITLE),
           defaultOnNull(file.getIdv3Tag(ARTIST_TAG), UNKNOWN_ARTIST),
-          (int) file.getDuration(),
-          identifier
+          file.getDuration(),
+          identifier,
+          !file.isSeekable()
       ));
     } finally {
       file.close();

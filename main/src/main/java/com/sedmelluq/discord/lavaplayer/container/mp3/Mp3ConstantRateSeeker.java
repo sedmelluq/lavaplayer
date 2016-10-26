@@ -43,6 +43,11 @@ public class Mp3ConstantRateSeeker implements Mp3Seeker {
   }
 
   @Override
+  public boolean isSeekable() {
+    return true;
+  }
+
+  @Override
   public long seekAndGetFrameIndex(long timecode, SeekableInputStream inputStream) throws IOException {
     long maximumFrameCount = getMaximumFrameCount();
 

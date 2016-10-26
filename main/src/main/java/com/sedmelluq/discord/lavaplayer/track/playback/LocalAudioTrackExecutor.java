@@ -151,6 +151,10 @@ public class LocalAudioTrackExecutor implements AudioTrackExecutor {
 
   @Override
   public void setPosition(long timecode) {
+    if (!audioTrack.isSeekable()) {
+      return;
+    }
+
     synchronized (actionSynchronizer) {
       if (timecode < 0) {
         timecode = 0;
@@ -184,6 +188,10 @@ public class LocalAudioTrackExecutor implements AudioTrackExecutor {
 
   @Override
   public void setLoop(AudioLoop loop) {
+    if (!audioTrack.isSeekable()) {
+      return;
+    }
+
     this.audioLoop = loop;
 
     if (loop != null) {
@@ -195,7 +203,7 @@ public class LocalAudioTrackExecutor implements AudioTrackExecutor {
   /**
    * Execute the read and seek loop for the track.
    * @param readExecutor Callback for reading the track
-   * @param seekExecutor Callback for performing a seek on the track
+   * @param seekExecutor Callback for performing a seek on the track, may be null on a non-seekable track
    */
   public void executeProcessingLoop(ReadExecutor readExecutor, SeekExecutor seekExecutor) {
     boolean proceed = true;
@@ -233,6 +241,10 @@ public class LocalAudioTrackExecutor implements AudioTrackExecutor {
    * @return True if a seek was performed
    */
   private boolean checkPendingSeek(SeekExecutor seekExecutor) {
+    if (!audioTrack.isSeekable()) {
+      return false;
+    }
+
     synchronized (actionSynchronizer) {
       long seekPosition = pendingSeek.get();
 

@@ -179,8 +179,9 @@ public class DefaultAudioPlayerManager implements AudioPlayerManager {
     AudioTrackInfo trackInfo = track.getInfo();
     output.writeUTF(trackInfo.title);
     output.writeUTF(trackInfo.author);
-    output.writeInt(trackInfo.length);
+    output.writeLong(trackInfo.length);
     output.writeUTF(trackInfo.identifier);
+    output.writeBoolean(trackInfo.isStream);
 
     encodeTrackDetails(track, output);
     output.writeLong(track.getPosition());
@@ -195,7 +196,7 @@ public class DefaultAudioPlayerManager implements AudioPlayerManager {
       return null;
     }
 
-    AudioTrackInfo trackInfo = new AudioTrackInfo(input.readUTF(), input.readUTF(), input.readInt(), input.readUTF());
+    AudioTrackInfo trackInfo = new AudioTrackInfo(input.readUTF(), input.readUTF(), input.readLong(), input.readUTF(), input.readBoolean());
     AudioTrack track = decodeTrackDetails(trackInfo, input);
     long position = input.readLong();
 

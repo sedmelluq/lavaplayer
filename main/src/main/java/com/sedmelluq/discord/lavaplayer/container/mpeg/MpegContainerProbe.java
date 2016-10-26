@@ -43,7 +43,7 @@ public class MpegContainerProbe implements MediaContainerProbe {
       return new MediaContainerDetection.Result(this, "No supported audio format in the MP4 file.");
     }
 
-    return new MediaContainerDetection.Result(this, new AudioTrackInfo(UNKNOWN_TITLE, UNKNOWN_ARTIST, (int) file.getDuration(), identifier));
+    return new MediaContainerDetection.Result(this, new AudioTrackInfo(UNKNOWN_TITLE, UNKNOWN_ARTIST, file.getDuration(), identifier, false));
   }
 
   @Override

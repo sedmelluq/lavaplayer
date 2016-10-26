@@ -42,7 +42,7 @@ public class JsonBrowser {
     if (value instanceof Map) {
       return new JsonBrowser(((Map) value).get(key));
     } else {
-      throw new IllegalStateException("Index only works on a list");
+      throw new IllegalStateException("Get only works on a map");
     }
   }
 
@@ -56,6 +56,20 @@ public class JsonBrowser {
       return new JsonBrowser(((Map) value).get(key));
     } else {
       return new JsonBrowser(null);
+    }
+  }
+
+  /**
+   * Put a value into the map if this instance contains a map.
+   * @param key The map entry key
+   * @param item The map entry value
+   */
+  @SuppressWarnings("unchecked")
+  public void put(String key, Object item) {
+    if (value instanceof Map) {
+      ((Map<String, Object>) value).put(key, item);
+    } else {
+      throw new IllegalStateException("Put only works on a map");
     }
   }
 
