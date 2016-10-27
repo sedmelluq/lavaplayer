@@ -1,8 +1,9 @@
 package com.sedmelluq.discord.lavaplayer.container.ogg;
 
-import com.sedmelluq.discord.lavaplayer.container.MediaContainerDetection;
+import com.sedmelluq.discord.lavaplayer.container.MediaContainerDetectionResult;
 import com.sedmelluq.discord.lavaplayer.container.MediaContainerProbe;
 import com.sedmelluq.discord.lavaplayer.tools.io.SeekableInputStream;
+import com.sedmelluq.discord.lavaplayer.track.AudioReference;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo;
 import org.slf4j.Logger;
@@ -27,18 +28,18 @@ public class OggContainerProbe implements MediaContainerProbe {
   }
 
   @Override
-  public MediaContainerDetection.Result probe(String identifier, SeekableInputStream stream) throws IOException {
+  public MediaContainerDetectionResult probe(AudioReference reference, SeekableInputStream stream) throws IOException {
     if (!checkNextBytes(stream, OGG_PAGE_HEADER)) {
       return null;
     }
 
-    log.debug("Track {} is an OGG stream.", identifier);
+    log.debug("Track {} is an OGG stream.", reference.identifier);
 
-    return new MediaContainerDetection.Result(this, new AudioTrackInfo(
-        UNKNOWN_TITLE,
+    return new MediaContainerDetectionResult(this, new AudioTrackInfo(
+        reference.title != null ? reference.title : UNKNOWN_TITLE,
         UNKNOWN_ARTIST,
         Long.MAX_VALUE,
-        identifier,
+        reference.identifier,
         true
     ));
   }

@@ -1,8 +1,9 @@
 package com.sedmelluq.discord.lavaplayer.container.flac;
 
-import com.sedmelluq.discord.lavaplayer.container.MediaContainerDetection;
+import com.sedmelluq.discord.lavaplayer.container.MediaContainerDetectionResult;
 import com.sedmelluq.discord.lavaplayer.container.MediaContainerProbe;
 import com.sedmelluq.discord.lavaplayer.tools.io.SeekableInputStream;
+import com.sedmelluq.discord.lavaplayer.track.AudioReference;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo;
 import org.slf4j.Logger;
@@ -30,20 +31,20 @@ public class FlacContainerProbe implements MediaContainerProbe {
   }
 
   @Override
-  public MediaContainerDetection.Result probe(String identifier, SeekableInputStream inputStream) throws IOException {
+  public MediaContainerDetectionResult probe(AudioReference reference, SeekableInputStream inputStream) throws IOException {
     if (!checkNextBytes(inputStream, FlacFileLoader.FLAC_CC)) {
       return null;
     }
 
-    log.debug("Track {} is a FLAC file.", identifier);
+    log.debug("Track {} is a FLAC file.", reference.identifier);
 
     FlacTrackInfo trackInfo = new FlacFileLoader(inputStream).parseHeaders();
 
-    return new MediaContainerDetection.Result(this, new AudioTrackInfo(
+    return new MediaContainerDetectionResult(this, new AudioTrackInfo(
         defaultOnNull(trackInfo.tags.get(TITLE_TAG), UNKNOWN_TITLE),
         defaultOnNull(trackInfo.tags.get(ARTIST_TAG), UNKNOWN_ARTIST),
         trackInfo.duration,
-        identifier,
+        reference.identifier,
         false
     ));
   }

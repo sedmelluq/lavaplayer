@@ -1,8 +1,9 @@
 package com.sedmelluq.discord.lavaplayer.container.mpeg;
 
-import com.sedmelluq.discord.lavaplayer.container.MediaContainerDetection;
+import com.sedmelluq.discord.lavaplayer.container.MediaContainerDetectionResult;
 import com.sedmelluq.discord.lavaplayer.container.MediaContainerProbe;
 import com.sedmelluq.discord.lavaplayer.tools.io.SeekableInputStream;
+import com.sedmelluq.discord.lavaplayer.track.AudioReference;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo;
 import org.slf4j.Logger;
@@ -28,22 +29,23 @@ public class MpegContainerProbe implements MediaContainerProbe {
   }
 
   @Override
-  public MediaContainerDetection.Result probe(String identifier, SeekableInputStream inputStream) throws IOException {
+  public MediaContainerDetectionResult probe(AudioReference reference, SeekableInputStream inputStream) throws IOException {
     if (!checkNextBytes(inputStream, ISO_TAG)) {
       return null;
     }
 
-    log.debug("Track {} is an MP4 file.", identifier);
+    log.debug("Track {} is an MP4 file.", reference.identifier);
 
     MpegStreamingFile file = new MpegStreamingFile(inputStream);
 
     if (!file.isFragmented()) {
-      return new MediaContainerDetection.Result(this, "Only fragmented MP4 file format is currently supported.");
+      return new MediaContainerDetectionResult(this, "Only fragmented MP4 file format is currently supported.");
     } else if (!hasSupportedAudioTrack(file)) {
-      return new MediaContainerDetection.Result(this, "No supported audio format in the MP4 file.");
+      return new MediaContainerDetectionResult(this, "No supported audio format in the MP4 file.");
     }
 
-    return new MediaContainerDetection.Result(this, new AudioTrackInfo(UNKNOWN_TITLE, UNKNOWN_ARTIST, file.getDuration(), identifier, false));
+    return new MediaContainerDetectionResult(this, new AudioTrackInfo(UNKNOWN_TITLE, UNKNOWN_ARTIST, file.getDuration(),
+        reference.identifier, false));
   }
 
   @Override

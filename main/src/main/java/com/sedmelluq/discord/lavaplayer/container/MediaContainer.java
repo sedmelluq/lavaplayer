@@ -5,6 +5,7 @@ import com.sedmelluq.discord.lavaplayer.container.matroska.MatroskaContainerProb
 import com.sedmelluq.discord.lavaplayer.container.mp3.Mp3ContainerProbe;
 import com.sedmelluq.discord.lavaplayer.container.mpeg.MpegContainerProbe;
 import com.sedmelluq.discord.lavaplayer.container.ogg.OggContainerProbe;
+import com.sedmelluq.discord.lavaplayer.container.playlists.M3uPlaylistContainerProbe;
 
 /**
  * Lists currently supported containers and their probes.
@@ -14,7 +15,8 @@ public enum MediaContainer {
   MP4(new MpegContainerProbe()),
   MP3(new Mp3ContainerProbe()),
   FLAC(new FlacContainerProbe()),
-  OGG(new OggContainerProbe());
+  OGG(new OggContainerProbe()),
+  M3U(new M3uPlaylistContainerProbe());
 
   /**
    * The probe used to detect files using this container and create the audio tracks for them.

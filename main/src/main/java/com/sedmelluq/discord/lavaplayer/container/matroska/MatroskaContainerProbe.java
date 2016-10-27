@@ -1,8 +1,9 @@
 package com.sedmelluq.discord.lavaplayer.container.matroska;
 
-import com.sedmelluq.discord.lavaplayer.container.MediaContainerDetection;
+import com.sedmelluq.discord.lavaplayer.container.MediaContainerDetectionResult;
 import com.sedmelluq.discord.lavaplayer.container.MediaContainerProbe;
 import com.sedmelluq.discord.lavaplayer.tools.io.SeekableInputStream;
+import com.sedmelluq.discord.lavaplayer.track.AudioReference;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo;
 import org.ebml.matroska.MatroskaFileTrack;
@@ -36,22 +37,22 @@ public class MatroskaContainerProbe implements MediaContainerProbe {
   }
 
   @Override
-  public MediaContainerDetection.Result probe(String identifier, SeekableInputStream inputStream) throws IOException {
+  public MediaContainerDetectionResult probe(AudioReference reference, SeekableInputStream inputStream) throws IOException {
     if (!checkNextBytes(inputStream, EBML_TAG)) {
       return null;
     }
 
-    log.debug("Track {} is a matroska file.", identifier);
+    log.debug("Track {} is a matroska file.", reference.identifier);
 
     MatroskaStreamingFile file = new MatroskaStreamingFile(new MatroskaStreamDataSource(inputStream));
     file.readFile();
 
     if (!hasSupportedAudioTrack(file)) {
-      return new MediaContainerDetection.Result(this, "No supported audio tracks present in the file.");
+      return new MediaContainerDetectionResult(this, "No supported audio tracks present in the file.");
     }
 
-    return new MediaContainerDetection.Result(this, new AudioTrackInfo(UNKNOWN_TITLE, UNKNOWN_ARTIST,
-        (long) file.getDuration(), identifier, false));
+    return new MediaContainerDetectionResult(this, new AudioTrackInfo(UNKNOWN_TITLE, UNKNOWN_ARTIST,
+        (long) file.getDuration(), reference.identifier, false));
   }
 
   private boolean hasSupportedAudioTrack(MatroskaStreamingFile file) {

@@ -2,6 +2,7 @@ package com.sedmelluq.discord.lavaplayer.source;
 
 import com.sedmelluq.discord.lavaplayer.player.DefaultAudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.track.AudioItem;
+import com.sedmelluq.discord.lavaplayer.track.AudioReference;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo;
 
@@ -27,10 +28,10 @@ public interface AudioSourceManager {
    * return a track instance and check that in InternalAudioTrack#loadTrackInfo.
    *
    * @param manager The audio manager to attach to the loaded tracks
-   * @param identifier The identifier which the source manager should find the track with
+   * @param reference The reference with the identifier which the source manager should find the track with
    * @return The loaded item or null on unrecognized identifier
    */
-  AudioItem loadItem(DefaultAudioPlayerManager manager, String identifier);
+  AudioItem loadItem(DefaultAudioPlayerManager manager, AudioReference reference);
 
   /**
    * Returns whether the specified track can be encoded. The argument is always a track created by this manager. Being

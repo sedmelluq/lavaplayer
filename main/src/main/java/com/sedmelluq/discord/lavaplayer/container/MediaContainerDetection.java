@@ -3,7 +3,7 @@ package com.sedmelluq.discord.lavaplayer.container;
 import com.sedmelluq.discord.lavaplayer.tools.ExceptionTools;
 import com.sedmelluq.discord.lavaplayer.tools.io.SavedHeadSeekableInputStream;
 import com.sedmelluq.discord.lavaplayer.tools.io.SeekableInputStream;
-import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo;
+import com.sedmelluq.discord.lavaplayer.track.AudioReference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,18 +24,18 @@ public class MediaContainerDetection {
   private static final int HEAD_MARK_LIMIT = 1024;
 
   /**
-   * @param identifier Identifier of the track, used in the AudioTrackInfo in result
+   * @param reference Reference to the track with an identifier, used in the AudioTrackInfo in result
    * @param inputStream Input stream of the file
    * @return Result of detection
    */
-  public static MediaContainerDetection.Result detectContainer(String identifier, SeekableInputStream inputStream) {
+  public static MediaContainerDetectionResult detectContainer(AudioReference reference, SeekableInputStream inputStream) {
     try {
       SavedHeadSeekableInputStream savedHeadInputStream = new SavedHeadSeekableInputStream(inputStream, HEAD_MARK_LIMIT);
       savedHeadInputStream.loadHead();
 
       for (MediaContainer container : MediaContainer.class.getEnumConstants()) {
         savedHeadInputStream.seek(0);
-        MediaContainerDetection.Result result = checkContainer(container, identifier, savedHeadInputStream);
+        MediaContainerDetectionResult result = checkContainer(container, reference, savedHeadInputStream);
 
         if (result != null) {
           return result;
@@ -45,12 +45,12 @@ public class MediaContainerDetection {
       throw ExceptionTools.wrapUnfriendlyExceptions("Could not read the file for detecting file type.", SUSPICIOUS, e);
     }
 
-    return new Result();
+    return new MediaContainerDetectionResult();
   }
 
-  private static MediaContainerDetection.Result checkContainer(MediaContainer container, String identifier, SeekableInputStream inputStream) {
+  private static MediaContainerDetectionResult checkContainer(MediaContainer container, AudioReference reference, SeekableInputStream inputStream) {
     try {
-      return container.probe.probe(identifier, inputStream);
+      return container.probe.probe(reference, inputStream);
     } catch (Exception e) {
       log.warn("Attempting to detect file with container {} failed.", container.name(), e);
       return null;
@@ -98,83 +98,5 @@ public class MediaContainerDetection {
     }
 
     return result;
-  }
-
-  /**
-   * Result of audio container detection.
-   */
-  public static class Result {
-    private final AudioTrackInfo trackInfo;
-    private final MediaContainerProbe containerProbe;
-    private final String unsupportedReason;
-
-    /**
-     * Constructor for supported file.
-     *
-     * @param containerProbe Probe of the container
-     * @param trackInfo Track info for the file
-     */
-    public Result(MediaContainerProbe containerProbe, AudioTrackInfo trackInfo) {
-      this.trackInfo = trackInfo;
-      this.containerProbe = containerProbe;
-      this.unsupportedReason = null;
-    }
-
-    /**
-     * Constructor for unsupported file of a known container.
-     *
-     * @param containerProbe Probe of the container
-     * @param unsupportedReason The reason why this track is not supported
-     */
-    public Result(MediaContainerProbe containerProbe, String unsupportedReason) {
-      this.trackInfo = null;
-      this.containerProbe = containerProbe;
-      this.unsupportedReason = unsupportedReason;
-    }
-
-    /**
-     * Constructor for unknown format result.
-     */
-    public Result() {
-      trackInfo = null;
-      containerProbe = null;
-      unsupportedReason = null;
-    }
-
-    /**
-     * @return If the container this file uses was detected. In case this returns true, the container probe is non-null.
-     */
-    public boolean isContainerDetected() {
-      return containerProbe != null;
-    }
-
-    /**
-     * @return The probe for the container of the file
-     */
-    public MediaContainerProbe getContainerProbe() {
-      return containerProbe;
-    }
-
-    /**
-     * @return Whether this specific file is supported. If this returns true, the track info is non-null. Otherwise
-     *         the reason why this file is not supported can be retrieved via getUnsupportedReason().
-     */
-    public boolean isSupportedFile() {
-      return isContainerDetected() && unsupportedReason == null;
-    }
-
-    /**
-     * @return The reason why this track is not supported.
-     */
-    public String getUnsupportedReason() {
-      return unsupportedReason;
-    }
-
-    /**
-     * @return Track info for the detected file.
-     */
-    public AudioTrackInfo getTrackInfo() {
-      return trackInfo;
-    }
   }
 }

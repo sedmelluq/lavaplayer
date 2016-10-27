@@ -2,12 +2,15 @@ package com.sedmelluq.discord.lavaplayer.source.http;
 
 import com.sedmelluq.discord.lavaplayer.container.MediaContainer;
 import com.sedmelluq.discord.lavaplayer.container.MediaContainerDetection;
+import com.sedmelluq.discord.lavaplayer.container.MediaContainerDetectionResult;
+import com.sedmelluq.discord.lavaplayer.container.MediaContainerProbe;
 import com.sedmelluq.discord.lavaplayer.player.DefaultAudioPlayerManager;
-import com.sedmelluq.discord.lavaplayer.source.AudioSourceManager;
+import com.sedmelluq.discord.lavaplayer.source.ProbingAudioSourceManager;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpClientTools;
 import com.sedmelluq.discord.lavaplayer.tools.io.PersistentHttpStream;
 import com.sedmelluq.discord.lavaplayer.track.AudioItem;
+import com.sedmelluq.discord.lavaplayer.track.AudioReference;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -25,7 +28,7 @@ import static com.sedmelluq.discord.lavaplayer.tools.FriendlyException.Severity.
 /**
  * Audio source manager which implements finding audio files from HTTP addresses.
  */
-public class HttpAudioSourceManager implements AudioSourceManager {
+public class HttpAudioSourceManager extends ProbingAudioSourceManager {
   private final HttpClientBuilder httpClientBuilder;
 
   /**
@@ -48,41 +51,33 @@ public class HttpAudioSourceManager implements AudioSourceManager {
   }
 
   @Override
-  public AudioItem loadItem(DefaultAudioPlayerManager manager, String identifier) {
-    if (!identifier.startsWith("https://") && !identifier.startsWith("http://")) {
+  public AudioItem loadItem(DefaultAudioPlayerManager manager, AudioReference reference) {
+    if (!reference.identifier.startsWith("https://") && !reference.identifier.startsWith("http://")) {
       return null;
     }
 
-    MediaContainerDetection.Result result = detectContainer(identifier);
-    if (result == null) {
-      return null;
-    }
-
-    return new HttpAudioTrack(result.getTrackInfo(), result.getContainerProbe(), this);
+    return handleLoadResult(detectContainer(reference));
   }
 
-  private MediaContainerDetection.Result detectContainer(String identifier) {
-    MediaContainerDetection.Result result;
+  @Override
+  protected AudioTrack createTrack(AudioTrackInfo trackInfo, MediaContainerProbe probe) {
+    return new HttpAudioTrack(trackInfo, probe, this);
+  }
+
+  private MediaContainerDetectionResult detectContainer(AudioReference reference) {
+    MediaContainerDetectionResult result;
 
     try (CloseableHttpClient httpClient = createHttpClient()) {
-      result = detectContainerWithClient(httpClient, identifier);
+      result = detectContainerWithClient(httpClient, reference);
     } catch (IOException e) {
       throw new FriendlyException("Connecting to the URL failed.", SUSPICIOUS, e);
-    }
-
-    if (result != null) {
-      if (!result.isContainerDetected()) {
-        throw new FriendlyException("Unknown file format.", COMMON, null);
-      } else if (!result.isSupportedFile()) {
-        throw new FriendlyException(result.getUnsupportedReason(), COMMON, null);
-      }
     }
 
     return result;
   }
 
-  private MediaContainerDetection.Result detectContainerWithClient(CloseableHttpClient httpClient, String identifier) throws IOException {
-    try (PersistentHttpStream inputStream = new PersistentHttpStream(httpClient, new URI(identifier), Long.MAX_VALUE)) {
+  private MediaContainerDetectionResult detectContainerWithClient(CloseableHttpClient httpClient, AudioReference reference) throws IOException {
+    try (PersistentHttpStream inputStream = new PersistentHttpStream(httpClient, new URI(reference.identifier), Long.MAX_VALUE)) {
       int statusCode = inputStream.checkStatusCode();
 
       if (statusCode == 404) {
@@ -91,7 +86,7 @@ public class HttpAudioSourceManager implements AudioSourceManager {
         throw new FriendlyException("That URL is not playable.", COMMON, new IllegalStateException("Status code " + statusCode));
       }
 
-      return MediaContainerDetection.detectContainer(identifier, inputStream);
+      return MediaContainerDetection.detectContainer(reference, inputStream);
     } catch (URISyntaxException e) {
       throw new FriendlyException("Not a valid URL.", COMMON, e);
     }

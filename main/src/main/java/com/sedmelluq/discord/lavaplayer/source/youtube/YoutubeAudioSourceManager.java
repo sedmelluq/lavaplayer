@@ -8,6 +8,7 @@ import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.track.AudioItem;
 import com.sedmelluq.discord.lavaplayer.source.AudioSourceManager;
 import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
+import com.sedmelluq.discord.lavaplayer.track.AudioReference;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.BasicAudioPlaylist;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo;
@@ -96,11 +97,11 @@ public class YoutubeAudioSourceManager implements AudioSourceManager {
   }
 
   @Override
-  public AudioItem loadItem(DefaultAudioPlayerManager manager, String identifier) {
+  public AudioItem loadItem(DefaultAudioPlayerManager manager, AudioReference reference) {
     AudioItem result;
 
-    if ((result = loadTrack(identifier)) == null) {
-      result = loadPlaylist(identifier);
+    if ((result = loadTrack(reference.identifier)) == null) {
+      result = loadPlaylist(reference.identifier);
     }
 
     return result;

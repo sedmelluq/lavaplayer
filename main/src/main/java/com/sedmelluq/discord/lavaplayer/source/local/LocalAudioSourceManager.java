@@ -1,53 +1,51 @@
 package com.sedmelluq.discord.lavaplayer.source.local;
 
 import com.sedmelluq.discord.lavaplayer.container.MediaContainerDetection;
+import com.sedmelluq.discord.lavaplayer.container.MediaContainerDetectionResult;
+import com.sedmelluq.discord.lavaplayer.container.MediaContainerProbe;
 import com.sedmelluq.discord.lavaplayer.player.DefaultAudioPlayerManager;
-import com.sedmelluq.discord.lavaplayer.source.AudioSourceManager;
+import com.sedmelluq.discord.lavaplayer.source.ProbingAudioSourceManager;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
+import com.sedmelluq.discord.lavaplayer.track.AudioItem;
+import com.sedmelluq.discord.lavaplayer.track.AudioReference;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo;
-import com.sedmelluq.discord.lavaplayer.track.InternalAudioTrack;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.File;
 import java.io.IOException;
 
-import static com.sedmelluq.discord.lavaplayer.tools.FriendlyException.Severity.COMMON;
 import static com.sedmelluq.discord.lavaplayer.tools.FriendlyException.Severity.SUSPICIOUS;
 
 /**
  * Audio source manager that implements finding audio files from the local file system.
  */
-public class LocalAudioSourceManager implements AudioSourceManager {
+public class LocalAudioSourceManager extends ProbingAudioSourceManager {
   @Override
   public String getSourceName() {
     return "local";
   }
 
   @Override
-  public InternalAudioTrack loadItem(DefaultAudioPlayerManager manager, String identifier) {
-    File file = new File(identifier);
+  public AudioItem loadItem(DefaultAudioPlayerManager manager, AudioReference reference) {
+    File file = new File(reference.identifier);
 
     if (file.exists() && file.isFile() && file.canRead()) {
-      MediaContainerDetection.Result result = detectContainerForFile(identifier, file);
-      return new LocalAudioTrack(result.getTrackInfo(), result.getContainerProbe(), this);
+      return handleLoadResult(detectContainerForFile(reference, file));
     } else {
       return null;
     }
   }
 
-  private MediaContainerDetection.Result detectContainerForFile(String identifier, File file) {
+  @Override
+  protected AudioTrack createTrack(AudioTrackInfo trackInfo, MediaContainerProbe probe) {
+    return new LocalAudioTrack(trackInfo, probe, this);
+  }
+
+  private MediaContainerDetectionResult detectContainerForFile(AudioReference reference, File file) {
     try (LocalSeekableInputStream inputStream = new LocalSeekableInputStream(file)) {
-      MediaContainerDetection.Result result = MediaContainerDetection.detectContainer(identifier, inputStream);
-
-      if (!result.isContainerDetected()) {
-        throw new FriendlyException("Unknown file format.", COMMON, null);
-      } else if (!result.isSupportedFile()) {
-        throw new FriendlyException(result.getUnsupportedReason(), COMMON, null);
-      }
-
-      return result;
+      return MediaContainerDetection.detectContainer(reference, inputStream);
     } catch (IOException e) {
       throw new FriendlyException("Failed to open file for reading.", SUSPICIOUS, e);
     }

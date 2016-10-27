@@ -15,6 +15,7 @@ import com.sedmelluq.discord.lavaplayer.tools.io.MessageInput;
 import com.sedmelluq.discord.lavaplayer.tools.io.MessageOutput;
 import com.sedmelluq.discord.lavaplayer.track.AudioItem;
 import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
+import com.sedmelluq.discord.lavaplayer.track.AudioReference;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo;
 import com.sedmelluq.discord.lavaplayer.track.DecodedTrackHolder;
@@ -155,7 +156,7 @@ public class DefaultAudioPlayerManager implements AudioPlayerManager {
   private Callable<Void> createItemLoader(final String identifier, final AudioLoadResultHandler resultHandler) {
     return () -> {
       try {
-        if (!checkSourcesForItem(identifier, resultHandler)) {
+        if (!checkSourcesForItem(new AudioReference(identifier, null), resultHandler)) {
           log.debug("No matches for track with identifier {}.", identifier);
           resultHandler.noMatches();
         }
@@ -329,23 +330,37 @@ public class DefaultAudioPlayerManager implements AudioPlayerManager {
     this.cleanupThreshold.set(cleanupThreshold);
   }
 
-  private boolean checkSourcesForItem(String identifier, AudioLoadResultHandler resultHandler) {
-    for (AudioSourceManager sourceManager : sourceManagers) {
-      AudioItem item = sourceManager.loadItem(this, identifier);
+  private boolean checkSourcesForItem(AudioReference reference, AudioLoadResultHandler resultHandler) {
+    AudioReference currentReference = reference;
 
-      if (item != null) {
-        if (item instanceof AudioTrack) {
-          log.debug("Loaded a track with identifier {} using {}.", identifier, sourceManager.getClass().getSimpleName());
-          resultHandler.trackLoaded((AudioTrack) item);
-        } else if (item instanceof AudioPlaylist) {
-          log.debug("Loaded a playlist with identifier {} using {}.", identifier, sourceManager.getClass().getSimpleName());
-          resultHandler.playlistLoaded((AudioPlaylist) item);
-        }
+    for (int redirects = 0; redirects < 3 && currentReference.identifier != null; redirects++) {
+      AudioItem item = checkSourcesForItemOnce(currentReference, resultHandler);
+      if (!(item instanceof AudioReference)) {
         return true;
       }
+      currentReference = (AudioReference) item;
     }
 
     return false;
+  }
+
+  private AudioItem checkSourcesForItemOnce(AudioReference reference, AudioLoadResultHandler resultHandler) {
+    for (AudioSourceManager sourceManager : sourceManagers) {
+      AudioItem item = sourceManager.loadItem(this, reference);
+
+      if (item != null) {
+        if (item instanceof AudioTrack) {
+          log.debug("Loaded a track with identifier {} using {}.", reference.identifier, sourceManager.getClass().getSimpleName());
+          resultHandler.trackLoaded((AudioTrack) item);
+        } else if (item instanceof AudioPlaylist) {
+          log.debug("Loaded a playlist with identifier {} using {}.", reference.identifier, sourceManager.getClass().getSimpleName());
+          resultHandler.playlistLoaded((AudioPlaylist) item);
+        }
+        return item;
+      }
+    }
+
+    return null;
   }
 
   public ExecutorService getExecutor() {

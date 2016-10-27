@@ -8,6 +8,7 @@ import com.sedmelluq.discord.lavaplayer.tools.JsonBrowser;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpClientTools;
 import com.sedmelluq.discord.lavaplayer.track.AudioItem;
 import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
+import com.sedmelluq.discord.lavaplayer.track.AudioReference;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo;
 import com.sedmelluq.discord.lavaplayer.track.BasicAudioPlaylist;
@@ -63,11 +64,11 @@ public class SoundCloudAudioSourceManager implements AudioSourceManager {
   }
 
   @Override
-  public AudioItem loadItem(DefaultAudioPlayerManager manager, String identifier) {
-    if (trackUrlPattern.matcher(identifier).matches()) {
-      return loadFromTrackPage(identifier);
-    } else if (playlistUrlPattern.matcher(identifier).matches()) {
-      return loadFromPlaylist(identifier);
+  public AudioItem loadItem(DefaultAudioPlayerManager manager, AudioReference reference) {
+    if (trackUrlPattern.matcher(reference.identifier).matches()) {
+      return loadFromTrackPage(reference.identifier);
+    } else if (playlistUrlPattern.matcher(reference.identifier).matches()) {
+      return loadFromPlaylist(reference.identifier);
     }
     return null;
   }
