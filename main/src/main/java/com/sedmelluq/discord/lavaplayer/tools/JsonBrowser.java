@@ -1,5 +1,7 @@
 package com.sedmelluq.discord.lavaplayer.tools;
 
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
@@ -12,7 +14,7 @@ import java.util.Map;
  * Allows to easily navigate in decoded JSON data
  */
 public class JsonBrowser {
-  private static final ObjectMapper mapper = new ObjectMapper();
+  private static final ObjectMapper mapper = setupMapper();
 
   private final Object value;
 
@@ -133,5 +135,12 @@ public class JsonBrowser {
    */
   public static JsonBrowser parse(InputStream stream) throws IOException {
     return new JsonBrowser(mapper.readValue(stream, Object.class));
+  }
+
+  private static ObjectMapper setupMapper() {
+    JsonFactory jsonFactory = new JsonFactory();
+    jsonFactory.enable(JsonParser.Feature.ALLOW_COMMENTS);
+    jsonFactory.enable(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES);
+    return new ObjectMapper(jsonFactory);
   }
 }

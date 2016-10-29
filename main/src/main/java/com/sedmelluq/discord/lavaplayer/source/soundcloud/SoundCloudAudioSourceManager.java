@@ -36,7 +36,7 @@ import static com.sedmelluq.discord.lavaplayer.tools.FriendlyException.Severity.
 import static com.sedmelluq.discord.lavaplayer.tools.FriendlyException.Severity.SUSPICIOUS;
 
 /**
- * Audio source manager that implements finding Soundtrack tracks based on URL.
+ * Audio source manager that implements finding SoundCloud tracks based on URL.
  */
 public class SoundCloudAudioSourceManager implements AudioSourceManager {
   private static final Logger log = LoggerFactory.getLogger(SoundCloudAudioSourceManager.class);
