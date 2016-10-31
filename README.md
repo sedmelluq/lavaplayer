@@ -5,7 +5,7 @@ LavaPlayer is an audio player library written in Java which can load audio track
 #### Maven package
 
 * Repository: **http://maven.sedmelluq.com**
-* Artifact: **com.sedmelluq:lavaplayer:1.1.1**
+* Artifact: **com.sedmelluq:lavaplayer:1.1.3**
 
 Using in Gradle:
 ```groovy
@@ -16,7 +16,7 @@ repositories {
 }
 
 dependencies {
-  compile 'com.sedmelluq:lavaplayer:1.1.1'
+  compile 'com.sedmelluq:lavaplayer:1.1.3'
 }
 ```
 
@@ -34,7 +34,7 @@ Using in Maven:
   <dependency>
     <groupId>com.sedmelluq</groupId>
     <artifactId>lavaplayer</artifactId>
-    <version>1.1.1</version>
+    <version>1.1.3</version>
   </dependency>
 </dependencies>
 ```
@@ -46,6 +46,7 @@ The set of sources where LavaPlayer can load tracks from is easily extensible, b
 
 * YouTube
 * SoundCloud
+* Bandcamp
 * Local files
 * HTTP URLs
 
@@ -56,6 +57,7 @@ The file formats that LavaPlayer can currently handle are (relevant for file/url
 * Matroska/WebM (AAC, Opus or Vorbis codecs)
 * MP4/M4A (AAC codec, only fragmented file format supported)
 * OGG streams (Opus, Vorbis and FLAC codecs)
+* M3U playlist referencing other supported formats
 
 ## Resource usage
 
