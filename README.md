@@ -57,7 +57,7 @@ The file formats that LavaPlayer can currently handle are (relevant for file/url
 * Matroska/WebM (AAC, Opus or Vorbis codecs)
 * MP4/M4A (AAC codec, only fragmented file format supported)
 * OGG streams (Opus, Vorbis and FLAC codecs)
-* ACC streams
+* AAC streams
 * M3U playlist referencing other supported formats
 
 ## Resource usage
