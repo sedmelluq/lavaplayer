@@ -33,8 +33,8 @@ import static com.sedmelluq.discord.lavaplayer.tools.FriendlyException.Severity.
  * Audio source manager that implements finding Bandcamp tracks based on URL.
  */
 public class BandcampAudioSourceManager implements AudioSourceManager {
-  private static final String TRACK_URL_REGEX = "^https?:\\/\\/(?:[^.]+\\.|)bandcamp\\.com/track/([a-zA-Z0-9-_]+)/?(?:\\?.*|)$";
-  private static final String ALBUM_URL_REGEX = "^https?:\\/\\/(?:[^.]+\\.|)bandcamp\\.com/album/([a-zA-Z0-9-_]+)/?(?:\\?.*|)$";
+  private static final String TRACK_URL_REGEX = "^https?://(?:[^.]+\\.|)bandcamp\\.com/track/([a-zA-Z0-9-_]+)/?(?:\\?.*|)$";
+  private static final String ALBUM_URL_REGEX = "^https?://(?:[^.]+\\.|)bandcamp\\.com/album/([a-zA-Z0-9-_]+)/?(?:\\?.*|)$";
 
   private static final Pattern trackUrlPattern = Pattern.compile(TRACK_URL_REGEX);
   private static final Pattern albumUrlPattern = Pattern.compile(ALBUM_URL_REGEX);
