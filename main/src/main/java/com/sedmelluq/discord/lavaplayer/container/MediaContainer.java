@@ -1,5 +1,6 @@
 package com.sedmelluq.discord.lavaplayer.container;
 
+import com.sedmelluq.discord.lavaplayer.container.adts.AdtsContainerProbe;
 import com.sedmelluq.discord.lavaplayer.container.flac.FlacContainerProbe;
 import com.sedmelluq.discord.lavaplayer.container.matroska.MatroskaContainerProbe;
 import com.sedmelluq.discord.lavaplayer.container.mp3.Mp3ContainerProbe;
@@ -16,6 +17,7 @@ public enum MediaContainer {
   MP3(new Mp3ContainerProbe()),
   FLAC(new FlacContainerProbe()),
   OGG(new OggContainerProbe()),
+  ADTS(new AdtsContainerProbe()),
   M3U(new M3uPlaylistContainerProbe());
 
   /**
