@@ -7,6 +7,7 @@ import com.sedmelluq.discord.lavaplayer.container.mp3.Mp3ContainerProbe;
 import com.sedmelluq.discord.lavaplayer.container.mpeg.MpegContainerProbe;
 import com.sedmelluq.discord.lavaplayer.container.ogg.OggContainerProbe;
 import com.sedmelluq.discord.lavaplayer.container.playlists.M3uPlaylistContainerProbe;
+import com.sedmelluq.discord.lavaplayer.container.playlists.PlainPlaylistContainerProbe;
 import com.sedmelluq.discord.lavaplayer.container.playlists.PlsPlaylistContainerProbe;
 
 /**
@@ -20,7 +21,8 @@ public enum MediaContainer {
   OGG(new OggContainerProbe()),
   ADTS(new AdtsContainerProbe()),
   M3U(new M3uPlaylistContainerProbe()),
-  PLS(new PlsPlaylistContainerProbe());
+  PLS(new PlsPlaylistContainerProbe()),
+  PLAIN(new PlainPlaylistContainerProbe());
 
   /**
    * The probe used to detect files using this container and create the audio tracks for them.

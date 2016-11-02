@@ -1,6 +1,7 @@
 package com.sedmelluq.discord.lavaplayer.container;
 
 import com.sedmelluq.discord.lavaplayer.tools.ExceptionTools;
+import com.sedmelluq.discord.lavaplayer.tools.io.GreedyInputStream;
 import com.sedmelluq.discord.lavaplayer.tools.io.SavedHeadSeekableInputStream;
 import com.sedmelluq.discord.lavaplayer.tools.io.SeekableInputStream;
 import com.sedmelluq.discord.lavaplayer.track.AudioReference;
@@ -8,6 +9,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.nio.charset.Charset;
+import java.util.regex.Pattern;
 
 import static com.sedmelluq.discord.lavaplayer.tools.FriendlyException.Severity.SUSPICIOUS;
 
@@ -98,5 +101,30 @@ public class MediaContainerDetection {
     }
 
     return result;
+  }
+
+  /**
+   * Check if the next bytes in the stream match the specified regex pattern.
+   *
+   * @param stream Input stream to read the bytes from
+   * @param distance Maximum number of bytes to read for matching
+   * @param pattern Pattern to match against
+   * @param charset Charset to use to decode the bytes
+   * @return True if the next bytes in the stream are a match
+   * @throws IOException On read error
+   */
+  public static boolean matchNextBytesAsRegex(SeekableInputStream stream, int distance, Pattern pattern, Charset charset) throws IOException {
+    long position = stream.getPosition();
+    byte[] bytes = new byte[distance];
+
+    int read = new GreedyInputStream(stream).read(bytes);
+    stream.seek(position);
+
+    if (read == -1) {
+      return false;
+    }
+
+    String text = new String(bytes, 0, read, charset);
+    return pattern.matcher(text).find();
   }
 }
