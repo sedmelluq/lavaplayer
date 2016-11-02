@@ -1,15 +1,22 @@
 package com.sedmelluq.discord.lavaplayer.tools;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.http.NameValuePair;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.Charset;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 /**
  * Helper methods related to strings and maps.
  */
 public class DataFormatTools {
+  private static final Pattern lineSplitPattern = Pattern.compile("[\\r\\n\\s]*\\n[\\r\\n\\s]*");
+
   /**
    * Extract text between the first subsequent occurrences of start and end in haystack
    * @param haystack The text to search from
@@ -55,5 +62,18 @@ public class DataFormatTools {
    */
   public static <T> T defaultOnNull(T value, T defaultValue) {
     return value == null ? defaultValue : value;
+  }
+
+  /**
+   * Consumes a stream and returns it as lines.
+   *
+   * @param inputStream Input stream to consume.
+   * @param charset Character set of the stream
+   * @return Lines from the stream
+   * @throws IOException On read error
+   */
+  public static String[] streamToLines(InputStream inputStream, Charset charset) throws IOException {
+    String text = IOUtils.toString(inputStream, charset);
+    return lineSplitPattern.split(text);
   }
 }

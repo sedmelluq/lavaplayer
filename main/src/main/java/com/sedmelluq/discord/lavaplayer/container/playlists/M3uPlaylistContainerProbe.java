@@ -2,17 +2,16 @@ package com.sedmelluq.discord.lavaplayer.container.playlists;
 
 import com.sedmelluq.discord.lavaplayer.container.MediaContainerDetectionResult;
 import com.sedmelluq.discord.lavaplayer.container.MediaContainerProbe;
+import com.sedmelluq.discord.lavaplayer.tools.DataFormatTools;
 import com.sedmelluq.discord.lavaplayer.tools.io.SeekableInputStream;
 import com.sedmelluq.discord.lavaplayer.track.AudioReference;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo;
-import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.regex.Pattern;
 
 import static com.sedmelluq.discord.lavaplayer.container.MediaContainerDetection.checkNextBytes;
 
@@ -24,8 +23,6 @@ public class M3uPlaylistContainerProbe implements MediaContainerProbe {
 
   private static final int[] M3U_HEADER_TAG = new int[] { '#', 'E', 'X', 'T', 'M', '3', 'U' };
   private static final int[] M3U_ENTRY_TAG = new int[] { '#', 'E', 'X', 'T', 'I', 'N', 'F' };
-
-  private static final Pattern lineSplitPattern = Pattern.compile("[\\r\\n\\s]*\\n[\\r\\n\\s]*");
 
   @Override
   public String getName() {
@@ -39,9 +36,7 @@ public class M3uPlaylistContainerProbe implements MediaContainerProbe {
     }
 
     log.debug("Track {} is an M3U playlist file.", reference.identifier);
-
-    String text = IOUtils.toString(inputStream, StandardCharsets.UTF_8);
-    return loadFromLines(lineSplitPattern.split(text));
+    return loadFromLines(DataFormatTools.streamToLines(inputStream, StandardCharsets.UTF_8));
   }
 
   private MediaContainerDetectionResult loadFromLines(String[] lines) {

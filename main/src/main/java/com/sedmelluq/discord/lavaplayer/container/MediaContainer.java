@@ -7,6 +7,7 @@ import com.sedmelluq.discord.lavaplayer.container.mp3.Mp3ContainerProbe;
 import com.sedmelluq.discord.lavaplayer.container.mpeg.MpegContainerProbe;
 import com.sedmelluq.discord.lavaplayer.container.ogg.OggContainerProbe;
 import com.sedmelluq.discord.lavaplayer.container.playlists.M3uPlaylistContainerProbe;
+import com.sedmelluq.discord.lavaplayer.container.playlists.PlsPlaylistContainerProbe;
 
 /**
  * Lists currently supported containers and their probes.
@@ -18,7 +19,8 @@ public enum MediaContainer {
   FLAC(new FlacContainerProbe()),
   OGG(new OggContainerProbe()),
   ADTS(new AdtsContainerProbe()),
-  M3U(new M3uPlaylistContainerProbe());
+  M3U(new M3uPlaylistContainerProbe()),
+  PLS(new PlsPlaylistContainerProbe());
 
   /**
    * The probe used to detect files using this container and create the audio tracks for them.
