@@ -37,7 +37,11 @@ public class GreedyInputStream extends FilterInputStream {
     while (skipped < maximum) {
       long chunk = in.skip(maximum - skipped);
       if (chunk == 0) {
-        break;
+        if (in.read() == -1) {
+          break;
+        } else {
+          chunk = 1;
+        }
       }
       skipped += chunk;
     }

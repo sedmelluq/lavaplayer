@@ -41,6 +41,8 @@ public abstract class SeekableInputStream extends InputStream {
 
   protected abstract void seekHard(long position) throws IOException;
 
+  protected abstract boolean canSeekHard();
+
   /**
    * Skip the specified number of bytes in the stream. The result is either that the requested number of bytes were
    * skipped or an EOFException was thrown.
@@ -55,7 +57,11 @@ public abstract class SeekableInputStream extends InputStream {
       long skipped = skip(target - current);
 
       if (skipped == 0) {
-        throw new EOFException("Cannot skip any further.");
+        if (read() == -1) {
+          throw new EOFException("Cannot skip any further.");
+        } else {
+          skipped = 1;
+        }
       }
 
       current += skipped;
@@ -72,6 +78,13 @@ public abstract class SeekableInputStream extends InputStream {
 
     if (current <= position && position - current <= maxSkipDistance) {
       skipFully(position - current);
+    } else if (!canSeekHard()) {
+      if (current > position) {
+        seekHard(0);
+        skipFully(position);
+      } else {
+        skipFully(position - current);
+      }
     } else {
       seekHard(position);
     }

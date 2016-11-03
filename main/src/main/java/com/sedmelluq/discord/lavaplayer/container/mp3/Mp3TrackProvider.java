@@ -185,7 +185,7 @@ public class Mp3TrackProvider {
     // Minor version
     dataInput.readByte();
 
-    if (majorVersion < 3 && majorVersion > 5) {
+    if (majorVersion < 2 && majorVersion > 5) {
       return;
     }
 

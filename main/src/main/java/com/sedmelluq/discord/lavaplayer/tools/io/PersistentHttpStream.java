@@ -223,4 +223,9 @@ public class PersistentHttpStream extends SeekableInputStream implements AutoClo
 
     this.position = position;
   }
+
+  @Override
+  protected boolean canSeekHard() {
+    return contentLength != Long.MAX_VALUE;
+  }
 }

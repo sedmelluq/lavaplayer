@@ -55,6 +55,11 @@ public class SavedHeadSeekableInputStream extends SeekableInputStream {
   }
 
   @Override
+  protected boolean canSeekHard() {
+    return delegate.canSeekHard();
+  }
+
+  @Override
   public int read() throws IOException {
     if (usingHead) {
       byte result = savedHead[(int) headPosition];

@@ -85,6 +85,11 @@ public class LocalSeekableInputStream extends SeekableInputStream {
   }
 
   @Override
+  protected boolean canSeekHard() {
+    return true;
+  }
+
+  @Override
   protected void seekHard(long position) throws IOException {
     channel.position(position);
     bufferedStream.discardBuffer();
