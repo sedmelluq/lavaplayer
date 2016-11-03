@@ -28,13 +28,13 @@ public class FlacAudioTrack extends BaseAudioTrack {
   @Override
   public void process(LocalAudioTrackExecutor localExecutor) throws Exception {
     FlacFileLoader file = new FlacFileLoader(inputStream);
-    FlacTrackStream trackStream = file.loadTrack(localExecutor.getProcessingContext());
+    FlacTrackProvider trackProvider = file.loadTrack(localExecutor.getProcessingContext());
 
     try {
       log.debug("Starting to play FLAC track {}", getIdentifier());
-      localExecutor.executeProcessingLoop(trackStream::provideFrames, trackStream::seekToTimecode);
+      localExecutor.executeProcessingLoop(trackProvider::provideFrames, trackProvider::seekToTimecode);
     } finally {
-      trackStream.close();
+      trackProvider.close();
     }
   }
 }

@@ -14,7 +14,7 @@ import java.nio.ByteBuffer;
 /**
  * Loader for an OGG FLAC track from an OGG packet stream.
  */
-public class OggFlacTrackStreamLoader {
+public class OggFlacTrackProviderLoader {
   private static final int NATIVE_FLAC_HEADER = ByteBuffer.wrap(new byte[] { 'f', 'L', 'a', 'C' }).getInt();
 
   /**
@@ -24,7 +24,7 @@ public class OggFlacTrackStreamLoader {
    * @return An OGG FLAC track handler
    * @throws IOException On read error
    */
-  public static OggFlacTrackStream load(OggPacketInputStream packetInputStream, DirectBufferStreamBroker broker) throws IOException {
+  public static OggFlacTrackProvider load(OggPacketInputStream packetInputStream, DirectBufferStreamBroker broker) throws IOException {
     ByteBuffer buffer = broker.getBuffer();
 
     if (buffer.getInt(9) != NATIVE_FLAC_HEADER) {
@@ -34,7 +34,7 @@ public class OggFlacTrackStreamLoader {
     buffer.position(13);
 
     FlacTrackInfo trackInfo = readHeaders(buffer, packetInputStream);
-    return new OggFlacTrackStream(trackInfo, packetInputStream);
+    return new OggFlacTrackProvider(trackInfo, packetInputStream);
   }
 
   private static FlacTrackInfo readHeaders(ByteBuffer firstPacketBuffer, OggPacketInputStream packetInputStream) throws IOException {

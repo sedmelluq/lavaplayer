@@ -27,15 +27,15 @@ public class Mp3AudioTrack extends BaseAudioTrack {
 
   @Override
   public void process(LocalAudioTrackExecutor localExecutor) throws Exception {
-    Mp3StreamingFile file = new Mp3StreamingFile(localExecutor.getProcessingContext(), inputStream);
+    Mp3TrackProvider provider = new Mp3TrackProvider(localExecutor.getProcessingContext(), inputStream);
 
     try {
-      file.parseHeaders();
+      provider.parseHeaders();
 
       log.debug("Starting to play MP3 track {}", getIdentifier());
-      localExecutor.executeProcessingLoop(file::provideFrames, file::seekToTimecode);
+      localExecutor.executeProcessingLoop(provider::provideFrames, provider::seekToTimecode);
     } finally {
-      file.close();
+      provider.close();
     }
   }
 }

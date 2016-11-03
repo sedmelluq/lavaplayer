@@ -7,7 +7,7 @@ import java.io.IOException;
 /**
  * A handler for a specific codec for an OGG stream.
  */
-public interface OggTrackStream {
+public interface OggTrackProvider {
   /**
    * Initialises the track stream.
    * @param context Configuration and output information for processing audio

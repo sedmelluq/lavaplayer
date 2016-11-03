@@ -47,7 +47,7 @@ public class OggAudioTrack extends BaseAudioTrack {
   }
 
   private void processTrackLoop(OggPacketInputStream packetInputStream, AudioProcessingContext context) throws IOException, InterruptedException {
-    OggTrackStream track = OggTrackLoader.loadTrack(packetInputStream);
+    OggTrackProvider track = OggTrackLoader.loadTrack(packetInputStream);
 
     while (track != null) {
       try {

@@ -12,7 +12,7 @@ import java.nio.ByteBuffer;
 /**
  * OGG stream handler for Vorbis codec.
  */
-public class OggVorbisTrackStream implements OggTrackStream {
+public class OggVorbisTrackProvider implements OggTrackProvider {
   private static final int PCM_BUFFER_SIZE = 4096;
 
   private final OggPacketInputStream packetInputStream;
@@ -27,7 +27,7 @@ public class OggVorbisTrackStream implements OggTrackStream {
    * @param broker Broker for loading stream data into direct byte buffer, it has already loaded the first packet of the
    *               stream at this point.
    */
-  public OggVorbisTrackStream(OggPacketInputStream packetInputStream, DirectBufferStreamBroker broker) {
+  public OggVorbisTrackProvider(OggPacketInputStream packetInputStream, DirectBufferStreamBroker broker) {
     this.packetInputStream = packetInputStream;
     this.broker = broker;
     this.decoder = new VorbisDecoder();

@@ -12,7 +12,7 @@ import java.io.IOException;
 /**
  * OGG stream handler for FLAC codec.
  */
-public class OggFlacTrackStream implements OggTrackStream {
+public class OggFlacTrackProvider implements OggTrackProvider {
   private final FlacTrackInfo info;
   private final OggPacketInputStream packetInputStream;
   private final BitStreamReader bitStreamReader;
@@ -25,7 +25,7 @@ public class OggFlacTrackStream implements OggTrackStream {
    * @param info FLAC track info
    * @param packetInputStream OGG packet input stream
    */
-  public OggFlacTrackStream(FlacTrackInfo info, OggPacketInputStream packetInputStream) {
+  public OggFlacTrackProvider(FlacTrackInfo info, OggPacketInputStream packetInputStream) {
     this.info = info;
     this.packetInputStream = packetInputStream;
     this.bitStreamReader = new BitStreamReader(packetInputStream);

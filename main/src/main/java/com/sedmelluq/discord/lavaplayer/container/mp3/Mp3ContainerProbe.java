@@ -46,7 +46,7 @@ public class Mp3ContainerProbe implements MediaContainerProbe {
 
     log.debug("Track {} is an MP3 file.", reference.identifier);
 
-    Mp3StreamingFile file = new Mp3StreamingFile(null, inputStream);
+    Mp3TrackProvider file = new Mp3TrackProvider(null, inputStream);
 
     try {
       file.parseHeaders();

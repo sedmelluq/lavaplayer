@@ -48,8 +48,8 @@ public class FlacFileLoader {
    * @return The FLAC track stream which can produce frames.
    * @throws IOException On IO error
    */
-  public FlacTrackStream loadTrack(AudioProcessingContext context) throws IOException {
-    return new FlacTrackStream(context, parseHeaders(), inputStream);
+  public FlacTrackProvider loadTrack(AudioProcessingContext context) throws IOException {
+    return new FlacTrackProvider(context, parseHeaders(), inputStream);
   }
 
   private void readMetadataBlocks(FlacTrackInfoBuilder trackInfoBuilder) throws IOException {

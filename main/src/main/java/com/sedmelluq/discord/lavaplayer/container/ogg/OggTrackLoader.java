@@ -19,7 +19,7 @@ public class OggTrackLoader {
    * @throws IOException On read error
    * @throws IllegalStateException If the track uses an unknown codec.
    */
-  public static OggTrackStream loadTrack(OggPacketInputStream packetInputStream) throws IOException {
+  public static OggTrackProvider loadTrack(OggPacketInputStream packetInputStream) throws IOException {
     if (!packetInputStream.startNewTrack()) {
       return null;
     } else if (!packetInputStream.startNewPacket()) {
@@ -33,15 +33,15 @@ public class OggTrackLoader {
     return chooseTrackFromIdentifier(headerIdentifier, packetInputStream, broker);
   }
 
-  private static OggTrackStream chooseTrackFromIdentifier(int headerIdentifier, OggPacketInputStream packetInputStream,
-                                                          DirectBufferStreamBroker broker) throws IOException {
+  private static OggTrackProvider chooseTrackFromIdentifier(int headerIdentifier, OggPacketInputStream packetInputStream,
+                                                            DirectBufferStreamBroker broker) throws IOException {
 
     if (headerIdentifier == FLAC_IDENTIFIER) {
-      return OggFlacTrackStreamLoader.load(packetInputStream, broker);
+      return OggFlacTrackProviderLoader.load(packetInputStream, broker);
     } else if (headerIdentifier == VORBIS_IDENTIFIER) {
-      return new OggVorbisTrackStream(packetInputStream, broker);
+      return new OggVorbisTrackProvider(packetInputStream, broker);
     } else if (headerIdentifier == OPUS_IDENTIFIER) {
-      return new OggOpusTrackStream(packetInputStream, broker);
+      return new OggOpusTrackProvider(packetInputStream, broker);
     } else {
       throw new IllegalStateException("Unsupported track in OGG stream.");
     }

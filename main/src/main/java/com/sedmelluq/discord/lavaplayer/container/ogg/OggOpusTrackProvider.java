@@ -10,7 +10,7 @@ import java.nio.ByteBuffer;
 /**
  * OGG stream handler for Opus codec.
  */
-public class OggOpusTrackStream implements OggTrackStream {
+public class OggOpusTrackProvider implements OggTrackProvider {
   private static final int HEAD_TAG_HALF = ByteBuffer.wrap(new byte[] { 'H', 'e', 'a', 'd' }).getInt();
 
   private final OggPacketInputStream packetInputStream;
@@ -22,7 +22,7 @@ public class OggOpusTrackStream implements OggTrackStream {
    * @param broker Broker for loading stream data into direct byte buffer, it has already loaded the first packet of the
    *               stream at this point.
    */
-  public OggOpusTrackStream(OggPacketInputStream packetInputStream, DirectBufferStreamBroker broker) {
+  public OggOpusTrackProvider(OggPacketInputStream packetInputStream, DirectBufferStreamBroker broker) {
     this.packetInputStream = packetInputStream;
     this.broker = broker;
   }

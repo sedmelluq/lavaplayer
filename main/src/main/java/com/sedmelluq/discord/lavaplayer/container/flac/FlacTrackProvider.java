@@ -12,7 +12,7 @@ import java.io.IOException;
 /**
  * A provider of audio frames from a FLAC track.
  */
-public class FlacTrackStream {
+public class FlacTrackProvider {
   private final FlacTrackInfo info;
   private final SeekableInputStream inputStream;
   private final SplitShortPcmAudioFilter downstream;
@@ -26,7 +26,7 @@ public class FlacTrackStream {
    * @param info Track information from FLAC metadata
    * @param inputStream Input stream to use
    */
-  public FlacTrackStream(AudioProcessingContext context, FlacTrackInfo info, SeekableInputStream inputStream) {
+  public FlacTrackProvider(AudioProcessingContext context, FlacTrackInfo info, SeekableInputStream inputStream) {
     this.info = info;
     this.inputStream = inputStream;
     this.downstream = FilterChainBuilder.forSplitShortPcm(context, info.stream.sampleRate);

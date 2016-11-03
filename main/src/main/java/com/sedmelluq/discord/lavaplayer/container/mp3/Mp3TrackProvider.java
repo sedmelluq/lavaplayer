@@ -21,7 +21,7 @@ import static com.sedmelluq.discord.lavaplayer.natives.mp3.Mp3Decoder.SAMPLES_PE
 /**
  * Handles parsing MP3 files, seeking and sending the decoded frames to the specified frame consumer.
  */
-public class Mp3StreamingFile {
+public class Mp3TrackProvider {
   private static final byte[] IDV3_TAG = new byte[] { 0x49, 0x44, 0x33 };
   private static final int IDV3_FLAG_EXTENDED = 0x40;
 
@@ -47,7 +47,7 @@ public class Mp3StreamingFile {
    *                instance is only used to retrieve information about the track.
    * @param inputStream Stream to read the file from
    */
-  public Mp3StreamingFile(AudioProcessingContext context, SeekableInputStream inputStream) {
+  public Mp3TrackProvider(AudioProcessingContext context, SeekableInputStream inputStream) {
     this.context = context;
     this.inputStream = inputStream;
     this.dataInput = new DataInputStream(inputStream);
