@@ -4,7 +4,6 @@ import com.sedmelluq.discord.lavaplayer.tools.io.PersistentHttpStream;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.impl.client.CloseableHttpClient;
 
-import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 
