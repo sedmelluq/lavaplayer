@@ -154,7 +154,7 @@ public class YoutubeAudioSourceManager implements AudioSourceManager {
         Matcher mixMatcher = mixEmbeddedPattern.matcher(identifier);
 
         if (playlistMatcher.find()) {
-          return loadPlaylistWithId(playlistMatcher.group(1), matcher.group(1));
+          return loadLinkedPlaylistWithId(playlistMatcher.group(1), matcher.group(1));
         } else if (mixMatcher.find()) {
           return loadMixWithId(mixMatcher.group(1), matcher.group(1));
         } else {
@@ -164,6 +164,16 @@ public class YoutubeAudioSourceManager implements AudioSourceManager {
     }
 
     return null;
+  }
+
+  private AudioItem loadLinkedPlaylistWithId(String playlistId, String videoId) {
+    AudioPlaylist playlist = loadPlaylistWithId(playlistId, videoId);
+
+    if (playlist == null) {
+      return loadTrackWithVideoId(videoId, false);
+    } else {
+      return playlist;
+    }
   }
 
   private AudioTrack loadTrackWithVideoId(String videoId, boolean mustExist) {
@@ -294,11 +304,21 @@ public class YoutubeAudioSourceManager implements AudioSourceManager {
         return buildPlaylist(httpClient, document, selectedVideoId);
       }
     } catch (Exception e) {
-      throw new RuntimeException(e);
+      throw ExceptionTools.wrapUnfriendlyExceptions(e);
     }
   }
 
   private AudioPlaylist buildPlaylist(CloseableHttpClient httpClient, Document document, String selectedVideoId) throws IOException {
+    boolean isAccessible = !document.select("#pl-header").isEmpty();
+
+    if (!isAccessible) {
+      if (selectedVideoId != null) {
+        return null;
+      } else {
+        throw new FriendlyException("The playlist is private.", COMMON, null);
+      }
+    }
+
     Element container = document.select("#pl-header").get(0).parent();
 
     String playlistName = container.select(".pl-header-title").get(0).text();

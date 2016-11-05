@@ -42,6 +42,20 @@ public class ExceptionTools {
   }
 
   /**
+   * If the exception is not a FriendlyException, wrap with a RuntimeException
+   *
+   * @param throwable The exception to potentially wrap
+   * @return Original or wrapped exception
+   */
+  public static RuntimeException wrapUnfriendlyExceptions(Throwable throwable) {
+    if (throwable instanceof FriendlyException) {
+      return (FriendlyException) throwable;
+    } else {
+      return new RuntimeException(throwable);
+    }
+  }
+
+  /**
    * Log a FriendlyException appropriately according to its severity.
    * @param log Logger instance to log it to
    * @param exception The exception itself
