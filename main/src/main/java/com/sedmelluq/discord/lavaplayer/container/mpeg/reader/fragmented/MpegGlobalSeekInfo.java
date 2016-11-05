@@ -1,4 +1,4 @@
-package com.sedmelluq.discord.lavaplayer.container.mpeg;
+package com.sedmelluq.discord.lavaplayer.container.mpeg.reader.fragmented;
 
 /**
  * Describes the seek info for a fragmented MP4 file

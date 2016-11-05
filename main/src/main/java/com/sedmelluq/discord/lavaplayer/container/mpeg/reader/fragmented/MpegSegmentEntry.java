@@ -1,4 +1,4 @@
-package com.sedmelluq.discord.lavaplayer.container.mpeg;
+package com.sedmelluq.discord.lavaplayer.container.mpeg.reader.fragmented;
 
 /**
  * Information about one MP4 segment aka fragment

@@ -1,4 +1,4 @@
-package com.sedmelluq.discord.lavaplayer.container.mpeg;
+package com.sedmelluq.discord.lavaplayer.container.mpeg.reader;
 
 /**
  * Information for one MP4 section (aka box)

@@ -5,6 +5,8 @@ package com.sedmelluq.discord.lavaplayer.track;
  * which means that the item referred to in it is loaded instead.
  */
 public class AudioReference implements AudioItem {
+  public static final AudioReference NO_TRACK = new AudioReference(null, null);
+
   /**
    * The identifier of the other item.
    */

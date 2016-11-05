@@ -1,4 +1,4 @@
-package com.sedmelluq.discord.lavaplayer.container.mpeg;
+package com.sedmelluq.discord.lavaplayer.container.mpeg.reader;
 
 import com.sedmelluq.discord.lavaplayer.tools.io.SeekableInputStream;
 
@@ -39,13 +39,13 @@ public class MpegReader {
    * @return The element if there were any more child elements
    */
   public MpegSectionInfo nextChild(MpegSectionInfo parent) {
-    if (parent.offset + parent.length <= seek.getPosition()) {
+    if (parent.offset + parent.length <= seek.getPosition() + 8) {
       return null;
     }
 
     try {
       long offset = seek.getPosition();
-      long length = data.readInt();
+      long length = Integer.toUnsignedLong(data.readInt());
       return new MpegSectionInfo(offset, length, readFourCC());
     } catch (IOException e) {
       throw new RuntimeException(e);
@@ -105,6 +105,7 @@ public class MpegReader {
     private final MpegSectionInfo parent;
     private final List<Handler> handlers;
     private final MpegReader reader;
+    private MpegParseStopChecker stopChecker;
 
     private Chain(MpegSectionInfo parent, MpegReader reader) {
       this.parent = parent;
@@ -155,6 +156,16 @@ public class MpegReader {
     }
 
     /**
+     * Assign a parsing stop checker to this chain.
+     * @param stopChecker Stop checker.
+     * @return this
+     */
+    public Chain stopChecker(MpegParseStopChecker stopChecker) {
+      this.stopChecker = stopChecker;
+      return this;
+    }
+
+    /**
      * Process the current section with all the handlers specified so far
      * @throws IOException On read error
      */
@@ -163,14 +174,23 @@ public class MpegReader {
       boolean finished = false;
 
       while (!finished && (child = reader.nextChild(parent)) != null) {
-        for (Handler handler : handlers) {
-          if (handler.type.equals(child.type) && !handleSection(child, handler)) {
-            finished = true;
-            break;
-          }
+        finished = stopChecker != null && stopChecker.check(child, true);
+
+        if (!finished) {
+          processHandlers(child);
+
+          finished = stopChecker != null && stopChecker.check(child, false);
         }
 
         reader.skip(child);
+      }
+    }
+
+    private void processHandlers(MpegSectionInfo child) throws IOException {
+      for (Handler handler : handlers) {
+        if (handler.type.equals(child.type)) {
+          handleSection(child, handler);
+        }
       }
     }
 

@@ -12,6 +12,7 @@ import com.sedmelluq.discord.lavaplayer.source.bandcamp.BandcampAudioSourceManag
 import com.sedmelluq.discord.lavaplayer.source.http.HttpAudioSourceManager;
 import com.sedmelluq.discord.lavaplayer.source.local.LocalAudioSourceManager;
 import com.sedmelluq.discord.lavaplayer.source.soundcloud.SoundCloudAudioSourceManager;
+import com.sedmelluq.discord.lavaplayer.source.vimeo.VimeoAudioSourceManager;
 import com.sedmelluq.discord.lavaplayer.source.youtube.YoutubeAudioSourceManager;
 import com.sedmelluq.discord.lavaplayer.tools.DaemonThreadFactory;
 import net.dv8tion.jda.JDA;
@@ -47,7 +48,7 @@ public class BotApplicationManager extends ListenerAdapter {
 
     playerManager = new DefaultAudioPlayerManager();
     //playerManager.useRemoteNodes("localhost:8080");
-    playerManager.enableGcMonitoring();
+    //playerManager.enableGcMonitoring();
     JdaUdpQueueingHookManager jdaUdpQueueingHookManager = new JdaUdpQueueingHookManager();
     playerManager.setOutputHookFactory(jdaUdpQueueingHookManager);
     jdaUdpQueueingHookManager.startDispatcher();
@@ -55,6 +56,7 @@ public class BotApplicationManager extends ListenerAdapter {
     playerManager.registerSourceManager(new YoutubeAudioSourceManager());
     playerManager.registerSourceManager(new SoundCloudAudioSourceManager());
     playerManager.registerSourceManager(new BandcampAudioSourceManager());
+    playerManager.registerSourceManager(new VimeoAudioSourceManager());
     playerManager.registerSourceManager(new HttpAudioSourceManager());
     playerManager.registerSourceManager(new LocalAudioSourceManager());
 

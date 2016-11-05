@@ -1,4 +1,4 @@
-package com.sedmelluq.discord.lavaplayer.container.mpeg;
+package com.sedmelluq.discord.lavaplayer.container.mpeg.reader;
 
 import java.io.IOException;
 

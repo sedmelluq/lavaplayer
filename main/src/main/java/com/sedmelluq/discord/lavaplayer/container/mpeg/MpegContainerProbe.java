@@ -2,6 +2,7 @@ package com.sedmelluq.discord.lavaplayer.container.mpeg;
 
 import com.sedmelluq.discord.lavaplayer.container.MediaContainerDetectionResult;
 import com.sedmelluq.discord.lavaplayer.container.MediaContainerProbe;
+import com.sedmelluq.discord.lavaplayer.container.mpeg.reader.MpegFileTrackProvider;
 import com.sedmelluq.discord.lavaplayer.tools.io.SeekableInputStream;
 import com.sedmelluq.discord.lavaplayer.track.AudioReference;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
@@ -36,15 +37,23 @@ public class MpegContainerProbe implements MediaContainerProbe {
 
     log.debug("Track {} is an MP4 file.", reference.identifier);
 
-    MpegStreamingFile file = new MpegStreamingFile(inputStream);
+    MpegFileLoader file = new MpegFileLoader(inputStream);
+    file.parseHeaders();
 
-    if (!file.isFragmented()) {
-      return new MediaContainerDetectionResult(this, "Only fragmented MP4 file format is currently supported.");
-    } else if (!hasSupportedAudioTrack(file)) {
+    MpegTrackInfo audioTrack = getSupportedAudioTrack(file);
+
+    if (audioTrack == null) {
       return new MediaContainerDetectionResult(this, "No supported audio format in the MP4 file.");
     }
 
-    return new MediaContainerDetectionResult(this, new AudioTrackInfo(UNKNOWN_TITLE, UNKNOWN_ARTIST, file.getDuration(),
+    MpegTrackConsumer trackConsumer = new MpegNoopTrackConsumer(audioTrack);
+    MpegFileTrackProvider fileReader = file.loadReader(trackConsumer);
+
+    if (fileReader == null) {
+      return new MediaContainerDetectionResult(this, "MP4 file uses an unsupported format.");
+    }
+
+    return new MediaContainerDetectionResult(this, new AudioTrackInfo(UNKNOWN_TITLE, UNKNOWN_ARTIST, fileReader.getDuration(),
         reference.identifier, false));
   }
 
@@ -53,13 +62,13 @@ public class MpegContainerProbe implements MediaContainerProbe {
     return new MpegAudioTrack(trackInfo, inputStream);
   }
 
-  private boolean hasSupportedAudioTrack(MpegStreamingFile file) {
+  private MpegTrackInfo getSupportedAudioTrack(MpegFileLoader file) {
     for (MpegTrackInfo track : file.getTrackList()) {
       if ("soun".equals(track.handler) && "mp4a".equals(track.codecName)) {
-        return true;
+        return track;
       }
     }
 
-    return false;
+    return null;
   }
 }

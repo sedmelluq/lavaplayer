@@ -335,7 +335,9 @@ public class DefaultAudioPlayerManager implements AudioPlayerManager {
 
     for (int redirects = 0; redirects < 3 && currentReference.identifier != null; redirects++) {
       AudioItem item = checkSourcesForItemOnce(currentReference, resultHandler);
-      if (!(item instanceof AudioReference)) {
+      if (item == null) {
+        return false;
+      } else if (!(item instanceof AudioReference)) {
         return true;
       }
       currentReference = (AudioReference) item;

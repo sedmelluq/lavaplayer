@@ -54,6 +54,10 @@ public class MpegTrackInfo {
       this.trackId = trackId;
     }
 
+    public int getTrackId() {
+      return trackId;
+    }
+
     public String getHandler() {
       return handler;
     }

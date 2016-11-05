@@ -1,5 +1,6 @@
 package com.sedmelluq.discord.lavaplayer.container.mpeg;
 
+import com.sedmelluq.discord.lavaplayer.container.mpeg.reader.MpegFileTrackProvider;
 import com.sedmelluq.discord.lavaplayer.tools.ExceptionTools;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.tools.io.SeekableInputStream;
@@ -35,31 +36,26 @@ public class MpegAudioTrack extends BaseAudioTrack {
 
   @Override
   public void process(LocalAudioTrackExecutor localExecutor) {
-    MpegStreamingFile file = loadMp4File();
+    MpegFileLoader file = new MpegFileLoader(inputStream);
+    file.parseHeaders();
+
     MpegTrackConsumer trackConsumer = loadAudioTrack(file, localExecutor.getProcessingContext());
 
     try {
-      localExecutor.executeProcessingLoop(() -> file.provideFrames(trackConsumer), file::seekToTimecode);
+      MpegFileTrackProvider fileReader = file.loadReader(trackConsumer);
+      if (fileReader == null) {
+        throw new FriendlyException("Unknown MP4 format.", SUSPICIOUS, null);
+      }
+
+      accurateDuration.set(fileReader.getDuration());
+
+      localExecutor.executeProcessingLoop(fileReader::provideFrames, fileReader::seekToTimecode);
     } finally {
       trackConsumer.close();
     }
   }
 
-  private MpegStreamingFile loadMp4File() {
-    MpegStreamingFile file = new MpegStreamingFile(inputStream);
-    file.readFile();
-
-    if (!file.isFragmented()) {
-      throw new FriendlyException("This track uses an unsupported MP4 version.", SUSPICIOUS,
-          new IllegalStateException("Non-fragmented MP4 files are not supported."));
-    }
-
-    accurateDuration.set(file.getDuration());
-
-    return file;
-  }
-
-  private MpegTrackConsumer loadAudioTrack(MpegStreamingFile file, AudioProcessingContext context) {
+  private MpegTrackConsumer loadAudioTrack(MpegFileLoader file, AudioProcessingContext context) {
     MpegTrackConsumer trackConsumer = null;
     boolean success = false;
 
