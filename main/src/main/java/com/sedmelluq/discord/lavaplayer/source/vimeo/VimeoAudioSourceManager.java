@@ -25,7 +25,7 @@ import java.util.regex.Pattern;
 import static com.sedmelluq.discord.lavaplayer.tools.FriendlyException.Severity.SUSPICIOUS;
 
 /**
- * Audio source manager that implements finding Vimeo tracks based from URL.
+ * Audio source manager which detects Vimeo tracks by URL.
  */
 public class VimeoAudioSourceManager implements AudioSourceManager {
   private static final String TRACK_URL_REGEX = "^https://vimeo.com/[0-9]+(?:\\?.*|)$";
