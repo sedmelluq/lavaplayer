@@ -9,8 +9,11 @@ import com.sedmelluq.discord.lavaplayer.remote.message.TrackStartResponseMessage
 import com.sedmelluq.discord.lavaplayer.remote.message.TrackFrameDataMessage;
 import com.sedmelluq.discord.lavaplayer.remote.message.TrackFrameRequestMessage;
 import com.sedmelluq.discord.lavaplayer.remote.message.TrackStoppedMessage;
+import com.sedmelluq.discord.lavaplayer.source.bandcamp.BandcampAudioSourceManager;
 import com.sedmelluq.discord.lavaplayer.source.http.HttpAudioSourceManager;
 import com.sedmelluq.discord.lavaplayer.source.soundcloud.SoundCloudAudioSourceManager;
+import com.sedmelluq.discord.lavaplayer.source.twitch.TwitchStreamAudioSourceManager;
+import com.sedmelluq.discord.lavaplayer.source.vimeo.VimeoAudioSourceManager;
 import com.sedmelluq.discord.lavaplayer.source.youtube.YoutubeAudioSourceManager;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
@@ -52,6 +55,9 @@ public class PlayingTrackManager {
     manager.setUseSeekGhosting(false);
     manager.registerSourceManager(new YoutubeAudioSourceManager());
     manager.registerSourceManager(new SoundCloudAudioSourceManager());
+    manager.registerSourceManager(new BandcampAudioSourceManager());
+    manager.registerSourceManager(new VimeoAudioSourceManager());
+    manager.registerSourceManager(new TwitchStreamAudioSourceManager());
     manager.registerSourceManager(new HttpAudioSourceManager());
   }
 
