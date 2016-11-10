@@ -77,8 +77,8 @@ public abstract class BaseAudioTrack implements InternalAudioTrack {
   }
 
   @Override
-  public void setLoop(AudioLoop loop) {
-    getActiveExecutor().setLoop(loop);
+  public void setMarker(TrackMarker marker) {
+    getActiveExecutor().setMarker(marker);
   }
 
   @Override

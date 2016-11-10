@@ -3,9 +3,10 @@ package com.sedmelluq.discord.lavaplayer.track.playback;
 import com.sedmelluq.discord.lavaplayer.player.AudioConfiguration;
 import com.sedmelluq.discord.lavaplayer.tools.ExceptionTools;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
-import com.sedmelluq.discord.lavaplayer.track.AudioLoop;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackState;
 import com.sedmelluq.discord.lavaplayer.track.InternalAudioTrack;
+import com.sedmelluq.discord.lavaplayer.track.TrackMarker;
+import com.sedmelluq.discord.lavaplayer.track.TrackMarkerTracker;
 import com.sedmelluq.discord.lavaplayer.track.TrackStateListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,6 +18,8 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static com.sedmelluq.discord.lavaplayer.tools.FriendlyException.Severity.FAULT;
 import static com.sedmelluq.discord.lavaplayer.tools.FriendlyException.Severity.SUSPICIOUS;
+import static com.sedmelluq.discord.lavaplayer.track.TrackMarkerHandler.MarkerState.ENDED;
+import static com.sedmelluq.discord.lavaplayer.track.TrackMarkerHandler.MarkerState.STOPPED;
 
 /**
  * Handles the execution and output buffering of an audio track.
@@ -34,7 +37,7 @@ public class LocalAudioTrackExecutor implements AudioTrackExecutor {
   private final AtomicLong lastFrameTimecode = new AtomicLong(0);
   private final AtomicReference<AudioTrackState> state = new AtomicReference<>(AudioTrackState.INACTIVE);
   private final Object actionSynchronizer = new Object();
-  private volatile AudioLoop audioLoop;
+  private final TrackMarkerTracker markerTracker = new TrackMarkerTracker();
 
   /**
    * @param audioTrack The audio track that this executor executes
@@ -86,6 +89,7 @@ public class LocalAudioTrackExecutor implements AudioTrackExecutor {
 
           playingThread.compareAndSet(Thread.currentThread(), null);
 
+          markerTracker.trigger(ENDED);
           state.set(AudioTrackState.FINISHED);
         }
       }
@@ -187,17 +191,8 @@ public class LocalAudioTrackExecutor implements AudioTrackExecutor {
   }
 
   @Override
-  public void setLoop(AudioLoop loop) {
-    if (!audioTrack.isSeekable()) {
-      return;
-    }
-
-    this.audioLoop = loop;
-
-    if (loop != null) {
-      log.debug("Setting loop between {} and {} on track {}", loop.startPosition, loop.endPosition, audioTrack.getIdentifier());
-      setPosition(loop.startPosition);
-    }
+  public void setMarker(TrackMarker marker) {
+    markerTracker.set(marker, getPosition());
   }
 
   /**
@@ -224,6 +219,7 @@ public class LocalAudioTrackExecutor implements AudioTrackExecutor {
 
         if (checkStopped()) {
           proceed = false;
+          markerTracker.trigger(STOPPED);
         } else if (checkPendingSeek(seekExecutor)) {
           proceed = true;
         } else {
@@ -275,6 +271,7 @@ public class LocalAudioTrackExecutor implements AudioTrackExecutor {
 
     seekExecutor.performSeek(seekPosition);
     pendingSeek.set(-1);
+    markerTracker.checkSeekTimecode(seekPosition);
   }
 
   @Override
@@ -282,9 +279,8 @@ public class LocalAudioTrackExecutor implements AudioTrackExecutor {
     AudioFrame frame = frameBuffer.provide();
 
     if (frame != null && !frame.isTerminator()) {
-      AudioLoop loop = audioLoop;
-      if (loop != null && frame.timecode >= loop.endPosition && !isPerformingSeek()) {
-        setPosition(loop.startPosition);
+      if (!isPerformingSeek()) {
+        markerTracker.checkPlaybackTimecode(frame.timecode);
       }
 
       lastFrameTimecode.set(frame.timecode);

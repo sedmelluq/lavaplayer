@@ -1,8 +1,9 @@
 package com.sedmelluq.discord.lavaplayer.track.playback;
 
-import com.sedmelluq.discord.lavaplayer.track.AudioLoop;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackState;
+import com.sedmelluq.discord.lavaplayer.track.TrackMarker;
+import com.sedmelluq.discord.lavaplayer.track.TrackMarkerTracker;
 import com.sedmelluq.discord.lavaplayer.track.TrackStateListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,15 +16,16 @@ public class PrimordialAudioTrackExecutor implements AudioTrackExecutor {
   private static final Logger log = LoggerFactory.getLogger(LocalAudioTrackExecutor.class);
 
   private final AudioTrackInfo trackInfo;
+  private final TrackMarkerTracker markerTracker;
 
   private volatile long position;
-  private volatile AudioLoop loop;
 
   /**
    * @param trackInfo Information of the track this executor is used with
    */
   public PrimordialAudioTrackExecutor(AudioTrackInfo trackInfo) {
     this.trackInfo = trackInfo;
+    this.markerTracker = new TrackMarkerTracker();
   }
 
   @Override
@@ -48,8 +50,8 @@ public class PrimordialAudioTrackExecutor implements AudioTrackExecutor {
 
   @Override
   public void setPosition(long timecode) {
-    loop = null;
     position = timecode;
+    markerTracker.checkSeekTimecode(timecode);
   }
 
   @Override
@@ -58,9 +60,8 @@ public class PrimordialAudioTrackExecutor implements AudioTrackExecutor {
   }
 
   @Override
-  public void setLoop(AudioLoop loop) {
-    this.loop = loop;
-    this.position = 0;
+  public void setMarker(TrackMarker marker) {
+    markerTracker.set(marker, position);
   }
 
   @Override
@@ -73,10 +74,10 @@ public class PrimordialAudioTrackExecutor implements AudioTrackExecutor {
    * @param executor The executor to apply the state to
    */
   public void applyStateToExecutor(AudioTrackExecutor executor) {
-    if (loop != null) {
-      executor.setLoop(loop);
-    } else if (position != 0) {
+    if (position != 0) {
       executor.setPosition(0);
     }
+
+    executor.setMarker(markerTracker.remove());
   }
 }

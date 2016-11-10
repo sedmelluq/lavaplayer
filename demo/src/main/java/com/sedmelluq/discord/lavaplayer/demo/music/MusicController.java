@@ -12,10 +12,10 @@ import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.tools.io.MessageInput;
 import com.sedmelluq.discord.lavaplayer.tools.io.MessageOutput;
-import com.sedmelluq.discord.lavaplayer.track.AudioLoop;
 import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.DecodedTrackHolder;
+import com.sedmelluq.discord.lavaplayer.track.TrackMarker;
 import com.sedmelluq.discord.lavaplayer.udpqueue.natives.UdpQueueManager;
 import net.dv8tion.jda.entities.Guild;
 import net.dv8tion.jda.entities.Message;
@@ -155,16 +155,18 @@ public class MusicController implements BotController {
   }
 
   @BotCommandHandler
-  private void loop(Message message, long start, long end) {
+  private void marker(final Message message, long position, final String text) {
     forPlayingTrack(track -> {
-      track.setLoop(new AudioLoop(start, end));
+      track.setMarker(new TrackMarker(position, state -> {
+        message.getChannel().sendMessage("Trigger [" + text + "] cause [" + state.name() + "]");
+      }));
     });
   }
 
   @BotCommandHandler
-  private void cancel(Message message) {
+  private void unmark(Message message) {
     forPlayingTrack(track -> {
-      track.setLoop(null);
+      track.setMarker(null);
     });
   }
 

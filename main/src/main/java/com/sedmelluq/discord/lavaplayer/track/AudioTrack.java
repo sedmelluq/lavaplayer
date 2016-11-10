@@ -44,9 +44,9 @@ public interface AudioTrack extends AudioItem {
   void setPosition(long position);
 
   /**
-   * @param loop Descriptor for the loop to set
+   * @param marker Track position marker to place
    */
-  void setLoop(AudioLoop loop);
+  void setMarker(TrackMarker marker);
 
   /**
    * @return Duration of the track in milliseconds

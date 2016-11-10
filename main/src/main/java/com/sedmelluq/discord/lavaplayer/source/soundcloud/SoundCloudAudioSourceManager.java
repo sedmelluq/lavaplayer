@@ -160,12 +160,13 @@ public class SoundCloudAudioSourceManager implements AudioSourceManager {
 
   private JsonBrowser loadTrackInfoFromJson(JsonBrowser json) {
     for (JsonBrowser value : json.values()) {
-      if ("64".equals(value.get("id").text())) {
+      String id = value.get("id").text();
+      if ("64".equals(id) || "66".equals(id)) {
         return value.get("data").index(0);
       }
     }
 
-    throw new IllegalStateException("Could not find track information block (64).");
+    throw new IllegalStateException("Could not find track information block (64/66).");
   }
 
   private AudioPlaylist loadFromPlaylist(String playlistWebUrl) {

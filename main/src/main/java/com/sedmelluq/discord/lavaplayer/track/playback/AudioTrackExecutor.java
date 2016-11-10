@@ -1,7 +1,7 @@
 package com.sedmelluq.discord.lavaplayer.track.playback;
 
-import com.sedmelluq.discord.lavaplayer.track.AudioLoop;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackState;
+import com.sedmelluq.discord.lavaplayer.track.TrackMarker;
 import com.sedmelluq.discord.lavaplayer.track.TrackStateListener;
 
 /**
@@ -41,8 +41,8 @@ public interface AudioTrackExecutor extends AudioFrameProvider {
   AudioTrackState getState();
 
   /**
-   * Set the playback to loop between specified timecodes.
-   * @param loop The loop to set. Use null to cancel a previous loop.
+   * Set track position marker.
+   * @param marker Track position marker to set.
    */
-  void setLoop(AudioLoop loop);
+  void setMarker(TrackMarker marker);
 }

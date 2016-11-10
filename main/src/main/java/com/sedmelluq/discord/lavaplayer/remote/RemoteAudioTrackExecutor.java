@@ -3,10 +3,11 @@ package com.sedmelluq.discord.lavaplayer.remote;
 import com.sedmelluq.discord.lavaplayer.player.AudioConfiguration;
 import com.sedmelluq.discord.lavaplayer.tools.ExceptionTools;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
-import com.sedmelluq.discord.lavaplayer.track.AudioLoop;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackEndReason;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackState;
+import com.sedmelluq.discord.lavaplayer.track.TrackMarker;
+import com.sedmelluq.discord.lavaplayer.track.TrackMarkerTracker;
 import com.sedmelluq.discord.lavaplayer.track.TrackStateListener;
 import com.sedmelluq.discord.lavaplayer.track.playback.AudioFrame;
 import com.sedmelluq.discord.lavaplayer.track.playback.AudioFrameBuffer;
@@ -16,6 +17,9 @@ import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+
+import static com.sedmelluq.discord.lavaplayer.track.TrackMarkerHandler.MarkerState.ENDED;
+import static com.sedmelluq.discord.lavaplayer.track.TrackMarkerHandler.MarkerState.STOPPED;
 
 /**
  * This executor delegates the actual audio processing to a remote node.
@@ -34,9 +38,10 @@ public class RemoteAudioTrackExecutor implements AudioTrackExecutor {
   private final AudioFrameBuffer frameBuffer = new AudioFrameBuffer(BUFFER_DURATION_MS);
   private final AtomicLong lastFrameTimecode = new AtomicLong(0);
   private final AtomicLong pendingSeek = new AtomicLong(NO_SEEK);
-  private volatile AudioLoop audioLoop;
+  private final TrackMarkerTracker markerTracker = new TrackMarkerTracker();
   private volatile TrackStateListener activeListener;
   private volatile boolean hasReceivedData;
+  private volatile boolean hasStarted;
 
   /**
    * @param track Audio track to play
@@ -95,7 +100,10 @@ public class RemoteAudioTrackExecutor implements AudioTrackExecutor {
   public void clearSeek(long position) {
     if (position != NO_SEEK) {
       frameBuffer.setClearOnInsert();
-      pendingSeek.compareAndSet(position, NO_SEEK);
+
+      if (pendingSeek.compareAndSet(position, NO_SEEK)) {
+        markerTracker.checkSeekTimecode(position);
+      }
     }
   }
 
@@ -125,6 +133,8 @@ public class RemoteAudioTrackExecutor implements AudioTrackExecutor {
    */
   public void detach() {
     activeListener = null;
+
+    markerTracker.trigger(ENDED);
   }
 
   @Override
@@ -135,6 +145,7 @@ public class RemoteAudioTrackExecutor implements AudioTrackExecutor {
   @Override
   public void execute(TrackStateListener listener) {
     try {
+      hasStarted = true;
       activeListener = listener;
       remoteNodeManager.startPlaying(this);
     } catch (Throwable throwable) {
@@ -151,6 +162,8 @@ public class RemoteAudioTrackExecutor implements AudioTrackExecutor {
     frameBuffer.setTerminateOnEmpty();
     frameBuffer.clear();
 
+    markerTracker.trigger(STOPPED);
+
     remoteNodeManager.onTrackEnd(null, track, AudioTrackEndReason.STOPPED);
   }
 
@@ -166,7 +179,7 @@ public class RemoteAudioTrackExecutor implements AudioTrackExecutor {
 
   @Override
   public AudioTrackState getState() {
-    if (!hasReceivedData && activeListener == null) {
+    if (hasStarted && activeListener == null) {
       return AudioTrackState.FINISHED;
     } else if (!hasReceivedData) {
       return AudioTrackState.LOADING;
@@ -176,8 +189,8 @@ public class RemoteAudioTrackExecutor implements AudioTrackExecutor {
   }
 
   @Override
-  public void setLoop(AudioLoop loop) {
-    audioLoop = loop;
+  public void setMarker(TrackMarker marker) {
+    markerTracker.set(marker, getPosition());
   }
 
   @Override
@@ -187,9 +200,8 @@ public class RemoteAudioTrackExecutor implements AudioTrackExecutor {
     if (frame != null && !frame.isTerminator()) {
       lastFrameTimecode.set(frame.timecode);
 
-      AudioLoop loop = audioLoop;
-      if (loop != null && frame.timecode >= loop.endPosition && pendingSeek.get() == NO_SEEK) {
-        setPosition(loop.startPosition);
+      if (pendingSeek.get() == NO_SEEK && !frameBuffer.hasClearOnInsert()) {
+        markerTracker.checkPlaybackTimecode(frame.timecode);
       }
     }
 
