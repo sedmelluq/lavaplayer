@@ -20,10 +20,8 @@ public class OggTrackLoader {
    * @throws IllegalStateException If the track uses an unknown codec.
    */
   public static OggTrackProvider loadTrack(OggPacketInputStream packetInputStream) throws IOException {
-    if (!packetInputStream.startNewTrack()) {
+    if (!packetInputStream.startNewTrack() || !packetInputStream.startNewPacket()) {
       return null;
-    } else if (!packetInputStream.startNewPacket()) {
-      throw new IOException("Stream terminated before the first packet.");
     }
 
     DirectBufferStreamBroker broker = new DirectBufferStreamBroker(1024);
