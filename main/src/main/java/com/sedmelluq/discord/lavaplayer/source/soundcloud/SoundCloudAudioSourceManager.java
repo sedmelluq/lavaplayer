@@ -160,13 +160,14 @@ public class SoundCloudAudioSourceManager implements AudioSourceManager {
 
   private JsonBrowser loadTrackInfoFromJson(JsonBrowser json) {
     for (JsonBrowser value : json.values()) {
-      String id = value.get("id").text();
-      if ("64".equals(id) || "66".equals(id)) {
-        return value.get("data").index(0);
+      for (JsonBrowser entry : value.safeGet("data").values()) {
+        if (entry.isMap() && "track".equals(entry.get("kind").text())) {
+          return entry;
+        }
       }
     }
 
-    throw new IllegalStateException("Could not find track information block (64/66).");
+    throw new IllegalStateException("Could not find track information block.");
   }
 
   private AudioPlaylist loadFromPlaylist(String playlistWebUrl) {
@@ -185,13 +186,14 @@ public class SoundCloudAudioSourceManager implements AudioSourceManager {
 
   private JsonBrowser loadPlaylistInfoFromJson(JsonBrowser json) {
     for (JsonBrowser value : json.values()) {
-      String id = value.get("id").text();
-      if ("84".equals(id) || "85".equals(id)) {
-        return value.get("data").index(0);
+      for (JsonBrowser entry : value.safeGet("data").values()) {
+        if (entry.isMap() && "playlist".equals(entry.get("kind").text())) {
+          return entry;
+        }
       }
     }
 
-    throw new IllegalStateException("Could not find playlist information block (84/85).");
+    throw new IllegalStateException("Could not find playlist information block.");
   }
 
   private List<AudioTrack> loadTracksFromPlaylist(CloseableHttpClient httpClient, JsonBrowser playlistInfo, String playlistWebUrl) throws IOException {

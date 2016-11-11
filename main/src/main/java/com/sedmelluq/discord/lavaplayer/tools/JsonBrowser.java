@@ -23,6 +23,20 @@ public class JsonBrowser {
   }
 
   /**
+   * @return True if the value represents a list.
+   */
+  public boolean isList() {
+    return value instanceof List;
+  }
+
+  /**
+   * @return True if the value represents a map.
+   */
+  public boolean isMap() {
+    return value instanceof Map;
+  }
+
+  /**
    * Get an element at an index for a list value
    * @param index List index
    * @return JsonBrowser instance which wraps the value at the specified index
