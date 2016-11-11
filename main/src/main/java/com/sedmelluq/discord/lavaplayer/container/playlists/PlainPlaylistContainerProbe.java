@@ -24,7 +24,7 @@ import static com.sedmelluq.discord.lavaplayer.container.MediaContainerDetection
 public class PlainPlaylistContainerProbe implements MediaContainerProbe {
   private static final Logger log = LoggerFactory.getLogger(PlainPlaylistContainerProbe.class);
 
-  private static final Pattern linkPattern = Pattern.compile("^https?://.*");
+  private static final Pattern linkPattern = Pattern.compile("^(?:https?|icy)://.*");
 
   @Override
   public String getName() {

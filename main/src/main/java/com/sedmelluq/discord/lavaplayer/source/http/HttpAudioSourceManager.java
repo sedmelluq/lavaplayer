@@ -52,16 +52,26 @@ public class HttpAudioSourceManager extends ProbingAudioSourceManager {
 
   @Override
   public AudioItem loadItem(DefaultAudioPlayerManager manager, AudioReference reference) {
-    if (!reference.identifier.startsWith("https://") && !reference.identifier.startsWith("http://")) {
+    AudioReference httpReference = getAsHttpReference(reference);
+    if (httpReference == null) {
       return null;
     }
 
-    return handleLoadResult(detectContainer(reference));
+    return handleLoadResult(detectContainer(httpReference));
   }
 
   @Override
   protected AudioTrack createTrack(AudioTrackInfo trackInfo, MediaContainerProbe probe) {
     return new HttpAudioTrack(trackInfo, probe, this);
+  }
+
+  private AudioReference getAsHttpReference(AudioReference reference) {
+    if (reference.identifier.startsWith("https://") || reference.identifier.startsWith("http://")) {
+      return reference;
+    } else if (reference.identifier.startsWith("icy://")) {
+      return new AudioReference("http://" + reference.identifier.substring(6), reference.title);
+    }
+    return null;
   }
 
   private MediaContainerDetectionResult detectContainer(AudioReference reference) {
