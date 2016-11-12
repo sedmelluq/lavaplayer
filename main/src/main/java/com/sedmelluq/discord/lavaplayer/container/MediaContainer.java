@@ -16,13 +16,13 @@ import com.sedmelluq.discord.lavaplayer.container.playlists.PlsPlaylistContainer
 public enum MediaContainer {
   MKV(new MatroskaContainerProbe()),
   MP4(new MpegContainerProbe()),
-  MP3(new Mp3ContainerProbe()),
   FLAC(new FlacContainerProbe()),
   OGG(new OggContainerProbe()),
   ADTS(new AdtsContainerProbe()),
   M3U(new M3uPlaylistContainerProbe()),
   PLS(new PlsPlaylistContainerProbe()),
-  PLAIN(new PlainPlaylistContainerProbe());
+  PLAIN(new PlainPlaylistContainerProbe()),
+  MP3(new Mp3ContainerProbe());
 
   /**
    * The probe used to detect files using this container and create the audio tracks for them.
