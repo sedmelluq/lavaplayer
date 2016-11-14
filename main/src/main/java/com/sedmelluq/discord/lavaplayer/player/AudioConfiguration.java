@@ -13,7 +13,7 @@ public class AudioConfiguration {
    * Create a new configuration with default values.
    */
   public AudioConfiguration() {
-    resamplingQuality = ResamplingQuality.MEDIUM;
+    resamplingQuality = ResamplingQuality.LOW;
     opusEncodingQuality = OPUS_QUALITY_MAX;
   }
 

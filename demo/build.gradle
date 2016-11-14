@@ -18,6 +18,6 @@ dependencies {
   runtime "ch.qos.logback:logback-core:$logbackVersion"
 }
 
-mainClassName = 'com.sedmelluq.discord.lavaplayer.demo.Main'
+mainClassName = 'com.sedmelluq.discord.lavaplayer.demo.Bootstrap'
 
 compileJava.dependsOn(':natives:checkNatives')

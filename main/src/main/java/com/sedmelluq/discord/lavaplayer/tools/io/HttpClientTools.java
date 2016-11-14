@@ -58,10 +58,6 @@ public class HttpClientTools {
             .build()
     );
 
-    if (sslContext != null) {
-      httpClientBuilder.setSSLContext(sslContext);
-    }
-
     return httpClientBuilder;
   }
 
