@@ -148,7 +148,7 @@ public class YoutubeSignatureCipherManager {
     String swapKey = extractDollarEscapedFirstGroup(swapPattern, actionBody);
 
     Pattern extractor = Pattern.compile(
-        "(?:a=)?" + actions.group(1) + "\\.(" +
+        "(?:a=)?" + Pattern.quote(actions.group(1)) + "\\.(" +
         String.join("|", reverseKey, slicePart, splicePart, swapKey) +
         ")\\(a,(\\d+)\\)"
     );
