@@ -3,6 +3,8 @@ package com.sedmelluq.discord.lavaplayer.demo.jda;
 import com.sedmelluq.discord.lavaplayer.player.AudioLoadResultHandler;
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.player.DefaultAudioPlayerManager;
+import com.sedmelluq.discord.lavaplayer.source.AudioSourceManager;
+import com.sedmelluq.discord.lavaplayer.source.AudioSourceManagers;
 import com.sedmelluq.discord.lavaplayer.source.bandcamp.BandcampAudioSourceManager;
 import com.sedmelluq.discord.lavaplayer.source.http.HttpAudioSourceManager;
 import com.sedmelluq.discord.lavaplayer.source.local.LocalAudioSourceManager;
@@ -39,13 +41,8 @@ public class Main extends ListenerAdapter {
     this.musicManagers = new HashMap<>();
 
     this.playerManager = new DefaultAudioPlayerManager();
-    playerManager.registerSourceManager(new YoutubeAudioSourceManager());
-    playerManager.registerSourceManager(new SoundCloudAudioSourceManager());
-    playerManager.registerSourceManager(new BandcampAudioSourceManager());
-    playerManager.registerSourceManager(new VimeoAudioSourceManager());
-    playerManager.registerSourceManager(new TwitchStreamAudioSourceManager());
-    playerManager.registerSourceManager(new HttpAudioSourceManager());
-    playerManager.registerSourceManager(new LocalAudioSourceManager());
+    AudioSourceManagers.registerRemoteSources(playerManager);
+    AudioSourceManagers.registerLocalSource(playerManager);
   }
 
   private synchronized GuildMusicManager getGuildAudioPlayer(Guild guild) {
