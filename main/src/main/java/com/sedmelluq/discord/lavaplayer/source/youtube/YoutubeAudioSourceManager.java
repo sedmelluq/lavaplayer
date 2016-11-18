@@ -18,6 +18,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.http.client.CookieStore;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.http.impl.client.BasicCookieStore;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -32,6 +33,7 @@ import org.slf4j.LoggerFactory;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.net.URI;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
@@ -62,6 +64,7 @@ public class YoutubeAudioSourceManager implements AudioSourceManager {
   private static final String MIX_REGEX = "(RD[a-zA-Z0-9_-]+)";
   private static final String PROTOCOL_REGEX = "(?:http://|https://|)";
   private static final String SUFFIX_REGEX = "(?:\\?.*|&.*|)";
+  private static final String SEARCH_PREFIX = "ytsearch:";
 
   private static final Pattern[] validTrackPatterns = new Pattern[] {
       Pattern.compile("^" + VIDEO_ID_REGEX + "$"),
@@ -99,6 +102,10 @@ public class YoutubeAudioSourceManager implements AudioSourceManager {
   @Override
   public AudioItem loadItem(DefaultAudioPlayerManager manager, AudioReference reference) {
     AudioItem result;
+
+    if (reference.identifier.startsWith(SEARCH_PREFIX)) {
+      return loadSearchResult(reference.identifier.substring(SEARCH_PREFIX.length()).trim());
+    }
 
     if ((result = loadTrack(reference.identifier)) == null) {
       result = loadPlaylist(reference.identifier);
@@ -387,7 +394,7 @@ public class YoutubeAudioSourceManager implements AudioSourceManager {
     return null;
   }
 
-  private int lengthTextToSeconds(String durationText) {
+  private static int lengthTextToSeconds(String durationText) {
     String[] parts = durationText.split(":");
     return Integer.valueOf(parts[0]) * 60 + Integer.valueOf(parts[1]);
   }
@@ -458,5 +465,57 @@ public class YoutubeAudioSourceManager implements AudioSourceManager {
         log.warn("Failed to load a track from a mix.", e);
       }
     }
+  }
+
+  private AudioItem loadSearchResult(String query) {
+    log.debug("Performing a search with query {}", query);
+
+    try (CloseableHttpClient httpClient = httpClientBuilder.build()) {
+      URI url = new URIBuilder("https://www.youtube.com/results").addParameter("search_query", query).build();
+
+      try (CloseableHttpResponse response = httpClient.execute(new HttpGet(url))) {
+        if (response.getStatusLine().getStatusCode() != 200) {
+          throw new IOException("Invalid status code for search response.");
+        }
+
+        Document document = Jsoup.parse(response.getEntity().getContent(), CHARSET, "");
+        return extractSearchResults(document, query);
+      }
+    } catch (Exception e) {
+      throw ExceptionTools.wrapUnfriendlyExceptions(e);
+    }
+  }
+
+  private AudioItem extractSearchResults(Document document, String query) {
+    List<AudioTrack> tracks = new ArrayList<>();
+
+    for (Element results : document.select("#page > #content #results")) {
+      for (Element result : results.select(".yt-lockup-video")) {
+        extractTrackFromResultEntry(tracks, result);
+      }
+    }
+
+    if (tracks.isEmpty()) {
+      return AudioReference.NO_TRACK;
+    } else {
+      return new BasicAudioPlaylist("Search results for: " + query, tracks, null);
+    }
+  }
+
+  private void extractTrackFromResultEntry(List<AudioTrack> tracks, Element element) {
+    Elements durationHolder = element.select(".video-time");
+    Elements contentHolder = element.select(".yt-lockup-content");
+
+    if (durationHolder.isEmpty()) {
+      return;
+    }
+
+    String videoId = element.attr("data-context-item-id");
+    long length = lengthTextToSeconds(durationHolder.get(0).text()) * 1000L;
+
+    String title = contentHolder.get(0).select(".yt-lockup-title > a").text();
+    String author = contentHolder.get(0).select(".yt-lockup-byline > a").text();
+
+    tracks.add(new YoutubeAudioTrack(new AudioTrackInfo(title, author, length, videoId, false), this));
   }
 }
