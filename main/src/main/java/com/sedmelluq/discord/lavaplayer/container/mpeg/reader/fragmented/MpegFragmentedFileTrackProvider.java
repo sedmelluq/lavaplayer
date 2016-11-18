@@ -156,7 +156,7 @@ public class MpegFragmentedFileTrackProvider implements MpegFileTrackProvider {
       final MpegTrackFragmentHeader.Builder builder = new MpegTrackFragmentHeader.Builder();
 
       reader.in(traf).handleVersioned("tfhd", tfhd -> {
-        builder.setTrackId(reader.data.readInt());
+        parseTrackFragmentHeader(tfhd, builder);
       }).handleVersioned("tfdt", tfdt -> {
         builder.setBaseTimecode((tfdt.version == 1) ? reader.data.readLong() : reader.data.readInt());
       }).handleVersioned("trun", trun -> {
@@ -171,6 +171,30 @@ public class MpegFragmentedFileTrackProvider implements MpegFileTrackProvider {
     }).run();
 
     return header.get();
+  }
+
+  private void parseTrackFragmentHeader(MpegVersionedSectionInfo tfhd, MpegTrackFragmentHeader.Builder builder) throws IOException {
+    builder.setTrackId(reader.data.readInt());
+
+    if ((tfhd.flags & 0x000010) != 0) {
+      // Need to read default sample size, but first must skip the fields before it
+      if ((tfhd.flags & 0x000001) != 0) {
+        // Skip baseDataOffset
+        reader.data.readLong();
+      }
+
+      if ((tfhd.flags & 0x000002) != 0) {
+        // Skip sampleDescriptionIndex
+        reader.data.readInt();
+      }
+
+      if ((tfhd.flags & 0x000008) != 0) {
+        // Skip defaultSampleDuration
+        reader.data.readInt();
+      }
+
+      builder.setDefaultSampleSize(reader.data.readInt());
+    }
   }
 
   private void parseTrackRunInfo(MpegVersionedSectionInfo trun, MpegTrackFragmentHeader.Builder builder) throws IOException {

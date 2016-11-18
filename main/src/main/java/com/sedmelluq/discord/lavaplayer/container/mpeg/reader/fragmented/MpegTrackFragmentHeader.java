@@ -47,6 +47,8 @@ public class MpegTrackFragmentHeader {
     private int trackId;
     private long baseTimecode;
     private int dataOffset;
+    private int defaultSampleSize;
+    private int sampleCount;
     private int[] sampleDurations;
     private int[] sampleSizes;
 
@@ -76,6 +78,10 @@ public class MpegTrackFragmentHeader {
       this.dataOffset = dataOffset;
     }
 
+    public void setDefaultSampleSize(int defaultSampleSize) {
+      this.defaultSampleSize = defaultSampleSize;
+    }
+
     /**
      * Create sample duration and size arrays
      * @param hasDurations If duration data is present
@@ -83,9 +89,12 @@ public class MpegTrackFragmentHeader {
      * @param sampleCount Number of samples
      */
     public void createSampleArrays(boolean hasDurations, boolean hasSizes, int sampleCount) {
+      this.sampleCount = sampleCount;
+
       if (hasDurations) {
         sampleDurations = new int[sampleCount];
       }
+
       if (hasSizes) {
         sampleSizes = new int[sampleCount];
       }
@@ -113,7 +122,17 @@ public class MpegTrackFragmentHeader {
      * @return The final header
      */
     public MpegTrackFragmentHeader build() {
-      return new MpegTrackFragmentHeader(trackId, baseTimecode, dataOffset, sampleDurations, sampleSizes);
+      int[] finalSampleSizes = sampleSizes;
+
+      if (defaultSampleSize != 0) {
+        finalSampleSizes = new int[sampleCount];
+
+        for (int i = 0; i < sampleCount; i++) {
+          finalSampleSizes[i] = defaultSampleSize;
+        }
+      }
+
+      return new MpegTrackFragmentHeader(trackId, baseTimecode, dataOffset, sampleDurations, finalSampleSizes);
     }
   }
 }
