@@ -13,6 +13,7 @@ import com.sedmelluq.discord.lavaplayer.track.AudioItem;
 import com.sedmelluq.discord.lavaplayer.track.AudioReference;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo;
+import org.apache.http.HttpStatus;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 
@@ -36,6 +37,7 @@ public class HttpAudioSourceManager extends ProbingAudioSourceManager {
    */
   public HttpAudioSourceManager() {
     httpClientBuilder = HttpClientTools.createSharedCookiesHttpBuilder();
+    httpClientBuilder.setRedirectStrategy(new HttpClientTools.NoRedirectsStrategy());
   }
 
   /**
@@ -89,10 +91,13 @@ public class HttpAudioSourceManager extends ProbingAudioSourceManager {
   private MediaContainerDetectionResult detectContainerWithClient(CloseableHttpClient httpClient, AudioReference reference) throws IOException {
     try (PersistentHttpStream inputStream = new PersistentHttpStream(httpClient, new URI(reference.identifier), Long.MAX_VALUE)) {
       int statusCode = inputStream.checkStatusCode();
+      String redirectUrl = HttpClientTools.getRedirectLocation(inputStream.getCurrentResponse());
 
-      if (statusCode == 404) {
+      if (redirectUrl != null) {
+        return new MediaContainerDetectionResult(null, new AudioReference(redirectUrl, null));
+      } else if (statusCode == HttpStatus.SC_NOT_FOUND) {
         return null;
-      } else if (statusCode != 200 && statusCode != 206) {
+      } else if (!HttpClientTools.isSuccessWithContent(statusCode)) {
         throw new FriendlyException("That URL is not playable.", COMMON, new IllegalStateException("Status code " + statusCode));
       }
 

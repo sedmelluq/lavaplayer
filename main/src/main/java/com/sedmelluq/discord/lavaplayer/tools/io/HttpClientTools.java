@@ -1,10 +1,17 @@
 package com.sedmelluq.discord.lavaplayer.tools.io;
 
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
+import org.apache.http.Header;
+import org.apache.http.HttpRequest;
+import org.apache.http.HttpResponse;
 import org.apache.http.HttpResponseFactory;
+import org.apache.http.HttpStatus;
+import org.apache.http.ProtocolException;
 import org.apache.http.ProtocolVersion;
 import org.apache.http.client.CookieStore;
+import org.apache.http.client.RedirectStrategy;
 import org.apache.http.client.config.RequestConfig;
+import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.config.MessageConstraints;
 import org.apache.http.config.Registry;
 import org.apache.http.config.RegistryBuilder;
@@ -25,6 +32,7 @@ import org.apache.http.io.SessionInputBuffer;
 import org.apache.http.message.BasicLineParser;
 import org.apache.http.message.LineParser;
 import org.apache.http.message.ParserCursor;
+import org.apache.http.protocol.HttpContext;
 import org.apache.http.ssl.SSLContexts;
 import org.apache.http.util.CharArrayBuffer;
 import org.slf4j.Logger;
@@ -153,5 +161,53 @@ public class HttpClientTools {
         return new GarbageAllergicHttpResponseParser(buffer, IcyHttpLineParser.ICY_INSTANCE, DefaultHttpResponseFactory.INSTANCE, constraints);
       });
     }
+  }
+
+  /**
+   * A redirect strategy which does not follow any redirects.
+   */
+  public static class NoRedirectsStrategy implements RedirectStrategy {
+    @Override
+    public boolean isRedirected(HttpRequest request, HttpResponse response, HttpContext context) throws ProtocolException {
+      return false;
+    }
+
+    @Override
+    public HttpUriRequest getRedirect(HttpRequest request, HttpResponse response, HttpContext context) throws ProtocolException {
+      return null;
+    }
+  }
+
+  /**
+   * @param response Response object.
+   * @return A redirect location if the status code indicates a redirect and the Location header is present.
+   */
+  public static String getRedirectLocation(HttpResponse response) {
+    if (!isRedirectStatus(response.getStatusLine().getStatusCode())) {
+      return null;
+    }
+
+    Header header = response.getFirstHeader("Location");
+    return header != null ? header.getValue() : null;
+  }
+
+  private static boolean isRedirectStatus(int statusCode) {
+    switch (statusCode) {
+      case HttpStatus.SC_MOVED_PERMANENTLY:
+      case HttpStatus.SC_MOVED_TEMPORARILY:
+      case HttpStatus.SC_SEE_OTHER:
+      case HttpStatus.SC_TEMPORARY_REDIRECT:
+        return true;
+      default:
+        return false;
+    }
+  }
+
+  /**
+   * @param statusCode The status code of a response.
+   * @return True if this status code indicates a success with a response body
+   */
+  public static boolean isSuccessWithContent(int statusCode) {
+    return statusCode == HttpStatus.SC_OK || statusCode == HttpStatus.SC_PARTIAL_CONTENT;
   }
 }

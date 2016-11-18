@@ -58,6 +58,13 @@ public class PersistentHttpStream extends SeekableInputStream implements AutoClo
     return lastStatusCode;
   }
 
+  /**
+   * @return An HTTP response if one is currently open.
+   */
+  public HttpResponse getCurrentResponse() {
+    return currentResponse;
+  }
+
   protected URI getConnectUrl() {
     return contentUrl;
   }

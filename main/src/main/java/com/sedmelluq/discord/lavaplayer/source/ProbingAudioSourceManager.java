@@ -15,12 +15,12 @@ import static com.sedmelluq.discord.lavaplayer.tools.FriendlyException.Severity.
 public abstract class ProbingAudioSourceManager implements AudioSourceManager {
   protected AudioItem handleLoadResult(MediaContainerDetectionResult result) {
     if (result != null) {
-      if (!result.isContainerDetected()) {
+      if (result.isReference()) {
+        return result.getReference();
+      } else if (!result.isContainerDetected()) {
         throw new FriendlyException("Unknown file format.", COMMON, null);
       } else if (!result.isSupportedFile()) {
         throw new FriendlyException(result.getUnsupportedReason(), COMMON, null);
-      } else if (result.isReference()) {
-        return result.getReference();
       } else {
         return createTrack(result.getTrackInfo(), result.getContainerProbe());
       }
