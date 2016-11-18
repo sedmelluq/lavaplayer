@@ -1,0 +1,27 @@
+plugins {
+  id 'java'
+  id 'application'
+  id 'idea'
+}
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+repositories {
+  jcenter()
+  maven {
+    url 'http://maven.sedmelluq.com'
+  }
+}
+
+ext.logbackVersion = '1.1.7'
+
+dependencies {
+  compile 'net.dv8tion:JDA:2.2.1_375'
+  compile 'com.sedmelluq:lavaplayer:1.1.17'
+
+  runtime "ch.qos.logback:logback-classic:$logbackVersion"
+  runtime "ch.qos.logback:logback-core:$logbackVersion"
+}
+
+mainClassName = 'com.sedmelluq.discord.lavaplayer.demo.jda.Main'

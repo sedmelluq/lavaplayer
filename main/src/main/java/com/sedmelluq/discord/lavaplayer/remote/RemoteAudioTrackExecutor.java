@@ -36,12 +36,13 @@ public class RemoteAudioTrackExecutor implements AudioTrackExecutor {
   private final AtomicInteger volumeLevel;
   private final long executorId;
   private final AudioFrameBuffer frameBuffer = new AudioFrameBuffer(BUFFER_DURATION_MS);
-  private final AtomicLong lastFrameTimecode = new AtomicLong(0);
+  private final AtomicLong lastFrameTimecode = new AtomicLong();
   private final AtomicLong pendingSeek = new AtomicLong(NO_SEEK);
   private final TrackMarkerTracker markerTracker = new TrackMarkerTracker();
   private volatile TrackStateListener activeListener;
   private volatile boolean hasReceivedData;
   private volatile boolean hasStarted;
+  private volatile Throwable trackException;
 
   /**
    * @param track Audio track to play
@@ -117,6 +118,7 @@ public class RemoteAudioTrackExecutor implements AudioTrackExecutor {
     ExceptionTools.log(log, exception, track.getIdentifier());
 
     if (currentListener != null) {
+      trackException = exception;
       currentListener.onTrackException(track, exception);
     }
   }
@@ -206,5 +208,10 @@ public class RemoteAudioTrackExecutor implements AudioTrackExecutor {
     }
 
     return frame;
+  }
+
+  @Override
+  public boolean failedBeforeLoad() {
+    return trackException != null && !hasReceivedData;
   }
 }

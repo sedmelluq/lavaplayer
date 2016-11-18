@@ -65,6 +65,11 @@ public class PrimordialAudioTrackExecutor implements AudioTrackExecutor {
   }
 
   @Override
+  public boolean failedBeforeLoad() {
+    return false;
+  }
+
+  @Override
   public AudioFrame provide() {
     return null;
   }

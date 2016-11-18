@@ -38,6 +38,7 @@ public class LocalAudioTrackExecutor implements AudioTrackExecutor {
   private final AtomicReference<AudioTrackState> state = new AtomicReference<>(AudioTrackState.INACTIVE);
   private final Object actionSynchronizer = new Object();
   private final TrackMarkerTracker markerTracker = new TrackMarkerTracker();
+  private volatile Throwable trackException;
 
   /**
    * @param audioTrack The audio track that this executor executes
@@ -80,6 +81,7 @@ public class LocalAudioTrackExecutor implements AudioTrackExecutor {
         FriendlyException exception = ExceptionTools.wrapUnfriendlyExceptions("Something broke when playing the track.", FAULT, e);
         ExceptionTools.log(log, exception, "playback of " + audioTrack.getIdentifier());
 
+        trackException = exception;
         listener.onTrackException(audioTrack, exception);
 
         ExceptionTools.rethrowErrors(e);
@@ -193,6 +195,11 @@ public class LocalAudioTrackExecutor implements AudioTrackExecutor {
   @Override
   public void setMarker(TrackMarker marker) {
     markerTracker.set(marker, getPosition());
+  }
+
+  @Override
+  public boolean failedBeforeLoad() {
+    return trackException != null && !frameBuffer.hasReceivedFrames();
   }
 
   /**

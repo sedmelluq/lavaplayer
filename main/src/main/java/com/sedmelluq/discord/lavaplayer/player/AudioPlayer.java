@@ -25,10 +25,10 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
 
 import static com.sedmelluq.discord.lavaplayer.track.AudioTrackEndReason.CLEANUP;
 import static com.sedmelluq.discord.lavaplayer.track.AudioTrackEndReason.FINISHED;
+import static com.sedmelluq.discord.lavaplayer.track.AudioTrackEndReason.LOAD_FAILED;
 import static com.sedmelluq.discord.lavaplayer.track.AudioTrackEndReason.REPLACED;
 import static com.sedmelluq.discord.lavaplayer.track.AudioTrackEndReason.STOPPED;
 
@@ -38,7 +38,7 @@ import static com.sedmelluq.discord.lavaplayer.track.AudioTrackEndReason.STOPPED
 public class AudioPlayer implements AudioFrameProvider, TrackStateListener {
   private static final Logger log = LoggerFactory.getLogger(AudioPlayer.class);
 
-  private final AtomicReference<InternalAudioTrack> activeTrack;
+  private volatile InternalAudioTrack activeTrack;
   private volatile long lastRequestTime;
   private volatile long lastReceiveTime;
   private volatile boolean stuckEventSent;
@@ -48,6 +48,7 @@ public class AudioPlayer implements AudioFrameProvider, TrackStateListener {
   private final List<AudioEventListener> listeners;
   private final AtomicInteger volumeLevel;
   private final AudioOutputHook outputHook;
+  private final Object trackSwitchLock;
 
   /**
    * @param manager Audio player manager which this player is attached to
@@ -56,17 +57,18 @@ public class AudioPlayer implements AudioFrameProvider, TrackStateListener {
   public AudioPlayer(DefaultAudioPlayerManager manager, AudioOutputHook outputHook) {
     this.manager = manager;
     this.outputHook = outputHook;
-    activeTrack = new AtomicReference<>();
+    activeTrack = null;
     paused = new AtomicBoolean();
     listeners = new ArrayList<>();
     volumeLevel = new AtomicInteger(100);
+    trackSwitchLock = new Object();
   }
 
   /**
    * @return Currently playing track
    */
   public AudioTrack getPlayingTrack() {
-    return activeTrack.get();
+    return activeTrack;
   }
 
   /**
@@ -83,25 +85,26 @@ public class AudioPlayer implements AudioFrameProvider, TrackStateListener {
    */
   public boolean startTrack(AudioTrack track, boolean noInterrupt) {
     InternalAudioTrack newTrack = (InternalAudioTrack) track;
-    InternalAudioTrack previousTrack = null;
+    InternalAudioTrack previousTrack;
 
-    if (noInterrupt) {
-      if (!activeTrack.compareAndSet(null, newTrack)) {
+    synchronized (trackSwitchLock){
+      previousTrack = activeTrack;
+
+      if (noInterrupt && previousTrack != null) {
         return false;
       }
-    } else {
-      previousTrack = activeTrack.getAndSet(newTrack);
-    }
 
-    lastRequestTime = System.currentTimeMillis();
-    lastReceiveTime = System.nanoTime();
-    stuckEventSent = false;
+      activeTrack = newTrack;
+      lastRequestTime = System.currentTimeMillis();
+      lastReceiveTime = System.nanoTime();
+      stuckEventSent = false;
 
-    if (previousTrack != null) {
-      previousTrack.stop();
-      dispatchEvent(new TrackEndEvent(this, previousTrack, newTrack == null ? STOPPED : REPLACED));
+      if (previousTrack != null) {
+        previousTrack.stop();
+        dispatchEvent(new TrackEndEvent(this, previousTrack, newTrack == null ? STOPPED : REPLACED));
 
-      shadowTrack = previousTrack;
+        shadowTrack = previousTrack;
+      }
     }
 
     if (newTrack == null) {
@@ -125,10 +128,14 @@ public class AudioPlayer implements AudioFrameProvider, TrackStateListener {
   private void stopWithReason(AudioTrackEndReason reason) {
     shadowTrack = null;
 
-    InternalAudioTrack previousTrack = activeTrack.getAndSet(null);
-    if (previousTrack != null) {
-      previousTrack.stop();
-      dispatchEvent(new TrackEndEvent(this, previousTrack, reason));
+    synchronized (trackSwitchLock) {
+      InternalAudioTrack previousTrack = activeTrack;
+      activeTrack = null;
+
+      if (previousTrack != null) {
+        previousTrack.stop();
+        dispatchEvent(new TrackEndEvent(this, previousTrack, reason));
+      }
     }
   }
 
@@ -170,7 +177,7 @@ public class AudioPlayer implements AudioFrameProvider, TrackStateListener {
       return null;
     }
 
-    while ((track = activeTrack.get()) != null) {
+    while ((track = activeTrack) != null) {
       AudioFrame frame = track.provide();
 
       if (frame != null) {
@@ -197,8 +204,12 @@ public class AudioPlayer implements AudioFrameProvider, TrackStateListener {
   }
 
   private void handleTerminator(InternalAudioTrack track) {
-    if (activeTrack.compareAndSet(track, null)) {
-      dispatchEvent(new TrackEndEvent(this, track, FINISHED));
+    synchronized (trackSwitchLock) {
+      if (activeTrack == track) {
+        activeTrack = null;
+
+        dispatchEvent(new TrackEndEvent(this, track, track.getActiveExecutor().failedBeforeLoad() ? LOAD_FAILED : FINISHED));
+      }
     }
   }
 

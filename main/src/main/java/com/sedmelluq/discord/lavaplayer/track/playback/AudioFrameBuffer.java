@@ -20,6 +20,7 @@ public class AudioFrameBuffer implements AudioFrameConsumer, AudioFrameProvider 
   private final int fullCapacity;
   private final ArrayBlockingQueue<AudioFrame> audioFrames;
   private volatile boolean locked;
+  private volatile boolean receivedFrames;
   private boolean terminated;
   private boolean terminateOnEmpty;
   private boolean clearOnInsert;
@@ -34,11 +35,14 @@ public class AudioFrameBuffer implements AudioFrameConsumer, AudioFrameProvider 
     terminated = false;
     terminateOnEmpty = false;
     clearOnInsert = false;
+    receivedFrames = false;
   }
 
   @Override
   public void consume(AudioFrame frame) throws InterruptedException {
     if (!locked) {
+      receivedFrames = true;
+
       if (clearOnInsert) {
         audioFrames.clear();
         clearOnInsert = false;
@@ -142,6 +146,13 @@ public class AudioFrameBuffer implements AudioFrameConsumer, AudioFrameProvider 
    */
   public void lockBuffer() {
     locked = true;
+  }
+
+  /**
+   * @return True if this buffer has received any input frames.
+   */
+  public boolean hasReceivedFrames() {
+    return receivedFrames;
   }
 
   @Override
