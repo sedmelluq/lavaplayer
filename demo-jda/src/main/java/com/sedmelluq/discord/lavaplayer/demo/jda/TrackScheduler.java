@@ -48,8 +48,8 @@ public class TrackScheduler extends AudioEventAdapter {
 
   @Override
   public void onTrackEnd(AudioPlayer player, AudioTrack track, AudioTrackEndReason endReason) {
-    // This is the only end reason for which we should be triggering the next track.
-    if (endReason == AudioTrackEndReason.FINISHED) {
+    // Only start the next track if the end reason is suitable for it (FINISHED or LOAD_FAILED)
+    if (endReason.mayStartNext) {
       nextTrack();
     }
   }

@@ -18,7 +18,7 @@ ext.logbackVersion = '1.1.7'
 
 dependencies {
   compile 'net.dv8tion:JDA:2.2.1_375'
-  compile 'com.sedmelluq:lavaplayer:1.1.17'
+  compile 'com.sedmelluq:lavaplayer:1.1.18'
 
   runtime "ch.qos.logback:logback-classic:$logbackVersion"
   runtime "ch.qos.logback:logback-core:$logbackVersion"
