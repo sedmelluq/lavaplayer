@@ -84,14 +84,24 @@ public class YoutubeAudioSourceManager implements AudioSourceManager {
   private final HttpClientBuilder httpClientBuilder;
   private final YoutubeSignatureCipherManager signatureCipherManager;
   private final ExecutorService mixLoadingExecutor;
+  private final boolean allowSearch;
+
+  /**
+   * Create an instance with default settings.
+   */
+  public YoutubeAudioSourceManager() {
+    this(true);
+  }
 
   /**
    * Create an instance.
+   * @param allowSearch Whether to allow search queries as identifiers
    */
-  public YoutubeAudioSourceManager() {
+  public YoutubeAudioSourceManager(boolean allowSearch) {
     httpClientBuilder = createSharedCookiesHttpBuilder();
     signatureCipherManager = new YoutubeSignatureCipherManager();
     mixLoadingExecutor = new ThreadPoolExecutor(0, 10, 5, TimeUnit.SECONDS, new LinkedBlockingQueue<>(), new DaemonThreadFactory("yt-mix"));
+    this.allowSearch = allowSearch;
   }
 
   @Override
@@ -103,7 +113,7 @@ public class YoutubeAudioSourceManager implements AudioSourceManager {
   public AudioItem loadItem(DefaultAudioPlayerManager manager, AudioReference reference) {
     AudioItem result;
 
-    if (reference.identifier.startsWith(SEARCH_PREFIX)) {
+    if (allowSearch && reference.identifier.startsWith(SEARCH_PREFIX)) {
       return loadSearchResult(reference.identifier.substring(SEARCH_PREFIX.length()).trim());
     }
 

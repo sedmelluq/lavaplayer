@@ -20,7 +20,7 @@ public class AudioSourceManagers {
    * @param playerManager Player manager to register the source managers to
    */
   public static void registerRemoteSources(AudioPlayerManager playerManager) {
-    playerManager.registerSourceManager(new YoutubeAudioSourceManager());
+    playerManager.registerSourceManager(new YoutubeAudioSourceManager(true));
     playerManager.registerSourceManager(new SoundCloudAudioSourceManager());
     playerManager.registerSourceManager(new BandcampAudioSourceManager());
     playerManager.registerSourceManager(new VimeoAudioSourceManager());

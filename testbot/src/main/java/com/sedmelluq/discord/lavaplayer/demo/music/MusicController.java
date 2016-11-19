@@ -192,15 +192,26 @@ public class MusicController implements BotController {
         List<AudioTrack> tracks = playlist.getTracks();
         message.getChannel().sendMessage("Loaded playlist: " + playlist.getName() + " (" + tracks.size() + ")");
 
+        connectToFirstVoiceChannel(guild.getAudioManager());
+
         AudioTrack selected = playlist.getSelectedTrack();
+
         if (selected != null) {
           message.getChannel().sendMessage("Selected track from playlist: " + selected.getInfo().title);
-          trackLoaded(selected);
+        } else {
+          selected = tracks.get(0);
+          message.getChannel().sendMessage("Added first track from playlist: " + selected.getInfo().title);
         }
 
-        for (int i = 0; i < Math.min(2, playlist.getTracks().size()); i++) {
+        if (now) {
+          scheduler.playNow(selected, true);
+        } else {
+          scheduler.addToQueue(selected);
+        }
+
+        for (int i = 0; i < Math.min(10, playlist.getTracks().size()); i++) {
           if (tracks.get(i) != selected) {
-            trackLoaded(tracks.get(i));
+            scheduler.addToQueue(tracks.get(i));
           }
         }
       }
