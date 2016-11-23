@@ -20,4 +20,9 @@ public interface AudioPlaylist extends AudioItem {
    * @return Track that is explicitly selected, may be null. This same instance occurs in the track list.
    */
   AudioTrack getSelectedTrack();
+
+  /**
+   * @return True if the playlist was created from search results.
+   */
+  boolean isSearchResult();
 }

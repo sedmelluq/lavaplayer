@@ -177,7 +177,8 @@ public class SoundCloudAudioSourceManager implements AudioSourceManager {
       return new BasicAudioPlaylist(
           playlistInfo.get("title").text(),
           loadTracksFromPlaylist(httpClient, playlistInfo, playlistWebUrl),
-          null
+          null,
+          false
       );
     } catch (IOException e) {
       throw new FriendlyException("Loading playlist from SoundCloud failed.", SUSPICIOUS, e);
@@ -297,7 +298,7 @@ public class SoundCloudAudioSourceManager implements AudioSourceManager {
       }
     }
 
-    return new BasicAudioPlaylist("Liked by " + userInfo.name, tracks, null);
+    return new BasicAudioPlaylist("Liked by " + userInfo.name, tracks, null, false);
   }
 
   private static class UserInfo {

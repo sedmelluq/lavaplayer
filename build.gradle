@@ -35,7 +35,7 @@ def getBuildParameters(base, bits) {
   } else if (Os.isFamily(Os.FAMILY_MAC)) {
     return [
         'identifier': 'darwin',
-        'library': "lib${base}.so",
+        'library': "lib${base}.dylib",
         'setupArguments': ["-DBITZ:STRING=${bits}"],
         'buildArguments': [],
         'env': ['CXXFLAGS': "-m${bits}", 'CFLAGS': "-m${bits}", 'LDFLAGS': "-m${bits}"]
@@ -43,7 +43,7 @@ def getBuildParameters(base, bits) {
   } else {
     return [
         'identifier': "linux-${bitSuffix}",
-        'library': "lib${base}.dylib",
+        'library': "lib${base}.so",
         'setupArguments': ["-DBITZ:STRING=${bits}"],
         'buildArguments': [],
         'env': ['CXXFLAGS': "-m${bits}", 'CFLAGS': "-m${bits}", 'LDFLAGS': "-m${bits}"]
@@ -112,7 +112,7 @@ def createBuildTask(tasksHolder, config, bits) {
   if (config.setupDependency) {
     setupTask.dependsOn(config.setupDependency)
   }
-  
+
   buildTask.dependsOn(setupTask)
   deployTask.dependsOn(buildTask)
   config.compileTask.dependsOn(deployTask)

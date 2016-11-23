@@ -85,7 +85,7 @@ public class BandcampAudioSourceManager implements AudioSourceManager {
       }
 
       JsonBrowser albumInfo = readAlbumInformation(text);
-      return new BasicAudioPlaylist(albumInfo.get("album_title").text(), tracks, null);
+      return new BasicAudioPlaylist(albumInfo.get("album_title").text(), tracks, null, false);
     });
   }
 

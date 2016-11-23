@@ -13,6 +13,7 @@ import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class MusicScheduler extends AudioEventAdapter implements Runnable {
@@ -21,6 +22,7 @@ public class MusicScheduler extends AudioEventAdapter implements Runnable {
   private final ScheduledExecutorService executorService;
   private final BlockingDeque<AudioTrack> queue;
   private final AtomicReference<Message> boxMessage;
+  private final AtomicBoolean creatingBoxMessage;
 
   public MusicScheduler(AudioPlayer player, MessageDispatcher messageDispatcher, ScheduledExecutorService executorService) {
     this.player = player;
@@ -28,6 +30,7 @@ public class MusicScheduler extends AudioEventAdapter implements Runnable {
     this.executorService = executorService;
     this.queue = new LinkedBlockingDeque<>();
     this.boxMessage = new AtomicReference<>();
+    this.creatingBoxMessage = new AtomicBoolean();
 
     executorService.scheduleAtFixedRate(this, 3000L, 3000L, TimeUnit.MILLISECONDS);
   }
@@ -77,9 +80,9 @@ public class MusicScheduler extends AudioEventAdapter implements Runnable {
 
   @Override
   public void onTrackEnd(AudioPlayer player, AudioTrack track, AudioTrackEndReason endReason) {
-    if (endReason == AudioTrackEndReason.FINISHED) {
-      messageDispatcher.sendMessage(String.format("Track %s finished.", track.getInfo().title));
+    if (endReason.mayStartNext) {
       startNextTrack(true);
+      messageDispatcher.sendMessage(String.format("Track %s finished.", track.getInfo().title));
     }
   }
 
@@ -118,7 +121,13 @@ public class MusicScheduler extends AudioEventAdapter implements Runnable {
       if (message != null) {
         message.updateMessageAsync(box, null);
       } else {
-        boxMessage.compareAndSet(null, messageDispatcher.sendMessage(box));
+        if (creatingBoxMessage.compareAndSet(false, true)) {
+          try {
+            boxMessage.set(messageDispatcher.sendMessage(box));
+          } finally {
+            creatingBoxMessage.set(false);
+          }
+        }
       }
     }
   }

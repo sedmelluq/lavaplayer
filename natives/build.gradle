@@ -28,7 +28,7 @@ task load << {
       into "$projectDir/samplerate/src"
     }
   }
-  
+
   if (!file("$projectDir/fdk-aac/libAACdec").exists()) {
     def downloadPath = "$buildDir/tmp/fdk-aac-master.zip"
     def unpackPath = "$buildDir"
@@ -88,6 +88,21 @@ task load << {
       into "$projectDir/opus"
     }
   }
+
+  if (!Os.isFamily(Os.FAMILY_WINDOWS) && !file("$projectDir/mp3/mpg123-1.23.8").exists()) {
+    def downloadPath = "$buildDir/tmp/temp.tar.bz2"
+    def unpackPath = "$buildDir"
+
+    download {
+      src "https://www.mpg123.de/download/mpg123-1.23.8.tar.bz2"
+      dest downloadPath
+    }
+
+    copy {
+      from tarTree(file(downloadPath))
+      into "$projectDir/mp3"
+    }
+  }
 }
 
 ext.devEnvPath = null
@@ -137,15 +152,80 @@ def buildOpusOnWindows(bits, force) {
   }
 }
 
-def buildOpusOnLinux(bits, force) {
+def waitForAndCheckSuccess(process, name) {
+  process.waitForProcessOutput(System.out as Appendable, System.err)
 
+  if (process.exitValue() != 0) {
+    throw new IllegalStateException("${name} failed.")
+  }
 }
 
-def buildOpus(bits, force) {
+def buildOpusOnLinux(bits, force) {
+  def present = file("${projectDir}/libs/${bits}/libopus.a").exists()
+
+  if (force || !present) {
+    def flags = "-m${bits} -fPIC -O3"
+    def process = ["./configure", "--enable-static", "--with-cpu=" + (bits == 32 ? "x86" : "x64-64"), "--with-pic", "CFLAGS=${flags}", "CXXFLAGS=${flags}", "LDFLAGS=${flags}"].
+        execute(null as String[], file("$projectDir/opus/opus-1.1.3"))
+
+    waitForAndCheckSuccess(process, "Opus ./configure")
+
+    process = ["make", "clean"].execute(null as String[], file("$projectDir/opus/opus-1.1.3"))
+    waitForAndCheckSuccess(process, "Opus make clean")
+
+    process = ["make"].execute(null as String[], file("$projectDir/opus/opus-1.1.3"))
+    waitForAndCheckSuccess(process, "Opus make")
+
+    copy {
+      from "$projectDir/opus/opus-1.1.3/.libs/libopus.a"
+      into "$projectDir/libs/${bits}"
+    }
+  }
+}
+
+def buildMpg123OnLinux(bits, force) {
+  def present = file("${projectDir}/libs/${bits}/libmpg123.a").exists()
+
+  if (force || !present) {
+    def process = ["patch", "-N", "mpg123-1.23.8/configure", "configure.patch"].execute(null as String[], file("$projectDir/mp3"))
+    waitForAndCheckSuccess(process, "Mpg123 patch configure")
+
+    process = ["./configure", "--enable-static", "--with-cpu=" + (bits == 32 ? "x86" : "x86-64"), "--with-pic", "CFLAGS=-fPIC -O3 -m${bits}", "CXXFLAGS=-fPIC -O3 -m${bits}"].
+        execute(null as String[], file("$projectDir/mp3/mpg123-1.23.8"))
+
+    waitForAndCheckSuccess(process, "Mpg123 ./configure")
+
+    process = ["make", "clean"].execute(null as String[], file("$projectDir/mp3/mpg123-1.23.8"))
+    waitForAndCheckSuccess(process, "make clean")
+
+    process = ["make"].execute(null as String[], file("$projectDir/mp3/mpg123-1.23.8"))
+    waitForAndCheckSuccess(process, "make")
+
+    copy {
+      from "$projectDir/mp3/mpg123-1.23.8/src/libmpg123/.libs/libmpg123.a"
+      into "$projectDir/libs/${bits}"
+    }
+  }
+}
+
+def prepareOggOnLinux(bits, force) {
+  def configured = file("$projectDir/vorbis/libogg-1.3.2/include/ogg/config_types.h").exists()
+
+  if (force || !configured) {
+    def process = ["./configure", "--enable-static", "--build=x86_64-pc-linux-gnu", "--with-pic"].
+        execute(null as String[], file("$projectDir/vorbis/libogg-1.3.2"))
+
+    process.waitForProcessOutput(System.out as Appendable, System.err)
+  }
+}
+
+def prepareBuilds(bits, force) {
   if (Os.isFamily(Os.FAMILY_WINDOWS)) {
     buildOpusOnWindows(bits, force)
   } else {
+    prepareOggOnLinux(bits, force)
     buildOpusOnLinux(bits, force)
+    buildMpg123OnLinux(bits, force)
   }
 }
 
@@ -157,7 +237,7 @@ def buildTaskConfig = [
     projectBase: projectDir,
     deployBase: project(':main').projectDir,
     setupDependency: tasks.load,
-    setupDoFirst: { config, bits -> buildOpus(bits, false) },
+    setupDoFirst: { config, bits -> prepareBuilds(bits, false) },
     compileTask: tasks.compileNatives,
     checkTask: tasks.checkNatives,
     name: 'connector'

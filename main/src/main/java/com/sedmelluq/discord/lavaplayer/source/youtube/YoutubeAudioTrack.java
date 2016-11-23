@@ -149,7 +149,7 @@ public class YoutubeAudioTrack extends DelegatedAudioTrack {
       String mimeType = adaptation.attr("mimeType");
 
       for (Element representation : adaptation.select("Representation")) {
-        String url = representation.select("BaseURL").get(0).text();
+        String url = representation.select("BaseURL").first().text();
         String contentLength = DataFormatTools.extractBetween(url, "/clen/", "/");
         String contentType = mimeType + "; codecs=" + representation.attr("codecs");
 

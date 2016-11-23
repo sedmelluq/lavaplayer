@@ -336,9 +336,9 @@ public class YoutubeAudioSourceManager implements AudioSourceManager {
       }
     }
 
-    Element container = document.select("#pl-header").get(0).parent();
+    Element container = document.select("#pl-header").first().parent();
 
-    String playlistName = container.select(".pl-header-title").get(0).text();
+    String playlistName = container.select(".pl-header-title").first().text();
 
     List<AudioTrack> tracks = new ArrayList<>();
     String loadMoreUrl = extractPlaylistTracks(container, container, tracks);
@@ -363,7 +363,7 @@ public class YoutubeAudioSourceManager implements AudioSourceManager {
       }
     }
 
-    return new BasicAudioPlaylist(playlistName, tracks, findSelectedTrack(tracks, selectedVideoId));
+    return new BasicAudioPlaylist(playlistName, tracks, findSelectedTrack(tracks, selectedVideoId), false);
   }
 
   private AudioTrack findSelectedTrack(List<AudioTrack> tracks, String selectedVideoId) {
@@ -387,7 +387,7 @@ public class YoutubeAudioSourceManager implements AudioSourceManager {
         String title = video.attr("data-title").trim();
         String author = video.select(".pl-video-owner a").text().trim();
 
-        int lengthInSeconds = lengthTextToSeconds(lengthElements.get(0).text());
+        int lengthInSeconds = lengthTextToSeconds(lengthElements.first().text());
 
         AudioTrackInfo info = new AudioTrackInfo(title, author, lengthInSeconds * 1000, videoId, false);
         tracks.add(new YoutubeAudioTrack(info, this));
@@ -397,7 +397,7 @@ public class YoutubeAudioSourceManager implements AudioSourceManager {
     if (loadMoreContainer != null) {
       Elements more = loadMoreContainer.select(".load-more-button");
       if (!more.isEmpty()) {
-        return more.get(0).attr("data-uix-load-more-href");
+        return more.first().attr("data-uix-load-more-href");
       }
     }
 
@@ -405,8 +405,13 @@ public class YoutubeAudioSourceManager implements AudioSourceManager {
   }
 
   private static int lengthTextToSeconds(String durationText) {
-    String[] parts = durationText.split(":");
-    return Integer.valueOf(parts[0]) * 60 + Integer.valueOf(parts[1]);
+    int length = 0;
+
+    for (String part : durationText.split(":")) {
+      length = length * 60 + Integer.valueOf(part);
+    }
+
+    return length;
   }
 
   private AudioPlaylist loadMixWithId(String mixId, String selectedVideoId) {
@@ -464,7 +469,7 @@ public class YoutubeAudioSourceManager implements AudioSourceManager {
       throw new FriendlyException("The selected track of the mix failed to load.", SUSPICIOUS, null);
     }
 
-    return new BasicAudioPlaylist("YouTube mix", tracks, selectedTrack);
+    return new BasicAudioPlaylist("YouTube mix", tracks, selectedTrack, false);
   }
 
   private void fetchTrackResultsFromExecutor(ExecutorCompletionService<AudioTrack> completion, List<AudioTrack> tracks, int size) throws InterruptedException {
@@ -508,23 +513,23 @@ public class YoutubeAudioSourceManager implements AudioSourceManager {
     if (tracks.isEmpty()) {
       return AudioReference.NO_TRACK;
     } else {
-      return new BasicAudioPlaylist("Search results for: " + query, tracks, null);
+      return new BasicAudioPlaylist("Search results for: " + query, tracks, null, true);
     }
   }
 
   private void extractTrackFromResultEntry(List<AudioTrack> tracks, Element element) {
-    Elements durationHolder = element.select(".video-time");
-    Elements contentHolder = element.select(".yt-lockup-content");
+    Element durationElement = element.select(".video-time").first();
+    Element contentElement = element.select(".yt-lockup-content").first();
+    String videoId = element.attr("data-context-item-id");
 
-    if (durationHolder.isEmpty()) {
+    if (durationElement == null || contentElement == null || videoId.isEmpty()) {
       return;
     }
 
-    String videoId = element.attr("data-context-item-id");
-    long length = lengthTextToSeconds(durationHolder.get(0).text()) * 1000L;
+    long length = lengthTextToSeconds(durationElement.text()) * 1000L;
 
-    String title = contentHolder.get(0).select(".yt-lockup-title > a").text();
-    String author = contentHolder.get(0).select(".yt-lockup-byline > a").text();
+    String title = contentElement.select(".yt-lockup-title > a").text();
+    String author = contentElement.select(".yt-lockup-byline > a").text();
 
     tracks.add(new YoutubeAudioTrack(new AudioTrackInfo(title, author, length, videoId, false), this));
   }

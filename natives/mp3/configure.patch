@@ -1,0 +1,629 @@
+--- configure.orig	2016-11-23 00:43:49.000000000 +0000
++++ configure	2016-09-26 22:21:39.000000000 +0100
+@@ -742,14 +742,10 @@
+ NAS_LIBS
+ HAVE_SDL_FALSE
+ HAVE_SDL_TRUE
+-SDL_CFLAGS
+ SDL_LDFLAGS
+-SDL_LIBS
+ HAVE_PULSE_FALSE
+ HAVE_PULSE_TRUE
+-PULSE_CFLAGS
+ PULSE_LDFLAGS
+-PULSE_LIBS
+ HAVE_PORTAUDIO_FALSE
+ HAVE_PORTAUDIO_TRUE
+ PORTAUDIO_CFLAGS
+@@ -757,14 +753,10 @@
+ PORTAUDIO_LIBS
+ HAVE_JACK_FALSE
+ HAVE_JACK_TRUE
+-JACK_CFLAGS
+ JACK_LDFLAGS
+-JACK_LIBS
+ HAVE_ESD_FALSE
+ HAVE_ESD_TRUE
+-ESD_CFLAGS
+ ESD_LDFLAGS
+-ESD_LIBS
+ HAVE_WIN32_WASAPI_FALSE
+ HAVE_WIN32_WASAPI_TRUE
+ WIN32_WASAPI_CFLAGS
+@@ -810,6 +802,17 @@
+ TINYALSA_CFLAGS
+ TINYALSA_LDFLAGS
+ TINYALSA_LIBS
++SDL_LIBS
++SDL_CFLAGS
++ESD_LIBS
++ESD_CFLAGS
++PULSE_LIBS
++PULSE_CFLAGS
++JACK_LIBS
++JACK_CFLAGS
++PKG_CONFIG_LIBDIR
++PKG_CONFIG_PATH
++PKG_CONFIG
+ DECODER_LOBJ
+ DECODER_OBJ
+ YASM_FORMAT
+@@ -930,7 +933,6 @@
+ docdir
+ oldincludedir
+ includedir
+-runstatedir
+ localstatedir
+ sharedstatedir
+ sysconfdir
+@@ -1012,7 +1014,18 @@
+ CCAS
+ CCASFLAGS
+ CPP
+-LT_SYS_LIBRARY_PATH'
++LT_SYS_LIBRARY_PATH
++PKG_CONFIG
++PKG_CONFIG_PATH
++PKG_CONFIG_LIBDIR
++JACK_CFLAGS
++JACK_LIBS
++PULSE_CFLAGS
++PULSE_LIBS
++ESD_CFLAGS
++ESD_LIBS
++SDL_CFLAGS
++SDL_LIBS'
+ 
+ 
+ # Initialize some variables set by options.
+@@ -1051,7 +1064,6 @@
+ sysconfdir='${prefix}/etc'
+ sharedstatedir='${prefix}/com'
+ localstatedir='${prefix}/var'
+-runstatedir='${localstatedir}/run'
+ includedir='${prefix}/include'
+ oldincludedir='/usr/include'
+ docdir='${datarootdir}/doc/${PACKAGE_TARNAME}'
+@@ -1304,15 +1316,6 @@
+   | -silent | --silent | --silen | --sile | --sil)
+     silent=yes ;;
+ 
+-  -runstatedir | --runstatedir | --runstatedi | --runstated \
+-  | --runstate | --runstat | --runsta | --runst | --runs \
+-  | --run | --ru | --r)
+-    ac_prev=runstatedir ;;
+-  -runstatedir=* | --runstatedir=* | --runstatedi=* | --runstated=* \
+-  | --runstate=* | --runstat=* | --runsta=* | --runst=* | --runs=* \
+-  | --run=* | --ru=* | --r=*)
+-    runstatedir=$ac_optarg ;;
+-
+   -sbindir | --sbindir | --sbindi | --sbind | --sbin | --sbi | --sb)
+     ac_prev=sbindir ;;
+   -sbindir=* | --sbindir=* | --sbindi=* | --sbind=* | --sbin=* \
+@@ -1450,7 +1453,7 @@
+ for ac_var in	exec_prefix prefix bindir sbindir libexecdir datarootdir \
+ 		datadir sysconfdir sharedstatedir localstatedir includedir \
+ 		oldincludedir docdir infodir htmldir dvidir pdfdir psdir \
+-		libdir localedir mandir runstatedir
++		libdir localedir mandir
+ do
+   eval ac_val=\$$ac_var
+   # Remove trailing slashes.
+@@ -1603,7 +1606,6 @@
+   --sysconfdir=DIR        read-only single-machine data [PREFIX/etc]
+   --sharedstatedir=DIR    modifiable architecture-independent data [PREFIX/com]
+   --localstatedir=DIR     modifiable single-machine data [PREFIX/var]
+-  --runstatedir=DIR       modifiable per-process data [LOCALSTATEDIR/run]
+   --libdir=DIR            object code libraries [EPREFIX/lib]
+   --includedir=DIR        C header files [PREFIX/include]
+   --oldincludedir=DIR     C header files for non-gcc [/usr/include]
+@@ -1783,6 +1785,20 @@
+   CPP         C preprocessor
+   LT_SYS_LIBRARY_PATH
+               User-defined run-time library search path.
++  PKG_CONFIG  path to pkg-config utility
++  PKG_CONFIG_PATH
++              directories to add to pkg-config's search path
++  PKG_CONFIG_LIBDIR
++              path overriding pkg-config's built-in search path
++  JACK_CFLAGS C compiler flags for JACK, overriding pkg-config
++  JACK_LIBS   linker flags for JACK, overriding pkg-config
++  PULSE_CFLAGS
++              C compiler flags for PULSE, overriding pkg-config
++  PULSE_LIBS  linker flags for PULSE, overriding pkg-config
++  ESD_CFLAGS  C compiler flags for ESD, overriding pkg-config
++  ESD_LIBS    linker flags for ESD, overriding pkg-config
++  SDL_CFLAGS  C compiler flags for SDL, overriding pkg-config
++  SDL_LIBS    linker flags for SDL, overriding pkg-config
+ 
+ Use these variables to override the choices made by `configure' or to help
+ it to find libraries and programs with nonstandard names/locations.
+@@ -15510,7 +15526,7 @@
+     We can't simply define LARGE_OFF_T to be 9223372036854775807,
+     since some C++ compilers masquerading as C compilers
+     incorrectly reject 9223372036854775807.  */
+-#define LARGE_OFF_T ((((off_t) 1 << 31) << 31) - 1 + (((off_t) 1 << 31) << 31))
++#define LARGE_OFF_T (((off_t) 1 << 62) - 1 + ((off_t) 1 << 62))
+   int off_t_is_large[(LARGE_OFF_T % 2147483629 == 721
+ 		       && LARGE_OFF_T % 2147483647 == 1)
+ 		      ? 1 : -1];
+@@ -15556,7 +15572,7 @@
+     We can't simply define LARGE_OFF_T to be 9223372036854775807,
+     since some C++ compilers masquerading as C compilers
+     incorrectly reject 9223372036854775807.  */
+-#define LARGE_OFF_T ((((off_t) 1 << 31) << 31) - 1 + (((off_t) 1 << 31) << 31))
++#define LARGE_OFF_T (((off_t) 1 << 62) - 1 + ((off_t) 1 << 62))
+   int off_t_is_large[(LARGE_OFF_T % 2147483629 == 721
+ 		       && LARGE_OFF_T % 2147483647 == 1)
+ 		      ? 1 : -1];
+@@ -15580,7 +15596,7 @@
+     We can't simply define LARGE_OFF_T to be 9223372036854775807,
+     since some C++ compilers masquerading as C compilers
+     incorrectly reject 9223372036854775807.  */
+-#define LARGE_OFF_T ((((off_t) 1 << 31) << 31) - 1 + (((off_t) 1 << 31) << 31))
++#define LARGE_OFF_T (((off_t) 1 << 62) - 1 + ((off_t) 1 << 62))
+   int off_t_is_large[(LARGE_OFF_T % 2147483629 == 721
+ 		       && LARGE_OFF_T % 2147483647 == 1)
+ 		      ? 1 : -1];
+@@ -15625,7 +15641,7 @@
+     We can't simply define LARGE_OFF_T to be 9223372036854775807,
+     since some C++ compilers masquerading as C compilers
+     incorrectly reject 9223372036854775807.  */
+-#define LARGE_OFF_T ((((off_t) 1 << 31) << 31) - 1 + (((off_t) 1 << 31) << 31))
++#define LARGE_OFF_T (((off_t) 1 << 62) - 1 + ((off_t) 1 << 62))
+   int off_t_is_large[(LARGE_OFF_T % 2147483629 == 721
+ 		       && LARGE_OFF_T % 2147483647 == 1)
+ 		      ? 1 : -1];
+@@ -15649,7 +15665,7 @@
+     We can't simply define LARGE_OFF_T to be 9223372036854775807,
+     since some C++ compilers masquerading as C compilers
+     incorrectly reject 9223372036854775807.  */
+-#define LARGE_OFF_T ((((off_t) 1 << 31) << 31) - 1 + (((off_t) 1 << 31) << 31))
++#define LARGE_OFF_T (((off_t) 1 << 62) - 1 + ((off_t) 1 << 62))
+   int off_t_is_large[(LARGE_OFF_T % 2147483629 == 721
+ 		       && LARGE_OFF_T % 2147483647 == 1)
+ 		      ? 1 : -1];
+@@ -17128,7 +17144,126 @@
+ 	check_forced=yes
+ fi
+ 
+-PKG_PROG_PKG_CONFIG()
++
++
++
++
++
++
++
++if test "x$ac_cv_env_PKG_CONFIG_set" != "xset"; then
++	if test -n "$ac_tool_prefix"; then
++  # Extract the first word of "${ac_tool_prefix}pkg-config", so it can be a program name with args.
++set dummy ${ac_tool_prefix}pkg-config; ac_word=$2
++{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
++$as_echo_n "checking for $ac_word... " >&6; }
++if ${ac_cv_path_PKG_CONFIG+:} false; then :
++  $as_echo_n "(cached) " >&6
++else
++  case $PKG_CONFIG in
++  [\\/]* | ?:[\\/]*)
++  ac_cv_path_PKG_CONFIG="$PKG_CONFIG" # Let the user override the test with a path.
++  ;;
++  *)
++  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
++for as_dir in $PATH
++do
++  IFS=$as_save_IFS
++  test -z "$as_dir" && as_dir=.
++    for ac_exec_ext in '' $ac_executable_extensions; do
++  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
++    ac_cv_path_PKG_CONFIG="$as_dir/$ac_word$ac_exec_ext"
++    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
++    break 2
++  fi
++done
++  done
++IFS=$as_save_IFS
++
++  ;;
++esac
++fi
++PKG_CONFIG=$ac_cv_path_PKG_CONFIG
++if test -n "$PKG_CONFIG"; then
++  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $PKG_CONFIG" >&5
++$as_echo "$PKG_CONFIG" >&6; }
++else
++  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
++$as_echo "no" >&6; }
++fi
++
++
++fi
++if test -z "$ac_cv_path_PKG_CONFIG"; then
++  ac_pt_PKG_CONFIG=$PKG_CONFIG
++  # Extract the first word of "pkg-config", so it can be a program name with args.
++set dummy pkg-config; ac_word=$2
++{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
++$as_echo_n "checking for $ac_word... " >&6; }
++if ${ac_cv_path_ac_pt_PKG_CONFIG+:} false; then :
++  $as_echo_n "(cached) " >&6
++else
++  case $ac_pt_PKG_CONFIG in
++  [\\/]* | ?:[\\/]*)
++  ac_cv_path_ac_pt_PKG_CONFIG="$ac_pt_PKG_CONFIG" # Let the user override the test with a path.
++  ;;
++  *)
++  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
++for as_dir in $PATH
++do
++  IFS=$as_save_IFS
++  test -z "$as_dir" && as_dir=.
++    for ac_exec_ext in '' $ac_executable_extensions; do
++  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
++    ac_cv_path_ac_pt_PKG_CONFIG="$as_dir/$ac_word$ac_exec_ext"
++    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
++    break 2
++  fi
++done
++  done
++IFS=$as_save_IFS
++
++  ;;
++esac
++fi
++ac_pt_PKG_CONFIG=$ac_cv_path_ac_pt_PKG_CONFIG
++if test -n "$ac_pt_PKG_CONFIG"; then
++  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_pt_PKG_CONFIG" >&5
++$as_echo "$ac_pt_PKG_CONFIG" >&6; }
++else
++  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
++$as_echo "no" >&6; }
++fi
++
++  if test "x$ac_pt_PKG_CONFIG" = x; then
++    PKG_CONFIG=""
++  else
++    case $cross_compiling:$ac_tool_warned in
++yes:)
++{ $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: using cross tools not prefixed with host triplet" >&5
++$as_echo "$as_me: WARNING: using cross tools not prefixed with host triplet" >&2;}
++ac_tool_warned=yes ;;
++esac
++    PKG_CONFIG=$ac_pt_PKG_CONFIG
++  fi
++else
++  PKG_CONFIG="$ac_cv_path_PKG_CONFIG"
++fi
++
++fi
++if test -n "$PKG_CONFIG"; then
++	_pkg_min_version=0.9.0
++	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking pkg-config is at least version $_pkg_min_version" >&5
++$as_echo_n "checking pkg-config is at least version $_pkg_min_version... " >&6; }
++	if $PKG_CONFIG --atleast-pkgconfig-version $_pkg_min_version; then
++		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
++$as_echo "yes" >&6; }
++	else
++		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
++$as_echo "no" >&6; }
++		PKG_CONFIG=""
++	fi
++fi
+ 
+ # Now go through the modules to check and do the chores.
+ for m in $check_modules
+@@ -17390,12 +17525,81 @@
+ { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_pthread_sem_post" >&5
+ $as_echo "$ac_cv_lib_pthread_sem_post" >&6; }
+ if test "x$ac_cv_lib_pthread_sem_post" = xyes; then :
+-   PKG_CHECK_MODULES(JACK, jack,
++
++pkg_failed=no
++{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for JACK" >&5
++$as_echo_n "checking for JACK... " >&6; }
++
++if test -n "$JACK_CFLAGS"; then
++    pkg_cv_JACK_CFLAGS="$JACK_CFLAGS"
++ elif test -n "$PKG_CONFIG"; then
++    if test -n "$PKG_CONFIG" && \
++    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"jack\""; } >&5
++  ($PKG_CONFIG --exists --print-errors "jack") 2>&5
++  ac_status=$?
++  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
++  test $ac_status = 0; }; then
++  pkg_cv_JACK_CFLAGS=`$PKG_CONFIG --cflags "jack" 2>/dev/null`
++		      test "x$?" != "x0" && pkg_failed=yes
++else
++  pkg_failed=yes
++fi
++ else
++    pkg_failed=untried
++fi
++if test -n "$JACK_LIBS"; then
++    pkg_cv_JACK_LIBS="$JACK_LIBS"
++ elif test -n "$PKG_CONFIG"; then
++    if test -n "$PKG_CONFIG" && \
++    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"jack\""; } >&5
++  ($PKG_CONFIG --exists --print-errors "jack") 2>&5
++  ac_status=$?
++  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
++  test $ac_status = 0; }; then
++  pkg_cv_JACK_LIBS=`$PKG_CONFIG --libs "jack" 2>/dev/null`
++		      test "x$?" != "x0" && pkg_failed=yes
++else
++  pkg_failed=yes
++fi
++ else
++    pkg_failed=untried
++fi
++
++
++
++if test $pkg_failed = yes; then
++   	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
++$as_echo "no" >&6; }
++
++if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
++        _pkg_short_errors_supported=yes
++else
++        _pkg_short_errors_supported=no
++fi
++        if test $_pkg_short_errors_supported = yes; then
++	        JACK_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "jack" 2>&1`
++        else
++	        JACK_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "jack" 2>&1`
++        fi
++	# Put the nasty error message in config.log where it belongs
++	echo "$JACK_PKG_ERRORS" >&5
++
++	 HAVE_JACK="no" check_failed=yes
++elif test $pkg_failed = untried; then
++     	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
++$as_echo "no" >&6; }
++	 HAVE_JACK="no" check_failed=yes
++else
++	JACK_CFLAGS=$pkg_cv_JACK_CFLAGS
++	JACK_LIBS=$pkg_cv_JACK_LIBS
++        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
++$as_echo "yes" >&6; }
+ 
+ 						output_modules="$output_modules jack"
+ 						HAVE_JACK="yes"
+ 						JACK_LIBS="$JACK_LIBS -lpthread"
+-					,  HAVE_JACK="no" check_failed=yes  )
++
++fi
+ 
+ else
+    HAVE_JACK=no check_failed=yes
+@@ -17404,10 +17608,150 @@
+ 
+ 		;;
+ 		pulse)
+-			PKG_CHECK_MODULES(PULSE, libpulse-simple, output_modules="$output_modules pulse" HAVE_PULSE="yes", HAVE_PULSE="no" check_failed=yes)
++
++pkg_failed=no
++{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for PULSE" >&5
++$as_echo_n "checking for PULSE... " >&6; }
++
++if test -n "$PULSE_CFLAGS"; then
++    pkg_cv_PULSE_CFLAGS="$PULSE_CFLAGS"
++ elif test -n "$PKG_CONFIG"; then
++    if test -n "$PKG_CONFIG" && \
++    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"libpulse-simple\""; } >&5
++  ($PKG_CONFIG --exists --print-errors "libpulse-simple") 2>&5
++  ac_status=$?
++  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
++  test $ac_status = 0; }; then
++  pkg_cv_PULSE_CFLAGS=`$PKG_CONFIG --cflags "libpulse-simple" 2>/dev/null`
++		      test "x$?" != "x0" && pkg_failed=yes
++else
++  pkg_failed=yes
++fi
++ else
++    pkg_failed=untried
++fi
++if test -n "$PULSE_LIBS"; then
++    pkg_cv_PULSE_LIBS="$PULSE_LIBS"
++ elif test -n "$PKG_CONFIG"; then
++    if test -n "$PKG_CONFIG" && \
++    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"libpulse-simple\""; } >&5
++  ($PKG_CONFIG --exists --print-errors "libpulse-simple") 2>&5
++  ac_status=$?
++  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
++  test $ac_status = 0; }; then
++  pkg_cv_PULSE_LIBS=`$PKG_CONFIG --libs "libpulse-simple" 2>/dev/null`
++		      test "x$?" != "x0" && pkg_failed=yes
++else
++  pkg_failed=yes
++fi
++ else
++    pkg_failed=untried
++fi
++
++
++
++if test $pkg_failed = yes; then
++   	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
++$as_echo "no" >&6; }
++
++if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
++        _pkg_short_errors_supported=yes
++else
++        _pkg_short_errors_supported=no
++fi
++        if test $_pkg_short_errors_supported = yes; then
++	        PULSE_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "libpulse-simple" 2>&1`
++        else
++	        PULSE_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "libpulse-simple" 2>&1`
++        fi
++	# Put the nasty error message in config.log where it belongs
++	echo "$PULSE_PKG_ERRORS" >&5
++
++	HAVE_PULSE="no" check_failed=yes
++elif test $pkg_failed = untried; then
++     	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
++$as_echo "no" >&6; }
++	HAVE_PULSE="no" check_failed=yes
++else
++	PULSE_CFLAGS=$pkg_cv_PULSE_CFLAGS
++	PULSE_LIBS=$pkg_cv_PULSE_LIBS
++        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
++$as_echo "yes" >&6; }
++	output_modules="$output_modules pulse" HAVE_PULSE="yes"
++fi
+ 		;;
+ 		esd)
+-			PKG_CHECK_MODULES(ESD, esound, output_modules="$output_modules esd" HAVE_ESD="yes", HAVE_ESD="no" check_failed=yes)
++
++pkg_failed=no
++{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for ESD" >&5
++$as_echo_n "checking for ESD... " >&6; }
++
++if test -n "$ESD_CFLAGS"; then
++    pkg_cv_ESD_CFLAGS="$ESD_CFLAGS"
++ elif test -n "$PKG_CONFIG"; then
++    if test -n "$PKG_CONFIG" && \
++    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"esound\""; } >&5
++  ($PKG_CONFIG --exists --print-errors "esound") 2>&5
++  ac_status=$?
++  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
++  test $ac_status = 0; }; then
++  pkg_cv_ESD_CFLAGS=`$PKG_CONFIG --cflags "esound" 2>/dev/null`
++		      test "x$?" != "x0" && pkg_failed=yes
++else
++  pkg_failed=yes
++fi
++ else
++    pkg_failed=untried
++fi
++if test -n "$ESD_LIBS"; then
++    pkg_cv_ESD_LIBS="$ESD_LIBS"
++ elif test -n "$PKG_CONFIG"; then
++    if test -n "$PKG_CONFIG" && \
++    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"esound\""; } >&5
++  ($PKG_CONFIG --exists --print-errors "esound") 2>&5
++  ac_status=$?
++  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
++  test $ac_status = 0; }; then
++  pkg_cv_ESD_LIBS=`$PKG_CONFIG --libs "esound" 2>/dev/null`
++		      test "x$?" != "x0" && pkg_failed=yes
++else
++  pkg_failed=yes
++fi
++ else
++    pkg_failed=untried
++fi
++
++
++
++if test $pkg_failed = yes; then
++   	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
++$as_echo "no" >&6; }
++
++if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
++        _pkg_short_errors_supported=yes
++else
++        _pkg_short_errors_supported=no
++fi
++        if test $_pkg_short_errors_supported = yes; then
++	        ESD_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "esound" 2>&1`
++        else
++	        ESD_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "esound" 2>&1`
++        fi
++	# Put the nasty error message in config.log where it belongs
++	echo "$ESD_PKG_ERRORS" >&5
++
++	HAVE_ESD="no" check_failed=yes
++elif test $pkg_failed = untried; then
++     	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
++$as_echo "no" >&6; }
++	HAVE_ESD="no" check_failed=yes
++else
++	ESD_CFLAGS=$pkg_cv_ESD_CFLAGS
++	ESD_LIBS=$pkg_cv_ESD_LIBS
++        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
++$as_echo "yes" >&6; }
++	output_modules="$output_modules esd" HAVE_ESD="yes"
++fi
+ 		;;
+ 		portaudio)
+ 			# Remember: This looks only insane because you chose an insane tab width!
+@@ -17576,7 +17920,77 @@
+ 			fi
+ 		;;
+ 		sdl)
+-			PKG_CHECK_MODULES(SDL, sdl, output_modules="$output_modules sdl" HAVE_SDL="yes", HAVE_SDL="no" check_failed=yes)
++
++pkg_failed=no
++{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for SDL" >&5
++$as_echo_n "checking for SDL... " >&6; }
++
++if test -n "$SDL_CFLAGS"; then
++    pkg_cv_SDL_CFLAGS="$SDL_CFLAGS"
++ elif test -n "$PKG_CONFIG"; then
++    if test -n "$PKG_CONFIG" && \
++    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"sdl\""; } >&5
++  ($PKG_CONFIG --exists --print-errors "sdl") 2>&5
++  ac_status=$?
++  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
++  test $ac_status = 0; }; then
++  pkg_cv_SDL_CFLAGS=`$PKG_CONFIG --cflags "sdl" 2>/dev/null`
++		      test "x$?" != "x0" && pkg_failed=yes
++else
++  pkg_failed=yes
++fi
++ else
++    pkg_failed=untried
++fi
++if test -n "$SDL_LIBS"; then
++    pkg_cv_SDL_LIBS="$SDL_LIBS"
++ elif test -n "$PKG_CONFIG"; then
++    if test -n "$PKG_CONFIG" && \
++    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"sdl\""; } >&5
++  ($PKG_CONFIG --exists --print-errors "sdl") 2>&5
++  ac_status=$?
++  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
++  test $ac_status = 0; }; then
++  pkg_cv_SDL_LIBS=`$PKG_CONFIG --libs "sdl" 2>/dev/null`
++		      test "x$?" != "x0" && pkg_failed=yes
++else
++  pkg_failed=yes
++fi
++ else
++    pkg_failed=untried
++fi
++
++
++
++if test $pkg_failed = yes; then
++   	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
++$as_echo "no" >&6; }
++
++if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
++        _pkg_short_errors_supported=yes
++else
++        _pkg_short_errors_supported=no
++fi
++        if test $_pkg_short_errors_supported = yes; then
++	        SDL_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "sdl" 2>&1`
++        else
++	        SDL_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "sdl" 2>&1`
++        fi
++	# Put the nasty error message in config.log where it belongs
++	echo "$SDL_PKG_ERRORS" >&5
++
++	HAVE_SDL="no" check_failed=yes
++elif test $pkg_failed = untried; then
++     	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
++$as_echo "no" >&6; }
++	HAVE_SDL="no" check_failed=yes
++else
++	SDL_CFLAGS=$pkg_cv_SDL_CFLAGS
++	SDL_LIBS=$pkg_cv_SDL_LIBS
++        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
++$as_echo "yes" >&6; }
++	output_modules="$output_modules sdl" HAVE_SDL="yes"
++fi
+ 		;;
+ 		nas)
+ 			NAS_LIBS=-laudio
