@@ -188,7 +188,7 @@ def buildMpg123OnLinux(bits, force) {
 
   if (force || !present) {
     def process = ["patch", "-N", "mpg123-1.23.8/configure", "configure.patch"].execute(null as String[], file("$projectDir/mp3"))
-    waitForAndCheckSuccess(process, "Mpg123 patch configure")
+    process.waitForProcessOutput(System.out as Appendable, System.err)
 
     process = ["./configure", "--enable-static", "--with-cpu=" + (bits == 32 ? "x86" : "x86-64"), "--with-pic", "CFLAGS=-fPIC -O3 -m${bits}", "CXXFLAGS=-fPIC -O3 -m${bits}"].
         execute(null as String[], file("$projectDir/mp3/mpg123-1.23.8"))
