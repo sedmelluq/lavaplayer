@@ -45,7 +45,7 @@ public class SoundCloudAudioSourceManager implements AudioSourceManager {
   private static final Logger log = LoggerFactory.getLogger(SoundCloudAudioSourceManager.class);
 
   private static final String CHARSET = "UTF-8";
-  private static final String CLIENT_ID = "02gUJC0hH2ct1EGOcYXQIzRFU91c72Ea";
+  private static final String CLIENT_ID = "fDoItMDbsbZz8dY16ZzARCZmzgHBPotA";
   private static final String TRACK_URL_REGEX = "^(?:http://|https://|)(?:www\\.|)soundcloud\\.com/([a-zA-Z0-9-_]+)/([a-zA-Z0-9-_]+)(?:\\?.*|)$";
   private static final String PLAYLIST_URL_REGEX = "^(?:http://|https://|)(?:www\\.|)soundcloud\\.com/([a-zA-Z0-9-_]+)/sets/([a-zA-Z0-9-_]+)(?:\\?.*|)$";
   private static final String LIKED_URL_REGEX = "^(?:http://|https://|)(?:www\\.|)soundcloud\\.com/([a-zA-Z0-9-_]+)/likes/?(?:\\?.*|)$";
@@ -91,14 +91,12 @@ public class SoundCloudAudioSourceManager implements AudioSourceManager {
 
   @Override
   public void encodeTrack(AudioTrack track, DataOutput output) throws IOException {
-    output.writeUTF(((SoundCloudAudioTrack) track).getTrackUrl());
+    // No extra information to save
   }
 
   @Override
   public AudioTrack decodeTrack(AudioTrackInfo trackInfo, DataInput input) throws IOException {
-    String trackUrl = input.readUTF();
-
-    return new SoundCloudAudioTrack(trackInfo, this, trackUrl);
+    return new SoundCloudAudioTrack(trackInfo, this);
   }
 
   @Override
@@ -113,6 +111,14 @@ public class SoundCloudAudioSourceManager implements AudioSourceManager {
     return httpClientBuilder.build();
   }
 
+  /**
+   * @param trackId ID of the track
+   * @return URL to use for streaming the track.
+   */
+  public String getTrackUrlFromId(String trackId) {
+    return "https://api.soundcloud.com/tracks/" + trackId + "/stream?client_id=" + CLIENT_ID;
+  }
+
   private AudioTrack loadFromTrackPage(String trackWebUrl) {
     try (CloseableHttpClient httpClient = httpClientBuilder.build()) {
       JsonBrowser trackInfoJson = loadTrackInfoFromJson(loadPageConfigJson(httpClient, trackWebUrl));
@@ -124,7 +130,6 @@ public class SoundCloudAudioSourceManager implements AudioSourceManager {
 
   private AudioTrack buildAudioTrack(JsonBrowser trackInfoJson) {
     String trackId = trackInfoJson.get("id").text();
-    String trackUrl = "https://api.soundcloud.com/tracks/" + trackId + "/stream?client_id=" + CLIENT_ID;
 
     AudioTrackInfo trackInfo = new AudioTrackInfo(
         trackInfoJson.get("title").text(),
@@ -134,7 +139,7 @@ public class SoundCloudAudioSourceManager implements AudioSourceManager {
         false
     );
 
-    return new SoundCloudAudioTrack(trackInfo, this, trackUrl);
+    return new SoundCloudAudioTrack(trackInfo, this);
   }
 
   private JsonBrowser loadPageConfigJson(CloseableHttpClient httpClient, String url) throws IOException {

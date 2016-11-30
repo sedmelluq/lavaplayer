@@ -20,22 +20,21 @@ public class SoundCloudAudioTrack extends DelegatedAudioTrack {
   private static final Logger log = LoggerFactory.getLogger(SoundCloudAudioTrack.class);
 
   private final SoundCloudAudioSourceManager sourceManager;
-  private final String trackUrl;
 
   /**
    * @param trackInfo Track info
    * @param sourceManager Source manager which was used to find this track
-   * @param trackUrl Base URL for the track (redirects to actual URL)
    */
-  public SoundCloudAudioTrack(AudioTrackInfo trackInfo, SoundCloudAudioSourceManager sourceManager, String trackUrl) {
+  public SoundCloudAudioTrack(AudioTrackInfo trackInfo, SoundCloudAudioSourceManager sourceManager) {
     super(trackInfo);
 
     this.sourceManager = sourceManager;
-    this.trackUrl = trackUrl;
   }
 
   @Override
   public void process(LocalAudioTrackExecutor localExecutor) throws Exception {
+    String trackUrl = sourceManager.getTrackUrlFromId(trackInfo.identifier);
+
     try (CloseableHttpClient httpClient = sourceManager.createHttpClient()) {
       log.debug("Starting SoundCloud track from URL: {}", trackUrl);
 
@@ -47,18 +46,11 @@ public class SoundCloudAudioTrack extends DelegatedAudioTrack {
 
   @Override
   public AudioTrack makeClone() {
-    return new SoundCloudAudioTrack(trackInfo, sourceManager, trackUrl);
+    return new SoundCloudAudioTrack(trackInfo, sourceManager);
   }
 
   @Override
   public AudioSourceManager getSourceManager() {
     return sourceManager;
-  }
-
-  /**
-   * @return The session independent URL for this track.
-   */
-  public String getTrackUrl() {
-    return trackUrl;
   }
 }
