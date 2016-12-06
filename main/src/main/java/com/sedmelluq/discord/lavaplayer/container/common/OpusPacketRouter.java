@@ -142,7 +142,7 @@ public class OpusPacketRouter {
     }
 
     if (frameBuffer == null || frameBuffer.capacity() < frameSize * inputChannels) {
-      frameBuffer = ByteBuffer.allocateDirect(frameSize * inputChannels * 2).order(ByteOrder.LITTLE_ENDIAN).asShortBuffer();
+      frameBuffer = ByteBuffer.allocateDirect(frameSize * inputChannels * 2).order(ByteOrder.nativeOrder()).asShortBuffer();
     }
 
     frameBuffer.clear();

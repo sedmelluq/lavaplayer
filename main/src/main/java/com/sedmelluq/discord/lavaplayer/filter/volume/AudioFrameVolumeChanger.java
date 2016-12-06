@@ -34,7 +34,7 @@ public class AudioFrameVolumeChanger implements AudioFrameRebuilder {
     this.newVolume = newVolume;
 
     this.encodedBuffer = ByteBuffer.allocateDirect(4096);
-    this.sampleBuffer = ByteBuffer.allocateDirect(FRAME_SIZE * CHANNEL_COUNT * 2).order(ByteOrder.LITTLE_ENDIAN).asShortBuffer();
+    this.sampleBuffer = ByteBuffer.allocateDirect(FRAME_SIZE * CHANNEL_COUNT * 2).order(ByteOrder.nativeOrder()).asShortBuffer();
     this.volumeProcessor = new PcmVolumeProcessor(100);
   }
 

@@ -87,7 +87,7 @@ public class AudioPlayer implements AudioFrameProvider, TrackStateListener {
     InternalAudioTrack newTrack = (InternalAudioTrack) track;
     InternalAudioTrack previousTrack;
 
-    synchronized (trackSwitchLock){
+    synchronized (trackSwitchLock) {
       previousTrack = activeTrack;
 
       if (noInterrupt && previousTrack != null) {

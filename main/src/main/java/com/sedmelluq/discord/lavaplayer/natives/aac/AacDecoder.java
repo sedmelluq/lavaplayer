@@ -65,6 +65,10 @@ public class AacDecoder extends NativeResourceHolder {
   private synchronized void configureRaw(long buffer) {
     checkNotReleased();
 
+    if (ByteOrder.nativeOrder() == ByteOrder.BIG_ENDIAN) {
+      buffer = Long.reverseBytes(buffer);
+    }
+
     int error;
     if ((error = library.configure(instance, buffer)) != 0) {
       throw new IllegalStateException("Configuring failed with error " + error);
@@ -74,7 +78,7 @@ public class AacDecoder extends NativeResourceHolder {
   private static long encodeConfiguration(int objectType, int frequency, int channels) {
     try {
       ByteBuffer buffer = ByteBuffer.allocate(8);
-      buffer.order(ByteOrder.LITTLE_ENDIAN);
+      buffer.order(ByteOrder.nativeOrder());
       BitStreamWriter bitWriter = new BitStreamWriter(new ByteBufferOutputStream(buffer));
 
       bitWriter.write(objectType, 5);

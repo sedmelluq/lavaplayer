@@ -92,7 +92,7 @@ public class AdtsStreamProvider {
       }
 
       downstream = FilterChainBuilder.forShortPcm(context, header.channels, header.sampleRate, true);
-      outputBuffer = ByteBuffer.allocateDirect(2048 * header.channels).order(ByteOrder.LITTLE_ENDIAN).asShortBuffer();
+      outputBuffer = ByteBuffer.allocateDirect(2048 * header.channels).order(ByteOrder.nativeOrder()).asShortBuffer();
     }
 
     previousHeader = header;

@@ -37,7 +37,7 @@ public class MpegAacTrackConsumer implements MpegTrackConsumer {
     this.track = track;
     this.decoder = new AacDecoder();
     this.inputBuffer = ByteBuffer.allocateDirect(4096);
-    this.outputBuffer = ByteBuffer.allocateDirect(2048 * track.channelCount).order(ByteOrder.LITTLE_ENDIAN).asShortBuffer();
+    this.outputBuffer = ByteBuffer.allocateDirect(2048 * track.channelCount).order(ByteOrder.nativeOrder()).asShortBuffer();
     this.downstream = FilterChainBuilder.forShortPcm(context, track.channelCount, track.sampleRate, true);
   }
 

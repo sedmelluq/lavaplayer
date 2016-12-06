@@ -35,7 +35,7 @@ public class MatroskaAacTrackConsumer implements MatroskaTrackConsumer {
     this.track = track;
     this.decoder = new AacDecoder();
     this.inputBuffer = ByteBuffer.allocateDirect(4096);
-    this.outputBuffer = ByteBuffer.allocateDirect(2048 * track.getAudio().getChannels()).order(ByteOrder.LITTLE_ENDIAN).asShortBuffer();
+    this.outputBuffer = ByteBuffer.allocateDirect(2048 * track.getAudio().getChannels()).order(ByteOrder.nativeOrder()).asShortBuffer();
     this.downstream = FilterChainBuilder.forShortPcm(context, track.getAudio().getChannels(),
         (int) track.getAudio().getSamplingFrequency(), true);
   }

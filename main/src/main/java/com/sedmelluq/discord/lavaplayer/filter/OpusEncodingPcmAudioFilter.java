@@ -41,7 +41,7 @@ public class OpusEncodingPcmAudioFilter implements FloatPcmAudioFilter, ShortPcm
   public OpusEncodingPcmAudioFilter(AudioProcessingContext context) {
     this.context = context;
     this.frameBuffer = ByteBuffer.allocateDirect(CHUNK_LENGTH_MS * SAMPLES_PER_MS * CHANNEL_COUNT * 2).
-        order(ByteOrder.LITTLE_ENDIAN).asShortBuffer();
+        order(ByteOrder.nativeOrder()).asShortBuffer();
     this.encoded = ByteBuffer.allocateDirect(4096);
     this.volumeProcessor = new PcmVolumeProcessor(context.volumeLevel.get());
 
