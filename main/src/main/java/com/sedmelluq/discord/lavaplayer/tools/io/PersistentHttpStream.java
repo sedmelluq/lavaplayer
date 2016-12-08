@@ -112,7 +112,7 @@ public class PersistentHttpStream extends SeekableInputStream implements AutoClo
   }
 
   private void handleSocketException(SocketException exception, boolean attemptReconnect) throws IOException {
-    if (!attemptReconnect || !"Connection reset".equals(exception.getMessage())) {
+    if (!attemptReconnect || !HttpClientTools.isConnectionResetException(exception)) {
       throw exception;
     }
 

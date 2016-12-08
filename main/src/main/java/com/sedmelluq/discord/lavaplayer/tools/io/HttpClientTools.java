@@ -42,6 +42,8 @@ import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.X509TrustManager;
 
+import java.net.SocketException;
+
 import static com.sedmelluq.discord.lavaplayer.tools.FriendlyException.Severity.COMMON;
 import static com.sedmelluq.discord.lavaplayer.tools.FriendlyException.Severity.SUSPICIOUS;
 
@@ -209,5 +211,13 @@ public class HttpClientTools {
    */
   public static boolean isSuccessWithContent(int statusCode) {
     return statusCode == HttpStatus.SC_OK || statusCode == HttpStatus.SC_PARTIAL_CONTENT;
+  }
+
+  /**
+   * @param exception Exception to check.
+   * @return True if the exception denotes a socket reset.
+   */
+  public static boolean isConnectionResetException(Throwable exception) {
+    return exception instanceof SocketException && "Connection reset".equals(exception.getMessage());
   }
 }

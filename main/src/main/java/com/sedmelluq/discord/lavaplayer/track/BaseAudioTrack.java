@@ -36,7 +36,7 @@ public abstract class BaseAudioTrack implements InternalAudioTrack {
       initialExecutor.applyStateToExecutor(executor);
       activeExecutor = executor;
     } else {
-      throw new IllegalStateException("Cannot assign executors to a track twice.");
+      throw new IllegalStateException("Cannot play the same instance of a track twice, use track.makeClone().");
     }
   }
 

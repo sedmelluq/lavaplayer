@@ -5,6 +5,7 @@ import com.sedmelluq.discord.lavaplayer.tools.DaemonThreadFactory;
 import com.sedmelluq.discord.lavaplayer.tools.ExceptionTools;
 import com.sedmelluq.discord.lavaplayer.tools.ExecutorTools;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
+import com.sedmelluq.discord.lavaplayer.tools.io.HttpClientTools;
 import com.sedmelluq.discord.lavaplayer.track.AudioItem;
 import com.sedmelluq.discord.lavaplayer.source.AudioSourceManager;
 import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
@@ -111,17 +112,16 @@ public class YoutubeAudioSourceManager implements AudioSourceManager {
 
   @Override
   public AudioItem loadItem(DefaultAudioPlayerManager manager, AudioReference reference) {
-    AudioItem result;
-
-    if (allowSearch && reference.identifier.startsWith(SEARCH_PREFIX)) {
-      return loadSearchResult(reference.identifier.substring(SEARCH_PREFIX.length()).trim());
+    try {
+      return loadItemOnce(reference);
+    } catch (FriendlyException exception) {
+      // In case of a connection reset exception, try once more.
+      if (HttpClientTools.isConnectionResetException(exception.getCause())) {
+        return loadItemOnce(reference);
+      } else {
+        throw exception;
+      }
     }
-
-    if ((result = loadTrack(reference.identifier)) == null) {
-      result = loadPlaylist(reference.identifier);
-    }
-
-    return result;
   }
 
   @Override
@@ -160,6 +160,20 @@ public class YoutubeAudioSourceManager implements AudioSourceManager {
     HttpClientBuilder httpClientBuilder = HttpClientBuilder.create();
     httpClientBuilder.setDefaultCookieStore(cookieStore);
     return httpClientBuilder;
+  }
+
+  private AudioItem loadItemOnce(AudioReference reference) {
+    AudioItem result;
+
+    if (allowSearch && reference.identifier.startsWith(SEARCH_PREFIX)) {
+      return loadSearchResult(reference.identifier.substring(SEARCH_PREFIX.length()).trim());
+    }
+
+    if ((result = loadTrack(reference.identifier)) == null) {
+      result = loadPlaylist(reference.identifier);
+    }
+
+    return result;
   }
 
   private AudioItem loadTrack(String identifier) {

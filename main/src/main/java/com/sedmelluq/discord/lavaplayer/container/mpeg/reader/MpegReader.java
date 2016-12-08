@@ -5,6 +5,7 @@ import com.sedmelluq.discord.lavaplayer.tools.io.SeekableInputStream;
 import java.io.DataInput;
 import java.io.DataInputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -72,6 +73,19 @@ public class MpegReader {
   public String readFourCC() throws IOException {
     data.readFully(fourCcBuffer);
     return new String(fourCcBuffer, "ISO-8859-1");
+  }
+
+  /**
+   * Read an UTF string with a specified size.
+   * @param size Size in bytes.
+   * @return The string read from the stream
+   * @throws IOException On read error
+   */
+  public String readUtfString(int size) throws IOException {
+    byte[] bytes = new byte[size];
+    data.readFully(bytes);
+
+    return new String(bytes, StandardCharsets.UTF_8);
   }
 
   /**

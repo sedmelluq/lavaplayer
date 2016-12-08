@@ -1,6 +1,7 @@
 package com.sedmelluq.discord.lavaplayer.container.mpeg;
 
 import com.sedmelluq.discord.lavaplayer.container.mpeg.reader.MpegParseStopChecker;
+import com.sedmelluq.discord.lavaplayer.container.mpeg.reader.MpegVersionedSectionInfo;
 import com.sedmelluq.discord.lavaplayer.container.mpeg.reader.fragmented.MpegFragmentedFileTrackProvider;
 import com.sedmelluq.discord.lavaplayer.container.mpeg.reader.MpegFileTrackProvider;
 import com.sedmelluq.discord.lavaplayer.container.mpeg.reader.MpegReader;
@@ -10,7 +11,9 @@ import com.sedmelluq.discord.lavaplayer.tools.io.SeekableInputStream;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -23,6 +26,7 @@ public class MpegFileLoader {
   private final MpegStandardFileTrackProvider standardFileReader;
   private final MpegReader reader;
   private final MpegSectionInfo root;
+  private final Map<String, Object> metadata;
 
   /**
    * @param inputStream Stream to read the file from
@@ -33,6 +37,7 @@ public class MpegFileLoader {
     this.root = new MpegSectionInfo(0, inputStream.getContentLength(), "root");
     this.fragmentedFileReader = new MpegFragmentedFileTrackProvider(reader, root);
     this.standardFileReader = new MpegStandardFileTrackProvider(reader);
+    this.metadata = new HashMap<>();
   }
 
   /**
@@ -56,12 +61,68 @@ public class MpegFileLoader {
             this::parseTrackInfo
         ).handle("mvex",
             fragmentedFileReader::parseMovieExtended
+        ).handle("udta",
+            this::parseMetadata
         ).run();
       }).handleVersioned("sidx", true,
           fragmentedFileReader::parseSegmentIndex
       ).stopChecker(getRootStopChecker(movieBoxSeen)).run();
     } catch (IOException e) {
       throw new RuntimeException(e);
+    }
+  }
+
+  /**
+   * @param name Name of the text metadata field.
+   * @return Value of the metadata field, or null if no value or not a string.
+   */
+  public String getTextMetadata(String name) {
+    Object data = metadata.get(name);
+    return data instanceof String ? (String) data : null;
+  }
+
+  private void parseMetadata(MpegSectionInfo udta) throws IOException {
+    reader.in(udta).handleVersioned("meta", meta -> {
+      reader.in(meta).handle("ilst", ilst -> {
+        MpegSectionInfo entry;
+
+        while ((entry = reader.nextChild(ilst)) != null) {
+          parseMetadataEntry(entry);
+        }
+      }).run();
+    }).run();
+  }
+
+  private void parseMetadataEntry(MpegSectionInfo entry) throws IOException {
+    MpegSectionInfo dataHeader = reader.nextChild(entry);
+
+    if (dataHeader != null && "data".equals(dataHeader.type)) {
+      MpegVersionedSectionInfo data = reader.parseFlags(dataHeader);
+
+      // Skip next 4 bytes
+      reader.data.readInt();
+
+      if (data.flags == 1) {
+        storeMetadata(entry.type, reader.readUtfString((int) data.length - 16));
+      }
+    }
+
+    reader.skip(entry);
+  }
+
+  private void storeMetadata(String code, Object value) {
+    String name = getMetadataName(code);
+
+    if (name != null && value != null) {
+      metadata.put(name, value);
+    }
+  }
+
+  private static String getMetadataName(String code) {
+    switch (code.toLowerCase()) {
+      case "\u00a9art": return "Artist";
+      case "\u00a9nam": return "Title";
+      default: return null;
     }
   }
 
