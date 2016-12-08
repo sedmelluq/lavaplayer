@@ -51,9 +51,10 @@ public class Main extends ListenerAdapter {
 
     if (musicManager == null) {
       musicManager = new GuildMusicManager(playerManager);
-      guild.getAudioManager().setSendingHandler(musicManager.getSendHandler());
       musicManagers.put(guildId, musicManager);
     }
+
+    guild.getAudioManager().setSendingHandler(musicManager.getSendHandler());
 
     return musicManager;
   }
