@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.ShortBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -197,7 +198,7 @@ public class Mp3TrackProvider {
     skipExtendedHeader(flags);
 
     if (majorVersion < 5) {
-      parseIdv3Frames(tagsEndPosition);
+      parseIdv3Frames(majorVersion, tagsEndPosition);
     }
 
     inputStream.seek(tagsEndPosition);
@@ -210,6 +211,12 @@ public class Mp3TrackProvider {
         | (dataInput.readByte() & 0xFF);
   }
 
+  private int readSyncProof3ByteInteger() throws IOException {
+    return (dataInput.readByte() & 0xFF) << 14
+        | (dataInput.readByte() & 0xFF) << 7
+        | (dataInput.readByte() & 0xFF);
+  }
+
   private void skipExtendedHeader(int flags) throws IOException {
     if ((flags & IDV3_FLAG_EXTENDED) != 0) {
       int size = readSyncProofInteger();
@@ -218,10 +225,10 @@ public class Mp3TrackProvider {
     }
   }
 
-  private void parseIdv3Frames(long tagsEndPosition) throws IOException {
+  private void parseIdv3Frames(int version, long tagsEndPosition) throws IOException {
     FrameHeader header;
 
-    while (inputStream.getPosition() + 10 <= tagsEndPosition && (header = readFrameHeader()) != null) {
+    while (inputStream.getPosition() + 10 <= tagsEndPosition && (header = readFrameHeader(version)) != null) {
       long nextTagPosition = inputStream.getPosition() + header.size;
 
       if (header.hasRawFormat() && knownTextExtensions.contains(header.id)) {
@@ -259,14 +266,50 @@ public class Mp3TrackProvider {
     }
   }
 
-  private FrameHeader readFrameHeader() throws IOException {
+  private String readId3v22TagName() throws IOException {
+    dataInput.readFully(tagHeaderBuffer, 0, 3);
+
+    if (tagHeaderBuffer[0] == 0) {
+      return null;
+    }
+
+    String shortName = new String(tagHeaderBuffer, 0, 3, StandardCharsets.ISO_8859_1);
+
+    if ("TT2".equals(shortName)) {
+      return "TIT2";
+    } else if ("TP1".equals(shortName)) {
+      return "TPE1";
+    } else {
+      return shortName;
+    }
+  }
+
+  private String readTagName() throws IOException {
     dataInput.readFully(tagHeaderBuffer, 0, 4);
 
     if (tagHeaderBuffer[0] == 0) {
       return null;
     }
 
-    return new FrameHeader(new String(tagHeaderBuffer, 0, 4, "ISO-8859-1"), readSyncProofInteger(), dataInput.readUnsignedShort());
+    return new String(tagHeaderBuffer, 0, 4, StandardCharsets.ISO_8859_1);
+  }
+
+  private FrameHeader readFrameHeader(int version) throws IOException {
+    if (version == 2) {
+      String tagName = readId3v22TagName();
+
+      if (tagName != null) {
+        return new FrameHeader(tagName, readSyncProof3ByteInteger(), 0);
+      }
+    } else {
+      String tagName = readTagName();
+
+      if (tagName != null) {
+        return new FrameHeader(tagName, readSyncProofInteger(), dataInput.readUnsignedShort());
+      }
+    }
+
+    return null;
   }
 
   @SuppressWarnings("unused")

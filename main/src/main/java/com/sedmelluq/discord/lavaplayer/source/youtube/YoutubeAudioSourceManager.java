@@ -207,11 +207,11 @@ public class YoutubeAudioSourceManager implements AudioSourceManager {
     }
   }
 
-  private AudioTrack loadTrackWithVideoId(String videoId, boolean mustExist) {
+  private AudioItem loadTrackWithVideoId(String videoId, boolean mustExist) {
     try (CloseableHttpClient httpClient = httpClientBuilder.build()) {
       JsonBrowser info = getTrackInfoFromMainPage(httpClient, videoId, mustExist);
       if (info == null) {
-        return null;
+        return AudioReference.NO_TRACK;
       }
 
       JsonBrowser args = info.get("args");
@@ -462,7 +462,7 @@ public class YoutubeAudioSourceManager implements AudioSourceManager {
   }
 
   private AudioPlaylist loadTracksAsynchronously(List<String> videoIds, String selectedVideoId) {
-    ExecutorCompletionService<AudioTrack> completion = new ExecutorCompletionService<>(mixLoadingExecutor);
+    ExecutorCompletionService<AudioItem> completion = new ExecutorCompletionService<>(mixLoadingExecutor);
     List<AudioTrack> tracks = new ArrayList<>();
 
     for (final String videoId : videoIds) {
@@ -486,10 +486,14 @@ public class YoutubeAudioSourceManager implements AudioSourceManager {
     return new BasicAudioPlaylist("YouTube mix", tracks, selectedTrack, false);
   }
 
-  private void fetchTrackResultsFromExecutor(ExecutorCompletionService<AudioTrack> completion, List<AudioTrack> tracks, int size) throws InterruptedException {
+  private void fetchTrackResultsFromExecutor(ExecutorCompletionService<AudioItem> completion, List<AudioTrack> tracks, int size) throws InterruptedException {
     for (int i = 0; i < size; i++) {
       try {
-        tracks.add(completion.take().get());
+        AudioItem item = completion.take().get();
+
+        if (item instanceof AudioTrack) {
+          tracks.add((AudioTrack) item);
+        }
       } catch (ExecutionException e) {
         log.warn("Failed to load a track from a mix.", e);
       }
