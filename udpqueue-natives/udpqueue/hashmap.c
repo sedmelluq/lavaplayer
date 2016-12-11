@@ -1,5 +1,4 @@
 #include "hashmap.h"
-#include <stdlib.h>
 
 hashmap_t* hashmap_create(size_t entry_size, size_t initial_capacity, entry_free_fn free_func) {
 	hashmap_t* map = calloc(1, sizeof(*map));

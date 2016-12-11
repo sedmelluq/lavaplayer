@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <inttypes.h>
+#include <string.h>
 #include "hashmap.h"
 #include "mutex.h"
 #include "timing.h"
@@ -15,7 +16,11 @@
 
 typedef SOCKET socket_t;
 #else
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netdb.h>
 #include <netinet/in.h>
+#include <unistd.h>
 
 typedef int socket_t;
 #define closesocket close
