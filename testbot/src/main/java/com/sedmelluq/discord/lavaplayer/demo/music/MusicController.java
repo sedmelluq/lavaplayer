@@ -17,11 +17,11 @@ import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.DecodedTrackHolder;
 import com.sedmelluq.discord.lavaplayer.track.TrackMarker;
 import com.sedmelluq.discord.lavaplayer.udpqueue.natives.UdpQueueManager;
-import net.dv8tion.jda.entities.Guild;
-import net.dv8tion.jda.entities.Message;
-import net.dv8tion.jda.entities.TextChannel;
-import net.dv8tion.jda.entities.VoiceChannel;
-import net.dv8tion.jda.managers.AudioManager;
+import net.dv8tion.jda.core.entities.Guild;
+import net.dv8tion.jda.core.entities.Message;
+import net.dv8tion.jda.core.entities.TextChannel;
+import net.dv8tion.jda.core.entities.VoiceChannel;
+import net.dv8tion.jda.core.managers.AudioManager;
 import net.iharder.Base64;
 
 import java.io.ByteArrayInputStream;
@@ -29,6 +29,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 
 public class MusicController implements BotController {
   private final AudioPlayerManager manager;
@@ -74,7 +75,7 @@ public class MusicController implements BotController {
 
     outputStream.finish();
 
-    message.getChannel().sendMessage(Base64.encodeBytes(baos.toByteArray()));
+    message.getChannel().sendMessage(Base64.encodeBytes(baos.toByteArray())).queue();
   }
 
   @BotCommandHandler
@@ -136,7 +137,7 @@ public class MusicController implements BotController {
   @BotCommandHandler
   private void duration(Message message) {
     forPlayingTrack(track -> {
-      message.getChannel().sendMessage("Duration is " + track.getDuration());
+      message.getChannel().sendMessage("Duration is " + track.getDuration()).queue();
     });
   }
 
@@ -150,7 +151,7 @@ public class MusicController implements BotController {
   @BotCommandHandler
   private void pos(Message message) {
     forPlayingTrack(track -> {
-      message.getChannel().sendMessage("Position is " + track.getPosition());
+      message.getChannel().sendMessage("Position is " + track.getPosition()).queue();
     });
   }
 
@@ -158,7 +159,7 @@ public class MusicController implements BotController {
   private void marker(final Message message, long position, final String text) {
     forPlayingTrack(track -> {
       track.setMarker(new TrackMarker(position, state -> {
-        message.getChannel().sendMessage("Trigger [" + text + "] cause [" + state.name() + "]");
+        message.getChannel().sendMessage("Trigger [" + text + "] cause [" + state.name() + "]").queue();
       }));
     });
   }
@@ -178,7 +179,7 @@ public class MusicController implements BotController {
       public void trackLoaded(AudioTrack track) {
         connectToFirstVoiceChannel(guild.getAudioManager());
 
-        message.getChannel().sendMessage("Starting now: " + track.getInfo().title + " (length " + track.getDuration() + ")");
+        message.getChannel().sendMessage("Starting now: " + track.getInfo().title + " (length " + track.getDuration() + ")").queue();
 
         if (now) {
           scheduler.playNow(track, true);
@@ -190,17 +191,17 @@ public class MusicController implements BotController {
       @Override
       public void playlistLoaded(AudioPlaylist playlist) {
         List<AudioTrack> tracks = playlist.getTracks();
-        message.getChannel().sendMessage("Loaded playlist: " + playlist.getName() + " (" + tracks.size() + ")");
+        message.getChannel().sendMessage("Loaded playlist: " + playlist.getName() + " (" + tracks.size() + ")").queue();
 
         connectToFirstVoiceChannel(guild.getAudioManager());
 
         AudioTrack selected = playlist.getSelectedTrack();
 
         if (selected != null) {
-          message.getChannel().sendMessage("Selected track from playlist: " + selected.getInfo().title);
+          message.getChannel().sendMessage("Selected track from playlist: " + selected.getInfo().title).queue();
         } else {
           selected = tracks.get(0);
-          message.getChannel().sendMessage("Added first track from playlist: " + selected.getInfo().title);
+          message.getChannel().sendMessage("Added first track from playlist: " + selected.getInfo().title).queue();
         }
 
         if (now) {
@@ -218,12 +219,12 @@ public class MusicController implements BotController {
 
       @Override
       public void noMatches() {
-        message.getChannel().sendMessage("Nothing found for " + identifier);
+        message.getChannel().sendMessage("Nothing found for " + identifier).queue();
       }
 
       @Override
       public void loadFailed(FriendlyException throwable) {
-        message.getChannel().sendMessage("Failed with message: " + throwable.getMessage() + " (" + throwable.getClass().getSimpleName() + ")");
+        message.getChannel().sendMessage("Failed with message: " + throwable.getMessage() + " (" + throwable.getClass().getSimpleName() + ")").queue();
       }
     });
   }
@@ -251,13 +252,20 @@ public class MusicController implements BotController {
 
   private class GlobalDispatcher implements MessageDispatcher {
     @Override
-    public Message sendMessage(String message) {
+    public void sendMessage(String message, Consumer<Message> success, Consumer<Throwable> failure) {
       TextChannel channel = outputChannel.get();
 
       if (channel != null) {
-        return channel.sendMessage(message);
-      } else {
-        return null;
+        channel.sendMessage(message).queue(success, failure);
+      }
+    }
+
+    @Override
+    public void sendMessage(String message) {
+      TextChannel channel = outputChannel.get();
+
+      if (channel != null) {
+        channel.sendMessage(message).queue();
       }
     }
   }
@@ -270,8 +278,13 @@ public class MusicController implements BotController {
     }
 
     @Override
-    public Message sendMessage(String message) {
-      return channel.sendMessage(message);
+    public void sendMessage(String message, Consumer<Message> success, Consumer<Throwable> failure) {
+      channel.sendMessage(message).queue(success, failure);
+    }
+
+    @Override
+    public void sendMessage(String message) {
+      channel.sendMessage(message).queue();
     }
   }
 

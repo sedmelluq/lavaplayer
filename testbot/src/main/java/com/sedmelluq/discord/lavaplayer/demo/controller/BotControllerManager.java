@@ -2,8 +2,8 @@ package com.sedmelluq.discord.lavaplayer.demo.controller;
 
 import com.sedmelluq.discord.lavaplayer.demo.BotApplicationManager;
 import com.sedmelluq.discord.lavaplayer.demo.BotGuildContext;
-import net.dv8tion.jda.entities.Guild;
-import net.dv8tion.jda.entities.Message;
+import net.dv8tion.jda.core.entities.Guild;
+import net.dv8tion.jda.core.entities.Message;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;

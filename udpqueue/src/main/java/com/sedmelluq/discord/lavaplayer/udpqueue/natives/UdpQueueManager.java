@@ -10,6 +10,7 @@ import java.nio.ByteBuffer;
  * Manages sending out queues of UDP packets at a fixed interval.
  */
 public class UdpQueueManager extends NativeResourceHolder {
+  private final int bufferCapacity;
   private final ByteBuffer packetBuffer;
   private final UdpQueueManagerLibrary library;
   private final long instance;
@@ -20,6 +21,7 @@ public class UdpQueueManager extends NativeResourceHolder {
    * @param maximumPacketSize Maximum packet size
    */
   public UdpQueueManager(int bufferCapacity, long packetInterval, int maximumPacketSize) {
+    this.bufferCapacity = bufferCapacity;
     packetBuffer = ByteBuffer.allocateDirect(maximumPacketSize);
     library = UdpQueueManagerLibrary.getInstance();
     instance = library.create(bufferCapacity, packetInterval);
@@ -35,6 +37,13 @@ public class UdpQueueManager extends NativeResourceHolder {
     checkNotReleased();
 
     return library.getRemainingCapacity(instance, key);
+  }
+
+  /**
+   * @return Total capacity used for queues in this manager.
+   */
+  public int getCapacity() {
+    return bufferCapacity;
   }
 
   /**

@@ -3,34 +3,29 @@ package com.sedmelluq.discord.lavaplayer.demo.jda;
 import com.sedmelluq.discord.lavaplayer.player.AudioLoadResultHandler;
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.player.DefaultAudioPlayerManager;
-import com.sedmelluq.discord.lavaplayer.source.AudioSourceManager;
 import com.sedmelluq.discord.lavaplayer.source.AudioSourceManagers;
-import com.sedmelluq.discord.lavaplayer.source.bandcamp.BandcampAudioSourceManager;
-import com.sedmelluq.discord.lavaplayer.source.http.HttpAudioSourceManager;
-import com.sedmelluq.discord.lavaplayer.source.local.LocalAudioSourceManager;
-import com.sedmelluq.discord.lavaplayer.source.soundcloud.SoundCloudAudioSourceManager;
-import com.sedmelluq.discord.lavaplayer.source.twitch.TwitchStreamAudioSourceManager;
-import com.sedmelluq.discord.lavaplayer.source.vimeo.VimeoAudioSourceManager;
-import com.sedmelluq.discord.lavaplayer.source.youtube.YoutubeAudioSourceManager;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
-import net.dv8tion.jda.JDA;
-import net.dv8tion.jda.JDABuilder;
-import net.dv8tion.jda.entities.Guild;
-import net.dv8tion.jda.entities.TextChannel;
-import net.dv8tion.jda.entities.VoiceChannel;
-import net.dv8tion.jda.events.message.MessageReceivedEvent;
-import net.dv8tion.jda.hooks.ListenerAdapter;
-import net.dv8tion.jda.managers.AudioManager;
+import net.dv8tion.jda.core.AccountType;
+import net.dv8tion.jda.core.JDA;
+import net.dv8tion.jda.core.JDABuilder;
+import net.dv8tion.jda.core.entities.Guild;
+import net.dv8tion.jda.core.entities.TextChannel;
+import net.dv8tion.jda.core.entities.VoiceChannel;
+import net.dv8tion.jda.core.events.message.MessageReceivedEvent;
+import net.dv8tion.jda.core.hooks.ListenerAdapter;
+import net.dv8tion.jda.core.managers.AudioManager;
 
-import javax.security.auth.login.LoginException;
 import java.util.HashMap;
 import java.util.Map;
 
 public class Main extends ListenerAdapter {
-  public static void main(String[] args) throws InterruptedException, LoginException {
-    JDA jda = new JDABuilder().setBotToken(System.getProperty("botToken")).buildBlocking();
+  public static void main(String[] args) throws Exception {
+    JDA jda = new JDABuilder(AccountType.BOT)
+        .setToken(System.getProperty("botToken"))
+        .buildBlocking();
+
     jda.addEventListener(new Main());
   }
 
@@ -81,7 +76,7 @@ public class Main extends ListenerAdapter {
     playerManager.loadItemOrdered(musicManager, trackUrl, new AudioLoadResultHandler() {
       @Override
       public void trackLoaded(AudioTrack track) {
-        channel.sendMessage("Adding to queue " + track.getInfo().title);
+        channel.sendMessage("Adding to queue " + track.getInfo().title).queue();
 
         play(channel.getGuild(), musicManager, track);
       }
@@ -94,19 +89,19 @@ public class Main extends ListenerAdapter {
           firstTrack = playlist.getTracks().get(0);
         }
 
-        channel.sendMessage("Adding to queue " + firstTrack.getInfo().title + " (first track of playlist " + playlist.getName() + ")");
+        channel.sendMessage("Adding to queue " + firstTrack.getInfo().title + " (first track of playlist " + playlist.getName() + ")").queue();
 
         play(channel.getGuild(), musicManager, firstTrack);
       }
 
       @Override
       public void noMatches() {
-        channel.sendMessage("Nothing found by " + trackUrl);
+        channel.sendMessage("Nothing found by " + trackUrl).queue();
       }
 
       @Override
       public void loadFailed(FriendlyException exception) {
-        channel.sendMessage("Could not play: " + exception.getMessage());
+        channel.sendMessage("Could not play: " + exception.getMessage()).queue();
       }
     });
   }
@@ -121,7 +116,7 @@ public class Main extends ListenerAdapter {
     GuildMusicManager musicManager = getGuildAudioPlayer(channel.getGuild());
     musicManager.scheduler.nextTrack();
 
-    channel.sendMessage("Skipped to next track.");
+    channel.sendMessage("Skipped to next track.").queue();
   }
 
   private static void connectToFirstVoiceChannel(AudioManager audioManager) {

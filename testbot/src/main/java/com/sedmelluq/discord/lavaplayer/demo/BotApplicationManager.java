@@ -15,12 +15,13 @@ import com.sedmelluq.discord.lavaplayer.source.twitch.TwitchStreamAudioSourceMan
 import com.sedmelluq.discord.lavaplayer.source.vimeo.VimeoAudioSourceManager;
 import com.sedmelluq.discord.lavaplayer.source.youtube.YoutubeAudioSourceManager;
 import com.sedmelluq.discord.lavaplayer.tools.DaemonThreadFactory;
-import net.dv8tion.jda.JDA;
-import net.dv8tion.jda.entities.Guild;
-import net.dv8tion.jda.entities.Message;
-import net.dv8tion.jda.events.guild.GuildLeaveEvent;
-import net.dv8tion.jda.events.message.MessageReceivedEvent;
-import net.dv8tion.jda.hooks.ListenerAdapter;
+import net.dv8tion.jda.core.JDA;
+import net.dv8tion.jda.core.entities.ChannelType;
+import net.dv8tion.jda.core.entities.Guild;
+import net.dv8tion.jda.core.entities.Message;
+import net.dv8tion.jda.core.events.guild.GuildLeaveEvent;
+import net.dv8tion.jda.core.events.message.MessageReceivedEvent;
+import net.dv8tion.jda.core.hooks.ListenerAdapter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -48,10 +49,6 @@ public class BotApplicationManager extends ListenerAdapter {
 
     playerManager = new DefaultAudioPlayerManager();
     //playerManager.useRemoteNodes("localhost:8080");
-    //playerManager.enableGcMonitoring();
-    //JdaUdpQueueingHookManager jdaUdpQueueingHookManager = new JdaUdpQueueingHookManager();
-    //playerManager.setOutputHookFactory(jdaUdpQueueingHookManager);
-    //jdaUdpQueueingHookManager.startDispatcher();
     playerManager.getConfiguration().setResamplingQuality(AudioConfiguration.ResamplingQuality.LOW);
     playerManager.registerSourceManager(new YoutubeAudioSourceManager());
     playerManager.registerSourceManager(new SoundCloudAudioSourceManager());
@@ -96,7 +93,7 @@ public class BotApplicationManager extends ListenerAdapter {
 
   @Override
   public void onMessageReceived(final MessageReceivedEvent event) {
-    if (event.isPrivate()) {
+    if (!event.isFromType(ChannelType.TEXT)) {
       return;
     }
 
@@ -110,22 +107,22 @@ public class BotApplicationManager extends ListenerAdapter {
 
       @Override
       public void commandWrongParameterCount(Message message, String name, String usage, int given, int required) {
-        event.getTextChannel().sendMessage("Wrong argument count for command");
+        event.getTextChannel().sendMessage("Wrong argument count for command").queue();
       }
 
       @Override
       public void commandWrongParameterType(Message message, String name, String usage, int index, String value, Class<?> expectedType) {
-        event.getTextChannel().sendMessage("Wrong argument type for command");
+        event.getTextChannel().sendMessage("Wrong argument type for command").queue();;
       }
 
       @Override
       public void commandRestricted(Message message, String name) {
-        event.getTextChannel().sendMessage("Command not permitted");
+        event.getTextChannel().sendMessage("Command not permitted").queue();;
       }
 
       @Override
       public void commandException(Message message, String name, Throwable throwable) {
-        event.getTextChannel().sendMessage("Command threw an exception");
+        event.getTextChannel().sendMessage("Command threw an exception").queue();;
 
         log.error("Command with content {} threw an exception.", message.getContent(), throwable);
       }

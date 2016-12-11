@@ -6,9 +6,17 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.FileAlreadyExistsException;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.attribute.FileAttribute;
+import java.nio.file.attribute.PosixFilePermissions;
 import java.util.HashSet;
 import java.util.Set;
+
+import static java.nio.file.attribute.PosixFilePermissions.asFileAttribute;
+import static java.nio.file.attribute.PosixFilePermissions.fromString;
 
 /**
  * Loads native libraries by name. Libraries are expected to be in classpath /natives/[arch]/[prefix]name[suffix]
@@ -90,8 +98,15 @@ public class NativeLibLoader {
       }
 
       File temporaryContainer = new File(System.getProperty("java.io.tmpdir"), "lava-jni-natives/" + libraryDirectory);
-      if (!temporaryContainer.mkdirs() && !temporaryContainer.exists()) {
-        throw new IOException("Failed to create directory for unpacked native library.");
+
+      if (!temporaryContainer.exists()) {
+        try {
+          createDirectoriesWithFullPermissions(temporaryContainer.toPath());
+        } catch (FileAlreadyExistsException ignored) {
+          // All is well
+        } catch (IOException e) {
+          throw new IOException("Failed to create directory for unpacked native library.", e);
+        }
       }
 
       extractedLibrary = new File(temporaryContainer, libraryPrefix + name + librarySuffix).toPath();
@@ -101,6 +116,16 @@ public class NativeLibLoader {
     }
 
     return extractedLibrary;
+  }
+
+  private static void createDirectoriesWithFullPermissions(Path path) throws IOException {
+    boolean isPosix = FileSystems.getDefault().supportedFileAttributeViews().contains("posix");
+
+    if (!isPosix) {
+      Files.createDirectories(path);
+    } else {
+      Files.createDirectories(path, asFileAttribute(fromString("rwxrwxrwx")));
+    }
   }
 
   /**

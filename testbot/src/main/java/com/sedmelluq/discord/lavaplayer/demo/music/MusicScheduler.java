@@ -5,7 +5,7 @@ import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
 import com.sedmelluq.discord.lavaplayer.player.event.AudioEventAdapter;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackEndReason;
-import net.dv8tion.jda.entities.Message;
+import net.dv8tion.jda.core.entities.Message;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -119,14 +119,15 @@ public class MusicScheduler extends AudioEventAdapter implements Runnable {
       String box = TrackBoxBuilder.buildTrackBox(80, track, player.isPaused(), player.getVolume());
 
       if (message != null) {
-        message.updateMessageAsync(box, null);
+        message.editMessage(box).queue();
       } else {
         if (creatingBoxMessage.compareAndSet(false, true)) {
-          try {
-            boxMessage.set(messageDispatcher.sendMessage(box));
-          } finally {
+          messageDispatcher.sendMessage(box, created -> {
+            boxMessage.set(created);
             creatingBoxMessage.set(false);
-          }
+          }, error -> {
+            creatingBoxMessage.set(false);
+          });
         }
       }
     }

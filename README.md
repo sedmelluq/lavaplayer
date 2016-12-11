@@ -106,9 +106,7 @@ First thing you have to do when using the library is to create a `DefaultAudioPl
 
 ```java
 AudioPlayerManager playerManager = new DefaultAudioPlayerManager();
-playerManager.getConfiguration().setResamplingQuality(AudioConfiguration.ResamplingQuality.LOW);
-playerManager.registerSourceManager(new YoutubeAudioSourceManager());
-playerManager.registerSourceManager(new SoundCloudAudioSourceManager());
+AudioSourceManagers.registerRemoteSources(playerManager);
 ```
 
 There are various configuration settings that can be modified:
@@ -206,11 +204,16 @@ public class TrackScheduler extends AudioEventAdapter {
 
   @Override
   public void onTrackEnd(AudioPlayer player, AudioTrack track, AudioTrackEndReason endReason) {
-    // endReason == FINISHED: A track finished (or died by an exception) - just start the next one
-    // endReason == STOPPED: The player was stopped - makes no sense to start the next track
-    // endReason == REPLACED: Another track started playing while this had not finished, do nothing
+    if (track.mayStartNext) {
+      // Start next track
+    }
+
+    // endReason == FINISHED: A track finished or died by an exception (mayStartNext = true).
+    // endReason == LOAD_FAILED: Loading of a track failed (mayStartNext = true).
+    // endReason == STOPPED: The player was stopped.
+    // endReason == REPLACED: Another track started playing while this had not finished
     // endReason == CLEANUP: Player hasn't been queried for a while, if you want you can put a
-	//                       clone of this back to your queue
+    //                       clone of this back to your queue
   }
 
   @Override
@@ -227,7 +230,7 @@ public class TrackScheduler extends AudioEventAdapter {
 
 #### JDA integration
 
-To use it with JDA 2, you would need an instance of `AudioSendHandler`. There is only the slight difference of no separate `canProvide` and `provide` methods in `AudioPlayer`, so the wrapper for this is simple:
+To use it with JDA 3, you would need an instance of `AudioSendHandler`. There is only the slight difference of no separate `canProvide` and `provide` methods in `AudioPlayer`, so the wrapper for this is simple:
 
 ```java
 public class AudioPlayerSendHandler implements AudioSendHandler {
