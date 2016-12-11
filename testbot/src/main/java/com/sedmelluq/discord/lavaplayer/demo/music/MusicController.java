@@ -101,6 +101,16 @@ public class MusicController implements BotController {
   }
 
   @BotCommandHandler
+  private void nodes(Message message, String addressList) {
+    manager.useRemoteNodes(addressList.split(" "));
+  }
+
+  @BotCommandHandler
+  private void local(Message message) {
+    manager.useRemoteNodes();
+  }
+
+  @BotCommandHandler
   private void gc(Message message, int duration) {
     UdpQueueManager.pauseDemo(duration);
   }

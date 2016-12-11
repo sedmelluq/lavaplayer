@@ -129,8 +129,11 @@ public class DefaultAudioPlayerManager implements AudioPlayerManager {
 
   @Override
   public void useRemoteNodes(String... nodeAddresses) {
-    remoteNodeManager.shutdown();
-    remoteNodeManager.initialise(Arrays.asList(nodeAddresses));
+    if (nodeAddresses.length > 0) {
+      remoteNodeManager.initialise(Arrays.asList(nodeAddresses));
+    } else {
+      remoteNodeManager.shutdown();
+    }
   }
 
   @Override

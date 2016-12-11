@@ -64,6 +64,7 @@ public class RemoteNodeProcessor implements Runnable {
   private volatile int aliveTickCounter;
   private volatile long lastAliveTime;
   private volatile NodeStatisticsMessage lastStatistics;
+  private volatile boolean closed;
 
   /**
    * @param playerManager Audio player manager
@@ -80,6 +81,14 @@ public class RemoteNodeProcessor implements Runnable {
     httpClientBuilder = createHttpClientBuilder();
     threadRunning = new AtomicBoolean();
     controlState = new AtomicInteger(ControlState.OFFLINE.id());
+    closed = false;
+  }
+
+  /**
+   * @return The address of this node.
+   */
+  public String getNodeAddress() {
+    return nodeAddress;
   }
 
   /**
@@ -116,9 +125,18 @@ public class RemoteNodeProcessor implements Runnable {
     }
   }
 
+  /**
+   * Mark this processor as shut down. No further tasks for it will be scheduled.
+   */
+  public void shutdown() {
+    processHealthCheck(true);
+    closed = true;
+    scheduledExecutor.remove(this);
+  }
+
   @Override
   public void run() {
-    if (!threadRunning.compareAndSet(false, true)) {
+    if (closed || !threadRunning.compareAndSet(false, true)) {
       log.debug("Not running node processor for {}, thread already active.", nodeAddress);
       return;
     }
@@ -146,7 +164,9 @@ public class RemoteNodeProcessor implements Runnable {
       aliveTickCounter = Math.min(-1, aliveTickCounter - 1);
       threadRunning.set(false);
 
-      scheduledExecutor.schedule(this, getScheduleDelay(), TimeUnit.MILLISECONDS);
+      if (!closed) {
+        scheduledExecutor.schedule(this, getScheduleDelay(), TimeUnit.MILLISECONDS);
+      }
     }
   }
 

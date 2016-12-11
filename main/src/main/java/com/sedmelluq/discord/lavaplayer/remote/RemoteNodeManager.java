@@ -12,6 +12,7 @@ import com.sedmelluq.discord.lavaplayer.track.InternalAudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.playback.AudioTrackExecutor;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -26,7 +27,9 @@ public class RemoteNodeManager extends AudioEventAdapter implements Runnable {
   private final DefaultAudioPlayerManager playerManager;
   private final List<RemoteNodeProcessor> processors;
   private final AtomicBoolean enabled;
+  private final Object lock;
   private volatile ScheduledThreadPoolExecutor scheduler;
+  private volatile List<RemoteNodeProcessor> activeProcessors;
 
   /**
    * @param playerManager Audio player manager
@@ -35,6 +38,8 @@ public class RemoteNodeManager extends AudioEventAdapter implements Runnable {
     this.playerManager = playerManager;
     this.processors = new ArrayList<>();
     this.enabled = new AtomicBoolean();
+    this.lock = new Object();
+    this.activeProcessors = new ArrayList<>();
   }
 
   /**
@@ -42,34 +47,51 @@ public class RemoteNodeManager extends AudioEventAdapter implements Runnable {
    * @param nodeAddresses Addresses of remote nodes
    */
   public void initialise(List<String> nodeAddresses) {
-    if (!enabled.compareAndSet(false, true)) {
-      throw new IllegalStateException("Remote nodes already configured.");
+    synchronized (lock) {
+      if (enabled.compareAndSet(false, true)) {
+        startScheduler(nodeAddresses.size() + 1);
+      } else {
+        scheduler.setCorePoolSize(nodeAddresses.size() + 1);
+      }
+
+      List<String> newNodeAddresses = new ArrayList<>(nodeAddresses);
+
+      for (Iterator<RemoteNodeProcessor> iterator = processors.iterator(); iterator.hasNext(); ) {
+        RemoteNodeProcessor processor = iterator.next();
+
+        if (!newNodeAddresses.remove(processor.getNodeAddress())) {
+          processor.shutdown();
+          iterator.remove();
+        }
+      }
+
+      for (String nodeAddress : newNodeAddresses) {
+        RemoteNodeProcessor processor = new RemoteNodeProcessor(playerManager, nodeAddress, scheduler);
+        scheduler.submit(processor);
+        processors.add(processor);
+      }
+
+      activeProcessors = new ArrayList<>(processors);
     }
-
-    ScheduledThreadPoolExecutor scheduledExecutor = new ScheduledThreadPoolExecutor(nodeAddresses.size() + 1, new DaemonThreadFactory("remote"));
-    scheduledExecutor.scheduleAtFixedRate(this, 2000, 2000, TimeUnit.MILLISECONDS);
-
-    for (String nodeAddress : nodeAddresses) {
-      RemoteNodeProcessor processor = new RemoteNodeProcessor(playerManager, nodeAddress, scheduledExecutor);
-      scheduledExecutor.submit(processor);
-      processors.add(processor);
-    }
-
-    scheduler = scheduledExecutor;
   }
 
   /**
    * Shut down, freeing all threads and stopping all tracks executed on remote nodes.
    */
   public void shutdown() {
-    if (!enabled.compareAndSet(true, false)) {
-      return;
-    }
+    synchronized (lock) {
+      if (!enabled.compareAndSet(true, false)) {
+        return;
+      }
 
-    ExecutorTools.shutdownExecutor(scheduler, "node manager");
+      ExecutorTools.shutdownExecutor(scheduler, "node manager");
 
-    for (RemoteNodeProcessor processor : processors) {
-      processor.processHealthCheck(true);
+      for (RemoteNodeProcessor processor : processors) {
+        processor.processHealthCheck(true);
+      }
+
+      processors.clear();
+      activeProcessors = new ArrayList<>(processors);
     }
   }
 
@@ -88,6 +110,12 @@ public class RemoteNodeManager extends AudioEventAdapter implements Runnable {
     RemoteNodeProcessor processor = getNodeForNextTrack();
 
     processor.startPlaying(remoteExecutor);
+  }
+
+  private void startScheduler(int initialSize) {
+    ScheduledThreadPoolExecutor scheduledExecutor = new ScheduledThreadPoolExecutor(initialSize, new DaemonThreadFactory("remote"));
+    scheduledExecutor.scheduleAtFixedRate(this, 2000, 2000, TimeUnit.MILLISECONDS);
+    scheduler = scheduledExecutor;
   }
 
   private RemoteNodeProcessor getNodeForNextTrack() {
@@ -115,7 +143,7 @@ public class RemoteNodeManager extends AudioEventAdapter implements Runnable {
     AudioTrackExecutor executor = ((InternalAudioTrack) track).getActiveExecutor();
 
     if (endReason != AudioTrackEndReason.FINISHED && executor instanceof RemoteAudioTrackExecutor) {
-      for (RemoteNodeProcessor processor : processors) {
+      for (RemoteNodeProcessor processor : activeProcessors) {
         processor.trackEnded((RemoteAudioTrackExecutor) executor, true);
       }
     }
@@ -123,7 +151,7 @@ public class RemoteNodeManager extends AudioEventAdapter implements Runnable {
 
   @Override
   public void run() {
-    for (RemoteNodeProcessor processor : processors) {
+    for (RemoteNodeProcessor processor : activeProcessors) {
       processor.processHealthCheck(false);
     }
   }
