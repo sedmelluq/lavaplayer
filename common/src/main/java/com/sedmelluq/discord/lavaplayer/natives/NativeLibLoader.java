@@ -10,8 +10,6 @@ import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.attribute.FileAttribute;
-import java.nio.file.attribute.PosixFilePermissions;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -22,11 +20,11 @@ import static java.nio.file.attribute.PosixFilePermissions.fromString;
  * Loads native libraries by name. Libraries are expected to be in classpath /natives/[arch]/[prefix]name[suffix]
  */
 public class NativeLibLoader {
-  private static final String LINUX_X86 = "linux-x86";
-  private static final String LINUX_X86_64 = "linux-x86-64";
-  private static final String WIN_X86 = "win-x86";
-  private static final String WIN_X86_64 = "win-x86-64";
-  private static final String DARWIN = "darwin";
+  public static final String LINUX_X86 = "linux-x86";
+  public static final String LINUX_X86_64 = "linux-x86-64";
+  public static final String WIN_X86 = "win-x86";
+  public static final String WIN_X86_64 = "win-x86-64";
+  public static final String DARWIN = "darwin";
 
   private static final Set<String> loadedLibraries;
   private static final String systemType;
@@ -126,15 +124,5 @@ public class NativeLibLoader {
     } else {
       Files.createDirectories(path, asFileAttribute(fromString("rwxrwxrwx")));
     }
-  }
-
-  /**
-   * Loads the connector library with its dependencies for the current system
-   */
-  public static void loadConnectorLibrary() {
-    NativeLibLoader.load(WIN_X86_64, "libmpg123-0");
-    NativeLibLoader.load(WIN_X86, "libgcc_s_sjlj-1");
-    NativeLibLoader.load(WIN_X86, "libmpg123-0");
-    NativeLibLoader.load("connector");
   }
 }

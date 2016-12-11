@@ -1,6 +1,6 @@
 package com.sedmelluq.discord.lavaplayer.natives.aac;
 
-import com.sedmelluq.discord.lavaplayer.natives.NativeLibLoader;
+import com.sedmelluq.discord.lavaplayer.natives.ConnectorNativeLibLoader;
 
 import java.nio.ByteBuffer;
 import java.nio.ShortBuffer;
@@ -11,7 +11,7 @@ class AacDecoderLibrary {
   }
 
   static AacDecoderLibrary getInstance() {
-    NativeLibLoader.loadConnectorLibrary();
+    ConnectorNativeLibLoader.loadConnectorLibrary();
     return new AacDecoderLibrary();
   }
 

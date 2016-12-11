@@ -7,12 +7,11 @@ plugins {
 version = '1.0.0'
 
 dependencies {
-  compile project(':udpqueue')
-
   compile "org.slf4j:slf4j-api:$slf4jVersion"
-
-  compile 'net.dv8tion:JDA:3.0.BETA_104'
+  compile 'commons-io:commons-io:2.5'
 }
+
+compileJava.dependsOn(':natives:checkNatives')
 
 task sourceJar(type: Jar) {
   from sourceSets.main.allJava
@@ -22,7 +21,7 @@ publishing {
   publications {
     mavenJava(MavenPublication) {
       groupId 'com.sedmelluq'
-      artifactId 'lavaplayer-jda-native-system'
+      artifactId 'lavaplayer-common'
 
       from components.java
 

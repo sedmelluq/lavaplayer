@@ -1,6 +1,6 @@
 package com.sedmelluq.discord.lavaplayer.natives.statistics;
 
-import com.sedmelluq.discord.lavaplayer.natives.NativeLibLoader;
+import com.sedmelluq.discord.lavaplayer.natives.ConnectorNativeLibLoader;
 
 class CpuStatisticsLibrary {
   private CpuStatisticsLibrary() {
@@ -8,7 +8,7 @@ class CpuStatisticsLibrary {
   }
 
   static CpuStatisticsLibrary getInstance() {
-    NativeLibLoader.loadConnectorLibrary();
+    ConnectorNativeLibLoader.loadConnectorLibrary();
     return new CpuStatisticsLibrary();
   }
 

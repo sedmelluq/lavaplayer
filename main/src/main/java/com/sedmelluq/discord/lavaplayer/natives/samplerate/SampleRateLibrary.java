@@ -1,6 +1,6 @@
 package com.sedmelluq.discord.lavaplayer.natives.samplerate;
 
-import com.sedmelluq.discord.lavaplayer.natives.NativeLibLoader;
+import com.sedmelluq.discord.lavaplayer.natives.ConnectorNativeLibLoader;
 
 class SampleRateLibrary {
   private SampleRateLibrary() {
@@ -8,7 +8,7 @@ class SampleRateLibrary {
   }
 
   static SampleRateLibrary getInstance() {
-    NativeLibLoader.loadConnectorLibrary();
+    ConnectorNativeLibLoader.loadConnectorLibrary();
     return new SampleRateLibrary();
   }
 
