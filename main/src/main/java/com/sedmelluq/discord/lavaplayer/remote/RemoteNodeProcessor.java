@@ -184,6 +184,8 @@ public class RemoteNodeProcessor implements Runnable {
     HttpPost post = new HttpPost("http://" + nodeAddress + "/tick");
     post.setEntity(new ByteArrayEntity(buildRequestBody()));
 
+    long requestStartTime = System.currentTimeMillis();
+
     try (CloseableHttpResponse response = httpClient.execute(post)) {
       if (response.getStatusLine().getStatusCode() != 200) {
         throw new IOException("Returned an unexpected response code " + response.getStatusLine().getStatusCode());
@@ -203,7 +205,9 @@ public class RemoteNodeProcessor implements Runnable {
       }
     }
 
-    Thread.sleep(500);
+    long sleepDuration = Math.max((requestStartTime + 500) - System.currentTimeMillis(), 10);
+
+    Thread.sleep(sleepDuration);
     return true;
   }
 

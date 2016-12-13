@@ -28,7 +28,7 @@ public class RemoteAudioTrackExecutor implements AudioTrackExecutor {
   private static final Logger log = LoggerFactory.getLogger(RemoteAudioTrackExecutor.class);
 
   private static final long NO_SEEK = -1;
-  private static final int BUFFER_DURATION_MS = 2500;
+  private static final int BUFFER_DURATION_MS = 3000;
 
   private final AudioTrack track;
   private final AudioConfiguration configuration;
