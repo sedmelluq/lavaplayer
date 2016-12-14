@@ -31,6 +31,11 @@ typedef struct queued_packet_s {
 	size_t data_length;
 } queued_packet_t;
 
+typedef struct unsent_packet_s {
+	queued_packet_t packet;
+	struct addrinfo* address;
+} unsent_packet_t;
+
 typedef struct queue_s {
 	uint64_t key;
 	hashmap_entry_t entry;
@@ -74,18 +79,15 @@ static void queue_entry_free(void* entry) {
 	}
 }
 
-static void queue_dispatch_packet(queue_t* queue, socket_t socketv4, socket_t socketv6, queue_manager_t* manager) {
-	socket_t socketvx = queue->address->ai_family == AF_INET ? socketv4 : socketv6;
+static void queue_pop_packet(queue_t* queue, unsent_packet_t* packet_out) {
 	queued_packet_t* packet = &queue->packet_buffer[queue->buffer_index];
 
 	queue->buffer_index = (queue->buffer_index + 1) % queue->buffer_capacity;
 	queue->buffer_size--;
 
-	sendto(socketvx, (const char*) packet->data, (int) packet->data_length, 0, queue->address->ai_addr, sizeof(*queue->address->ai_addr));
+	packet_out->packet = *packet;
+	packet_out->address = queue->address;
 
-	int64_t now = timing_get_nanos();
-
-	free(packet->data);
 	packet->data = NULL;
 	packet->data_length = 0;
 }
@@ -224,34 +226,36 @@ static bool manager_queue_packet(queue_manager_t* manager, uint64_t key, const c
 	return result;
 }
 
-static int64_t manager_get_time_to_next(queue_manager_t* manager, int64_t current_time) {
+static int64_t manager_get_target_time(queue_manager_t* manager, int64_t current_time) {
 	queue_t* queue = linked_list_peek_first(&manager->queue_linked);
 
-	return queue == NULL ? manager->packet_interval : queue->next_due_time - current_time;
+	return queue == NULL ? current_time + manager->packet_interval : queue->next_due_time;
 }
 
-static int64_t manager_process_next_locked(queue_manager_t* manager, socket_t socketv4, socket_t socketv6) {
-	int64_t current_time = timing_get_nanos();
+static int64_t manager_process_next_locked(queue_manager_t* manager, unsent_packet_t* packet_out, int64_t current_time) {
 	queue_t* queue = linked_list_peek_first(&manager->queue_linked);
 
+	packet_out->packet.data = NULL;
+	packet_out->address = NULL;
+
 	if (queue == NULL) {
-		return manager->packet_interval;
+		return current_time + manager->packet_interval;
 	}
 
 	if (queue->buffer_size == 0) {
 		hashmap_remove(manager->queues, queue->key);
 		queue_entry_free(queue);
-		return manager_get_time_to_next(manager, current_time);
+		return manager_get_target_time(manager, current_time);
 	}
 
 	if (queue->next_due_time == 0) {
 		queue->next_due_time = current_time;
 	}
 	else if (queue->next_due_time - current_time >= 1500000LL) {
-		return queue->next_due_time - current_time;
+		return queue->next_due_time;
 	}
 
-	queue_dispatch_packet(queue, socketv4, socketv6, manager);
+	queue_pop_packet(queue, packet_out);
 
 	linked_list_remove_first(&manager->queue_linked);
 	linked_list_insert_last(&manager->queue_linked, &queue->link);
@@ -265,7 +269,17 @@ static int64_t manager_process_next_locked(queue_manager_t* manager, socket_t so
 		queue->next_due_time += manager->packet_interval;
 	}
 	
-	return manager_get_time_to_next(manager, current_time);
+	return manager_get_target_time(manager, current_time);
+}
+
+static void manager_dispatch_packet(queue_manager_t* manager, socket_t socketv4, socket_t socketv6, unsent_packet_t* unsent_packet) {
+	socket_t socketvx = unsent_packet->address->ai_family == AF_INET ? socketv4 : socketv6;
+
+	sendto(socketvx, (const char*) unsent_packet->packet.data, (int) unsent_packet->packet.data_length, 0, unsent_packet->address->ai_addr, sizeof(*unsent_packet->address->ai_addr));
+
+	free(unsent_packet->packet.data);
+	unsent_packet->packet.data = NULL;
+	unsent_packet->packet.data_length = 0;
 }
 
 static void manager_process(queue_manager_t* manager) {
@@ -282,8 +296,18 @@ static void manager_process(queue_manager_t* manager) {
 			break;
 		}
 
-		int64_t wait_time = manager_process_next_locked(manager, socketv4, socketv6);
+		int64_t current_time = timing_get_nanos();
+		unsent_packet_t packet_to_send = { 0 };
+
+		int64_t target_time = manager_process_next_locked(manager, &packet_to_send, current_time);
 		mutex_unlock(manager->lock);
+
+		if (packet_to_send.packet.data != NULL) {
+			manager_dispatch_packet(manager, socketv4, socketv6, &packet_to_send);
+			current_time = timing_get_nanos();
+		}
+
+		int64_t wait_time = target_time - current_time;
 
 		if (wait_time >= 1500000LL) {
 			timing_sleep(wait_time);
