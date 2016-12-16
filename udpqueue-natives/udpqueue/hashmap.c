@@ -102,6 +102,8 @@ void* hashmap_put(hashmap_t* map, uint64_t key, bool* existed) {
 			*existed = true;
 			return *reference;
 		}
+
+		reference = &((*reference)->next);
 	}
 	
 	*existed = false;
@@ -125,9 +127,12 @@ void* hashmap_remove(hashmap_t* map, uint64_t key) {
 	
 	while (*reference != NULL) {
 		if ((*reference)->key == key) {
+			hashmap_entry_t* result = *reference;
 			*reference = (*reference)->next;
-			return *reference;
+			return result;
 		}
+
+		reference = &((*reference)->next);
 	}
 	
 	return NULL;
