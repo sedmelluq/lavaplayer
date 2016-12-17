@@ -1,6 +1,7 @@
 package com.sedmelluq.discord.lavaplayer.player;
 
 import com.sedmelluq.discord.lavaplayer.player.hook.AudioOutputHookFactory;
+import com.sedmelluq.discord.lavaplayer.remote.RemoteNodeRegistry;
 import com.sedmelluq.discord.lavaplayer.source.AudioSourceManager;
 import com.sedmelluq.discord.lavaplayer.tools.io.MessageInput;
 import com.sedmelluq.discord.lavaplayer.tools.io.MessageOutput;
@@ -142,4 +143,9 @@ public interface AudioPlayerManager {
    * @return New audio player.
    */
   AudioPlayer createPlayer();
+
+  /**
+   * @return Registry of remote nodes currently used.
+   */
+  RemoteNodeRegistry getRemoteNodeRegistry();
 }

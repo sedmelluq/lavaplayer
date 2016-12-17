@@ -13,8 +13,11 @@ import com.sedmelluq.discord.lavaplayer.remote.message.TrackStoppedMessage;
 import com.sedmelluq.discord.lavaplayer.tools.ExceptionTools;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
+import com.sedmelluq.discord.lavaplayer.track.InternalAudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.playback.AudioFrame;
 import com.sedmelluq.discord.lavaplayer.track.playback.AudioFrameBuffer;
+import com.sedmelluq.discord.lavaplayer.track.playback.AudioTrackExecutor;
+import org.apache.commons.io.input.CountingInputStream;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
@@ -29,6 +32,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
@@ -45,12 +49,14 @@ import static com.sedmelluq.discord.lavaplayer.tools.FriendlyException.Severity.
 /**
  * Processes one remote node.
  */
-public class RemoteNodeProcessor implements Runnable {
+public class RemoteNodeProcessor implements RemoteNode, Runnable {
   private static final Logger log = LoggerFactory.getLogger(RemoteNodeProcessor.class);
 
   private static final int CONNECT_TIMEOUT = 1000;
   private static final int SOCKET_TIMEOUT = 2000;
   private static final int TRACK_KILL_THRESHOLD = 5000;
+  private static final int TICK_MINIMUM_INTERVAL = 500;
+  private static final int NODE_REQUEST_HISTORY = 200;
 
   private final DefaultAudioPlayerManager playerManager;
   private final String nodeAddress;
@@ -60,7 +66,8 @@ public class RemoteNodeProcessor implements Runnable {
   private final RemoteMessageMapper mapper;
   private final HttpClientBuilder httpClientBuilder;
   private final AtomicBoolean threadRunning;
-  private final AtomicInteger controlState;
+  private final AtomicInteger connectionState;
+  private final ArrayDeque<RemoteNode.Tick> tickHistory;
   private volatile int aliveTickCounter;
   private volatile long lastAliveTime;
   private volatile NodeStatisticsMessage lastStatistics;
@@ -80,7 +87,8 @@ public class RemoteNodeProcessor implements Runnable {
     mapper = new RemoteMessageMapper();
     httpClientBuilder = createHttpClientBuilder();
     threadRunning = new AtomicBoolean();
-    controlState = new AtomicInteger(ControlState.OFFLINE.id());
+    connectionState = new AtomicInteger(ConnectionState.OFFLINE.id());
+    tickHistory = new ArrayDeque<>(NODE_REQUEST_HISTORY);
     closed = false;
   }
 
@@ -143,7 +151,7 @@ public class RemoteNodeProcessor implements Runnable {
 
     log.debug("Trying to connect to node {}.", nodeAddress);
 
-    controlState.set(ControlState.PENDING.id());
+    connectionState.set(ConnectionState.PENDING.id());
 
     try (CloseableHttpClient httpClient = httpClientBuilder.build()) {
       while (processOneTick(httpClient)) {
@@ -159,7 +167,7 @@ public class RemoteNodeProcessor implements Runnable {
 
       ExceptionTools.rethrowErrors(e);
     } finally {
-      controlState.set(ControlState.OFFLINE.id());
+      connectionState.set(ConnectionState.OFFLINE.id());
 
       aliveTickCounter = Math.min(-1, aliveTickCounter - 1);
       threadRunning.set(false);
@@ -181,33 +189,49 @@ public class RemoteNodeProcessor implements Runnable {
   }
 
   private boolean processOneTick(CloseableHttpClient httpClient) throws Exception {
-    HttpPost post = new HttpPost("http://" + nodeAddress + "/tick");
-    post.setEntity(new ByteArrayEntity(buildRequestBody()));
+    TickBuilder tickBuilder = new TickBuilder(System.currentTimeMillis());
 
-    long requestStartTime = System.currentTimeMillis();
+    try {
+      dispatchOneTick(httpClient, tickBuilder);
+    } finally {
+      tickBuilder.endTime = System.currentTimeMillis();
+      recordTick(tickBuilder.build());
+    }
+
+    long sleepDuration = Math.max((tickBuilder.startTime + 500) - tickBuilder.endTime, 10);
+
+    Thread.sleep(sleepDuration);
+    return true;
+  }
+
+  private boolean dispatchOneTick(CloseableHttpClient httpClient, TickBuilder tickBuilder) throws Exception {
+    HttpPost post = new HttpPost("http://" + nodeAddress + "/tick");
+    ByteArrayEntity entity = new ByteArrayEntity(buildRequestBody());
+    post.setEntity(entity);
+
+    tickBuilder.requestSize = (int) entity.getContentLength();
 
     try (CloseableHttpResponse response = httpClient.execute(post)) {
-      if (response.getStatusLine().getStatusCode() != 200) {
-        throw new IOException("Returned an unexpected response code " + response.getStatusLine().getStatusCode());
+      tickBuilder.responseCode = response.getStatusLine().getStatusCode();
+
+      if (tickBuilder.responseCode != 200) {
+        throw new IOException("Returned an unexpected response code " + tickBuilder.responseCode);
       }
 
-      if (controlState.compareAndSet(ControlState.PENDING.id(), ControlState.ONLINE.id())) {
+      if (connectionState.compareAndSet(ConnectionState.PENDING.id(), ConnectionState.ONLINE.id())) {
         log.info("Node {} came online.", nodeAddress);
-      } else if (controlState.get() != ControlState.ONLINE.id()) {
+      } else if (connectionState.get() != ConnectionState.ONLINE.id()) {
         log.warn("Node {} received successful response, but had already lost control of its tracks.");
         return false;
       }
 
       lastAliveTime = System.currentTimeMillis();
 
-      if (!handleResponseBody(response.getEntity().getContent())) {
+      if (!handleResponseBody(response.getEntity().getContent(), tickBuilder)) {
         return false;
       }
     }
 
-    long sleepDuration = Math.max((requestStartTime + 500) - System.currentTimeMillis(), 10);
-
-    Thread.sleep(sleepDuration);
     return true;
   }
 
@@ -239,8 +263,9 @@ public class RemoteNodeProcessor implements Runnable {
     return outputBytes.toByteArray();
   }
 
-  private boolean handleResponseBody(InputStream inputStream) {
-    DataInputStream input = new DataInputStream(inputStream);
+  private boolean handleResponseBody(InputStream inputStream, TickBuilder tickBuilder) {
+    CountingInputStream countingStream = new CountingInputStream(inputStream);
+    DataInputStream input = new DataInputStream(countingStream);
     RemoteMessage message;
 
     try {
@@ -262,6 +287,8 @@ public class RemoteNodeProcessor implements Runnable {
     } catch (Throwable e) {
       log.error("Error when processing response from node.", e);
       ExceptionTools.rethrowErrors(e);
+    } finally {
+      tickBuilder.responseSize = countingStream.getCount();
     }
 
     return true;
@@ -340,7 +367,7 @@ public class RemoteNodeProcessor implements Runnable {
       return;
     }
 
-    controlState.set(ControlState.OFFLINE.id());
+    connectionState.set(ConnectionState.OFFLINE.id());
 
     // There may be some racing that manages to add a track after this, it will be dealt with on the next iteration
     for (Long executorId : new ArrayList<>(playingTracks.keySet())) {
@@ -359,7 +386,7 @@ public class RemoteNodeProcessor implements Runnable {
   public int getBalancerPenalty() {
     NodeStatisticsMessage statistics = lastStatistics;
 
-    if (statistics == null || controlState.get() != ControlState.ONLINE.id()) {
+    if (statistics == null || connectionState.get() != ConnectionState.ONLINE.id()) {
       return Integer.MAX_VALUE;
     }
 
@@ -369,13 +396,99 @@ public class RemoteNodeProcessor implements Runnable {
     return trackPenalty + cpuPenalty;
   }
 
-  private enum ControlState {
-    PENDING,
-    ONLINE,
-    OFFLINE;
+  private void recordTick(RemoteNode.Tick tick) {
+    synchronized (tickHistory) {
+      if (tickHistory.size() == NODE_REQUEST_HISTORY) {
+        tickHistory.removeFirst();
+      }
 
-    private int id() {
-      return ordinal();
+      tickHistory.addLast(tick);
+    }
+  }
+
+  @Override
+  public String getAddress() {
+    return nodeAddress;
+  }
+
+  @Override
+  public ConnectionState getConnectionState() {
+    if (closed) {
+      return ConnectionState.REMOVED;
+    } else {
+      return ConnectionState.class.getEnumConstants()[connectionState.get()];
+    }
+  }
+
+  @Override
+  public NodeStatisticsMessage getLastStatistics() {
+    return lastStatistics;
+  }
+
+  @Override
+  public int getTickMinimumInterval() {
+    return TICK_MINIMUM_INTERVAL;
+  }
+
+  @Override
+  public int getTickHistoryCapacity() {
+    return NODE_REQUEST_HISTORY;
+  }
+
+  @Override
+  public List<Tick> getLastTicks(boolean reset) {
+    synchronized (tickHistory) {
+      List<Tick> result = new ArrayList<>(tickHistory);
+      
+      if (reset) {
+        tickHistory.clear();
+      }
+
+      return result;
+    }
+  }
+
+  @Override
+  public int getPlayingTrackCount() {
+    return playingTracks.size();
+  }
+
+  @Override
+  public List<AudioTrack> getPlayingTracks() {
+    List<AudioTrack> tracks = new ArrayList<>();
+
+    for (RemoteAudioTrackExecutor executor : playingTracks.values()) {
+      tracks.add(executor.getTrack());
+    }
+
+    return tracks;
+  }
+
+  @Override
+  public boolean isPlayingTrack(AudioTrack track) {
+    AudioTrackExecutor executor = ((InternalAudioTrack) track).getActiveExecutor();
+
+    if (executor instanceof RemoteAudioTrackExecutor) {
+      return playingTracks.containsKey(((RemoteAudioTrackExecutor) executor).getExecutorId());
+    }
+
+    return false;
+  }
+
+  private static class TickBuilder {
+    private final long startTime;
+    private long endTime;
+    private int responseCode;
+    private int requestSize;
+    private int responseSize;
+
+    private TickBuilder(long startTime) {
+      this.startTime = startTime;
+      this.responseCode = -1;
+    }
+
+    private RemoteNode.Tick build() {
+      return new RemoteNode.Tick(startTime, endTime, responseCode, requestSize, responseSize);
     }
   }
 }

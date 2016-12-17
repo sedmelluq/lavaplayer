@@ -4,6 +4,7 @@ import com.sedmelluq.discord.lavaplayer.player.hook.AudioOutputHook;
 import com.sedmelluq.discord.lavaplayer.player.hook.AudioOutputHookFactory;
 import com.sedmelluq.discord.lavaplayer.remote.RemoteAudioTrackExecutor;
 import com.sedmelluq.discord.lavaplayer.remote.RemoteNodeManager;
+import com.sedmelluq.discord.lavaplayer.remote.RemoteNodeRegistry;
 import com.sedmelluq.discord.lavaplayer.source.AudioSourceManager;
 import com.sedmelluq.discord.lavaplayer.tools.DaemonThreadFactory;
 import com.sedmelluq.discord.lavaplayer.tools.ExceptionTools;
@@ -383,5 +384,10 @@ public class DefaultAudioPlayerManager implements AudioPlayerManager {
     }
 
     return player;
+  }
+
+  @Override
+  public RemoteNodeRegistry getRemoteNodeRegistry() {
+    return remoteNodeManager;
   }
 }

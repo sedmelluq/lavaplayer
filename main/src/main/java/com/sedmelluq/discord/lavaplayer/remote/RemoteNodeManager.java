@@ -23,7 +23,7 @@ import static com.sedmelluq.discord.lavaplayer.tools.FriendlyException.Severity.
 /**
  * Manager of remote nodes for audio processing.
  */
-public class RemoteNodeManager extends AudioEventAdapter implements Runnable {
+public class RemoteNodeManager extends AudioEventAdapter implements RemoteNodeRegistry, Runnable {
   private final DefaultAudioPlayerManager playerManager;
   private final List<RemoteNodeProcessor> processors;
   private final AtomicBoolean enabled;
@@ -95,9 +95,7 @@ public class RemoteNodeManager extends AudioEventAdapter implements Runnable {
     }
   }
 
-  /**
-   * @return True if using remote nodes for audio processing is enabled
-   */
+  @Override
   public boolean isEnabled() {
     return enabled.get();
   }
@@ -154,5 +152,21 @@ public class RemoteNodeManager extends AudioEventAdapter implements Runnable {
     for (RemoteNodeProcessor processor : activeProcessors) {
       processor.processHealthCheck(false);
     }
+  }
+
+  @Override
+  public RemoteNode getNodeUsedForTrack(AudioTrack track) {
+    for (RemoteNodeProcessor processor : activeProcessors) {
+      if (processor.isPlayingTrack(track)) {
+        return processor;
+      }
+    }
+
+    return null;
+  }
+
+  @Override
+  public List<RemoteNode> getNodes() {
+    return new ArrayList<>(activeProcessors);
   }
 }
