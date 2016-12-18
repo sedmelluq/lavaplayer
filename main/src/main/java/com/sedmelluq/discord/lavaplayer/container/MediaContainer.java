@@ -18,11 +18,11 @@ public enum MediaContainer {
   MP4(new MpegContainerProbe()),
   FLAC(new FlacContainerProbe()),
   OGG(new OggContainerProbe()),
-  ADTS(new AdtsContainerProbe()),
   M3U(new M3uPlaylistContainerProbe()),
   PLS(new PlsPlaylistContainerProbe()),
   PLAIN(new PlainPlaylistContainerProbe()),
-  MP3(new Mp3ContainerProbe());
+  MP3(new Mp3ContainerProbe()),
+  ADTS(new AdtsContainerProbe());
 
   /**
    * The probe used to detect files using this container and create the audio tracks for them.
