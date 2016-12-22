@@ -4,6 +4,7 @@ import com.sedmelluq.discord.lavaplayer.remote.message.NodeStatisticsMessage;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * A remote node interface which provides information about a specific node.
@@ -53,6 +54,11 @@ public interface RemoteNode {
    * @return List of tracks being played by this node for the current player manager.
    */
   List<AudioTrack> getPlayingTracks();
+
+  /**
+   * @return Map containing the balancer penalty factors, with "Total" being the sum of all others.
+   */
+  Map<String, Integer> getBalancerPenaltyDetails();
 
   /**
    * Checks if a audio track is being played by this node.

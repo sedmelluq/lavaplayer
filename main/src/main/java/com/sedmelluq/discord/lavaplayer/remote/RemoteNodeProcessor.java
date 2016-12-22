@@ -12,6 +12,7 @@ import com.sedmelluq.discord.lavaplayer.remote.message.TrackStartResponseMessage
 import com.sedmelluq.discord.lavaplayer.remote.message.TrackStoppedMessage;
 import com.sedmelluq.discord.lavaplayer.tools.ExceptionTools;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
+import com.sedmelluq.discord.lavaplayer.tools.RingBufferMath;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.InternalAudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.playback.AudioFrame;
@@ -34,7 +35,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -69,6 +72,7 @@ public class RemoteNodeProcessor implements RemoteNode, Runnable {
   private final AtomicInteger connectionState;
   private final ArrayDeque<RemoteNode.Tick> tickHistory;
   private volatile int aliveTickCounter;
+  private volatile int requestTimingPenalty;
   private volatile long lastAliveTime;
   private volatile NodeStatisticsMessage lastStatistics;
   private volatile boolean closed;
@@ -154,7 +158,9 @@ public class RemoteNodeProcessor implements RemoteNode, Runnable {
     connectionState.set(ConnectionState.PENDING.id());
 
     try (CloseableHttpClient httpClient = httpClientBuilder.build()) {
-      while (processOneTick(httpClient)) {
+      RingBufferMath timingAverage = new RingBufferMath(10, in -> Math.pow(in, 5.0), out -> Math.pow(out, 0.2));
+
+      while (processOneTick(httpClient, timingAverage)) {
         aliveTickCounter = Math.max(1, aliveTickCounter + 1);
         lastAliveTime = System.currentTimeMillis();
       }
@@ -188,14 +194,14 @@ public class RemoteNodeProcessor implements RemoteNode, Runnable {
     }
   }
 
-  private boolean processOneTick(CloseableHttpClient httpClient) throws Exception {
+  private boolean processOneTick(CloseableHttpClient httpClient, RingBufferMath timingAverage) throws Exception {
     TickBuilder tickBuilder = new TickBuilder(System.currentTimeMillis());
 
     try {
       dispatchOneTick(httpClient, tickBuilder);
     } finally {
       tickBuilder.endTime = System.currentTimeMillis();
-      recordTick(tickBuilder.build());
+      recordTick(tickBuilder.build(), timingAverage);
     }
 
     long sleepDuration = Math.max((tickBuilder.startTime + 500) - tickBuilder.endTime, 10);
@@ -217,6 +223,8 @@ public class RemoteNodeProcessor implements RemoteNode, Runnable {
       if (tickBuilder.responseCode != 200) {
         throw new IOException("Returned an unexpected response code " + tickBuilder.responseCode);
       }
+
+      Thread.sleep(700);
 
       if (connectionState.compareAndSet(ConnectionState.PENDING.id(), ConnectionState.ONLINE.id())) {
         log.info("Node {} came online.", nodeAddress);
@@ -380,23 +388,10 @@ public class RemoteNodeProcessor implements RemoteNode, Runnable {
     }
   }
 
-  /**
-   * @return The penalty for load balancing. Node with the lowest value will receive the next track.
-   */
-  public int getBalancerPenalty() {
-    NodeStatisticsMessage statistics = lastStatistics;
+  private void recordTick(RemoteNode.Tick tick, RingBufferMath timingAverage) {
+    timingAverage.add(tick.endTime - tick.startTime);
+    requestTimingPenalty = (int) Math.max(0, Math.atan((timingAverage.mean() - 1500) / 100) * 150 + 225);
 
-    if (statistics == null || connectionState.get() != ConnectionState.ONLINE.id()) {
-      return Integer.MAX_VALUE;
-    }
-
-    int trackPenalty = statistics.totalTrackCount + statistics.playingTrackCount;
-    int cpuPenalty = (int) Math.pow(statistics.systemCpuUsage + 0.7f, 10.0f);
-
-    return trackPenalty + cpuPenalty;
-  }
-
-  private void recordTick(RemoteNode.Tick tick) {
     synchronized (tickHistory) {
       if (tickHistory.size() == NODE_REQUEST_HISTORY) {
         tickHistory.removeFirst();
@@ -462,6 +457,61 @@ public class RemoteNodeProcessor implements RemoteNode, Runnable {
     }
 
     return tracks;
+  }
+
+  private boolean isUnavailableForTracks(NodeStatisticsMessage statistics) {
+    return statistics == null || connectionState.get() != ConnectionState.ONLINE.id();
+  }
+
+  private int getPenaltyForPlayingTracks(NodeStatisticsMessage statistics) {
+    return statistics.playingTrackCount * 2;
+  }
+
+  private int getPenaltyForPausedTracks(NodeStatisticsMessage statistics) {
+    return statistics.totalTrackCount - statistics.playingTrackCount;
+  }
+
+  private int getPenaltyForCpuUsage(NodeStatisticsMessage statistics) {
+    return (int) (Math.pow(statistics.systemCpuUsage + 0.7f, 10.0f) * 1.5);
+  }
+
+  @Override
+  public Map<String, Integer> getBalancerPenaltyDetails() {
+    Map<String, Integer> details = new HashMap<>();
+    NodeStatisticsMessage statistics = lastStatistics;
+
+    if (isUnavailableForTracks(statistics)) {
+      details.put("unavailable", Integer.MAX_VALUE);
+    } else {
+      details.put("playing", getPenaltyForPlayingTracks(statistics));
+      details.put("paused", getPenaltyForPausedTracks(statistics));
+      details.put("cpu", getPenaltyForCpuUsage(statistics));
+      details.put("timings", requestTimingPenalty);
+    }
+
+    int total = 0;
+    for (int value : details.values()) {
+      total += value;
+    }
+    details.put("total", total);
+
+    return details;
+  }
+
+  /**
+   * @return The penalty for load balancing. Node with the lowest value will receive the next track.
+   */
+  public int getBalancerPenalty() {
+    NodeStatisticsMessage statistics = lastStatistics;
+
+    if (isUnavailableForTracks(statistics)) {
+      return Integer.MAX_VALUE;
+    }
+
+    return getPenaltyForPlayingTracks(statistics) +
+        getPenaltyForPausedTracks(statistics) +
+        getPenaltyForCpuUsage(statistics) +
+        requestTimingPenalty;
   }
 
   @Override

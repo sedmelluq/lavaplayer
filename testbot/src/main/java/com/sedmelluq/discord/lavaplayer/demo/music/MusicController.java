@@ -30,6 +30,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
@@ -256,6 +257,12 @@ public class MusicController implements BotController {
         builder.append("   name: ").append(track.getInfo().author).append(" - ").append(track.getInfo().title).append("\n");
         builder.append("   progress: ").append(track.getPosition()).append(" / ").append(track.getDuration()).append("\n");
       }
+    }
+
+    builder.append("Balancer penalties: ").append(tracks.size()).append("\n");
+
+    for (Map.Entry<String, Integer> penalty : node.getBalancerPenaltyDetails().entrySet()) {
+      builder.append("   ").append(penalty.getKey()).append(": ").append(penalty.getValue()).append("\n");
     }
 
     return builder.toString();
