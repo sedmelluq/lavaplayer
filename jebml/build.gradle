@@ -4,7 +4,7 @@ plugins {
 
 apply plugin: 'de.undercouch.download'
 
-task load << {
+task load { doLast {
   if (!file("$projectDir/src/main").exists()) {
     def downloadPath = "$buildDir/tmp/master.zip"
     def unpackPath = "$buildDir/tmp"
@@ -24,7 +24,7 @@ task load << {
       into "$projectDir/src/main"
     }
   }
-}
+}}
 
 dependencies {
   compile "org.slf4j:slf4j-api:$slf4jVersion"

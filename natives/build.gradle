@@ -8,7 +8,7 @@ import java.util.regex.Pattern
 
 apply plugin: 'de.undercouch.download'
 
-task load << {
+task load { doLast {
   if (!file("$projectDir/samplerate/src").exists()) {
     def downloadPath = "$buildDir/tmp/libsamplerate.tar.gz"
     def unpackPath = "$buildDir/tmp"
@@ -103,7 +103,7 @@ task load << {
       into "$projectDir/mp3"
     }
   }
-}
+}}
 
 ext.devEnvPath = null
 
