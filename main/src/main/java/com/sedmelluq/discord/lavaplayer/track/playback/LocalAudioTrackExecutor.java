@@ -69,6 +69,8 @@ public class LocalAudioTrackExecutor implements AudioTrackExecutor {
   @Override
   public void execute(TrackStateListener listener) {
     if (playingThread.compareAndSet(null, Thread.currentThread())) {
+      log.debug("Starting to play track {} locally with listener {}", audioTrack.getInfo().identifier, listener);
+
       state.set(AudioTrackState.LOADING);
 
       try {

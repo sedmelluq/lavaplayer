@@ -204,5 +204,10 @@ public class PlayingTrackManager {
     private TrackExceptionMessage popExceptionMessage() {
       return exceptionMessage.getAndSet(null);
     }
+
+    @Override
+    public String toString() {
+      return "PlayingTrack[executor: " + executorId + "]";
+    }
   }
 }
