@@ -82,7 +82,7 @@ public class UdpQueueManager extends NativeResourceHolder {
    * @param length Length of the pause in milliseconds
    */
   public static void pauseDemo(int length) {
-    NativeLibLoader.load("udpqueue");
+    NativeLibLoader.load(UdpQueueManager.class, "udpqueue");
     UdpQueueManagerLibrary.pauseDemo(length);
   }
 }

@@ -58,13 +58,13 @@ public class NativeLibLoader {
 
   /**
    * Load a library only if the current system type matches the specified one
-   * @param systemTypeFilter System type that should match current
    * @param name Name of the library
+   * @param systemTypeFilter System type that should match current
    * @throws LinkageError When loading the library fails
    */
-  public static void load(String systemTypeFilter, String name) {
+  public static void load(String name, String systemTypeFilter) {
     if (systemType.equals(systemTypeFilter)) {
-      load(name);
+      load(NativeLibLoader.class, name);
     }
   }
 
@@ -73,10 +73,32 @@ public class NativeLibLoader {
    * @throws LinkageError When loading the library fails
    */
   public static void load(String name) {
+    load(NativeLibLoader.class, name);
+  }
+
+  /**
+   * Load a library only if the current system type matches the specified one
+   * @param resourceBase The class to use for obtaining the resource stream
+   * @param name Name of the library
+   * @param systemTypeFilter System type that should match current
+   * @throws LinkageError When loading the library fails
+   */
+  public static void load(Class<?> resourceBase, String name, String systemTypeFilter) {
+    if (systemType.equals(systemTypeFilter)) {
+      load(resourceBase, name);
+    }
+  }
+
+  /**
+   * @param resourceBase The class to use for obtaining the resource stream
+   * @param name Name of the library
+   * @throws LinkageError When loading the library fails
+   */
+  public static void load(Class<?> resourceBase, String name) {
     synchronized (loadedLibraries) {
       if (!loadedLibraries.contains(name)) {
         try {
-          System.load(extractLibrary(name).toFile().getAbsolutePath());
+          System.load(extractLibrary(resourceBase, name).toFile().getAbsolutePath());
 
           loadedLibraries.add(name);
         } catch (Exception e) {
@@ -86,11 +108,11 @@ public class NativeLibLoader {
     }
   }
 
-  private static Path extractLibrary(String name) throws IOException {
+  private static Path extractLibrary(Class<?> resourceBase, String name) throws IOException {
     String path = "/natives/" + systemType + "/" + libraryPrefix + name + librarySuffix;
     Path extractedLibrary;
 
-    try (InputStream libraryStream = NativeLibLoader.class.getResourceAsStream(path)) {
+    try (InputStream libraryStream = resourceBase.getResourceAsStream(path)) {
       if (libraryStream == null) {
         throw new UnsatisfiedLinkError("Required library at " + path + " was not found");
       }

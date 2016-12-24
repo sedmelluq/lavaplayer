@@ -13,7 +13,7 @@ allprojects {
   targetCompatibility = 1.8
 }
 
-ext.slf4jVersion = '1.7.21'
+ext.slf4jVersion = '1.7.22'
 
 import org.apache.tools.ant.taskdefs.condition.Os
 

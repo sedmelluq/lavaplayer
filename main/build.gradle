@@ -4,7 +4,7 @@ plugins {
   id 'org.sonarqube' version '2.1'
 }
 
-version = '1.1.31'
+version = '1.1.32'
 
 dependencies {
   compile project(':jebml')
@@ -15,10 +15,10 @@ dependencies {
   compile 'org.apache.httpcomponents:httpclient:4.5.2'
   compile 'commons-io:commons-io:2.5'
 
-  compile 'com.fasterxml.jackson.core:jackson-core:2.8.1'
-  compile 'com.fasterxml.jackson.core:jackson-databind:2.8.1'
+  compile 'com.fasterxml.jackson.core:jackson-core:2.8.5'
+  compile 'com.fasterxml.jackson.core:jackson-databind:2.8.5'
 
-  compile 'org.jsoup:jsoup:1.9.2'
+  compile 'org.jsoup:jsoup:1.10.1'
 
   compile 'net.iharder:base64:2.3.9'
 }

@@ -4,14 +4,14 @@ plugins {
   id 'org.sonarqube' version '2.1'
 }
 
-version = '1.0.2'
+version = '1.0.3'
 
 dependencies {
   compile project(':udpqueue')
 
   compile "org.slf4j:slf4j-api:$slf4jVersion"
 
-  compile 'net.dv8tion:JDA:3.0.BETA2_109'
+  compile 'net.dv8tion:JDA:3.0.BETA2_112'
 }
 
 task sourceJar(type: Jar) {

@@ -10,7 +10,7 @@ class UdpQueueManagerLibrary {
   }
 
   static UdpQueueManagerLibrary getInstance() {
-    NativeLibLoader.load("udpqueue");
+    NativeLibLoader.load(UdpQueueManagerLibrary.class, "udpqueue");
     return new UdpQueueManagerLibrary();
   }
 
