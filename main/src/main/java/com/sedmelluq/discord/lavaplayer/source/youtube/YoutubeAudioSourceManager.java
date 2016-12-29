@@ -524,7 +524,9 @@ public class YoutubeAudioSourceManager implements AudioSourceManager {
 
     for (Element results : document.select("#page > #content #results")) {
       for (Element result : results.select(".yt-lockup-video")) {
-        extractTrackFromResultEntry(tracks, result);
+        if (!result.hasAttr("data-ad-impressions")) {
+          extractTrackFromResultEntry(tracks, result);
+        }
       }
     }
 
