@@ -204,7 +204,7 @@ public class TrackScheduler extends AudioEventAdapter {
 
   @Override
   public void onTrackEnd(AudioPlayer player, AudioTrack track, AudioTrackEndReason endReason) {
-    if (track.mayStartNext) {
+    if (endReason.mayStartNext) {
       // Start next track
     }
 
