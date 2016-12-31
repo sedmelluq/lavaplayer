@@ -43,6 +43,8 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.X509TrustManager;
 
 import java.net.SocketException;
+import java.net.URI;
+import java.net.URISyntaxException;
 
 import static com.sedmelluq.discord.lavaplayer.tools.FriendlyException.Severity.COMMON;
 import static com.sedmelluq.discord.lavaplayer.tools.FriendlyException.Severity.SUSPICIOUS;
@@ -184,13 +186,24 @@ public class HttpClientTools {
    * @param response Response object.
    * @return A redirect location if the status code indicates a redirect and the Location header is present.
    */
-  public static String getRedirectLocation(HttpResponse response) {
+  public static String getRedirectLocation(String requestUrl, HttpResponse response) {
     if (!isRedirectStatus(response.getStatusLine().getStatusCode())) {
       return null;
     }
 
     Header header = response.getFirstHeader("Location");
-    return header != null ? header.getValue() : null;
+    if (header == null) {
+      return null;
+    }
+
+    String location = header.getValue();
+
+    try {
+      return new URI(requestUrl).resolve(location).toString();
+    } catch (URISyntaxException e) {
+      log.debug("Failed to parse URI.", e);
+      return location;
+    }
   }
 
   private static boolean isRedirectStatus(int statusCode) {

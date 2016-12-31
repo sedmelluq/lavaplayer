@@ -91,7 +91,7 @@ public class HttpAudioSourceManager extends ProbingAudioSourceManager {
   private MediaContainerDetectionResult detectContainerWithClient(CloseableHttpClient httpClient, AudioReference reference) throws IOException {
     try (PersistentHttpStream inputStream = new PersistentHttpStream(httpClient, new URI(reference.identifier), Long.MAX_VALUE)) {
       int statusCode = inputStream.checkStatusCode();
-      String redirectUrl = HttpClientTools.getRedirectLocation(inputStream.getCurrentResponse());
+      String redirectUrl = HttpClientTools.getRedirectLocation(reference.identifier, inputStream.getCurrentResponse());
 
       if (redirectUrl != null) {
         return new MediaContainerDetectionResult(null, new AudioReference(redirectUrl, null));

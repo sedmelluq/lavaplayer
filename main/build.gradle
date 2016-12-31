@@ -4,7 +4,7 @@ plugins {
   id 'org.sonarqube' version '2.1'
 }
 
-version = '1.1.34'
+version = '1.1.35'
 
 dependencies {
   compile project(':jebml')

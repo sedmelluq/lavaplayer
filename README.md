@@ -5,7 +5,7 @@ LavaPlayer is an audio player library written in Java which can load audio track
 #### Maven package
 
 * Repository: **http://maven.sedmelluq.com**
-* Artifact: **com.sedmelluq:lavaplayer:1.1.34**
+* Artifact: **com.sedmelluq:lavaplayer:1.1.35**
 
 Using in Gradle:
 ```groovy
@@ -16,7 +16,7 @@ repositories {
 }
 
 dependencies {
-  compile 'com.sedmelluq:lavaplayer:1.1.34'
+  compile 'com.sedmelluq:lavaplayer:1.1.35'
 }
 ```
 
@@ -34,7 +34,7 @@ Using in Maven:
   <dependency>
     <groupId>com.sedmelluq</groupId>
     <artifactId>lavaplayer</artifactId>
-    <version>1.1.34</version>
+    <version>1.1.35</version>
   </dependency>
 </dependencies>
 ```

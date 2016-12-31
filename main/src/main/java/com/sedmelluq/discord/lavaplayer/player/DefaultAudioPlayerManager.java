@@ -57,6 +57,8 @@ public class DefaultAudioPlayerManager implements AudioPlayerManager {
   private static final int DEFAULT_FRAME_BUFFER_DURATION = (int) TimeUnit.SECONDS.toMillis(5);
   private static final int DEFAULT_CLEANUP_THRESHOLD = (int) TimeUnit.MINUTES.toMillis(1);
 
+  private static final int MAXIMUM_LOAD_REDIRECTS = 5;
+
   private static final Logger log = LoggerFactory.getLogger(DefaultAudioPlayerManager.class);
 
   private final List<AudioSourceManager> sourceManagers;
@@ -337,7 +339,7 @@ public class DefaultAudioPlayerManager implements AudioPlayerManager {
   private boolean checkSourcesForItem(AudioReference reference, AudioLoadResultHandler resultHandler) {
     AudioReference currentReference = reference;
 
-    for (int redirects = 0; redirects < 3 && currentReference.identifier != null; redirects++) {
+    for (int redirects = 0; redirects < MAXIMUM_LOAD_REDIRECTS && currentReference.identifier != null; redirects++) {
       AudioItem item = checkSourcesForItemOnce(currentReference, resultHandler);
       if (item == null) {
         return false;
