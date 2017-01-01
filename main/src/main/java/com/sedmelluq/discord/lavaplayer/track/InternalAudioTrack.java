@@ -12,7 +12,7 @@ public interface InternalAudioTrack extends AudioTrack, AudioFrameProvider {
   /**
    * @param executor Executor to assign to the track
    */
-  void assignExecutor(AudioTrackExecutor executor);
+  void assignExecutor(AudioTrackExecutor executor, boolean applyPrimordialState);
 
   /**
    * @return Get the active track executor

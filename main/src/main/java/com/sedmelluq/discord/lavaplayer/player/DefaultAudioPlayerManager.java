@@ -276,7 +276,7 @@ public class DefaultAudioPlayerManager implements AudioPlayerManager {
    */
   public void executeTrack(final TrackStateListener listener, InternalAudioTrack track, AudioConfiguration configuration, AtomicInteger volumeLevel) {
     final AudioTrackExecutor executor = createExecutorForTrack(track, configuration, volumeLevel);
-    track.assignExecutor(executor);
+    track.assignExecutor(executor, true);
 
     trackPlaybackExecutorService.execute(() -> executor.execute(listener));
   }

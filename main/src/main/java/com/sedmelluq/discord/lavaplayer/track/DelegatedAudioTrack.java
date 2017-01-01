@@ -23,7 +23,7 @@ public abstract class DelegatedAudioTrack extends BaseAudioTrack {
 
     this.delegate = delegate;
 
-    delegate.assignExecutor(localExecutor);
+    delegate.assignExecutor(localExecutor, false);
     delegate.process(localExecutor);
   }
 
