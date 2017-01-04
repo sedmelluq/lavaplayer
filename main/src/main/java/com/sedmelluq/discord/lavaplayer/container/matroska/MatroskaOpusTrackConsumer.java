@@ -1,9 +1,10 @@
 package com.sedmelluq.discord.lavaplayer.container.matroska;
 
 import com.sedmelluq.discord.lavaplayer.container.common.OpusPacketRouter;
+import com.sedmelluq.discord.lavaplayer.container.matroska.format.MatroskaFileTrack;
 import com.sedmelluq.discord.lavaplayer.track.playback.AudioProcessingContext;
-import org.ebml.matroska.MatroskaFileFrame;
-import org.ebml.matroska.MatroskaFileTrack;
+
+import java.nio.ByteBuffer;
 
 /**
  * Consumes OPUS track data from a matroska file.
@@ -18,7 +19,7 @@ public class MatroskaOpusTrackConsumer implements MatroskaTrackConsumer {
    */
   public MatroskaOpusTrackConsumer(AudioProcessingContext context, MatroskaFileTrack track) {
     this.track = track;
-    this.opusPacketRouter = new OpusPacketRouter(context, (int) track.getAudio().getSamplingFrequency(), track.getAudio().getChannels());
+    this.opusPacketRouter = new OpusPacketRouter(context, (int) track.audio.samplingFrequency, track.audio.channels);
   }
 
   @Override
@@ -42,8 +43,8 @@ public class MatroskaOpusTrackConsumer implements MatroskaTrackConsumer {
   }
 
   @Override
-  public void consume(MatroskaFileFrame frame) throws InterruptedException {
-    opusPacketRouter.process(frame.getData());
+  public void consume(ByteBuffer data) throws InterruptedException {
+    opusPacketRouter.process(data);
   }
 
   @Override

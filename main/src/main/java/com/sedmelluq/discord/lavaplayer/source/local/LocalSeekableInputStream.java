@@ -20,6 +20,7 @@ public class LocalSeekableInputStream extends SeekableInputStream {
   private final FileInputStream inputStream;
   private final FileChannel channel;
   private final ExtendedBufferedInputStream bufferedStream;
+  private long position;
 
   /**
    * @param file File to create a stream for.
@@ -38,17 +39,26 @@ public class LocalSeekableInputStream extends SeekableInputStream {
 
   @Override
   public int read() throws IOException {
-    return bufferedStream.read();
+    int result = bufferedStream.read();
+    if (result >= 0) {
+      position++;
+    }
+
+    return result;
   }
 
   @Override
   public int read(byte[] b, int off, int len) throws IOException {
-    return bufferedStream.read(b, off, len);
+    int read = bufferedStream.read(b, off, len);
+    position += read;
+    return read;
   }
 
   @Override
   public long skip(long n) throws IOException {
-    return bufferedStream.skip(n);
+    long skipped = bufferedStream.skip(n);
+    position += skipped;
+    return skipped;
   }
 
   @Override
@@ -77,11 +87,7 @@ public class LocalSeekableInputStream extends SeekableInputStream {
 
   @Override
   public long getPosition() {
-    try {
-      return channel.position() - bufferedStream.getBufferedByteCount();
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
+    return position;
   }
 
   @Override
@@ -92,6 +98,7 @@ public class LocalSeekableInputStream extends SeekableInputStream {
   @Override
   protected void seekHard(long position) throws IOException {
     channel.position(position);
+    this.position = position;
     bufferedStream.discardBuffer();
   }
 }

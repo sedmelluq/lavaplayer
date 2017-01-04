@@ -183,6 +183,7 @@ public class HttpClientTools {
   }
 
   /**
+   * @param requestUrl URL of the original request.
    * @param response Response object.
    * @return A redirect location if the status code indicates a redirect and the Location header is present.
    */

@@ -1,11 +1,10 @@
 package com.sedmelluq.discord.lavaplayer.container.matroska;
 
+import com.sedmelluq.discord.lavaplayer.container.matroska.format.MatroskaFileTrack;
 import com.sedmelluq.discord.lavaplayer.filter.FilterChainBuilder;
 import com.sedmelluq.discord.lavaplayer.filter.FloatPcmAudioFilter;
 import com.sedmelluq.discord.lavaplayer.natives.vorbis.VorbisDecoder;
 import com.sedmelluq.discord.lavaplayer.track.playback.AudioProcessingContext;
-import org.ebml.matroska.MatroskaFileFrame;
-import org.ebml.matroska.MatroskaFileTrack;
 
 import java.nio.ByteBuffer;
 
@@ -33,8 +32,8 @@ public class MatroskaVorbisTrackConsumer implements MatroskaTrackConsumer {
     this.decoder = new VorbisDecoder();
     this.copyBuffer = new byte[COPY_BUFFER_SIZE];
 
-    MatroskaFileTrack.MatroskaAudioTrack audioTrack = track.getAudio();
-    this.downstream = FilterChainBuilder.forFloatPcm(context, audioTrack.getChannels(), (int) audioTrack.getSamplingFrequency());
+    MatroskaFileTrack.AudioDetails audioTrack = track.audio;
+    this.downstream = FilterChainBuilder.forFloatPcm(context, audioTrack.channels, (int) audioTrack.samplingFrequency);
   }
 
   @Override
@@ -44,10 +43,9 @@ public class MatroskaVorbisTrackConsumer implements MatroskaTrackConsumer {
 
   @Override
   public void initialise() {
-    ByteBuffer privateData = track.getCodecPrivate();
-    ByteBuffer directPrivateData = ByteBuffer.allocateDirect(privateData.remaining());
+    ByteBuffer directPrivateData = ByteBuffer.allocateDirect(track.codecPrivate.length);
 
-    directPrivateData.put(privateData.array(), privateData.arrayOffset() + privateData.position(), privateData.remaining());
+    directPrivateData.put(track.codecPrivate);
     directPrivateData.flip();
 
     try {
@@ -120,8 +118,8 @@ public class MatroskaVorbisTrackConsumer implements MatroskaTrackConsumer {
   }
 
   @Override
-  public void consume(MatroskaFileFrame frame) throws InterruptedException {
-    ByteBuffer directBuffer = getAsDirectBuffer(frame.getData());
+  public void consume(ByteBuffer data) throws InterruptedException {
+    ByteBuffer directBuffer = getAsDirectBuffer(data);
     decoder.input(directBuffer);
 
     int output;

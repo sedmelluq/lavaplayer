@@ -1,4 +1,4 @@
-package com.sedmelluq.discord.lavaplayer.container.matroska;
+package com.sedmelluq.discord.lavaplayer.container.matroska.format;
 
 import java.nio.ByteBuffer;
 
@@ -54,7 +54,7 @@ public class MatroskaFixedBlock {
    * Parse the header of this block to initialise its fields
    */
   public void parseHeader() {
-    trackNumber = readEbmlCode(false);
+    trackNumber = (int) MatroskaEbmlReader.readEbmlInteger(buffer, null);
     timecode = buffer.getShort();
 
     int flags = buffer.get() & 0xFF;
@@ -144,45 +144,14 @@ public class MatroskaFixedBlock {
   }
 
   private void parseEbmlLaceSizes(int[] laceSizes) {
-    laceSizes[0] = readEbmlCode(false);
+    laceSizes[0] = (int) MatroskaEbmlReader.readEbmlInteger(buffer, null);
     int sizeTotal = laceSizes[0];
 
     for (int i = 1; i < laceSizes.length - 1; i++) {
-      laceSizes[i] = laceSizes[i - 1] + readEbmlCode(true);
+      laceSizes[i] = laceSizes[i - 1] + (int) MatroskaEbmlReader.readEbmlInteger(buffer, MatroskaEbmlReader.Type.LACE_SIGNED);
       sizeTotal += laceSizes[i];
     }
 
     laceSizes[laceSizes.length - 1] = buffer.remaining() - sizeTotal;
-  }
-
-  private int readEbmlCode(boolean signed) {
-    int firstByte = buffer.get() & 0xFF;
-
-    int codeLength = Integer.numberOfLeadingZeros(firstByte) - 23;
-    if (codeLength > 4) {
-      throw new IllegalStateException("More than 4 bytes for length, probably invalid data");
-    }
-
-    int code = (firstByte & (0xFF >> codeLength)) << ((codeLength - 1) << 3);
-
-    for (int i = 2; i <= codeLength; i++) {
-      code |= (buffer.get() & 0xFF) << ((codeLength - i) << 3);
-    }
-
-    if (signed) {
-      return signEbmlCode(code, codeLength);
-    } else {
-      return code;
-    }
-  }
-
-  private int signEbmlCode(int code, int codeLength) {
-    switch (codeLength) {
-      case 1: return code - 63;
-      case 2: return code - 8191;
-      case 3: return code - 1048575;
-      case 4: return code - 134217727;
-      default: return code;
-    }
   }
 }

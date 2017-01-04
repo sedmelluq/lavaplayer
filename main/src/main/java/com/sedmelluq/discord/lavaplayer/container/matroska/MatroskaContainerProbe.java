@@ -2,11 +2,11 @@ package com.sedmelluq.discord.lavaplayer.container.matroska;
 
 import com.sedmelluq.discord.lavaplayer.container.MediaContainerDetectionResult;
 import com.sedmelluq.discord.lavaplayer.container.MediaContainerProbe;
+import com.sedmelluq.discord.lavaplayer.container.matroska.format.MatroskaFileTrack;
 import com.sedmelluq.discord.lavaplayer.tools.io.SeekableInputStream;
 import com.sedmelluq.discord.lavaplayer.track.AudioReference;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo;
-import org.ebml.matroska.MatroskaFileTrack;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,7 +44,7 @@ public class MatroskaContainerProbe implements MediaContainerProbe {
 
     log.debug("Track {} is a matroska file.", reference.identifier);
 
-    MatroskaStreamingFile file = new MatroskaStreamingFile(new MatroskaStreamDataSource(inputStream));
+    MatroskaStreamingFile file = new MatroskaStreamingFile(inputStream);
     file.readFile();
 
     if (!hasSupportedAudioTrack(file)) {
@@ -57,7 +57,7 @@ public class MatroskaContainerProbe implements MediaContainerProbe {
 
   private boolean hasSupportedAudioTrack(MatroskaStreamingFile file) {
     for (MatroskaFileTrack track : file.getTrackList()) {
-      if (track.getTrackType() == MatroskaFileTrack.TrackType.AUDIO && supportedCodecs.contains(track.getCodecID())) {
+      if (track.type == MatroskaFileTrack.Type.AUDIO && supportedCodecs.contains(track.codecId)) {
         return true;
       }
     }

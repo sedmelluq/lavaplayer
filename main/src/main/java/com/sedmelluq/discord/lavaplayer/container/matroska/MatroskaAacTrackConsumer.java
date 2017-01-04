@@ -1,12 +1,11 @@
 package com.sedmelluq.discord.lavaplayer.container.matroska;
 
+import com.sedmelluq.discord.lavaplayer.container.matroska.format.MatroskaFileTrack;
 import com.sedmelluq.discord.lavaplayer.container.mpeg.MpegAacTrackConsumer;
 import com.sedmelluq.discord.lavaplayer.filter.FilterChainBuilder;
 import com.sedmelluq.discord.lavaplayer.filter.ShortPcmAudioFilter;
 import com.sedmelluq.discord.lavaplayer.natives.aac.AacDecoder;
 import com.sedmelluq.discord.lavaplayer.track.playback.AudioProcessingContext;
-import org.ebml.matroska.MatroskaFileFrame;
-import org.ebml.matroska.MatroskaFileTrack;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,24 +34,21 @@ public class MatroskaAacTrackConsumer implements MatroskaTrackConsumer {
     this.track = track;
     this.decoder = new AacDecoder();
     this.inputBuffer = ByteBuffer.allocateDirect(4096);
-    this.outputBuffer = ByteBuffer.allocateDirect(2048 * track.getAudio().getChannels()).order(ByteOrder.nativeOrder()).asShortBuffer();
-    this.downstream = FilterChainBuilder.forShortPcm(context, track.getAudio().getChannels(),
-        (int) track.getAudio().getSamplingFrequency(), true);
+    this.outputBuffer = ByteBuffer.allocateDirect(2048 * track.audio.channels).order(ByteOrder.nativeOrder()).asShortBuffer();
+    this.downstream = FilterChainBuilder.forShortPcm(context, track.audio.channels,
+        (int) track.audio.samplingFrequency, true);
   }
 
   @Override
   public void initialise() {
-    log.debug("Initialising AAC track with frequency {} and channel count {}.", track.getAudio().getSamplingFrequency(),
-        track.getAudio().getChannels());
+    log.debug("Initialising AAC track with frequency {} and channel count {}.", track.audio.samplingFrequency,
+        track.audio.channels);
 
     configureDecoder();
   }
 
   private void configureDecoder() {
-    ByteBuffer buffer = track.getCodecPrivate().duplicate();
-    byte[] header = new byte[buffer.remaining()];
-    buffer.get(header);
-    decoder.configure(header);
+    decoder.configure(track.codecPrivate);
   }
 
   @Override
@@ -78,12 +74,10 @@ public class MatroskaAacTrackConsumer implements MatroskaTrackConsumer {
   }
 
   @Override
-  public void consume(MatroskaFileFrame frame) throws InterruptedException {
-    ByteBuffer buffer = frame.getData();
-
-    while (buffer.hasRemaining()) {
-      int chunk = Math.min(buffer.remaining(), inputBuffer.capacity());
-      ByteBuffer chunkBuffer = buffer.duplicate();
+  public void consume(ByteBuffer data) throws InterruptedException {
+    while (data.hasRemaining()) {
+      int chunk = Math.min(data.remaining(), inputBuffer.capacity());
+      ByteBuffer chunkBuffer = data.duplicate();
       chunkBuffer.limit(chunkBuffer.position() + chunk);
 
       inputBuffer.clear();
@@ -96,7 +90,7 @@ public class MatroskaAacTrackConsumer implements MatroskaTrackConsumer {
         outputBuffer.clear();
       }
 
-      buffer.position(chunkBuffer.position());
+      data.position(chunkBuffer.position());
     }
   }
 

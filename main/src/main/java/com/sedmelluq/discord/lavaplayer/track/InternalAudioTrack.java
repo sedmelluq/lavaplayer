@@ -11,6 +11,7 @@ import com.sedmelluq.discord.lavaplayer.track.playback.LocalAudioTrackExecutor;
 public interface InternalAudioTrack extends AudioTrack, AudioFrameProvider {
   /**
    * @param executor Executor to assign to the track
+   * @param applyPrimordialState True if the state previously applied to this track should be copied to new executor.
    */
   void assignExecutor(AudioTrackExecutor executor, boolean applyPrimordialState);
 

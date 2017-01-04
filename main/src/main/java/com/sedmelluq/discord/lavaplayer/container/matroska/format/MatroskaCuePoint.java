@@ -1,4 +1,4 @@
-package com.sedmelluq.discord.lavaplayer.container.matroska;
+package com.sedmelluq.discord.lavaplayer.container.matroska.format;
 
 /**
  * Matroska file cue point. Provides the offsets at a specific timecode for each track

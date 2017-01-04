@@ -2,8 +2,10 @@ plugins {
   id 'java'
   id 'application'
   id 'org.sonarqube' version '2.1'
+  id 'com.jfrog.bintray' version '1.7.3'
 }
 
+ext.moduleName = 'lavaplayer-common'
 version = '1.0.1'
 
 dependencies {
@@ -20,8 +22,8 @@ task sourceJar(type: Jar) {
 publishing {
   publications {
     mavenJava(MavenPublication) {
-      groupId 'com.sedmelluq'
-      artifactId 'lavaplayer-common'
+      groupId rootProject.group
+      artifactId moduleName
 
       from components.java
 
@@ -31,3 +33,5 @@ publishing {
     }
   }
 }
+
+apply from: "${rootDir}/gradle/bintray.gradle"

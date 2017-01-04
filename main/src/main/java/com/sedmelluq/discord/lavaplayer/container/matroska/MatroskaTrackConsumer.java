@@ -1,7 +1,8 @@
 package com.sedmelluq.discord.lavaplayer.container.matroska;
 
-import org.ebml.matroska.MatroskaFileFrame;
-import org.ebml.matroska.MatroskaFileTrack;
+import com.sedmelluq.discord.lavaplayer.container.matroska.format.MatroskaFileTrack;
+
+import java.nio.ByteBuffer;
 
 /**
  * Consumer for the file frames of a specific matroska file track
@@ -34,10 +35,10 @@ public interface MatroskaTrackConsumer {
   /**
    * Consume one frame from the track
    *
-   * @param frame The frame to consume
+   * @param data The data of the frame
    * @throws InterruptedException
    */
-  void consume(MatroskaFileFrame frame) throws InterruptedException;
+  void consume(ByteBuffer data) throws InterruptedException;
 
   /**
    * Already flushed, no more input coming. Free all resources

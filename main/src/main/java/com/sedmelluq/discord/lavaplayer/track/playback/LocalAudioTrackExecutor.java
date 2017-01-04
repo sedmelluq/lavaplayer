@@ -68,6 +68,8 @@ public class LocalAudioTrackExecutor implements AudioTrackExecutor {
 
   @Override
   public void execute(TrackStateListener listener) {
+    boolean interrupted = false;
+
     if (playingThread.compareAndSet(null, Thread.currentThread())) {
       log.debug("Starting to play track {} locally with listener {}", audioTrack.getInfo().identifier, listener);
 
@@ -78,6 +80,8 @@ public class LocalAudioTrackExecutor implements AudioTrackExecutor {
 
         log.info("Playing track {} finished or was stopped.", audioTrack.getIdentifier());
       } catch (Throwable e) {
+        // Temporarily clear the interrupted status so it would not disrupt listener methods.
+        interrupted = e instanceof InterruptedException || Thread.interrupted();
         frameBuffer.setTerminateOnEmpty();
 
         FriendlyException exception = ExceptionTools.wrapUnfriendlyExceptions("Something broke when playing the track.", FAULT, e);
@@ -89,12 +93,16 @@ public class LocalAudioTrackExecutor implements AudioTrackExecutor {
         ExceptionTools.rethrowErrors(e);
       } finally {
         synchronized (actionSynchronizer) {
-          Thread.interrupted();
+          interrupted = interrupted || Thread.interrupted();
 
           playingThread.compareAndSet(Thread.currentThread(), null);
 
           markerTracker.trigger(ENDED);
           state.set(AudioTrackState.FINISHED);
+        }
+
+        if (interrupted) {
+          Thread.currentThread().interrupt();
         }
       }
     } else {
@@ -232,6 +240,7 @@ public class LocalAudioTrackExecutor implements AudioTrackExecutor {
         } else if (checkPendingSeek(seekExecutor)) {
           proceed = true;
         } else {
+          Thread.currentThread().interrupt();
           throw new FriendlyException("The track was unexpectedly terminated.", SUSPICIOUS, interruption);
         }
       } catch (Exception e) {
