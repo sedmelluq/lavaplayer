@@ -14,12 +14,17 @@ public class TrackStoppedCodec implements RemoteMessageCodec<TrackStoppedMessage
   }
 
   @Override
+  public int version() {
+    return 1;
+  }
+
+  @Override
   public void encode(DataOutput out, TrackStoppedMessage message) throws IOException {
     out.writeLong(message.executorId);
   }
 
   @Override
-  public TrackStoppedMessage decode(DataInput in) throws IOException {
+  public TrackStoppedMessage decode(DataInput in, int version) throws IOException {
     return new TrackStoppedMessage(in.readLong());
   }
 }

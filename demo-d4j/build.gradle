@@ -10,9 +10,6 @@ targetCompatibility = 1.8
 repositories {
   jcenter()
   maven {
-    url 'http://maven.sedmelluq.com'
-  }
-  maven {
     url 'https://jitpack.io'
   }
 }
@@ -21,7 +18,7 @@ ext.logbackVersion = '1.1.8'
 
 dependencies {
   compile 'com.github.austinv11:Discord4j:2.7.0'
-  compile 'com.sedmelluq:lavaplayer:1.1.36'
+  compile 'com.sedmelluq:lavaplayer:1.1.37'
 
   runtime "ch.qos.logback:logback-classic:$logbackVersion"
   runtime "ch.qos.logback:logback-core:$logbackVersion"

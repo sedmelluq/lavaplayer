@@ -1,5 +1,9 @@
 # Change Log
 
+## [1.1.37] - 2017-01-04
+### Changed
+- MKV file handling refactored to be more lightweight.
+
 ## [1.1.36] - 2017-01-01
 ### Fixed
 - Fixed track marker and position reset when starting the track.

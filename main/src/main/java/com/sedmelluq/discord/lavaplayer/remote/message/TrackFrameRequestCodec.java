@@ -14,6 +14,11 @@ public class TrackFrameRequestCodec implements RemoteMessageCodec<TrackFrameRequ
   }
 
   @Override
+  public int version() {
+    return 1;
+  }
+
+  @Override
   public void encode(DataOutput out, TrackFrameRequestMessage message) throws IOException {
     out.writeLong(message.executorId);
     out.writeInt(message.maximumFrames);
@@ -22,7 +27,7 @@ public class TrackFrameRequestCodec implements RemoteMessageCodec<TrackFrameRequ
   }
 
   @Override
-  public TrackFrameRequestMessage decode(DataInput in) throws IOException {
+  public TrackFrameRequestMessage decode(DataInput in, int version) throws IOException {
     return new TrackFrameRequestMessage(in.readLong(), in.readInt(), in.readInt(), in.readLong());
   }
 }

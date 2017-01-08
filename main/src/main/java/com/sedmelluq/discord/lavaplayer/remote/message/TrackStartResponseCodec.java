@@ -14,6 +14,11 @@ public class TrackStartResponseCodec implements RemoteMessageCodec<TrackStartRes
   }
 
   @Override
+  public int version() {
+    return 1;
+  }
+
+  @Override
   public void encode(DataOutput out, TrackStartResponseMessage message) throws IOException {
     out.writeLong(message.executorId);
     out.writeBoolean(message.success);
@@ -24,7 +29,7 @@ public class TrackStartResponseCodec implements RemoteMessageCodec<TrackStartRes
   }
 
   @Override
-  public TrackStartResponseMessage decode(DataInput in) throws IOException {
+  public TrackStartResponseMessage decode(DataInput in, int version) throws IOException {
     long executorId = in.readLong();
     boolean success = in.readBoolean();
 

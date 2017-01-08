@@ -16,6 +16,11 @@ public interface RemoteMessageCodec<T extends RemoteMessage> {
   Class<T> getMessageClass();
 
   /**
+   * @return Latest version of this codec.
+   */
+  int version();
+
+  /**
    * Encode the message to the specified output.
    *
    * @param out The output stream
@@ -28,8 +33,9 @@ public interface RemoteMessageCodec<T extends RemoteMessage> {
    * Decode a message from the specified input.
    *
    * @param in The input stream
+   * @param version Version of the message
    * @return The decoded message
    * @throws IOException When an IO error occurs
    */
-  T decode(DataInput in) throws IOException;
+  T decode(DataInput in, int version) throws IOException;
 }

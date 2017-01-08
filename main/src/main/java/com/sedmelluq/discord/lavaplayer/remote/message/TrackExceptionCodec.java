@@ -16,13 +16,18 @@ public class TrackExceptionCodec implements RemoteMessageCodec<TrackExceptionMes
   }
 
   @Override
+  public int version() {
+    return 1;
+  }
+
+  @Override
   public void encode(DataOutput out, TrackExceptionMessage message) throws IOException {
     out.writeLong(message.executorId);
     ExceptionTools.encodeException(out, message.exception);
   }
 
   @Override
-  public TrackExceptionMessage decode(DataInput in) throws IOException {
+  public TrackExceptionMessage decode(DataInput in, int version) throws IOException {
     return new TrackExceptionMessage(in.readLong(), ExceptionTools.decodeException(in));
   }
 }

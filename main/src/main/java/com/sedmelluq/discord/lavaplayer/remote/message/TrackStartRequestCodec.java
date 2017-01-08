@@ -17,6 +17,11 @@ public class TrackStartRequestCodec implements RemoteMessageCodec<TrackStartRequ
   }
 
   @Override
+  public int version() {
+    return 1;
+  }
+
+  @Override
   public void encode(DataOutput out, TrackStartRequestMessage message) throws IOException {
     out.writeLong(message.executorId);
     out.writeUTF(message.trackInfo.title);
@@ -32,7 +37,7 @@ public class TrackStartRequestCodec implements RemoteMessageCodec<TrackStartRequ
   }
 
   @Override
-  public TrackStartRequestMessage decode(DataInput in) throws IOException {
+  public TrackStartRequestMessage decode(DataInput in, int version) throws IOException {
     long executorId = in.readLong();
     AudioTrackInfo trackInfo = new AudioTrackInfo(in.readUTF(), in.readUTF(), in.readLong(), in.readUTF(), in.readBoolean());
 

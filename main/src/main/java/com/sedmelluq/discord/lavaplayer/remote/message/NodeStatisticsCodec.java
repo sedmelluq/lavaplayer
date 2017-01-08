@@ -14,6 +14,11 @@ public class NodeStatisticsCodec implements RemoteMessageCodec<NodeStatisticsMes
   }
 
   @Override
+  public int version() {
+    return 1;
+  }
+
+  @Override
   public void encode(DataOutput out, NodeStatisticsMessage message) throws IOException {
     out.writeInt(message.playingTrackCount);
     out.writeInt(message.totalTrackCount);
@@ -22,7 +27,7 @@ public class NodeStatisticsCodec implements RemoteMessageCodec<NodeStatisticsMes
   }
 
   @Override
-  public NodeStatisticsMessage decode(DataInput in) throws IOException {
+  public NodeStatisticsMessage decode(DataInput in, int version) throws IOException {
     return new NodeStatisticsMessage(in.readInt(), in.readInt(), in.readFloat(), in.readFloat());
   }
 }
