@@ -390,7 +390,7 @@ public class RemoteNodeProcessor implements RemoteNode, Runnable {
 
   private void recordTick(RemoteNode.Tick tick, RingBufferMath timingAverage) {
     timingAverage.add(tick.endTime - tick.startTime);
-    requestTimingPenalty = (int) Math.max(0, Math.atan((timingAverage.mean() - 1500) / 100) * 150 + 225);
+    requestTimingPenalty = (int) ((1450.0f / ((1450.0f - Math.min(timingAverage.mean(), 1440)) / 30.0f)) - 30.0f);
 
     synchronized (tickHistory) {
       if (tickHistory.size() == NODE_REQUEST_HISTORY) {
@@ -472,7 +472,7 @@ public class RemoteNodeProcessor implements RemoteNode, Runnable {
   }
 
   private int getPenaltyForCpuUsage(NodeStatisticsMessage statistics) {
-    return (int) (Math.pow(statistics.systemCpuUsage + 0.7f, 10.0f) * 1.5);
+    return (int) ((1.0f / ((1.0f - Math.min(statistics.systemCpuUsage, 0.99f)) / 30.0f)) - 30.0f);
   }
 
   @Override

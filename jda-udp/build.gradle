@@ -11,7 +11,7 @@ dependencies {
 
   compile "org.slf4j:slf4j-api:$slf4jVersion"
 
-  compile 'net.dv8tion:JDA:3.0.BETA2_118'
+  compile 'net.dv8tion:JDA:3.0.BETA2_119'
 }
 
 task sourceJar(type: Jar) {
