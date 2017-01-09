@@ -1,5 +1,10 @@
 # Change Log
 
+## [1.1.38] - 2017-01-09
+### Changed
+- Node balancing takes CPU and latency more seriously.
+- Node messaging changed, requires node update to 1.1.38.
+
 ## [1.1.37] - 2017-01-04
 ### Changed
 - MKV file handling refactored to be more lightweight.
