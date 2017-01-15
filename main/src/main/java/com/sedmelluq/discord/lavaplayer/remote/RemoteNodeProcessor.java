@@ -18,6 +18,7 @@ import com.sedmelluq.discord.lavaplayer.track.InternalAudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.playback.AudioFrame;
 import com.sedmelluq.discord.lavaplayer.track.playback.AudioFrameBuffer;
 import com.sedmelluq.discord.lavaplayer.track.playback.AudioTrackExecutor;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.CountingInputStream;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -198,7 +199,9 @@ public class RemoteNodeProcessor implements RemoteNode, Runnable {
     TickBuilder tickBuilder = new TickBuilder(System.currentTimeMillis());
 
     try {
-      dispatchOneTick(httpClient, tickBuilder);
+      if (!dispatchOneTick(httpClient, tickBuilder)) {
+        return false;
+      }
     } finally {
       tickBuilder.endTime = System.currentTimeMillis();
       recordTick(tickBuilder.build(), timingAverage);
@@ -211,20 +214,20 @@ public class RemoteNodeProcessor implements RemoteNode, Runnable {
   }
 
   private boolean dispatchOneTick(CloseableHttpClient httpClient, TickBuilder tickBuilder) throws Exception {
+    boolean success = false;
     HttpPost post = new HttpPost("http://" + nodeAddress + "/tick");
     ByteArrayEntity entity = new ByteArrayEntity(buildRequestBody());
     post.setEntity(entity);
 
     tickBuilder.requestSize = (int) entity.getContentLength();
 
-    try (CloseableHttpResponse response = httpClient.execute(post)) {
-      tickBuilder.responseCode = response.getStatusLine().getStatusCode();
+    CloseableHttpResponse response = httpClient.execute(post);
 
+    try {
+      tickBuilder.responseCode = response.getStatusLine().getStatusCode();
       if (tickBuilder.responseCode != 200) {
         throw new IOException("Returned an unexpected response code " + tickBuilder.responseCode);
       }
-
-      Thread.sleep(700);
 
       if (connectionState.compareAndSet(ConnectionState.PENDING.id(), ConnectionState.ONLINE.id())) {
         log.info("Node {} came online.", nodeAddress);
@@ -237,6 +240,14 @@ public class RemoteNodeProcessor implements RemoteNode, Runnable {
 
       if (!handleResponseBody(response.getEntity().getContent(), tickBuilder)) {
         return false;
+      }
+
+      success = true;
+    } finally {
+      if (!success) {
+        IOUtils.closeQuietly(response);
+      } else {
+        IOUtils.closeQuietly(response.getEntity().getContent());
       }
     }
 
@@ -464,7 +475,14 @@ public class RemoteNodeProcessor implements RemoteNode, Runnable {
   }
 
   private int getPenaltyForPlayingTracks(NodeStatisticsMessage statistics) {
-    return statistics.playingTrackCount * 2;
+    int count = statistics.playingTrackCount;
+    int penalty = Math.min(count, 100);
+
+    if (count > 100) {
+      penalty += Math.pow(count - 100, 0.7f);
+    }
+
+    return penalty * 3 / 2;
   }
 
   private int getPenaltyForPausedTracks(NodeStatisticsMessage statistics) {

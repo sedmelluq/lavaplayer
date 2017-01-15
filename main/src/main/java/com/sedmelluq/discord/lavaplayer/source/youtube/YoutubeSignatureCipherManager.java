@@ -186,7 +186,13 @@ public class YoutubeSignatureCipherManager {
 
   private static URI parseTokenScriptUrl(String urlString) {
     try {
-      return new URI("https:" + urlString);
+      if (urlString.startsWith("//")) {
+        return new URI("https:" + urlString);
+      } else if (urlString.startsWith("/")) {
+        return new URI("https://s.ytimg.com" + urlString);
+      } else {
+        return new URI(urlString);
+      }
     } catch (URISyntaxException e) {
       throw new RuntimeException(e);
     }
