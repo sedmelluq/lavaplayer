@@ -1,5 +1,22 @@
 # Change Log
 
+## [1.1.42] - 2017-01-16
+### Added
+- Support for OS X (native library).
+
+## [1.1.41] - 2017-01-15
+### Fixed
+- Fixed YouTube tracks broken when player.js URL was given without hostname.
+
+## [1.1.40] - 2017-01-14
+### Fixed
+- Fixed constant delay on processing node messages.
+- Fixed making a new HTTP connection for each node request.
+
+## [1.1.39] - 2017-01-14
+### Changed
+- Reduced playing track count effect on node balancing.
+
 ## [1.1.38] - 2017-01-09
 ### Changed
 - Node balancing takes CPU and latency more seriously.
