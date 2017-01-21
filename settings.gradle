@@ -1,1 +1,1 @@
-include 'main', 'natives', 'testbot', 'node', 'udpqueue', 'udpqueue-natives', 'jda-udp', 'demo-jda', 'demo-d4j', 'common'
+include 'main', 'natives', 'testbot', 'node', 'demo-jda', 'demo-d4j', 'common'
