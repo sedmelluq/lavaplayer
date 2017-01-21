@@ -54,12 +54,6 @@ public class Main extends ListenerAdapter {
     return musicManager;
   }
 
-  public static class GoodException extends RuntimeException {
-    public GoodException() {
-      throw this;
-    }
-  }
-
   @Override
   public void onMessageReceived(MessageReceivedEvent event) {
     String[] command = event.getMessage().getContent().split(" ", 2);
