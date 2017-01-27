@@ -479,7 +479,7 @@ public class RemoteNodeProcessor implements RemoteNode, Runnable {
     int penalty = Math.min(count, 100);
 
     if (count > 100) {
-      penalty += Math.pow(count - 100, 0.7f);
+      penalty += Math.pow(count - 100.0, 0.7);
     }
 
     return penalty * 3 / 2;

@@ -1,5 +1,16 @@
 # Change Log
 
+## [1.1.43] - 2017-01-28
+### Added
+- Loading unlisted SoundCloud tracks.
+- Searching on SoundCloud with scsearch: prefix.
+- Option to specify maximum number of YouTube playlist pages to load (was hardcoded to 6).
+
+### Fixed
+- Fixed SoundCloud playlist tracks in wrong order.
+- Fixed paid movies appearing in YouTube search results.
+- Fixed YouTube playlists with UU prefix not working.
+
 ## [1.1.42] - 2017-01-16
 ### Added
 - Support for OS X (native library).

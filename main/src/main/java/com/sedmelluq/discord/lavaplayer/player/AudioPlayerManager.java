@@ -54,6 +54,14 @@ public interface AudioPlayerManager {
   void registerSourceManager(AudioSourceManager sourceManager);
 
   /**
+   * Shortcut for accessing a source manager of a certain class.
+   * @param klass The class of the source manager to return.
+   * @param <T> The class of the source manager.
+   * @return The source manager of the specified class, or null if not registered.
+   */
+  <T extends AudioSourceManager> T source(Class<T> klass);
+
+  /**
    * Schedules loading a track or playlist with the specified identifier.
    * @param identifier    The identifier that a specific source manager should be able to find the track with.
    * @param resultHandler A handler to process the result of this operation. It can either end by finding a track,

@@ -61,7 +61,7 @@ public class YoutubeAudioSourceManager implements AudioSourceManager {
   static final String CHARSET = "UTF-8";
 
   private static final String VIDEO_ID_REGEX = "([a-zA-Z0-9_-]{11})";
-  private static final String PLAYLIST_REGEX = "((PL|LL|FL)[a-zA-Z0-9_-]+)";
+  private static final String PLAYLIST_REGEX = "((PL|LL|FL|UU)[a-zA-Z0-9_-]+)";
   private static final String MIX_REGEX = "(RD[a-zA-Z0-9_-]+)";
   private static final String PROTOCOL_REGEX = "(?:http://|https://|)";
   private static final String SUFFIX_REGEX = "(?:\\?.*|&.*|)";
@@ -86,6 +86,7 @@ public class YoutubeAudioSourceManager implements AudioSourceManager {
   private final YoutubeSignatureCipherManager signatureCipherManager;
   private final ExecutorService mixLoadingExecutor;
   private final boolean allowSearch;
+  private volatile int playlistPageCount;
 
   /**
    * Create an instance with default settings.
@@ -103,6 +104,14 @@ public class YoutubeAudioSourceManager implements AudioSourceManager {
     signatureCipherManager = new YoutubeSignatureCipherManager();
     mixLoadingExecutor = new ThreadPoolExecutor(0, 10, 5, TimeUnit.SECONDS, new LinkedBlockingQueue<>(), new DaemonThreadFactory("yt-mix"));
     this.allowSearch = allowSearch;
+    playlistPageCount = 6;
+  }
+
+  /**
+   * @param playlistPageCount Maximum number of pages loaded from one playlist. There are 100 tracks per page.
+   */
+  public void setPlaylistPageCount(int playlistPageCount) {
+    this.playlistPageCount = playlistPageCount;
   }
 
   @Override
@@ -357,9 +366,10 @@ public class YoutubeAudioSourceManager implements AudioSourceManager {
     List<AudioTrack> tracks = new ArrayList<>();
     String loadMoreUrl = extractPlaylistTracks(container, container, tracks);
     int loadCount = 0;
+    int pageCount = playlistPageCount;
 
     // Also load the next pages, each result gives us a JSON with separate values for list html and next page loader html
-    while (loadMoreUrl != null && ++loadCount <= 5) {
+    while (loadMoreUrl != null && ++loadCount < pageCount) {
       try (CloseableHttpResponse response = httpClient.execute(new HttpGet("https://www.youtube.com" + loadMoreUrl))) {
         if (response.getStatusLine().getStatusCode() != 200) {
           throw new IOException("Invalid status code for playlist response.");
@@ -524,7 +534,7 @@ public class YoutubeAudioSourceManager implements AudioSourceManager {
 
     for (Element results : document.select("#page > #content #results")) {
       for (Element result : results.select(".yt-lockup-video")) {
-        if (!result.hasAttr("data-ad-impressions")) {
+        if (!result.hasAttr("data-ad-impressions") && result.select(".standalone-ypc-badge-renderer-label").isEmpty()) {
           extractTrackFromResultEntry(tracks, result);
         }
       }

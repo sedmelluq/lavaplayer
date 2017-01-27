@@ -11,6 +11,7 @@ import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.remote.RemoteNode;
 import com.sedmelluq.discord.lavaplayer.remote.message.NodeStatisticsMessage;
+import com.sedmelluq.discord.lavaplayer.source.youtube.YoutubeAudioSourceManager;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.tools.io.MessageInput;
 import com.sedmelluq.discord.lavaplayer.tools.io.MessageOutput;
@@ -65,6 +66,11 @@ public class MusicController implements BotController {
   @BotCommandHandler
   private void now(Message message, String identifier) {
     addTrack(message, identifier, true);
+  }
+
+  @BotCommandHandler
+  private void hex(Message message, int pageCount) {
+    manager.source(YoutubeAudioSourceManager.class).setPlaylistPageCount(pageCount);
   }
 
   @BotCommandHandler

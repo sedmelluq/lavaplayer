@@ -150,6 +150,17 @@ public class DefaultAudioPlayerManager implements AudioPlayerManager {
   }
 
   @Override
+  public <T extends AudioSourceManager> T source(Class<T> klass) {
+    for (AudioSourceManager sourceManager : sourceManagers) {
+      if (klass.isAssignableFrom(sourceManager.getClass())) {
+        return (T) sourceManager;
+      }
+    }
+
+    return null;
+  }
+
+  @Override
   public Future<Void> loadItem(final String identifier, final AudioLoadResultHandler resultHandler) {
     return trackInfoExecutorService.submit(createItemLoader(identifier, resultHandler));
   }
