@@ -1,5 +1,9 @@
 # Change Log
 
+## [1.1.44] - 2017-01-28
+### Added
+- WAV file support (16-bit PCM).
+
 ## [1.1.43] - 2017-01-28
 ### Added
 - Loading unlisted SoundCloud tracks.

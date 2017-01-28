@@ -9,11 +9,13 @@ import com.sedmelluq.discord.lavaplayer.container.ogg.OggContainerProbe;
 import com.sedmelluq.discord.lavaplayer.container.playlists.M3uPlaylistContainerProbe;
 import com.sedmelluq.discord.lavaplayer.container.playlists.PlainPlaylistContainerProbe;
 import com.sedmelluq.discord.lavaplayer.container.playlists.PlsPlaylistContainerProbe;
+import com.sedmelluq.discord.lavaplayer.container.wav.WavContainerProbe;
 
 /**
  * Lists currently supported containers and their probes.
  */
 public enum MediaContainer {
+  WAV(new WavContainerProbe()),
   MKV(new MatroskaContainerProbe()),
   MP4(new MpegContainerProbe()),
   FLAC(new FlacContainerProbe()),
