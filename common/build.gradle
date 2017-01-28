@@ -6,7 +6,7 @@ plugins {
 }
 
 ext.moduleName = 'lavaplayer-common'
-version = '1.0.1'
+version = '1.0.2'
 
 dependencies {
   compile "org.slf4j:slf4j-api:$slf4jVersion"

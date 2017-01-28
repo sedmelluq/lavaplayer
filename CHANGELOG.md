@@ -1,5 +1,9 @@
 # Change Log
 
+## [1.1.45] - 2017-01-28
+### Changed
+- ARM binaries are now loaded from natives/linux-arm and natives/linux-aarch64 directories instead of x86 ones.
+
 ## [1.1.44] - 2017-01-28
 ### Added
 - WAV file support (16-bit PCM).

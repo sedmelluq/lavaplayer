@@ -22,39 +22,15 @@ import static java.nio.file.attribute.PosixFilePermissions.fromString;
 public class NativeLibLoader {
   public static final String LINUX_X86 = "linux-x86";
   public static final String LINUX_X86_64 = "linux-x86-64";
+  public static final String LINUX_ARM = "linux-arm";
+  public static final String LINUX_ARM_64 = "linux-aarch64";
   public static final String WIN_X86 = "win-x86";
   public static final String WIN_X86_64 = "win-x86-64";
   public static final String DARWIN = "darwin";
 
-  private static final Set<String> loadedLibraries;
-  private static final String systemType;
-  private static final String libraryPrefix;
-  private static final String librarySuffix;
-  private static final String libraryDirectory;
-
-  static {
-    String osName = System.getProperty("os.name");
-    String bits = System.getProperty("sun.arch.data.model");
-
-    libraryDirectory = String.valueOf(System.currentTimeMillis());
-    loadedLibraries = new HashSet<>();
-
-    if (osName.startsWith("Linux")) {
-      systemType = "64".equals(bits) ? LINUX_X86_64 : LINUX_X86;
-      libraryPrefix = "lib";
-      librarySuffix = ".so";
-    } else if ((osName.startsWith("Mac") || osName.startsWith("Darwin")) && "64".equals(bits)) {
-      systemType = DARWIN;
-      libraryPrefix = "lib";
-      librarySuffix = ".dylib";
-    } else if (osName.startsWith("Windows") && !osName.startsWith("Windows CE")) {
-      systemType = "64".equals(bits) ? WIN_X86_64 : WIN_X86;
-      libraryPrefix = "";
-      librarySuffix = ".dll";
-    } else {
-      throw new IllegalStateException("Native libraries not supported on this platform.");
-    }
-  }
+  private static final Set<String> loadedLibraries = new HashSet<>();
+  private static final String libraryDirectory = String.valueOf(System.currentTimeMillis());
+  private static final Architecture architecture = detectArchitecture();
 
   /**
    * Load a library only if the current system type matches the specified one
@@ -63,7 +39,7 @@ public class NativeLibLoader {
    * @throws LinkageError When loading the library fails
    */
   public static void load(String name, String systemTypeFilter) {
-    if (systemType.equals(systemTypeFilter)) {
+    if (architecture.systemType.equals(systemTypeFilter)) {
       load(NativeLibLoader.class, name);
     }
   }
@@ -84,7 +60,7 @@ public class NativeLibLoader {
    * @throws LinkageError When loading the library fails
    */
   public static void load(Class<?> resourceBase, String name, String systemTypeFilter) {
-    if (systemType.equals(systemTypeFilter)) {
+    if (architecture.systemType.equals(systemTypeFilter)) {
       load(resourceBase, name);
     }
   }
@@ -109,7 +85,7 @@ public class NativeLibLoader {
   }
 
   private static Path extractLibrary(Class<?> resourceBase, String name) throws IOException {
-    String path = "/natives/" + systemType + "/" + libraryPrefix + name + librarySuffix;
+    String path = "/natives/" + architecture.systemType + "/" + architecture.libraryPrefix + name + architecture.librarySuffix;
     Path extractedLibrary;
 
     try (InputStream libraryStream = resourceBase.getResourceAsStream(path)) {
@@ -129,7 +105,7 @@ public class NativeLibLoader {
         }
       }
 
-      extractedLibrary = new File(temporaryContainer, libraryPrefix + name + librarySuffix).toPath();
+      extractedLibrary = new File(temporaryContainer, architecture.libraryPrefix + name + architecture.librarySuffix).toPath();
       try (FileOutputStream fileStream = new FileOutputStream(extractedLibrary.toFile())) {
         IOUtils.copy(libraryStream, fileStream);
       }
@@ -145,6 +121,40 @@ public class NativeLibLoader {
       Files.createDirectories(path);
     } else {
       Files.createDirectories(path, asFileAttribute(fromString("rwxrwxrwx")));
+    }
+  }
+
+  private static Architecture detectArchitecture() {
+    String osName = System.getProperty("os.name");
+    String arch = System.getProperty("os.arch");
+    String bits = System.getProperty("sun.arch.data.model");
+
+    if (osName.startsWith("Linux")) {
+      if (arch.startsWith("arm")) {
+        return new Architecture(LINUX_ARM, "lib", ".so");
+      } else if (arch.startsWith("aarch64")) {
+        return new Architecture(LINUX_ARM_64, "lib", ".so");
+      } else {
+        return new Architecture("64".equals(bits) ? LINUX_X86_64 : LINUX_X86, "lib", ".so");
+      }
+    } else if ((osName.startsWith("Mac") || osName.startsWith("Darwin")) && "64".equals(bits)) {
+      return new Architecture(DARWIN, "lib", ".dylib");
+    } else if (osName.startsWith("Windows") && !osName.startsWith("Windows CE")) {
+      return new Architecture("64".equals(bits) ? WIN_X86_64 : WIN_X86, "", ".dll");
+    }
+
+    throw new IllegalStateException("Native libraries not supported on this platform.");
+  }
+
+  private static class Architecture {
+    private final String systemType;
+    private final String libraryPrefix;
+    private final String librarySuffix;
+
+    private Architecture(String systemType, String libraryPrefix, String librarySuffix) {
+      this.systemType = systemType;
+      this.libraryPrefix = libraryPrefix;
+      this.librarySuffix = librarySuffix;
     }
   }
 }
