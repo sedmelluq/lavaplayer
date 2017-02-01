@@ -110,5 +110,10 @@ JNIEXPORT void JNICALL Java_com_sedmelluq_discord_lavaplayer_natives_vorbis_Vorb
 	vorbis_info_clear(&state->info);
 	vorbis_comment_clear(&state->comment);
 
+	if (state->initialised) {
+		vorbis_block_clear(&state->block);
+		vorbis_dsp_clear(&state->dsp_state);
+	}
+
 	free(state);
 }
