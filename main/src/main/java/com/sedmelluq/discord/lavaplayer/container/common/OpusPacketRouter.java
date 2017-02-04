@@ -1,7 +1,7 @@
 package com.sedmelluq.discord.lavaplayer.container.common;
 
 import com.sedmelluq.discord.lavaplayer.filter.FilterChainBuilder;
-import com.sedmelluq.discord.lavaplayer.filter.OpusEncodingPcmAudioFilter;
+import com.sedmelluq.discord.lavaplayer.format.AudioDataFormat;
 import com.sedmelluq.discord.lavaplayer.filter.ShortPcmAudioFilter;
 import com.sedmelluq.discord.lavaplayer.filter.volume.AudioFrameVolumeChanger;
 import com.sedmelluq.discord.lavaplayer.natives.opus.OpusDecoder;
@@ -23,17 +23,17 @@ public class OpusPacketRouter {
   private static final Logger log = LoggerFactory.getLogger(OpusPacketRouter.class);
 
   private final AudioProcessingContext context;
-  private final boolean hasStandardInput;
   private final int inputFrequency;
   private final int inputChannels;
   private final byte[] headerBytes;
 
   private long currentTimecode;
-  private boolean hasStandardSize;
   private OpusDecoder opusDecoder;
   private ShortPcmAudioFilter downstream;
   private ByteBuffer directInput;
   private ShortBuffer frameBuffer;
+  private AudioDataFormat inputFormat;
+  private int lastFrameSize;
 
   /**
    * @param context Configuration and output information for processing audio
@@ -42,11 +42,10 @@ public class OpusPacketRouter {
    */
   public OpusPacketRouter(AudioProcessingContext context, int inputFrequency, int inputChannels) {
     this.context = context;
-    this.hasStandardInput = inputFrequency == OpusEncodingPcmAudioFilter.FREQUENCY && inputChannels == OpusEncodingPcmAudioFilter.CHANNEL_COUNT;
     this.inputFrequency = inputFrequency;
     this.inputChannels = inputChannels;
     this.headerBytes = new byte[2];
-    this.hasStandardSize = true;
+    this.lastFrameSize = 0;
   }
 
   /**
@@ -116,8 +115,9 @@ public class OpusPacketRouter {
 
     if (frameSize == 0) {
       return 0;
-    } else if (frameSize != OpusEncodingPcmAudioFilter.FRAME_SIZE) {
-      hasStandardSize = false;
+    } else if (frameSize != lastFrameSize) {
+      lastFrameSize = frameSize;
+      inputFormat = new AudioDataFormat(inputChannels, inputFrequency, frameSize, AudioDataFormat.Codec.OPUS);
     }
 
     currentTimecode += frameSize * 1000 / inputFrequency;
@@ -156,21 +156,17 @@ public class OpusPacketRouter {
     byte[] bytes = new byte[buffer.remaining()];
     buffer.get(bytes);
 
-    context.frameConsumer.consume(new AudioFrame(currentTimecode, bytes, 100));
-  }
-
-  private boolean needsDecoding() {
-    return context.volumeLevel.get() != 100 || !hasStandardSize || !hasStandardInput;
+    context.frameConsumer.consume(new AudioFrame(currentTimecode, bytes, 100, inputFormat));
   }
 
   private void checkDecoderNecessity() {
-    if (needsDecoding()) {
+    if (FilterChainBuilder.isProcessingRequired(context, inputFormat)) {
       if (opusDecoder == null) {
         log.debug("Enabling reencode mode on opus track.");
 
         initialiseDecoder();
 
-        AudioFrameVolumeChanger.apply(context.configuration, context.frameConsumer, context.volumeLevel.get());
+        AudioFrameVolumeChanger.apply(context);
       }
     } else {
       if (opusDecoder != null) {
@@ -178,7 +174,7 @@ public class OpusPacketRouter {
 
         destroyDecoder();
 
-        AudioFrameVolumeChanger.apply(context.configuration, context.frameConsumer, context.volumeLevel.get());
+        AudioFrameVolumeChanger.apply(context);
       }
     }
   }

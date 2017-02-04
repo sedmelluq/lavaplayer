@@ -1,5 +1,6 @@
 package com.sedmelluq.discord.lavaplayer.track.playback;
 
+import com.sedmelluq.discord.lavaplayer.format.AudioDataFormat;
 import com.sedmelluq.discord.lavaplayer.player.AudioConfiguration;
 import com.sedmelluq.discord.lavaplayer.tools.ExceptionTools;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
@@ -11,6 +12,8 @@ import com.sedmelluq.discord.lavaplayer.track.TrackStateListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -52,8 +55,9 @@ public class LocalAudioTrackExecutor implements AudioTrackExecutor {
                                  boolean useSeekGhosting, int bufferDuration) {
 
     this.audioTrack = audioTrack;
-    this.frameBuffer = new AudioFrameBuffer(bufferDuration);
-    this.processingContext = new AudioProcessingContext(configuration, frameBuffer, volumeLevel);
+    AudioDataFormat currentFormat = configuration.getOutputFormat();
+    this.frameBuffer = new AudioFrameBuffer(bufferDuration, currentFormat);
+    this.processingContext = new AudioProcessingContext(configuration, frameBuffer, volumeLevel, currentFormat);
     this.useSeekGhosting = useSeekGhosting;
   }
 
@@ -294,7 +298,12 @@ public class LocalAudioTrackExecutor implements AudioTrackExecutor {
 
   @Override
   public AudioFrame provide() {
-    AudioFrame frame = frameBuffer.provide();
+    return AudioFrameProviderTools.delegateToTimedProvide(this);
+  }
+
+  @Override
+  public AudioFrame provide(long timeout, TimeUnit unit) throws TimeoutException, InterruptedException {
+    AudioFrame frame = frameBuffer.provide(timeout, unit);
 
     if (frame != null && !frame.isTerminator()) {
       if (!isPerformingSeek()) {

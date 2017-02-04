@@ -16,6 +16,7 @@ import com.sedmelluq.discord.lavaplayer.track.TrackStateListener;
 import com.sedmelluq.discord.lavaplayer.track.playback.AudioFrame;
 import com.sedmelluq.discord.lavaplayer.track.playback.AudioFrameProvider;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
+import com.sedmelluq.discord.lavaplayer.track.playback.AudioFrameProviderTools;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -23,6 +24,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -157,7 +159,12 @@ public class AudioPlayer implements AudioFrameProvider, TrackStateListener {
 
   @Override
   public AudioFrame provide() {
-    AudioFrame frame = provideDirectly();
+    return AudioFrameProviderTools.delegateToTimedProvide(this);
+  }
+
+  @Override
+  public AudioFrame provide(long timeout, TimeUnit unit) throws TimeoutException, InterruptedException {
+    AudioFrame frame = provideDirectly(timeout, unit);
     if (outputHook != null) {
       frame = outputHook.outgoingFrame(this, frame);
     }
@@ -166,19 +173,21 @@ public class AudioPlayer implements AudioFrameProvider, TrackStateListener {
 
   /**
    * Provide an audio frame bypassing hooks.
+   * @param timeout Specifies the maximum time to wait for data. Pass 0 for non-blocking mode.
+   * @param unit Specifies the time unit of the maximum wait time.
    * @return An audio frame if available, otherwise null
    */
-  public AudioFrame provideDirectly() {
+  public AudioFrame provideDirectly(long timeout, TimeUnit unit) throws TimeoutException, InterruptedException {
     InternalAudioTrack track;
 
     lastRequestTime = System.currentTimeMillis();
 
-    if (paused.get()) {
+    if (timeout == 0 && paused.get()) {
       return null;
     }
 
     while ((track = activeTrack) != null) {
-      AudioFrame frame = track.provide();
+      AudioFrame frame = track.provide(timeout, unit);
 
       if (frame != null) {
         lastReceiveTime = System.nanoTime();
@@ -188,11 +197,8 @@ public class AudioPlayer implements AudioFrameProvider, TrackStateListener {
           handleTerminator(track);
           continue;
         }
-      } else {
-        if (!stuckEventSent && System.nanoTime() - lastReceiveTime > manager.getTrackStuckThresholdNanos()) {
-          stuckEventSent = true;
-          dispatchEvent(new TrackStuckEvent(this, track, TimeUnit.NANOSECONDS.toMillis(manager.getTrackStuckThresholdNanos())));
-        }
+      } else if (timeout == 0) {
+        checkStuck(track);
 
         frame = provideShadowFrame();
       }
@@ -210,6 +216,13 @@ public class AudioPlayer implements AudioFrameProvider, TrackStateListener {
 
         dispatchEvent(new TrackEndEvent(this, track, track.getActiveExecutor().failedBeforeLoad() ? LOAD_FAILED : FINISHED));
       }
+    }
+  }
+
+  private void checkStuck(AudioTrack track) {
+    if (!stuckEventSent && System.nanoTime() - lastReceiveTime > manager.getTrackStuckThresholdNanos()) {
+      stuckEventSent = true;
+      dispatchEvent(new TrackStuckEvent(this, track, TimeUnit.NANOSECONDS.toMillis(manager.getTrackStuckThresholdNanos())));
     }
   }
 
@@ -290,6 +303,11 @@ public class AudioPlayer implements AudioFrameProvider, TrackStateListener {
   @Override
   public void onTrackException(AudioTrack track, FriendlyException exception) {
     dispatchEvent(new TrackExceptionEvent(this, track, exception));
+  }
+
+  @Override
+  public void onTrackStuck(AudioTrack track, long thresholdMs) {
+    dispatchEvent(new TrackStuckEvent(this, track, thresholdMs));
   }
 
   /**

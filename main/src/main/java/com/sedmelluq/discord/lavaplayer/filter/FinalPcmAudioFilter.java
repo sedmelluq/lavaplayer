@@ -1,9 +1,6 @@
 package com.sedmelluq.discord.lavaplayer.filter;
 
-import com.sedmelluq.discord.lavaplayer.filter.volume.PcmVolumeProcessor;
-import com.sedmelluq.discord.lavaplayer.natives.opus.OpusEncoder;
-import com.sedmelluq.discord.lavaplayer.track.playback.AudioFrame;
-import com.sedmelluq.discord.lavaplayer.filter.volume.AudioFrameVolumeChanger;
+import com.sedmelluq.discord.lavaplayer.format.AudioDataFormat;
 import com.sedmelluq.discord.lavaplayer.track.playback.AudioProcessingContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -11,42 +8,34 @@ import org.slf4j.LoggerFactory;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.ShortBuffer;
+import java.util.Collection;
 
 /**
- * Encodes the input audio samples to OPUS frames and passes them to a frame consumer.
+ * Collects buffers of the required chunk size and passes them on to audio post processors.
  */
-public class OpusEncodingPcmAudioFilter implements FloatPcmAudioFilter, ShortPcmAudioFilter, SplitShortPcmAudioFilter {
-  private static final Logger log = LoggerFactory.getLogger(OpusEncodingPcmAudioFilter.class);
+public class FinalPcmAudioFilter implements FloatPcmAudioFilter, ShortPcmAudioFilter, SplitShortPcmAudioFilter {
+  private static final Logger log = LoggerFactory.getLogger(FinalPcmAudioFilter.class);
   private static final short[] zeroPadding = new short[128];
 
-  public static final int FREQUENCY = 48000;
-  public static final int CHANNEL_COUNT = 2;
-  public static final int FRAME_SIZE = 960;
-
-  private static final int CHUNK_LENGTH_MS = 20;
-  private static final int SAMPLES_PER_MS = 48;
-
-  private final AudioProcessingContext context;
+  private final AudioDataFormat format;
   private final ShortBuffer frameBuffer;
-  private final ByteBuffer encoded;
-  private final OpusEncoder opusEncoder;
-  private final PcmVolumeProcessor volumeProcessor;
+  private final Collection<AudioPostProcessor> postProcessors;
 
   private long ignoredFrames;
-  private long nextTimecode;
+  private long timecodeBase;
+  private long timecodeSampleOffset;
 
   /**
    * @param context Configuration and output information for processing
+   * @param postProcessors Post processors to pass the final audio buffers to
    */
-  public OpusEncodingPcmAudioFilter(AudioProcessingContext context) {
-    this.context = context;
-    this.frameBuffer = ByteBuffer.allocateDirect(CHUNK_LENGTH_MS * SAMPLES_PER_MS * CHANNEL_COUNT * 2).
-        order(ByteOrder.nativeOrder()).asShortBuffer();
-    this.encoded = ByteBuffer.allocateDirect(4096);
-    this.volumeProcessor = new PcmVolumeProcessor(context.volumeLevel.get());
+  public FinalPcmAudioFilter(AudioProcessingContext context, Collection<AudioPostProcessor> postProcessors) {
+    this.format = context.outputFormat;
+    this.frameBuffer = ByteBuffer.allocateDirect(format.bufferSize(2)).order(ByteOrder.nativeOrder()).asShortBuffer();
+    this.postProcessors = postProcessors;
 
-    opusEncoder = new OpusEncoder(FREQUENCY, CHANNEL_COUNT, context.configuration.getOpusEncodingQuality());
-    nextTimecode = 0;
+    timecodeBase = 0;
+    timecodeSampleOffset = 0;
   }
 
   private short decodeSample(float sample) {
@@ -56,8 +45,9 @@ public class OpusEncodingPcmAudioFilter implements FloatPcmAudioFilter, ShortPcm
   @Override
   public void seekPerformed(long requestedTime, long providedTime) {
     frameBuffer.clear();
-    ignoredFrames = requestedTime > providedTime ? (requestedTime - providedTime) * SAMPLES_PER_MS * CHANNEL_COUNT : 0;
-    nextTimecode = Math.max(requestedTime, providedTime);
+    ignoredFrames = requestedTime > providedTime ? (requestedTime - providedTime) * format.channelCount * format.sampleRate / 1000L : 0;
+    timecodeBase = Math.max(requestedTime, providedTime);
+    timecodeSampleOffset = 0;
 
     if (ignoredFrames > 0) {
       log.debug("Ignoring {} frames due to inaccurate seek (requested {}, provided {}).", ignoredFrames, requestedTime, providedTime);
@@ -74,7 +64,9 @@ public class OpusEncodingPcmAudioFilter implements FloatPcmAudioFilter, ShortPcm
 
   @Override
   public void close() {
-    opusEncoder.close();
+    for (AudioPostProcessor postProcessor : postProcessors) {
+      postProcessor.close();
+    }
   }
 
   private void fillFrameBuffer() {
@@ -154,32 +146,16 @@ public class OpusEncodingPcmAudioFilter implements FloatPcmAudioFilter, ShortPcm
 
   private void dispatch() throws InterruptedException {
     if (!frameBuffer.hasRemaining()) {
-      int currentVolume = context.volumeLevel.get();
+      long timecode = timecodeBase + timecodeSampleOffset * 1000 / format.sampleRate;
+      frameBuffer.clear();
 
-      if (currentVolume != volumeProcessor.getLastVolume()) {
-        AudioFrameVolumeChanger.apply(context.configuration, context.frameConsumer, currentVolume);
+      for (AudioPostProcessor postProcessor : postProcessors) {
+        postProcessor.process(timecode, frameBuffer);
       }
 
       frameBuffer.clear();
 
-      // Volume 0 is stored in the frame with volume 100 buffer
-      if (currentVolume != 0) {
-        volumeProcessor.applyVolume(100, currentVolume, frameBuffer);
-      } else {
-        volumeProcessor.setLastVolume(0);
-      }
-
-      encoded.clear();
-
-      int encodedLength = opusEncoder.encode(frameBuffer, FRAME_SIZE, encoded);
-
-      byte[] encodedBytes = new byte[encodedLength];
-      encoded.get(encodedBytes);
-
-      context.frameConsumer.consume(new AudioFrame(nextTimecode, encodedBytes, currentVolume));
-      frameBuffer.clear();
-
-      nextTimecode += CHUNK_LENGTH_MS;
+      timecodeSampleOffset += format.chunkSampleCount;
     }
   }
 }

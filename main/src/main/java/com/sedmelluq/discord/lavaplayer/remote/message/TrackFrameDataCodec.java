@@ -18,7 +18,7 @@ public class TrackFrameDataCodec implements RemoteMessageCodec<TrackFrameDataMes
   }
 
   @Override
-  public int version() {
+  public int version(RemoteMessage message) {
     return 1;
   }
 
@@ -50,7 +50,7 @@ public class TrackFrameDataCodec implements RemoteMessageCodec<TrackFrameDataMes
       byte[] data = new byte[in.readInt()];
       in.readFully(data);
 
-      frames.add(new AudioFrame(timecode, data, in.readInt()));
+      frames.add(new AudioFrame(timecode, data, in.readInt(), null));
     }
 
     return new TrackFrameDataMessage(executorId, frames, in.readBoolean(), in.readLong());

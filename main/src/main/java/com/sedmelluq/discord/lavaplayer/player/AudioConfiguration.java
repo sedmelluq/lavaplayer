@@ -1,5 +1,8 @@
 package com.sedmelluq.discord.lavaplayer.player;
 
+import com.sedmelluq.discord.lavaplayer.format.AudioDataFormat;
+import com.sedmelluq.discord.lavaplayer.format.StandardAudioDataFormats;
+
 /**
  * Configuration for audio processing.
  */
@@ -8,6 +11,7 @@ public class AudioConfiguration {
 
   private volatile ResamplingQuality resamplingQuality;
   private volatile int opusEncodingQuality;
+  private volatile AudioDataFormat outputFormat;
 
   /**
    * Create a new configuration with default values.
@@ -15,6 +19,7 @@ public class AudioConfiguration {
   public AudioConfiguration() {
     resamplingQuality = ResamplingQuality.LOW;
     opusEncodingQuality = OPUS_QUALITY_MAX;
+    outputFormat = StandardAudioDataFormats.DISCORD_OPUS;
   }
 
   public ResamplingQuality getResamplingQuality() {
@@ -31,6 +36,25 @@ public class AudioConfiguration {
 
   public void setOpusEncodingQuality(int opusEncodingQuality) {
     this.opusEncodingQuality = Math.max(0, Math.min(opusEncodingQuality, OPUS_QUALITY_MAX));
+  }
+
+  public AudioDataFormat getOutputFormat() {
+    return outputFormat;
+  }
+
+  public void setOutputFormat(AudioDataFormat outputFormat) {
+    this.outputFormat = outputFormat;
+  }
+
+  /**
+   * @return A copy of this configuration.
+   */
+  public AudioConfiguration copy() {
+    AudioConfiguration copy = new AudioConfiguration();
+    copy.setResamplingQuality(resamplingQuality);
+    copy.setOpusEncodingQuality(opusEncodingQuality);
+    copy.setOutputFormat(outputFormat);
+    return copy;
   }
 
   /**

@@ -1,14 +1,16 @@
 package com.sedmelluq.discord.lavaplayer.track.playback;
 
+import com.sedmelluq.discord.lavaplayer.format.AudioDataFormat;
+
 /**
- * A single OPUS audio frame with 20ms length.
+ * A single audio frame.
  */
 public class AudioFrame {
   /**
    * An AudioFrame instance which marks the end of an audio track, the time code or buffer from it should not be tried
    * to access.
    */
-  public static final AudioFrame TERMINATOR = new AudioFrame(0, null, 0);
+  public static final AudioFrame TERMINATOR = new AudioFrame(0, null, 0, null);
 
   /**
    * Timecode of this frame in milliseconds.
@@ -16,7 +18,7 @@ public class AudioFrame {
   public final long timecode;
 
   /**
-   * OPUS-encoded buffer for this frame.
+   * Buffer for this frame, in the format specified in the format field.
    */
   public final byte[] data;
 
@@ -28,14 +30,21 @@ public class AudioFrame {
   public final int volume;
 
   /**
-   * @param timecode Timecode of this frame in milliseconds.
-   * @param data OPUS-encoded buffer for this frame.
-   * @param volume Volume level of the audio in this frame
+   * Specifies the format of audio in the data buffer.
    */
-  public AudioFrame(long timecode, byte[] data, int volume) {
+  public final AudioDataFormat format;
+
+  /**
+   * @param timecode Timecode of this frame in milliseconds.
+   * @param data Buffer for this frame, in the format specified in the format field.
+   * @param volume Volume level of the audio in this frame.
+   * @param format Specifies the format of audio in the data buffer.
+   */
+  public AudioFrame(long timecode, byte[] data, int volume, AudioDataFormat format) {
     this.timecode = timecode;
     this.data = data;
     this.volume = volume;
+    this.format = format;
   }
 
   /**

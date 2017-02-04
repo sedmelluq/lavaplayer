@@ -107,13 +107,13 @@ JNIEXPORT jint JNICALL Java_com_sedmelluq_discord_lavaplayer_natives_vorbis_Vorb
 JNIEXPORT void JNICALL Java_com_sedmelluq_discord_lavaplayer_natives_vorbis_VorbisDecoderLibrary_destroy(JNIEnv *jni, jobject me, jlong instance) {
 	vorbis_state_t* state = (vorbis_state_t*) instance;
 
-	vorbis_info_clear(&state->info);
-	vorbis_comment_clear(&state->comment);
-
 	if (state->initialised) {
 		vorbis_block_clear(&state->block);
 		vorbis_dsp_clear(&state->dsp_state);
 	}
+
+	vorbis_comment_clear(&state->comment);
+	vorbis_info_clear(&state->info);
 
 	free(state);
 }

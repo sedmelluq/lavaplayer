@@ -56,6 +56,16 @@ public class ExceptionTools {
   }
 
   /**
+   * Makes sure thread is set to interrupted state when the throwable is an InterruptedException
+   * @param throwable Throwable to check
+   */
+  public static void keepInterrupted(Throwable throwable) {
+    if (throwable instanceof InterruptedException) {
+      Thread.currentThread().interrupt();
+    }
+  }
+
+  /**
    * Log a FriendlyException appropriately according to its severity.
    * @param log Logger instance to log it to
    * @param exception The exception itself

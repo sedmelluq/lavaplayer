@@ -11,10 +11,13 @@ import com.sedmelluq.discord.lavaplayer.track.TrackMarkerTracker;
 import com.sedmelluq.discord.lavaplayer.track.TrackStateListener;
 import com.sedmelluq.discord.lavaplayer.track.playback.AudioFrame;
 import com.sedmelluq.discord.lavaplayer.track.playback.AudioFrameBuffer;
+import com.sedmelluq.discord.lavaplayer.track.playback.AudioFrameProviderTools;
 import com.sedmelluq.discord.lavaplayer.track.playback.AudioTrackExecutor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -35,7 +38,7 @@ public class RemoteAudioTrackExecutor implements AudioTrackExecutor {
   private final RemoteNodeManager remoteNodeManager;
   private final AtomicInteger volumeLevel;
   private final long executorId;
-  private final AudioFrameBuffer frameBuffer = new AudioFrameBuffer(BUFFER_DURATION_MS);
+  private final AudioFrameBuffer frameBuffer;
   private final AtomicLong lastFrameTimecode = new AtomicLong();
   private final AtomicLong pendingSeek = new AtomicLong(NO_SEEK);
   private final TrackMarkerTracker markerTracker = new TrackMarkerTracker();
@@ -50,12 +53,15 @@ public class RemoteAudioTrackExecutor implements AudioTrackExecutor {
    * @param remoteNodeManager Manager of remote nodes
    * @param volumeLevel Mutable volume level
    */
-  public RemoteAudioTrackExecutor(AudioTrack track, AudioConfiguration configuration, RemoteNodeManager remoteNodeManager, AtomicInteger volumeLevel) {
+  public RemoteAudioTrackExecutor(AudioTrack track, AudioConfiguration configuration,
+                                  RemoteNodeManager remoteNodeManager, AtomicInteger volumeLevel) {
+
     this.track = track;
-    this.configuration = configuration;
+    this.configuration = configuration.copy();
     this.remoteNodeManager = remoteNodeManager;
     this.volumeLevel = volumeLevel;
     this.executorId = System.nanoTime();
+    this.frameBuffer = new AudioFrameBuffer(BUFFER_DURATION_MS, configuration.getOutputFormat());
   }
 
   /**
@@ -197,7 +203,12 @@ public class RemoteAudioTrackExecutor implements AudioTrackExecutor {
 
   @Override
   public AudioFrame provide() {
-    AudioFrame frame = frameBuffer.provide();
+    return AudioFrameProviderTools.delegateToTimedProvide(this);
+  }
+
+  @Override
+  public AudioFrame provide(long timeout, TimeUnit unit) throws TimeoutException, InterruptedException {
+    AudioFrame frame = frameBuffer.provide(timeout, unit);
 
     if (frame != null && !frame.isTerminator()) {
       lastFrameTimecode.set(frame.timecode);

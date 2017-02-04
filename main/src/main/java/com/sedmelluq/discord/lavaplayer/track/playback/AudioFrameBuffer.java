@@ -1,11 +1,14 @@
 package com.sedmelluq.discord.lavaplayer.track.playback;
 
+import com.sedmelluq.discord.lavaplayer.format.AudioDataFormat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 /**
  * A frame buffer. Stores the specified duration worth of frames in the internal buffer.
@@ -14,11 +17,10 @@ import java.util.concurrent.ArrayBlockingQueue;
 public class AudioFrameBuffer implements AudioFrameConsumer, AudioFrameProvider {
   private static final Logger log = LoggerFactory.getLogger(AudioFrameBuffer.class);
 
-  private static final byte[] SILENT_OPUS_FRAME = new byte[] {(byte) 0xFC, (byte) 0xFF, (byte) 0xFE};
-
   private final Object synchronizer;
   private final int fullCapacity;
   private final ArrayBlockingQueue<AudioFrame> audioFrames;
+  private final AudioDataFormat format;
   private volatile boolean locked;
   private volatile boolean receivedFrames;
   private boolean terminated;
@@ -27,11 +29,13 @@ public class AudioFrameBuffer implements AudioFrameConsumer, AudioFrameProvider 
 
   /**
    * @param bufferDuration The length of the internal buffer in milliseconds
+   * @param format The format of the frames held in this buffer
    */
-  public AudioFrameBuffer(int bufferDuration) {
+  public AudioFrameBuffer(int bufferDuration, AudioDataFormat format) {
     synchronizer = new Object();
     fullCapacity = bufferDuration / 20 + 1;
     audioFrames = new ArrayBlockingQueue<>(fullCapacity);
+    this.format = format;
     terminated = false;
     terminateOnEmpty = false;
     clearOnInsert = false;
@@ -83,16 +87,49 @@ public class AudioFrameBuffer implements AudioFrameConsumer, AudioFrameProvider 
     AudioFrame frame = audioFrames.poll();
 
     if (frame == null) {
-      synchronized (synchronizer) {
-        if (terminateOnEmpty) {
-          terminateOnEmpty = false;
-          terminated = true;
-          synchronizer.notifyAll();
-          return AudioFrame.TERMINATOR;
-        }
+      return fetchPendingTerminator();
+    }
+
+    return filterFrame(frame);
+  }
+
+  @Override
+  public AudioFrame provide(long timeout, TimeUnit unit) throws TimeoutException, InterruptedException {
+    AudioFrame frame = audioFrames.poll();
+
+    if (frame == null) {
+      AudioFrame terminator = fetchPendingTerminator();
+      if (terminator != null) {
+        return terminator;
       }
-    } else if (frame.volume == 0) {
-      return new AudioFrame(frame.timecode, SILENT_OPUS_FRAME, 0);
+
+      frame = audioFrames.poll(timeout, unit);
+      terminator = fetchPendingTerminator();
+
+      if (terminator != null) {
+        return terminator;
+      }
+    }
+
+    return filterFrame(frame);
+  }
+
+  private AudioFrame fetchPendingTerminator() {
+    synchronized (synchronizer) {
+      if (terminateOnEmpty) {
+        terminateOnEmpty = false;
+        terminated = true;
+        synchronizer.notifyAll();
+        return AudioFrame.TERMINATOR;
+      }
+    }
+
+    return null;
+  }
+
+  private AudioFrame filterFrame(AudioFrame frame) {
+    if (frame != null && frame.volume == 0) {
+      return new AudioFrame(frame.timecode, format.silence, 0, format);
     }
 
     return frame;

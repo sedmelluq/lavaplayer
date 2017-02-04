@@ -16,9 +16,10 @@ public interface RemoteMessageCodec<T extends RemoteMessage> {
   Class<T> getMessageClass();
 
   /**
-   * @return Latest version of this codec.
+   * @param message If set, returns version to use for this specific message.
+   * @return Latest version of this codec, or version to use if the message is specified.
    */
-  int version();
+  int version(RemoteMessage message);
 
   /**
    * Encode the message to the specified output.

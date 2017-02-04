@@ -1,5 +1,7 @@
 package com.sedmelluq.discord.lavaplayer.remote.message;
 
+import com.sedmelluq.discord.lavaplayer.format.AudioDataFormat;
+import com.sedmelluq.discord.lavaplayer.format.StandardAudioDataFormats;
 import com.sedmelluq.discord.lavaplayer.player.AudioConfiguration;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo;
 
@@ -11,14 +13,25 @@ import java.io.IOException;
  * Codec for track start message.
  */
 public class TrackStartRequestCodec implements RemoteMessageCodec<TrackStartRequestMessage> {
+  private static final int VERSION_WITH_FORMAT = 2;
+
   @Override
   public Class<TrackStartRequestMessage> getMessageClass() {
     return TrackStartRequestMessage.class;
   }
 
   @Override
-  public int version() {
-    return 1;
+  public int version(RemoteMessage message) {
+    // Backwards compatibility with older nodes.
+    if (message instanceof TrackStartRequestMessage) {
+      AudioDataFormat format = ((TrackStartRequestMessage) message).configuration.getOutputFormat();
+
+      if (format.equals(StandardAudioDataFormats.DISCORD_OPUS)) {
+        return 1;
+      }
+    }
+
+    return 2;
   }
 
   @Override
@@ -34,6 +47,14 @@ public class TrackStartRequestCodec implements RemoteMessageCodec<TrackStartRequ
     out.writeInt(message.volume);
     out.writeUTF(message.configuration.getResamplingQuality().name());
     out.writeInt(message.configuration.getOpusEncodingQuality());
+
+    if (version(message) >= VERSION_WITH_FORMAT) {
+      AudioDataFormat format = message.configuration.getOutputFormat();
+      out.writeInt(format.channelCount);
+      out.writeInt(format.sampleRate);
+      out.writeInt(format.chunkSampleCount);
+      out.writeUTF(format.codec.name());
+    }
   }
 
   @Override
@@ -48,6 +69,13 @@ public class TrackStartRequestCodec implements RemoteMessageCodec<TrackStartRequ
     AudioConfiguration configuration = new AudioConfiguration();
     configuration.setResamplingQuality(AudioConfiguration.ResamplingQuality.valueOf(in.readUTF()));
     configuration.setOpusEncodingQuality(in.readInt());
+
+    if (version >= VERSION_WITH_FORMAT) {
+      AudioDataFormat format = new AudioDataFormat(in.readInt(), in.readInt(), in.readInt(),
+          AudioDataFormat.Codec.valueOf(in.readUTF()));
+
+      configuration.setOutputFormat(format);
+    }
 
     return new TrackStartRequestMessage(executorId, trackInfo, encodedTrack, volume, configuration);
   }

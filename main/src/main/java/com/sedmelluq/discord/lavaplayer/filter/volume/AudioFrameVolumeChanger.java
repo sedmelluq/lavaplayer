@@ -1,40 +1,41 @@
 package com.sedmelluq.discord.lavaplayer.filter.volume;
 
-import com.sedmelluq.discord.lavaplayer.natives.opus.OpusDecoder;
-import com.sedmelluq.discord.lavaplayer.natives.opus.OpusEncoder;
+import com.sedmelluq.discord.lavaplayer.format.AudioDataFormat;
+import com.sedmelluq.discord.lavaplayer.format.transcoder.AudioChunkDecoder;
+import com.sedmelluq.discord.lavaplayer.format.transcoder.AudioChunkEncoder;
+import com.sedmelluq.discord.lavaplayer.format.transcoder.OpusChunkDecoder;
+import com.sedmelluq.discord.lavaplayer.format.transcoder.OpusChunkEncoder;
+import com.sedmelluq.discord.lavaplayer.format.transcoder.PcmChunkDecoder;
+import com.sedmelluq.discord.lavaplayer.format.transcoder.PcmChunkEncoder;
 import com.sedmelluq.discord.lavaplayer.player.AudioConfiguration;
 import com.sedmelluq.discord.lavaplayer.track.playback.AudioFrame;
-import com.sedmelluq.discord.lavaplayer.track.playback.AudioFrameConsumer;
 import com.sedmelluq.discord.lavaplayer.track.playback.AudioFrameRebuilder;
+import com.sedmelluq.discord.lavaplayer.track.playback.AudioProcessingContext;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.ShortBuffer;
-
-import static com.sedmelluq.discord.lavaplayer.filter.OpusEncodingPcmAudioFilter.CHANNEL_COUNT;
-import static com.sedmelluq.discord.lavaplayer.filter.OpusEncodingPcmAudioFilter.FRAME_SIZE;
-import static com.sedmelluq.discord.lavaplayer.filter.OpusEncodingPcmAudioFilter.FREQUENCY;
 
 /**
  * A frame rebuilder to apply a specific volume level to the frames.
  */
 public class AudioFrameVolumeChanger implements AudioFrameRebuilder {
   private final AudioConfiguration configuration;
+  private final AudioDataFormat format;
   private final int newVolume;
-  private final ByteBuffer encodedBuffer;
   private final ShortBuffer sampleBuffer;
   private final PcmVolumeProcessor volumeProcessor;
 
-  private OpusEncoder encoder;
-  private OpusDecoder decoder;
+  private AudioChunkEncoder encoder;
+  private AudioChunkDecoder decoder;
   private int frameIndex;
 
-  private AudioFrameVolumeChanger(AudioConfiguration configuration, int newVolume) {
+  private AudioFrameVolumeChanger(AudioConfiguration configuration, AudioDataFormat format, int newVolume) {
     this.configuration = configuration;
+    this.format = format;
     this.newVolume = newVolume;
 
-    this.encodedBuffer = ByteBuffer.allocateDirect(4096);
-    this.sampleBuffer = ByteBuffer.allocateDirect(FRAME_SIZE * CHANNEL_COUNT * 2).order(ByteOrder.nativeOrder()).asShortBuffer();
+    this.sampleBuffer = ByteBuffer.allocateDirect(format.bufferSize(2)).order(ByteOrder.nativeOrder()).asShortBuffer();
     this.volumeProcessor = new PcmVolumeProcessor(100);
   }
 
@@ -44,14 +45,7 @@ public class AudioFrameVolumeChanger implements AudioFrameRebuilder {
       return frame;
     }
 
-    encodedBuffer.clear();
-    encodedBuffer.put(frame.data);
-    encodedBuffer.flip();
-
-    sampleBuffer.clear();
-    decoder.decode(encodedBuffer, sampleBuffer);
-
-    encodedBuffer.clear();
+    decoder.decode(frame.data, sampleBuffer);
 
     int targetVolume = newVolume;
 
@@ -64,10 +58,7 @@ public class AudioFrameVolumeChanger implements AudioFrameRebuilder {
       volumeProcessor.applyVolume(frame.volume, targetVolume, sampleBuffer);
     }
 
-    encoder.encode(sampleBuffer, FRAME_SIZE, encodedBuffer);
-
-    byte[] bytes = new byte[encodedBuffer.remaining()];
-    encodedBuffer.get(bytes);
+    byte[] bytes = encoder.encode(sampleBuffer);
 
     // One frame per 20ms is consumed. To not spike the CPU usage, reencode only once per 5ms. By the time the buffer is
     // fully rebuilt, it is probably near to 3/4 its maximum size.
@@ -78,12 +69,17 @@ public class AudioFrameVolumeChanger implements AudioFrameRebuilder {
       Thread.currentThread().interrupt();
     }
 
-    return new AudioFrame(frame.timecode, bytes, targetVolume);
+    return new AudioFrame(frame.timecode, bytes, targetVolume, format);
   }
 
   private void setupLibraries() {
-    encoder = new OpusEncoder(FREQUENCY, CHANNEL_COUNT, configuration.getOpusEncodingQuality());
-    decoder = new OpusDecoder(FREQUENCY, CHANNEL_COUNT);
+    if (format.codec == AudioDataFormat.Codec.OPUS) {
+      encoder = new OpusChunkEncoder(configuration, format);
+      decoder = new OpusChunkDecoder(format);
+    } else {
+      encoder = new PcmChunkEncoder(format);
+      decoder = new PcmChunkDecoder(format);
+    }
   }
 
   private void clearLibraries() {
@@ -98,16 +94,14 @@ public class AudioFrameVolumeChanger implements AudioFrameRebuilder {
 
   /**
    * Applies a volume level to the buffered frames of a frame consumer
-   * @param configuration Audio configuration to use encoding
-   * @param frameConsumer The frame consumer
-   * @param newVolume New volume to apply
+   * @param context Audio processing context which contains the format information as well as the frame buffer
    */
-  public static void apply(AudioConfiguration configuration, AudioFrameConsumer frameConsumer, int newVolume) {
-    AudioFrameVolumeChanger volumeChanger = new AudioFrameVolumeChanger(configuration, newVolume);
+  public static void apply(AudioProcessingContext context) {
+    AudioFrameVolumeChanger volumeChanger = new AudioFrameVolumeChanger(context.configuration, context.outputFormat, context.volumeLevel.get());
 
     try {
       volumeChanger.setupLibraries();
-      frameConsumer.rebuild(volumeChanger);
+      context.frameConsumer.rebuild(volumeChanger);
     } finally {
       volumeChanger.clearLibraries();
     }

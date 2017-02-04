@@ -59,7 +59,7 @@ public class RemoteMessageMapper {
 
     RemoteMessageType type = types[typeIndex];
 
-    if (version < 1 || version > type.codec.version()) {
+    if (version < 1 || version > type.codec.version(null)) {
       log.warn("Invalid version {} for message {}.", version, type.name());
       input.readFully(new byte[messageSize - 2]);
       return UnknownMessage.INSTANCE;
@@ -87,7 +87,7 @@ public class RemoteMessageMapper {
 
     output.writeInt(messageOutputBytes.size() + 2);
     output.writeByte((byte) type.ordinal());
-    output.writeByte((byte) type.codec.version());
+    output.writeByte((byte) type.codec.version(message));
     messageOutputBytes.writeTo(output);
   }
 

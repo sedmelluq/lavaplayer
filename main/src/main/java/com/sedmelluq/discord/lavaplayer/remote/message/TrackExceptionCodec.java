@@ -16,7 +16,7 @@ public class TrackExceptionCodec implements RemoteMessageCodec<TrackExceptionMes
   }
 
   @Override
-  public int version() {
+  public int version(RemoteMessage message) {
     return 1;
   }
 

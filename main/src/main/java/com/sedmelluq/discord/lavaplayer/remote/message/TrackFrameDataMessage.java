@@ -16,7 +16,8 @@ public class TrackFrameDataMessage implements RemoteMessage {
    */
   public final long executorId;
   /**
-   * Frames provided by the node
+   * Frames provided by the node. These are missing the audio format, which must be attached locally. It can be assumed
+   * that the node provides data in the format that it was initially requested in.
    */
   public final List<AudioFrame> frames;
   /**

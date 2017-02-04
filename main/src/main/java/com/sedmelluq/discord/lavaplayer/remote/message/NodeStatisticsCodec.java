@@ -14,7 +14,7 @@ public class NodeStatisticsCodec implements RemoteMessageCodec<NodeStatisticsMes
   }
 
   @Override
-  public int version() {
+  public int version(RemoteMessage message) {
     return 1;
   }
 

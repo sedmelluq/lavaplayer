@@ -14,7 +14,7 @@ public class TrackStartResponseCodec implements RemoteMessageCodec<TrackStartRes
   }
 
   @Override
-  public int version() {
+  public int version(RemoteMessage message) {
     return 1;
   }
 

@@ -1,5 +1,6 @@
 package com.sedmelluq.discord.lavaplayer.demo.music;
 
+import com.sedmelluq.discord.lavaplayer.format.AudioDataFormat;
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
 import com.sedmelluq.discord.lavaplayer.track.playback.AudioFrame;
 import net.dv8tion.jda.core.audio.AudioSendHandler;
@@ -25,6 +26,6 @@ public class AudioPlayerSendHandler implements AudioSendHandler {
 
   @Override
   public boolean isOpus() {
-    return true;
+    return lastFrame != null && lastFrame.format.codec == AudioDataFormat.Codec.OPUS;
   }
 }

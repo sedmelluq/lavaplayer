@@ -201,6 +201,11 @@ public class PlayingTrackManager {
       this.exceptionMessage.set(new TrackExceptionMessage(executorId, exception));
     }
 
+    @Override
+    public void onTrackStuck(AudioTrack track, long thresholdMs) {
+      // Should never be called.
+    }
+
     private TrackExceptionMessage popExceptionMessage() {
       return exceptionMessage.getAndSet(null);
     }

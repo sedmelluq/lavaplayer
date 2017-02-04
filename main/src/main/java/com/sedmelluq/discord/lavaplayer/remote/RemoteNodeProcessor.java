@@ -1,5 +1,6 @@
 package com.sedmelluq.discord.lavaplayer.remote;
 
+import com.sedmelluq.discord.lavaplayer.format.AudioDataFormat;
 import com.sedmelluq.discord.lavaplayer.player.DefaultAudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.remote.message.NodeStatisticsMessage;
 import com.sedmelluq.discord.lavaplayer.remote.message.RemoteMessage;
@@ -339,8 +340,10 @@ public class RemoteNodeProcessor implements RemoteNode, Runnable {
       AudioFrameBuffer buffer = executor.getAudioBuffer();
       executor.receivedData();
 
+      AudioDataFormat format = executor.getConfiguration().getOutputFormat();
+
       for (AudioFrame frame : message.frames) {
-        buffer.consume(frame);
+        buffer.consume(new AudioFrame(frame.timecode, frame.data, frame.volume, format));
       }
 
       if (message.finished) {
