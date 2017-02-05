@@ -6,6 +6,7 @@ import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.util.EntityUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -209,6 +210,7 @@ public class PersistentHttpStream extends SeekableInputStream implements AutoClo
   public void close() throws IOException {
     if (currentResponse != null) {
       try {
+        EntityUtils.consumeQuietly(currentResponse.getEntity());
         currentResponse.close();
       } catch (IOException e) {
         log.debug("Failed to close response.", e);

@@ -33,6 +33,7 @@ import java.util.StringJoiner;
 import static com.sedmelluq.discord.lavaplayer.container.Formats.MIME_AUDIO_WEBM;
 import static com.sedmelluq.discord.lavaplayer.source.youtube.YoutubeAudioSourceManager.CHARSET;
 import static com.sedmelluq.discord.lavaplayer.tools.DataFormatTools.convertToMapLayout;
+import static com.sedmelluq.discord.lavaplayer.tools.FriendlyException.Severity.COMMON;
 import static com.sedmelluq.discord.lavaplayer.tools.FriendlyException.Severity.SUSPICIOUS;
 
 /**
@@ -60,13 +61,29 @@ public class YoutubeAudioTrack extends DelegatedAudioTrack {
 
       log.debug("Starting track from URL: {}", format.signedUrl);
 
-      try (YoutubePersistentHttpStream stream = new YoutubePersistentHttpStream(httpClient, format.signedUrl, format.details.getContentLength())) {
-        if (MIME_AUDIO_WEBM.equals(format.details.getType().getMimeType())) {
-          processDelegate(new MatroskaAudioTrack(trackInfo, stream), localExecutor);
-        } else {
-          processDelegate(new MpegAudioTrack(trackInfo, stream), localExecutor);
-        }
+      if (trackInfo.isStream) {
+        processStream(localExecutor, httpClient, format);
+      } else {
+        processStatic(localExecutor, httpClient, format);
       }
+    }
+  }
+
+  private void processStatic(LocalAudioTrackExecutor localExecutor, CloseableHttpClient httpClient, FormatWithUrl format) throws Exception {
+    try (YoutubePersistentHttpStream stream = new YoutubePersistentHttpStream(httpClient, format.signedUrl, format.details.getContentLength())) {
+      if (MIME_AUDIO_WEBM.equals(format.details.getType().getMimeType())) {
+        processDelegate(new MatroskaAudioTrack(trackInfo, stream), localExecutor);
+      } else {
+        processDelegate(new MpegAudioTrack(trackInfo, stream), localExecutor);
+      }
+    }
+  }
+
+  private void processStream(LocalAudioTrackExecutor localExecutor, CloseableHttpClient httpClient, FormatWithUrl format) throws Exception {
+    if (MIME_AUDIO_WEBM.equals(format.details.getType().getMimeType())) {
+      throw new FriendlyException("YouTube WebM streams are currently not supported.", COMMON, null);
+    } else {
+      processDelegate(new YoutubeMpegStreamAudioTrack(trackInfo, httpClient, format.signedUrl), localExecutor);
     }
   }
 

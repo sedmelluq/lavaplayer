@@ -1,5 +1,23 @@
 # Change Log
 
+## [1.2.1] - 2017-02-05
+### Added
+- Partial support for YouTube live streams (only MP4).
+
+## [1.2.0] - 2017-02-04
+### Added
+- Method to poll frames from AudioPlayer in a blocking way.
+- Support for different audio output formats.
+- Utility class for getting an AudioInputStream from AudioPlayer.
+
+## [1.1.47] - 2017-02-01
+### Changed
+- Fixed another smaller leak with Vorbis.
+
+## [1.1.46] - 2017-02-01
+### Fixed
+- Fixed a native memory leak with Vorbis tracks.
+
 ## [1.1.45] - 2017-01-28
 ### Changed
 - ARM binaries are now loaded from natives/linux-arm and natives/linux-aarch64 directories instead of x86 ones.

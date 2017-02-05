@@ -77,6 +77,8 @@ public class AudioPlayerInputStream extends InputStream {
    * @param player Format of the frames expected from the player
    * @param format The player to read frames from
    * @param stuckTimeout Timeout till track stuck event is sent and silence is returned on reading
+   * @param provideSilence Returns true if the stream should provide silence if no track is being played or when getting
+   *                       track frames times out.
    * @return An audio input stream usable with JDK sound system
    */
   public static AudioInputStream createStream(AudioPlayer player, AudioDataFormat format, long stuckTimeout, boolean provideSilence) {
@@ -85,23 +87,9 @@ public class AudioPlayerInputStream extends InputStream {
   }
 
   private void ensureAvailable() throws IOException {
-    if (available() > 0) {
-      return;
-    }
-
     while (available() == 0) {
       try {
-        AudioFrame frame = player.provide(timeout, TimeUnit.MILLISECONDS);
-
-        if (frame != null) {
-          if (!format.equals(frame.format)) {
-            throw new IllegalStateException("Frame read from the player uses a different format than expected.");
-          }
-
-          addFrame(frame.data);
-        } else if (!provideSilence) {
-          Thread.sleep(10);
-        }
+        attemptRetrieveFrame();
       } catch (TimeoutException e) {
         notifyTrackStuck();
       } catch (InterruptedException e) {
@@ -113,6 +101,20 @@ public class AudioPlayerInputStream extends InputStream {
         addFrame(format.silence);
         break;
       }
+    }
+  }
+
+  private void attemptRetrieveFrame() throws TimeoutException, InterruptedException {
+    AudioFrame frame = player.provide(timeout, TimeUnit.MILLISECONDS);
+
+    if (frame != null) {
+      if (!format.equals(frame.format)) {
+        throw new IllegalStateException("Frame read from the player uses a different format than expected.");
+      }
+
+      addFrame(frame.data);
+    } else if (!provideSilence) {
+      Thread.sleep(10);
     }
   }
 

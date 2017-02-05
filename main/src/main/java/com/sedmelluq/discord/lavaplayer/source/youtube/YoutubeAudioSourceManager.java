@@ -224,8 +224,11 @@ public class YoutubeAudioSourceManager implements AudioSourceManager {
       }
 
       JsonBrowser args = info.get("args");
+      boolean isStream = "1".equals(args.get("live_playback").text());
+      long duration = isStream ? Long.MAX_VALUE : args.get("length_seconds").as(Long.class) * 1000;
+
       AudioTrackInfo trackInfo = new AudioTrackInfo(
-          args.get("title").text(), args.get("author").text(), args.get("length_seconds").as(Integer.class) * 1000, videoId, false
+          args.get("title").text(), args.get("author").text(), duration, videoId, isStream
       );
 
       return new YoutubeAudioTrack(trackInfo, this);

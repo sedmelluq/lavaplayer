@@ -55,7 +55,7 @@ public class MpegAudioTrack extends BaseAudioTrack {
     }
   }
 
-  private MpegTrackConsumer loadAudioTrack(MpegFileLoader file, AudioProcessingContext context) {
+  protected MpegTrackConsumer loadAudioTrack(MpegFileLoader file, AudioProcessingContext context) {
     MpegTrackConsumer trackConsumer = null;
     boolean success = false;
 

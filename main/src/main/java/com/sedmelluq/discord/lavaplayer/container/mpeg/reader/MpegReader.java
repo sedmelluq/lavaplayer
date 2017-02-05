@@ -2,9 +2,11 @@ package com.sedmelluq.discord.lavaplayer.container.mpeg.reader;
 
 import com.sedmelluq.discord.lavaplayer.tools.io.SeekableInputStream;
 
+import java.io.ByteArrayOutputStream;
 import java.io.DataInput;
 import java.io.DataInputStream;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
@@ -24,6 +26,7 @@ public class MpegReader {
   public final SeekableInputStream seek;
 
   private final byte[] fourCcBuffer;
+  private final ByteBuffer readAttemptBuffer;
 
   /**
    * @param inputStream Input as a seekable stream
@@ -32,6 +35,7 @@ public class MpegReader {
     seek = inputStream;
     data = new DataInputStream(inputStream);
     fourCcBuffer = new byte[4];
+    readAttemptBuffer = ByteBuffer.allocate(4);
   }
 
   /**
@@ -46,7 +50,13 @@ public class MpegReader {
 
     try {
       long offset = seek.getPosition();
-      long length = Integer.toUnsignedLong(data.readInt());
+      Integer lengthField = tryReadInt();
+
+      if (lengthField == null) {
+        return null;
+      }
+
+      long length = Integer.toUnsignedLong(lengthField);
       return new MpegSectionInfo(offset, length, readFourCC());
     } catch (IOException e) {
       throw new RuntimeException(e);
@@ -89,6 +99,22 @@ public class MpegReader {
   }
 
   /**
+   * Read a null-terminated UTF string.
+   * @return The string read from the stream
+   * @throws IOException On read error
+   */
+  public String readTerminatedString() throws IOException {
+    ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+    byte nextByte;
+
+    while ((nextByte = data.readByte()) != 0) {
+      bytes.write(nextByte);
+    }
+
+    return new String(bytes.toByteArray(), StandardCharsets.UTF_8);
+  }
+
+  /**
    * Parse the flags and version for the specified section
    * @param section The section where the flags and version should be parsed
    * @return The section info with version info
@@ -101,6 +127,18 @@ public class MpegReader {
   private static MpegVersionedSectionInfo parseFlagsForSection(DataInput in, MpegSectionInfo section) throws IOException {
     int versionAndFlags = in.readInt();
     return new MpegVersionedSectionInfo(section, versionAndFlags >>> 24, versionAndFlags & 0xffffff);
+  }
+
+  private Integer tryReadInt() throws IOException {
+    int firstByte = seek.read();
+
+    if (firstByte == -1) {
+      return null;
+    }
+
+    readAttemptBuffer.put(0, (byte) firstByte);
+    data.readFully(readAttemptBuffer.array(), 1, 3);
+    return readAttemptBuffer.getInt(0);
   }
 
   /**

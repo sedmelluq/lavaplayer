@@ -27,6 +27,7 @@ public class MpegFileLoader {
   private final MpegReader reader;
   private final MpegSectionInfo root;
   private final Map<String, Object> metadata;
+  private byte[] lastEventMessage;
 
   /**
    * @param inputStream Stream to read the file from
@@ -64,7 +65,9 @@ public class MpegFileLoader {
         ).handle("udta",
             this::parseMetadata
         ).run();
-      }).handleVersioned("sidx", true,
+      }).handleVersioned("emsg",
+          this::parseEventMessage
+      ).handleVersioned("sidx", true,
           fragmentedFileReader::parseSegmentIndex
       ).stopChecker(getRootStopChecker(movieBoxSeen)).run();
     } catch (IOException e) {
@@ -79,6 +82,13 @@ public class MpegFileLoader {
   public String getTextMetadata(String name) {
     Object data = metadata.get(name);
     return data instanceof String ? (String) data : null;
+  }
+
+  /**
+   * @return Payload from the last emsg message encountered.
+   */
+  public byte[] getLastEventMessage() {
+    return lastEventMessage;
   }
 
   private void parseMetadata(MpegSectionInfo udta) throws IOException {
@@ -206,5 +216,18 @@ public class MpegFileLoader {
     reader.data.readUnsignedShort(); // apple stuff
 
     trackInfo.setSampleRate(reader.data.readInt());
+  }
+
+  private void parseEventMessage(MpegSectionInfo emsg) throws IOException {
+    reader.readTerminatedString(); // scheme_id_uri
+    reader.readTerminatedString(); // value
+    reader.data.readInt(); // timescale
+    reader.data.readInt(); // presentation_time_delta
+    reader.data.readInt(); // event_duration
+
+    int remaining = (int) ((emsg.offset + emsg.length) - reader.seek.getPosition());
+
+    lastEventMessage = new byte[remaining];
+    reader.data.readFully(lastEventMessage);
   }
 }
