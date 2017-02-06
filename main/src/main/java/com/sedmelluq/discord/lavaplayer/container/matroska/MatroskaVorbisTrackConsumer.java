@@ -1,6 +1,7 @@
 package com.sedmelluq.discord.lavaplayer.container.matroska;
 
 import com.sedmelluq.discord.lavaplayer.container.matroska.format.MatroskaFileTrack;
+import com.sedmelluq.discord.lavaplayer.container.matroska.format.MatroskaFileTrack.AudioDetails;
 import com.sedmelluq.discord.lavaplayer.filter.FilterChainBuilder;
 import com.sedmelluq.discord.lavaplayer.filter.FloatPcmAudioFilter;
 import com.sedmelluq.discord.lavaplayer.natives.vorbis.VorbisDecoder;
@@ -32,7 +33,7 @@ public class MatroskaVorbisTrackConsumer implements MatroskaTrackConsumer {
     this.decoder = new VorbisDecoder();
     this.copyBuffer = new byte[COPY_BUFFER_SIZE];
 
-    MatroskaFileTrack.AudioDetails audioTrack = track.audio;
+    AudioDetails audioTrack = fillMissingDetails(track.audio, track.codecPrivate);
     this.downstream = FilterChainBuilder.forFloatPcm(context, audioTrack.channels, (int) audioTrack.samplingFrequency);
   }
 
@@ -73,7 +74,7 @@ public class MatroskaVorbisTrackConsumer implements MatroskaTrackConsumer {
     }
   }
 
-  private int readLacingValue(ByteBuffer buffer) {
+  private static int readLacingValue(ByteBuffer buffer) {
     int value = 0;
     int current;
 
@@ -83,6 +84,21 @@ public class MatroskaVorbisTrackConsumer implements MatroskaTrackConsumer {
     } while (current == 255);
 
     return value;
+  }
+
+  private static AudioDetails fillMissingDetails(AudioDetails details, byte[] headers) {
+    if (details.channels != 0) {
+      return details;
+    }
+
+    ByteBuffer buffer = ByteBuffer.wrap(headers);
+    readLacingValue(buffer); // first header size
+    readLacingValue(buffer); // second header size
+
+    buffer.getInt(); // vorbis version
+    int channelCount = buffer.get() & 0xFF;
+
+    return new AudioDetails(details.samplingFrequency, details.outputSamplingFrequency, channelCount, details.bitDepth);
   }
 
   @Override

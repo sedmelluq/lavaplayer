@@ -1,5 +1,9 @@
 # Change Log
 
+## [1.2.2] - 2017-02-06
+### Fixed
+- Fixed Vorbis MKV tracks not working if the channel count was not specified in MKV audio section.
+
 ## [1.2.1] - 2017-02-05
 ### Added
 - Partial support for YouTube live streams (only MP4).
