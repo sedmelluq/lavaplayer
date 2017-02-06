@@ -59,7 +59,7 @@ public class RemoteNodeProcessor implements RemoteNode, Runnable {
 
   private static final int CONNECT_TIMEOUT = 1000;
   private static final int SOCKET_TIMEOUT = 2000;
-  private static final int TRACK_KILL_THRESHOLD = 5000;
+  private static final int TRACK_KILL_THRESHOLD = 10000;
   private static final int TICK_MINIMUM_INTERVAL = 500;
   private static final int NODE_REQUEST_HISTORY = 200;
 
@@ -181,7 +181,15 @@ public class RemoteNodeProcessor implements RemoteNode, Runnable {
       threadRunning.set(false);
 
       if (!closed) {
+        long delay = getScheduleDelay();
+
+        if (aliveTickCounter == -1) {
+          log.info("Node {} loop ended, retry scheduled in {}.", nodeAddress, delay);
+        }
+
         scheduledExecutor.schedule(this, getScheduleDelay(), TimeUnit.MILLISECONDS);
+      } else {
+        log.info("Node {} loop ended, node was removed.", nodeAddress);
       }
     }
   }
@@ -390,6 +398,10 @@ public class RemoteNodeProcessor implements RemoteNode, Runnable {
     }
 
     connectionState.set(ConnectionState.OFFLINE.id());
+
+    if (!terminate) {
+      log.warn("Bringing node {} offline since last response from it was {}ms ago.", nodeAddress, System.currentTimeMillis() - lastAliveTime);
+    }
 
     // There may be some racing that manages to add a track after this, it will be dealt with on the next iteration
     for (Long executorId : new ArrayList<>(playingTracks.keySet())) {
