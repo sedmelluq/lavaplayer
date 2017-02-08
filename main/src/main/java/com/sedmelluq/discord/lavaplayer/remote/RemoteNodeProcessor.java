@@ -187,7 +187,7 @@ public class RemoteNodeProcessor implements RemoteNode, Runnable {
           log.info("Node {} loop ended, retry scheduled in {}.", nodeAddress, delay);
         }
 
-        scheduledExecutor.schedule(this, getScheduleDelay(), TimeUnit.MILLISECONDS);
+        scheduledExecutor.schedule(this, delay, TimeUnit.MILLISECONDS);
       } else {
         log.info("Node {} loop ended, node was removed.", nodeAddress);
       }
@@ -377,9 +377,10 @@ public class RemoteNodeProcessor implements RemoteNode, Runnable {
   }
 
   private static HttpClientBuilder createHttpClientBuilder() {
-    RequestConfig.Builder requestBuilder = RequestConfig.custom();
-    requestBuilder = requestBuilder.setConnectTimeout(CONNECT_TIMEOUT);
-    requestBuilder = requestBuilder.setConnectionRequestTimeout(SOCKET_TIMEOUT);
+    RequestConfig.Builder requestBuilder = RequestConfig.custom()
+        .setConnectTimeout(CONNECT_TIMEOUT)
+        .setConnectionRequestTimeout(CONNECT_TIMEOUT)
+        .setSocketTimeout(SOCKET_TIMEOUT);
 
     HttpClientBuilder builder = HttpClientBuilder.create();
     builder.setDefaultRequestConfig(requestBuilder.build());

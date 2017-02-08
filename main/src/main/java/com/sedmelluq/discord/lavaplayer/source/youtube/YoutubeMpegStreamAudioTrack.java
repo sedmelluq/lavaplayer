@@ -85,6 +85,7 @@ public class YoutubeMpegStreamAudioTrack extends MpegAudioTrack {
       }
 
       fileReader.provideFrames();
+      stream.releaseConnection();
     } catch (IOException e) {
       throw new RuntimeException(e);
     }

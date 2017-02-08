@@ -1,5 +1,16 @@
 # Change Log
 
+## [1.2.4] - 2017-02-08
+### Fixed
+- Fixed YouTube live streams opening a new connection for each request.
+- Fixed no read timeout applied to requests to nodes.
+- Fixed track getting locked when seek gets stuck.
+- Fixed attempting to read the entire response on closing a stream mid-way.
+
+## [1.2.3] - 2017-02-07
+### Changed
+- Increased timeout for terminating the tracks of a node if its processing is stuck.
+
 ## [1.2.2] - 2017-02-06
 ### Fixed
 - Fixed Vorbis MKV tracks not working if the channel count was not specified in MKV audio section.

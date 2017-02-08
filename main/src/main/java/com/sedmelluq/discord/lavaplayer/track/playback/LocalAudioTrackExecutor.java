@@ -242,7 +242,13 @@ public class LocalAudioTrackExecutor implements AudioTrackExecutor {
           proceed = false;
           markerTracker.trigger(STOPPED);
         } else if (checkPendingSeek(seekExecutor)) {
-          proceed = true;
+          // Double-check, might have received a stop request while seeking
+          if (checkStopped()) {
+            proceed = false;
+            markerTracker.trigger(STOPPED);
+          } else {
+            proceed = true;
+          }
         } else {
           Thread.currentThread().interrupt();
           throw new FriendlyException("The track was unexpectedly terminated.", SUSPICIOUS, interruption);
@@ -263,26 +269,29 @@ public class LocalAudioTrackExecutor implements AudioTrackExecutor {
       return false;
     }
 
+    long seekPosition;
+
     synchronized (actionSynchronizer) {
-      long seekPosition = pendingSeek.get();
+      seekPosition = pendingSeek.get();
 
-      if (seekPosition != -1) {
-        log.debug("Track {} interrupted for seeking to {}.", audioTrack.getIdentifier(), seekPosition);
-
-        try {
-          performSeek(seekExecutor, seekPosition);
-        } catch (Exception e) {
-          throw ExceptionTools.wrapUnfriendlyExceptions("Something went wrong when seeking to a position.", FAULT, e);
-        }
-
-        return true;
+      if (seekPosition == -1) {
+        return false;
       }
+
+      log.debug("Track {} interrupted for seeking to {}.", audioTrack.getIdentifier(), seekPosition);
+      applySeekState(seekPosition);
     }
 
-    return false;
+    try {
+      seekExecutor.performSeek(seekPosition);
+    } catch (Exception e) {
+      throw ExceptionTools.wrapUnfriendlyExceptions("Something went wrong when seeking to a position.", FAULT, e);
+    }
+
+    return true;
   }
 
-  private void performSeek(SeekExecutor seekExecutor, long seekPosition) {
+  private void applySeekState(long seekPosition) {
     state.set(AudioTrackState.SEEKING);
 
     if (useSeekGhosting) {
@@ -291,7 +300,6 @@ public class LocalAudioTrackExecutor implements AudioTrackExecutor {
       frameBuffer.clear();
     }
 
-    seekExecutor.performSeek(seekPosition);
     pendingSeek.set(-1);
     markerTracker.checkSeekTimecode(seekPosition);
   }

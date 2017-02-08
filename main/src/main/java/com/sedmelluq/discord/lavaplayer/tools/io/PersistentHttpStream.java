@@ -210,7 +210,6 @@ public class PersistentHttpStream extends SeekableInputStream implements AutoClo
   public void close() throws IOException {
     if (currentResponse != null) {
       try {
-        EntityUtils.consumeQuietly(currentResponse.getEntity());
         currentResponse.close();
       } catch (IOException e) {
         log.debug("Failed to close response.", e);
@@ -219,6 +218,22 @@ public class PersistentHttpStream extends SeekableInputStream implements AutoClo
       currentResponse = null;
       currentContent = null;
     }
+  }
+
+  /**
+   * Detach from the current connection, making sure not to close the connection when the stream is closed.
+   */
+  public void releaseConnection() {
+    if (currentContent != null) {
+      try {
+        currentContent.close();
+      } catch (IOException e) {
+        log.debug("Failed to close response stream.", e);
+      }
+    }
+
+    currentResponse = null;
+    currentContent = null;
   }
 
   @Override
