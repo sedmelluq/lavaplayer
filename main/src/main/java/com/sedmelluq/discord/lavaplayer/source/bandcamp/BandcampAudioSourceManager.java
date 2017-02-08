@@ -6,10 +6,10 @@ import com.sedmelluq.discord.lavaplayer.tools.DataFormatTools;
 import com.sedmelluq.discord.lavaplayer.tools.ExceptionTools;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.tools.JsonBrowser;
-import com.sedmelluq.discord.lavaplayer.tools.io.HttpAccessPoint;
-import com.sedmelluq.discord.lavaplayer.tools.io.HttpAccessPointManager;
+import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterface;
+import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterfaceManager;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpClientTools;
-import com.sedmelluq.discord.lavaplayer.tools.io.ThreadLocalContextAccessPointManager;
+import com.sedmelluq.discord.lavaplayer.tools.io.ThreadLocalHttpInterfaceManager;
 import com.sedmelluq.discord.lavaplayer.track.AudioItem;
 import com.sedmelluq.discord.lavaplayer.track.AudioReference;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
@@ -40,13 +40,13 @@ public class BandcampAudioSourceManager implements AudioSourceManager {
   private static final Pattern trackUrlPattern = Pattern.compile(TRACK_URL_REGEX);
   private static final Pattern albumUrlPattern = Pattern.compile(ALBUM_URL_REGEX);
 
-  private final HttpAccessPointManager accessPointManager;
+  private final HttpInterfaceManager httpInterfaceManager;
 
   /**
    * Create an instance.
    */
   public BandcampAudioSourceManager() {
-    accessPointManager = new ThreadLocalContextAccessPointManager(HttpClientTools.createSharedCookiesHttpBuilder());
+    httpInterfaceManager = new ThreadLocalHttpInterfaceManager(HttpClientTools.createSharedCookiesHttpBuilder());
   }
 
   @Override
@@ -133,17 +133,17 @@ public class BandcampAudioSourceManager implements AudioSourceManager {
   }
 
   private AudioItem extractFromPage(String url, AudioItemExtractor extractor) {
-    try (HttpAccessPoint accessPoint = accessPointManager.getAccessPoint()) {
-      return extractFromPageWithAccessPoint(accessPoint, url, extractor);
+    try (HttpInterface httpInterface = httpInterfaceManager.getInterface()) {
+      return extractFromPageWithInterface(httpInterface, url, extractor);
     } catch (Exception e) {
       throw ExceptionTools.wrapUnfriendlyExceptions("Loading information for a Bandcamp track failed.", FAULT, e);
     }
   }
 
-  private AudioItem extractFromPageWithAccessPoint(HttpAccessPoint accessPoint, String url, AudioItemExtractor extractor) throws Exception {
+  private AudioItem extractFromPageWithInterface(HttpInterface httpInterface, String url, AudioItemExtractor extractor) throws Exception {
     String responseText;
 
-    try (CloseableHttpResponse response = accessPoint.execute(new HttpGet(url))) {
+    try (CloseableHttpResponse response = httpInterface.execute(new HttpGet(url))) {
       int statusCode = response.getStatusLine().getStatusCode();
 
       if (statusCode == 404) {
@@ -155,7 +155,7 @@ public class BandcampAudioSourceManager implements AudioSourceManager {
       responseText = IOUtils.toString(response.getEntity().getContent(), StandardCharsets.UTF_8);
     }
 
-    return extractor.extract(accessPoint, responseText);
+    return extractor.extract(httpInterface, responseText);
   }
 
   @Override
@@ -175,17 +175,17 @@ public class BandcampAudioSourceManager implements AudioSourceManager {
 
   @Override
   public void shutdown() {
-    IOUtils.closeQuietly(accessPointManager);
+    IOUtils.closeQuietly(httpInterfaceManager);
   }
 
   /**
-   * @return Get an HTTP access point for a playing track.
+   * @return Get an HTTP interface for a playing track.
    */
-  public HttpAccessPoint getAccessPoint() {
-    return accessPointManager.getAccessPoint();
+  public HttpInterface getHttpInterface() {
+    return httpInterfaceManager.getInterface();
   }
 
   private interface AudioItemExtractor {
-    AudioItem extract(HttpAccessPoint accessPoint, String text) throws Exception;
+    AudioItem extract(HttpInterface httpInterface, String text) throws Exception;
   }
 }

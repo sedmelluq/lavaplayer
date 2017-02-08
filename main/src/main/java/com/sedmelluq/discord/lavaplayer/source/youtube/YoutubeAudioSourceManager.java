@@ -5,10 +5,10 @@ import com.sedmelluq.discord.lavaplayer.tools.DaemonThreadFactory;
 import com.sedmelluq.discord.lavaplayer.tools.ExceptionTools;
 import com.sedmelluq.discord.lavaplayer.tools.ExecutorTools;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
-import com.sedmelluq.discord.lavaplayer.tools.io.HttpAccessPoint;
-import com.sedmelluq.discord.lavaplayer.tools.io.HttpAccessPointManager;
+import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterface;
+import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterfaceManager;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpClientTools;
-import com.sedmelluq.discord.lavaplayer.tools.io.ThreadLocalContextAccessPointManager;
+import com.sedmelluq.discord.lavaplayer.tools.io.ThreadLocalHttpInterfaceManager;
 import com.sedmelluq.discord.lavaplayer.track.AudioItem;
 import com.sedmelluq.discord.lavaplayer.source.AudioSourceManager;
 import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
@@ -88,7 +88,7 @@ public class YoutubeAudioSourceManager implements AudioSourceManager {
 
   private final YoutubeSignatureCipherManager signatureCipherManager;
   private final ExecutorService mixLoadingExecutor;
-  private final HttpAccessPointManager accessPointManager;
+  private final HttpInterfaceManager httpInterfaceManager;
   private final boolean allowSearch;
   private volatile int playlistPageCount;
 
@@ -107,7 +107,7 @@ public class YoutubeAudioSourceManager implements AudioSourceManager {
     signatureCipherManager = new YoutubeSignatureCipherManager();
     mixLoadingExecutor = new ThreadPoolExecutor(0, 10, 5, TimeUnit.SECONDS, new LinkedBlockingQueue<>(MIX_QUEUE_CAPACITY),
         new DaemonThreadFactory("yt-mix"));
-    accessPointManager = new ThreadLocalContextAccessPointManager(createSharedCookiesHttpBuilder());
+    httpInterfaceManager = new ThreadLocalHttpInterfaceManager(createSharedCookiesHttpBuilder());
     this.allowSearch = allowSearch;
     playlistPageCount = 6;
   }
@@ -155,7 +155,7 @@ public class YoutubeAudioSourceManager implements AudioSourceManager {
 
   @Override
   public void shutdown() {
-    IOUtils.closeQuietly(accessPointManager);
+    IOUtils.closeQuietly(httpInterfaceManager);
 
     ExecutorTools.shutdownExecutor(mixLoadingExecutor, "youtube mix");
   }
@@ -165,10 +165,10 @@ public class YoutubeAudioSourceManager implements AudioSourceManager {
   }
 
   /**
-   * @return Get an HTTP access point for a playing track.
+   * @return Get an HTTP interface for a playing track.
    */
-  public HttpAccessPoint getAccessPoint() {
-    return accessPointManager.getAccessPoint();
+  public HttpInterface getHttpInterface() {
+    return httpInterfaceManager.getInterface();
   }
 
   private static HttpClientBuilder createSharedCookiesHttpBuilder() {
@@ -224,8 +224,8 @@ public class YoutubeAudioSourceManager implements AudioSourceManager {
   }
 
   private AudioItem loadTrackWithVideoId(String videoId, boolean mustExist) {
-    try (HttpAccessPoint accessPoint = getAccessPoint()) {
-      JsonBrowser info = getTrackInfoFromMainPage(accessPoint, videoId, mustExist);
+    try (HttpInterface httpInterface = getHttpInterface()) {
+      JsonBrowser info = getTrackInfoFromMainPage(httpInterface, videoId, mustExist);
       if (info == null) {
         return AudioReference.NO_TRACK;
       }
@@ -244,8 +244,8 @@ public class YoutubeAudioSourceManager implements AudioSourceManager {
     }
   }
 
-  JsonBrowser getTrackInfoFromMainPage(HttpAccessPoint accessPoint, String videoId, boolean mustExist) throws Exception {
-    try (CloseableHttpResponse response = accessPoint.execute(new HttpGet("https://www.youtube.com/watch?v=" + videoId))) {
+  JsonBrowser getTrackInfoFromMainPage(HttpInterface httpInterface, String videoId, boolean mustExist) throws Exception {
+    try (CloseableHttpResponse response = httpInterface.execute(new HttpGet("https://www.youtube.com/watch?v=" + videoId))) {
       if (response.getStatusLine().getStatusCode() != 200) {
         throw new IOException("Invalid status code for video page response.");
       }
@@ -258,17 +258,17 @@ public class YoutubeAudioSourceManager implements AudioSourceManager {
       }
     }
 
-    if (determineFailureReason(accessPoint, videoId, mustExist)) {
+    if (determineFailureReason(httpInterface, videoId, mustExist)) {
       return null;
     }
 
     // In case main page does not give player configuration, but info page indicates an OK result, it is probably an
     // age-restricted video for which the complete track info can be combined from the embed page and the info page.
-    return getTrackInfoFromEmbedPage(accessPoint, videoId);
+    return getTrackInfoFromEmbedPage(httpInterface, videoId);
   }
 
-  private boolean determineFailureReason(HttpAccessPoint accessPoint, String videoId, boolean mustExist) throws Exception {
-    try (CloseableHttpResponse response = accessPoint.execute(new HttpGet("https://www.youtube.com/get_video_info?hl=en_GB&video_id=" + videoId))) {
+  private boolean determineFailureReason(HttpInterface httpInterface, String videoId, boolean mustExist) throws Exception {
+    try (CloseableHttpResponse response = httpInterface.execute(new HttpGet("https://www.youtube.com/get_video_info?hl=en_GB&video_id=" + videoId))) {
       if (response.getStatusLine().getStatusCode() != 200) {
         throw new IOException("Invalid status code for video info response.");
       }
@@ -293,14 +293,14 @@ public class YoutubeAudioSourceManager implements AudioSourceManager {
         new IllegalStateException("Main page had no video, but video info has no error."));
   }
 
-  private JsonBrowser getTrackInfoFromEmbedPage(HttpAccessPoint accessPoint, String videoId) throws Exception {
-    JsonBrowser basicInfo = loadTrackBaseInfoFromEmbedPage(accessPoint, videoId);
-    basicInfo.put("args", loadTrackArgsFromVideoInfoPage(accessPoint, videoId, basicInfo.get("sts").text()));
+  private JsonBrowser getTrackInfoFromEmbedPage(HttpInterface httpInterface, String videoId) throws Exception {
+    JsonBrowser basicInfo = loadTrackBaseInfoFromEmbedPage(httpInterface, videoId);
+    basicInfo.put("args", loadTrackArgsFromVideoInfoPage(httpInterface, videoId, basicInfo.get("sts").text()));
     return basicInfo;
   }
 
-  private JsonBrowser loadTrackBaseInfoFromEmbedPage(HttpAccessPoint accessPoint, String videoId) throws Exception {
-    try (CloseableHttpResponse response = accessPoint.execute(new HttpGet("https://www.youtube.com/embed/" + videoId))) {
+  private JsonBrowser loadTrackBaseInfoFromEmbedPage(HttpInterface httpInterface, String videoId) throws Exception {
+    try (CloseableHttpResponse response = httpInterface.execute(new HttpGet("https://www.youtube.com/embed/" + videoId))) {
       if (response.getStatusLine().getStatusCode() != 200) {
         throw new IOException("Invalid status code for embed video page response.");
       }
@@ -317,10 +317,10 @@ public class YoutubeAudioSourceManager implements AudioSourceManager {
         new IllegalStateException("Expected player config is not present in embed page."));
   }
 
-  private Map<String, String> loadTrackArgsFromVideoInfoPage(HttpAccessPoint accessPoint, String videoId, String sts) throws Exception {
+  private Map<String, String> loadTrackArgsFromVideoInfoPage(HttpInterface httpInterface, String videoId, String sts) throws Exception {
     String url = "https://www.youtube.com/get_video_info?hl=en_GB&video_id=" + videoId + "&sts=" + sts;
 
-    try (CloseableHttpResponse response = accessPoint.execute(new HttpGet(url))) {
+    try (CloseableHttpResponse response = httpInterface.execute(new HttpGet(url))) {
       if (response.getStatusLine().getStatusCode() != 200) {
         throw new IOException("Invalid status code for video info response.");
       }
@@ -344,21 +344,21 @@ public class YoutubeAudioSourceManager implements AudioSourceManager {
   private AudioPlaylist loadPlaylistWithId(String playlistId, String selectedVideoId) {
     log.debug("Starting to load playlist with ID {}", playlistId);
 
-    try (HttpAccessPoint accessPoint = getAccessPoint()) {
-      try (CloseableHttpResponse response = accessPoint.execute(new HttpGet("https://www.youtube.com/playlist?list=" + playlistId))) {
+    try (HttpInterface httpInterface = getHttpInterface()) {
+      try (CloseableHttpResponse response = httpInterface.execute(new HttpGet("https://www.youtube.com/playlist?list=" + playlistId))) {
         if (response.getStatusLine().getStatusCode() != 200) {
           throw new IOException("Invalid status code for playlist response.");
         }
 
         Document document = Jsoup.parse(response.getEntity().getContent(), CHARSET, "");
-        return buildPlaylist(accessPoint, document, selectedVideoId);
+        return buildPlaylist(httpInterface, document, selectedVideoId);
       }
     } catch (Exception e) {
       throw ExceptionTools.wrapUnfriendlyExceptions(e);
     }
   }
 
-  private AudioPlaylist buildPlaylist(HttpAccessPoint accessPoint, Document document, String selectedVideoId) throws IOException {
+  private AudioPlaylist buildPlaylist(HttpInterface httpInterface, Document document, String selectedVideoId) throws IOException {
     boolean isAccessible = !document.select("#pl-header").isEmpty();
 
     if (!isAccessible) {
@@ -380,7 +380,7 @@ public class YoutubeAudioSourceManager implements AudioSourceManager {
 
     // Also load the next pages, each result gives us a JSON with separate values for list html and next page loader html
     while (loadMoreUrl != null && ++loadCount < pageCount) {
-      try (CloseableHttpResponse response = accessPoint.execute(new HttpGet("https://www.youtube.com" + loadMoreUrl))) {
+      try (CloseableHttpResponse response = httpInterface.execute(new HttpGet("https://www.youtube.com" + loadMoreUrl))) {
         if (response.getStatusLine().getStatusCode() != 200) {
           throw new IOException("Invalid status code for playlist response.");
         }
@@ -451,10 +451,10 @@ public class YoutubeAudioSourceManager implements AudioSourceManager {
   private AudioPlaylist loadMixWithId(String mixId, String selectedVideoId) {
     List<String> videoIds = new ArrayList<>();
 
-    try (HttpAccessPoint accessPoint = getAccessPoint()) {
+    try (HttpInterface httpInterface = getHttpInterface()) {
       String mixUrl = "https://www.youtube.com/watch?v=" + selectedVideoId + "&list=" + mixId;
 
-      try (CloseableHttpResponse response = accessPoint.execute(new HttpGet(mixUrl))) {
+      try (CloseableHttpResponse response = httpInterface.execute(new HttpGet(mixUrl))) {
         if (response.getStatusLine().getStatusCode() != 200) {
           throw new IOException("Invalid status code for mix response.");
         }
@@ -523,10 +523,10 @@ public class YoutubeAudioSourceManager implements AudioSourceManager {
   private AudioItem loadSearchResult(String query) {
     log.debug("Performing a search with query {}", query);
 
-    try (HttpAccessPoint accessPoint = getAccessPoint()) {
+    try (HttpInterface httpInterface = getHttpInterface()) {
       URI url = new URIBuilder("https://www.youtube.com/results").addParameter("search_query", query).build();
 
-      try (CloseableHttpResponse response = accessPoint.execute(new HttpGet(url))) {
+      try (CloseableHttpResponse response = httpInterface.execute(new HttpGet(url))) {
         if (response.getStatusLine().getStatusCode() != 200) {
           throw new IOException("Invalid status code for search response.");
         }

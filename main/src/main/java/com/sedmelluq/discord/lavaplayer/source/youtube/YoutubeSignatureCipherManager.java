@@ -1,6 +1,6 @@
 package com.sedmelluq.discord.lavaplayer.source.youtube;
 
-import com.sedmelluq.discord.lavaplayer.tools.io.HttpAccessPoint;
+import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterface;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
@@ -64,13 +64,13 @@ public class YoutubeSignatureCipherManager {
 
   /**
    * Produces a valid playback URL for the specified track
-   * @param accessPoint HttpAccessPoint instance to use
+   * @param httpInterface HTTP interface to use
    * @param playerScript Address of the script which is used to decipher signatures
    * @param format The track for which to get the URL
    * @return Valid playback URL
    * @throws IOException On network IO error
    */
-  public URI getValidUrl(HttpAccessPoint accessPoint, String playerScript, YoutubeTrackFormat format) throws IOException {
+  public URI getValidUrl(HttpInterface httpInterface, String playerScript, YoutubeTrackFormat format) throws IOException {
     String signature = format.getSignature();
     URI initialUrl = format.getUrl();
 
@@ -78,7 +78,7 @@ public class YoutubeSignatureCipherManager {
       return initialUrl;
     }
 
-    YoutubeSignatureCipher cipher = getCipherKeyFromScript(accessPoint, playerScript);
+    YoutubeSignatureCipher cipher = getCipherKeyFromScript(httpInterface, playerScript);
 
     try {
       return new URIBuilder(initialUrl)
@@ -92,29 +92,29 @@ public class YoutubeSignatureCipherManager {
 
   /**
    * Produces a valid dash XML URL from the possibly ciphered URL.
-   * @param accessPoint HttpAccessPoint instance to use
+   * @param httpInterface HTTP interface instance to use
    * @param playerScript Address of the script which is used to decipher signatures
    * @param dashUrl URL of the dash XML, possibly with a ciphered signature
    * @return Valid dash XML URL
    * @throws IOException On network IO error
    */
-  public String getValidDashUrl(HttpAccessPoint accessPoint, String playerScript, String dashUrl) throws IOException {
+  public String getValidDashUrl(HttpInterface httpInterface, String playerScript, String dashUrl) throws IOException {
     Matcher matcher = signatureExtraction.matcher(dashUrl);
 
     if (!matcher.find()) {
       return dashUrl;
     }
 
-    YoutubeSignatureCipher cipher = getCipherKeyFromScript(accessPoint, playerScript);
+    YoutubeSignatureCipher cipher = getCipherKeyFromScript(httpInterface, playerScript);
     return matcher.replaceFirst("/signature/" + cipher.apply(matcher.group(1)) + "/");
   }
 
-  private YoutubeSignatureCipher getCipherKeyFromScript(HttpAccessPoint accessPoint, String cipherScriptUrl) throws IOException {
+  private YoutubeSignatureCipher getCipherKeyFromScript(HttpInterface httpInterface, String cipherScriptUrl) throws IOException {
     YoutubeSignatureCipher cipherKey = cipherCache.get(cipherScriptUrl);
 
     if (cipherKey == null) {
       synchronized (cipherLoadLock) {
-        try (CloseableHttpResponse response = accessPoint.execute(new HttpGet(parseTokenScriptUrl(cipherScriptUrl)))) {
+        try (CloseableHttpResponse response = httpInterface.execute(new HttpGet(parseTokenScriptUrl(cipherScriptUrl)))) {
           validateResponseCode(response);
 
           cipherKey = extractTokensFromScript(IOUtils.toString(response.getEntity().getContent(), "UTF-8"));

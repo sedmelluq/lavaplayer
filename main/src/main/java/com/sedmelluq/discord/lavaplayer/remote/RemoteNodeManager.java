@@ -6,10 +6,13 @@ import com.sedmelluq.discord.lavaplayer.player.event.AudioEventAdapter;
 import com.sedmelluq.discord.lavaplayer.tools.DaemonThreadFactory;
 import com.sedmelluq.discord.lavaplayer.tools.ExecutorTools;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
+import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterfaceManager;
+import com.sedmelluq.discord.lavaplayer.tools.io.SimpleHttpInterfaceManager;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackEndReason;
 import com.sedmelluq.discord.lavaplayer.track.InternalAudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.playback.AudioTrackExecutor;
+import org.apache.commons.io.IOUtils;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -25,6 +28,7 @@ import static com.sedmelluq.discord.lavaplayer.tools.FriendlyException.Severity.
  */
 public class RemoteNodeManager extends AudioEventAdapter implements RemoteNodeRegistry, Runnable {
   private final DefaultAudioPlayerManager playerManager;
+  private final HttpInterfaceManager httpInterfaceManager;
   private final List<RemoteNodeProcessor> processors;
   private final AtomicBoolean enabled;
   private final Object lock;
@@ -36,6 +40,7 @@ public class RemoteNodeManager extends AudioEventAdapter implements RemoteNodeRe
    */
   public RemoteNodeManager(DefaultAudioPlayerManager playerManager) {
     this.playerManager = playerManager;
+    this.httpInterfaceManager = new SimpleHttpInterfaceManager(RemoteNodeProcessor.createHttpClientBuilder());
     this.processors = new ArrayList<>();
     this.enabled = new AtomicBoolean();
     this.lock = new Object();
@@ -66,7 +71,7 @@ public class RemoteNodeManager extends AudioEventAdapter implements RemoteNodeRe
       }
 
       for (String nodeAddress : newNodeAddresses) {
-        RemoteNodeProcessor processor = new RemoteNodeProcessor(playerManager, nodeAddress, scheduler);
+        RemoteNodeProcessor processor = new RemoteNodeProcessor(playerManager, nodeAddress, scheduler, httpInterfaceManager);
         scheduler.submit(processor);
         processors.add(processor);
       }
@@ -89,6 +94,8 @@ public class RemoteNodeManager extends AudioEventAdapter implements RemoteNodeRe
       for (RemoteNodeProcessor processor : processors) {
         processor.processHealthCheck(true);
       }
+
+      IOUtils.closeQuietly(httpInterfaceManager);
 
       processors.clear();
       activeProcessors = new ArrayList<>(processors);

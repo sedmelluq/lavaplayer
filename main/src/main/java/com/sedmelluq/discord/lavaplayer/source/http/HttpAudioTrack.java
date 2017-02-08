@@ -2,7 +2,7 @@ package com.sedmelluq.discord.lavaplayer.source.http;
 
 import com.sedmelluq.discord.lavaplayer.container.MediaContainerProbe;
 import com.sedmelluq.discord.lavaplayer.source.AudioSourceManager;
-import com.sedmelluq.discord.lavaplayer.tools.io.HttpAccessPoint;
+import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterface;
 import com.sedmelluq.discord.lavaplayer.tools.io.PersistentHttpStream;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.InternalAudioTrack;
@@ -44,10 +44,10 @@ public class HttpAudioTrack extends DelegatedAudioTrack {
 
   @Override
   public void process(LocalAudioTrackExecutor localExecutor) throws Exception {
-    try (HttpAccessPoint accessPoint = sourceManager.getAccessPoint()) {
+    try (HttpInterface httpInterface = sourceManager.getHttpInterface()) {
       log.debug("Starting http track from URL: {}", trackInfo.identifier);
 
-      try (PersistentHttpStream inputStream = new PersistentHttpStream(accessPoint, new URI(trackInfo.identifier), Long.MAX_VALUE)) {
+      try (PersistentHttpStream inputStream = new PersistentHttpStream(httpInterface, new URI(trackInfo.identifier), Long.MAX_VALUE)) {
         processDelegate((InternalAudioTrack) probe.createTrack(trackInfo, inputStream), localExecutor);
       }
     }

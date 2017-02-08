@@ -7,11 +7,11 @@ import com.sedmelluq.discord.lavaplayer.container.MediaContainerProbe;
 import com.sedmelluq.discord.lavaplayer.player.DefaultAudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.source.ProbingAudioSourceManager;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
-import com.sedmelluq.discord.lavaplayer.tools.io.HttpAccessPoint;
-import com.sedmelluq.discord.lavaplayer.tools.io.HttpAccessPointManager;
+import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterface;
+import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterfaceManager;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpClientTools;
 import com.sedmelluq.discord.lavaplayer.tools.io.PersistentHttpStream;
-import com.sedmelluq.discord.lavaplayer.tools.io.ThreadLocalContextAccessPointManager;
+import com.sedmelluq.discord.lavaplayer.tools.io.ThreadLocalHttpInterfaceManager;
 import com.sedmelluq.discord.lavaplayer.track.AudioItem;
 import com.sedmelluq.discord.lavaplayer.track.AudioReference;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
@@ -31,13 +31,13 @@ import static com.sedmelluq.discord.lavaplayer.tools.FriendlyException.Severity.
  * Audio source manager which implements finding audio files from HTTP addresses.
  */
 public class HttpAudioSourceManager extends ProbingAudioSourceManager {
-  private final HttpAccessPointManager accessPointManager;
+  private final HttpInterfaceManager httpInterfaceManager;
 
   /**
    * Create a new instance.
    */
   public HttpAudioSourceManager() {
-    accessPointManager = new ThreadLocalContextAccessPointManager(
+    httpInterfaceManager = new ThreadLocalHttpInterfaceManager(
         HttpClientTools
             .createSharedCookiesHttpBuilder()
             .setRedirectStrategy(new HttpClientTools.NoRedirectsStrategy())
@@ -65,10 +65,10 @@ public class HttpAudioSourceManager extends ProbingAudioSourceManager {
   }
 
   /**
-   * @return Get an HTTP access point for a playing track.
+   * @return Get an HTTP interface for a playing track.
    */
-  public HttpAccessPoint getAccessPoint() {
-    return accessPointManager.getAccessPoint();
+  public HttpInterface getHttpInterface() {
+    return httpInterfaceManager.getInterface();
   }
 
   private AudioReference getAsHttpReference(AudioReference reference) {
@@ -83,8 +83,8 @@ public class HttpAudioSourceManager extends ProbingAudioSourceManager {
   private MediaContainerDetectionResult detectContainer(AudioReference reference) {
     MediaContainerDetectionResult result;
 
-    try (HttpAccessPoint accessPoint = getAccessPoint()) {
-      result = detectContainerWithClient(accessPoint, reference);
+    try (HttpInterface httpInterface = getHttpInterface()) {
+      result = detectContainerWithClient(httpInterface, reference);
     } catch (IOException e) {
       throw new FriendlyException("Connecting to the URL failed.", SUSPICIOUS, e);
     }
@@ -92,8 +92,8 @@ public class HttpAudioSourceManager extends ProbingAudioSourceManager {
     return result;
   }
 
-  private MediaContainerDetectionResult detectContainerWithClient(HttpAccessPoint accessPoint, AudioReference reference) throws IOException {
-    try (PersistentHttpStream inputStream = new PersistentHttpStream(accessPoint, new URI(reference.identifier), Long.MAX_VALUE)) {
+  private MediaContainerDetectionResult detectContainerWithClient(HttpInterface httpInterface, AudioReference reference) throws IOException {
+    try (PersistentHttpStream inputStream = new PersistentHttpStream(httpInterface, new URI(reference.identifier), Long.MAX_VALUE)) {
       int statusCode = inputStream.checkStatusCode();
       String redirectUrl = HttpClientTools.getRedirectLocation(reference.identifier, inputStream.getCurrentResponse());
 

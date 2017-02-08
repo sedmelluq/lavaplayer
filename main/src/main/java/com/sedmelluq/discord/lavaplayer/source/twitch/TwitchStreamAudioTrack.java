@@ -5,7 +5,7 @@ import com.sedmelluq.discord.lavaplayer.container.mpegts.MpegTsElementaryInputSt
 import com.sedmelluq.discord.lavaplayer.container.mpegts.PesPacketInputStream;
 import com.sedmelluq.discord.lavaplayer.source.AudioSourceManager;
 import com.sedmelluq.discord.lavaplayer.tools.io.ChainedInputStream;
-import com.sedmelluq.discord.lavaplayer.tools.io.HttpAccessPoint;
+import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterface;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo;
 import com.sedmelluq.discord.lavaplayer.track.DelegatedAudioTrack;
@@ -47,8 +47,8 @@ public class TwitchStreamAudioTrack extends DelegatedAudioTrack {
   public void process(LocalAudioTrackExecutor localExecutor) throws Exception {
     log.debug("Starting to play Twitch channel {}.", channelName);
 
-    try (final HttpAccessPoint accessPoint = sourceManager.getAccessPoint()) {
-      try (ChainedInputStream chainedInputStream = new ChainedInputStream(() -> getSegmentInputStream(accessPoint))) {
+    try (final HttpInterface httpInterface = sourceManager.getHttpInterface()) {
+      try (ChainedInputStream chainedInputStream = new ChainedInputStream(() -> getSegmentInputStream(httpInterface))) {
         MpegTsElementaryInputStream elementaryInputStream = new MpegTsElementaryInputStream(chainedInputStream, ADTS_ELEMENTARY_STREAM);
         PesPacketInputStream pesPacketInputStream = new PesPacketInputStream(elementaryInputStream);
 
@@ -57,8 +57,8 @@ public class TwitchStreamAudioTrack extends DelegatedAudioTrack {
     }
   }
 
-  private InputStream getSegmentInputStream(HttpAccessPoint accessPoint) {
-    String url = segmentUrlProvider.getNextSegmentUrl(accessPoint);
+  private InputStream getSegmentInputStream(HttpInterface httpInterface) {
+    String url = segmentUrlProvider.getNextSegmentUrl(httpInterface);
     if (url == null) {
       return null;
     }
@@ -67,7 +67,7 @@ public class TwitchStreamAudioTrack extends DelegatedAudioTrack {
     boolean success = false;
 
     try {
-      response = accessPoint.execute(createGetRequest(url));
+      response = httpInterface.execute(createGetRequest(url));
       int statusCode = response.getStatusLine().getStatusCode();
 
       if (statusCode != 200) {

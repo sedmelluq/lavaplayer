@@ -3,7 +3,7 @@ package com.sedmelluq.discord.lavaplayer.source.bandcamp;
 import com.sedmelluq.discord.lavaplayer.container.mp3.Mp3AudioTrack;
 import com.sedmelluq.discord.lavaplayer.source.AudioSourceManager;
 import com.sedmelluq.discord.lavaplayer.tools.JsonBrowser;
-import com.sedmelluq.discord.lavaplayer.tools.io.HttpAccessPoint;
+import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterface;
 import com.sedmelluq.discord.lavaplayer.tools.io.PersistentHttpStream;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo;
@@ -39,20 +39,20 @@ public class BandcampAudioTrack extends DelegatedAudioTrack {
 
   @Override
   public void process(LocalAudioTrackExecutor localExecutor) throws Exception {
-    try (HttpAccessPoint accessPoint = sourceManager.getAccessPoint()) {
+    try (HttpInterface httpInterface = sourceManager.getHttpInterface()) {
       log.debug("Loading Bandcamp track page from URL: {}", trackInfo.identifier);
 
-      String trackMediaUrl = getTrackMediaUrl(accessPoint);
+      String trackMediaUrl = getTrackMediaUrl(httpInterface);
       log.debug("Starting Bandcamp track from URL: {}", trackMediaUrl);
 
-      try (PersistentHttpStream stream = new PersistentHttpStream(accessPoint, new URI(trackMediaUrl), null)) {
+      try (PersistentHttpStream stream = new PersistentHttpStream(httpInterface, new URI(trackMediaUrl), null)) {
         processDelegate(new Mp3AudioTrack(trackInfo, stream), localExecutor);
       }
     }
   }
 
-  private String getTrackMediaUrl(HttpAccessPoint accessPoint) throws IOException {
-    try (CloseableHttpResponse response = accessPoint.execute(new HttpGet(trackInfo.identifier))) {
+  private String getTrackMediaUrl(HttpInterface httpInterface) throws IOException {
+    try (CloseableHttpResponse response = httpInterface.execute(new HttpGet(trackInfo.identifier))) {
       int statusCode = response.getStatusLine().getStatusCode();
       if (statusCode != 200) {
         throw new IOException("Invalid status code " + statusCode + " for track page.");

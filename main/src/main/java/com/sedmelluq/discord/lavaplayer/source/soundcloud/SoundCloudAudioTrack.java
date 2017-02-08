@@ -2,7 +2,7 @@ package com.sedmelluq.discord.lavaplayer.source.soundcloud;
 
 import com.sedmelluq.discord.lavaplayer.container.mp3.Mp3AudioTrack;
 import com.sedmelluq.discord.lavaplayer.source.AudioSourceManager;
-import com.sedmelluq.discord.lavaplayer.tools.io.HttpAccessPoint;
+import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterface;
 import com.sedmelluq.discord.lavaplayer.tools.io.PersistentHttpStream;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo;
@@ -35,10 +35,10 @@ public class SoundCloudAudioTrack extends DelegatedAudioTrack {
   public void process(LocalAudioTrackExecutor localExecutor) throws Exception {
     String trackUrl = sourceManager.getTrackUrlFromId(trackInfo.identifier);
 
-    try (HttpAccessPoint accessPoint = sourceManager.getAccessPoint()) {
+    try (HttpInterface httpInterface = sourceManager.getHttpInterface()) {
       log.debug("Starting SoundCloud track from URL: {}", trackUrl);
 
-      try (PersistentHttpStream stream = new PersistentHttpStream(accessPoint, new URI(trackUrl), null)) {
+      try (PersistentHttpStream stream = new PersistentHttpStream(httpInterface, new URI(trackUrl), null)) {
         processDelegate(new Mp3AudioTrack(trackInfo, stream), localExecutor);
       }
     }

@@ -6,7 +6,7 @@ import com.sedmelluq.discord.lavaplayer.container.mpeg.MpegTrackConsumer;
 import com.sedmelluq.discord.lavaplayer.container.mpeg.reader.MpegFileTrackProvider;
 import com.sedmelluq.discord.lavaplayer.tools.DataFormatTools;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
-import com.sedmelluq.discord.lavaplayer.tools.io.HttpAccessPoint;
+import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterface;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo;
 import com.sedmelluq.discord.lavaplayer.track.playback.LocalAudioTrackExecutor;
 import org.apache.http.client.utils.URIBuilder;
@@ -24,18 +24,18 @@ import static com.sedmelluq.discord.lavaplayer.tools.FriendlyException.Severity.
  * responds to a segment request with 204.
  */
 public class YoutubeMpegStreamAudioTrack extends MpegAudioTrack {
-  private final HttpAccessPoint accessPoint;
+  private final HttpInterface httpInterface;
   private final URI signedUrl;
 
   /**
    * @param trackInfo Track info
-   * @param accessPoint HTTP access point to use for loading segments
+   * @param httpInterface HTTP interface to use for loading segments
    * @param signedUrl URI of the base stream with signature resolved
    */
-  public YoutubeMpegStreamAudioTrack(AudioTrackInfo trackInfo, HttpAccessPoint accessPoint, URI signedUrl) {
+  public YoutubeMpegStreamAudioTrack(AudioTrackInfo trackInfo, HttpInterface httpInterface, URI signedUrl) {
     super(trackInfo, null);
 
-    this.accessPoint = accessPoint;
+    this.httpInterface = httpInterface;
     this.signedUrl = signedUrl;
   }
 
@@ -64,7 +64,7 @@ public class YoutubeMpegStreamAudioTrack extends MpegAudioTrack {
   private void processNextSegment(LocalAudioTrackExecutor localExecutor, TrackState state) throws InterruptedException {
     URI segmentUrl = getNextSegmentUrl(state);
 
-    try (YoutubePersistentHttpStream stream = new YoutubePersistentHttpStream(accessPoint, segmentUrl, Long.MAX_VALUE)) {
+    try (YoutubePersistentHttpStream stream = new YoutubePersistentHttpStream(httpInterface, segmentUrl, Long.MAX_VALUE)) {
       if (stream.checkStatusCode() == 204) {
         state.finished = true;
         return;

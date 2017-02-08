@@ -3,13 +3,15 @@ package com.sedmelluq.discord.lavaplayer.tools;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.RejectedExecutionHandler;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 /**
  * Utility methods for working with executors.
@@ -18,6 +20,11 @@ public class ExecutorTools {
   private static final Logger log = LoggerFactory.getLogger(ExecutorTools.class);
 
   private static final long WAIT_TIME = 1000L;
+
+  /**
+   * A completed Future<Void> instance.
+   */
+  public static final CompletedVoidFuture COMPLETED_VOID = new CompletedVoidFuture();
 
   /**
    * Shut down an executor and log the shutdown result. The executor is given a fixed amount of time to shut down, if it
@@ -88,6 +95,33 @@ public class ExecutorTools {
       if (!executor.getQueue().add(runnable)) {
         abortPolicy.rejectedExecution(runnable, executor);
       }
+    }
+  }
+
+  private static class CompletedVoidFuture implements Future<Void> {
+    @Override
+    public boolean cancel(boolean mayInterruptIfRunning) {
+      return false;
+    }
+
+    @Override
+    public boolean isCancelled() {
+      return false;
+    }
+
+    @Override
+    public boolean isDone() {
+      return true;
+    }
+
+    @Override
+    public Void get() throws InterruptedException, ExecutionException {
+      return null;
+    }
+
+    @Override
+    public Void get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
+      return null;
     }
   }
 }

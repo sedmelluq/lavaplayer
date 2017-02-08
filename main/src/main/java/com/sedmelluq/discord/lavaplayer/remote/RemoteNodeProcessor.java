@@ -14,6 +14,8 @@ import com.sedmelluq.discord.lavaplayer.remote.message.TrackStoppedMessage;
 import com.sedmelluq.discord.lavaplayer.tools.ExceptionTools;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.tools.RingBufferMath;
+import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterface;
+import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterfaceManager;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.InternalAudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.playback.AudioFrame;
@@ -25,7 +27,6 @@ import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.ByteArrayEntity;
-import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -66,10 +67,10 @@ public class RemoteNodeProcessor implements RemoteNode, Runnable {
   private final DefaultAudioPlayerManager playerManager;
   private final String nodeAddress;
   private final ScheduledThreadPoolExecutor scheduledExecutor;
+  private final HttpInterfaceManager httpInterfaceManager;
   private final BlockingQueue<RemoteMessage> queuedMessages;
   private final ConcurrentMap<Long, RemoteAudioTrackExecutor> playingTracks;
   private final RemoteMessageMapper mapper;
-  private final HttpClientBuilder httpClientBuilder;
   private final AtomicBoolean threadRunning;
   private final AtomicInteger connectionState;
   private final ArrayDeque<RemoteNode.Tick> tickHistory;
@@ -83,15 +84,18 @@ public class RemoteNodeProcessor implements RemoteNode, Runnable {
    * @param playerManager Audio player manager
    * @param nodeAddress Address of this node
    * @param scheduledExecutor Scheduler to use to schedule reconnects
+   * @param httpInterfaceManager HTTP interface manager to use for communicating with node
    */
-  public RemoteNodeProcessor(DefaultAudioPlayerManager playerManager, String nodeAddress, ScheduledThreadPoolExecutor scheduledExecutor) {
+  public RemoteNodeProcessor(DefaultAudioPlayerManager playerManager, String nodeAddress,
+                             ScheduledThreadPoolExecutor scheduledExecutor, HttpInterfaceManager httpInterfaceManager) {
+
     this.playerManager = playerManager;
     this.nodeAddress = nodeAddress;
     this.scheduledExecutor = scheduledExecutor;
+    this.httpInterfaceManager = httpInterfaceManager;
     queuedMessages = new LinkedBlockingQueue<>();
     playingTracks = new ConcurrentHashMap<>();
     mapper = new RemoteMessageMapper();
-    httpClientBuilder = createHttpClientBuilder();
     threadRunning = new AtomicBoolean();
     connectionState = new AtomicInteger(ConnectionState.OFFLINE.id());
     tickHistory = new ArrayDeque<>(NODE_REQUEST_HISTORY);
@@ -159,10 +163,10 @@ public class RemoteNodeProcessor implements RemoteNode, Runnable {
 
     connectionState.set(ConnectionState.PENDING.id());
 
-    try (CloseableHttpClient httpClient = httpClientBuilder.build()) {
+    try (HttpInterface httpInterface = httpInterfaceManager.getInterface()) {
       RingBufferMath timingAverage = new RingBufferMath(10, in -> Math.pow(in, 5.0), out -> Math.pow(out, 0.2));
 
-      while (processOneTick(httpClient, timingAverage)) {
+      while (processOneTick(httpInterface, timingAverage)) {
         aliveTickCounter = Math.max(1, aliveTickCounter + 1);
         lastAliveTime = System.currentTimeMillis();
       }
@@ -204,11 +208,11 @@ public class RemoteNodeProcessor implements RemoteNode, Runnable {
     }
   }
 
-  private boolean processOneTick(CloseableHttpClient httpClient, RingBufferMath timingAverage) throws Exception {
+  private boolean processOneTick(HttpInterface httpInterface, RingBufferMath timingAverage) throws Exception {
     TickBuilder tickBuilder = new TickBuilder(System.currentTimeMillis());
 
     try {
-      if (!dispatchOneTick(httpClient, tickBuilder)) {
+      if (!dispatchOneTick(httpInterface, tickBuilder)) {
         return false;
       }
     } finally {
@@ -222,7 +226,7 @@ public class RemoteNodeProcessor implements RemoteNode, Runnable {
     return true;
   }
 
-  private boolean dispatchOneTick(CloseableHttpClient httpClient, TickBuilder tickBuilder) throws Exception {
+  private boolean dispatchOneTick(HttpInterface httpInterface, TickBuilder tickBuilder) throws Exception {
     boolean success = false;
     HttpPost post = new HttpPost("http://" + nodeAddress + "/tick");
     ByteArrayEntity entity = new ByteArrayEntity(buildRequestBody());
@@ -230,7 +234,7 @@ public class RemoteNodeProcessor implements RemoteNode, Runnable {
 
     tickBuilder.requestSize = (int) entity.getContentLength();
 
-    CloseableHttpResponse response = httpClient.execute(post);
+    CloseableHttpResponse response = httpInterface.execute(post);
 
     try {
       tickBuilder.responseCode = response.getStatusLine().getStatusCode();
@@ -376,7 +380,10 @@ public class RemoteNodeProcessor implements RemoteNode, Runnable {
     lastStatistics = message;
   }
 
-  private static HttpClientBuilder createHttpClientBuilder() {
+  /**
+   * @return An HTTP client builder with appropriate timeouts for node requests.
+   */
+  public static HttpClientBuilder createHttpClientBuilder() {
     RequestConfig.Builder requestBuilder = RequestConfig.custom()
         .setConnectTimeout(CONNECT_TIMEOUT)
         .setConnectionRequestTimeout(CONNECT_TIMEOUT)

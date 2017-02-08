@@ -23,7 +23,7 @@ public class PersistentHttpStream extends SeekableInputStream implements AutoClo
 
   private static final long MAX_SKIP_DISTANCE = 512L * 1024L;
 
-  private final HttpAccessPoint accessPoint;
+  private final HttpInterface httpInterface;
   protected final URI contentUrl;
   private int lastStatusCode;
   private CloseableHttpResponse currentResponse;
@@ -31,14 +31,14 @@ public class PersistentHttpStream extends SeekableInputStream implements AutoClo
   protected long position;
 
   /**
-   * @param accessPoint The HttpAccessPoint to use for requests
+   * @param httpInterface The HTTP interface to use for requests
    * @param contentUrl The URL of the resource
    * @param contentLength The length of the resource in bytes
    */
-  public PersistentHttpStream(HttpAccessPoint accessPoint, URI contentUrl, Long contentLength) {
+  public PersistentHttpStream(HttpInterface httpInterface, URI contentUrl, Long contentLength) {
     super(contentLength == null ? Long.MAX_VALUE : contentLength, MAX_SKIP_DISTANCE);
 
-    this.accessPoint = accessPoint;
+    this.httpInterface = httpInterface;
     this.contentUrl = contentUrl;
     this.position = 0;
   }
@@ -91,7 +91,7 @@ public class PersistentHttpStream extends SeekableInputStream implements AutoClo
 
   private void connect(boolean skipStatusCheck) throws IOException {
     if (currentResponse == null) {
-      currentResponse = accessPoint.execute(getConnectRequest());
+      currentResponse = httpInterface.execute(getConnectRequest());
       lastStatusCode = currentResponse.getStatusLine().getStatusCode();
 
       if (!skipStatusCheck) {

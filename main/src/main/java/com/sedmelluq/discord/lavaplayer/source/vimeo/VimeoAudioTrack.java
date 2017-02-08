@@ -4,7 +4,7 @@ import com.sedmelluq.discord.lavaplayer.container.mpeg.MpegAudioTrack;
 import com.sedmelluq.discord.lavaplayer.source.AudioSourceManager;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.tools.JsonBrowser;
-import com.sedmelluq.discord.lavaplayer.tools.io.HttpAccessPoint;
+import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterface;
 import com.sedmelluq.discord.lavaplayer.tools.io.PersistentHttpStream;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo;
@@ -42,31 +42,31 @@ public class VimeoAudioTrack extends DelegatedAudioTrack {
 
   @Override
   public void process(LocalAudioTrackExecutor localExecutor) throws Exception {
-    try (HttpAccessPoint accessPoint = sourceManager.getAccessPoint()) {
-      String playbackUrl = loadPlaybackUrl(accessPoint);
+    try (HttpInterface httpInterface = sourceManager.getHttpInterface()) {
+      String playbackUrl = loadPlaybackUrl(httpInterface);
 
       log.debug("Starting Vimeo track from URL: {}", playbackUrl);
 
-      try (PersistentHttpStream stream = new PersistentHttpStream(accessPoint, new URI(playbackUrl), null)) {
+      try (PersistentHttpStream stream = new PersistentHttpStream(httpInterface, new URI(playbackUrl), null)) {
         processDelegate(new MpegAudioTrack(trackInfo, stream), localExecutor);
       }
     }
   }
 
-  private String loadPlaybackUrl(HttpAccessPoint accessPoint) throws IOException {
-    JsonBrowser config = loadPlayerConfig(accessPoint);
+  private String loadPlaybackUrl(HttpInterface httpInterface) throws IOException {
+    JsonBrowser config = loadPlayerConfig(httpInterface);
     if (config == null) {
       throw new FriendlyException("Track information not present on the page.", SUSPICIOUS, null);
     }
 
     String trackConfigUrl = config.get("player").get("config_url").text();
-    JsonBrowser trackConfig = loadTrackConfig(accessPoint, trackConfigUrl);
+    JsonBrowser trackConfig = loadTrackConfig(httpInterface, trackConfigUrl);
 
     return trackConfig.get("request").get("files").get("progressive").index(0).get("url").text();
   }
 
-  private JsonBrowser loadPlayerConfig(HttpAccessPoint accessPoint) throws IOException {
-    try (CloseableHttpResponse response = accessPoint.execute(new HttpGet(trackInfo.identifier))) {
+  private JsonBrowser loadPlayerConfig(HttpInterface httpInterface) throws IOException {
+    try (CloseableHttpResponse response = httpInterface.execute(new HttpGet(trackInfo.identifier))) {
       int statusCode = response.getStatusLine().getStatusCode();
 
       if (statusCode != 200) {
@@ -78,8 +78,8 @@ public class VimeoAudioTrack extends DelegatedAudioTrack {
     }
   }
 
-  private JsonBrowser loadTrackConfig(HttpAccessPoint accessPoint, String trackAccessInfoUrl) throws IOException {
-    try (CloseableHttpResponse response = accessPoint.execute(new HttpGet(trackAccessInfoUrl))) {
+  private JsonBrowser loadTrackConfig(HttpInterface httpInterface, String trackAccessInfoUrl) throws IOException {
+    try (CloseableHttpResponse response = httpInterface.execute(new HttpGet(trackAccessInfoUrl))) {
       int statusCode = response.getStatusLine().getStatusCode();
 
       if (statusCode != 200) {

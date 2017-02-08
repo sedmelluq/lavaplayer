@@ -4,10 +4,10 @@ import com.sedmelluq.discord.lavaplayer.player.DefaultAudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.source.AudioSourceManager;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.tools.JsonBrowser;
-import com.sedmelluq.discord.lavaplayer.tools.io.HttpAccessPoint;
-import com.sedmelluq.discord.lavaplayer.tools.io.HttpAccessPointManager;
+import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterface;
+import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterfaceManager;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpClientTools;
-import com.sedmelluq.discord.lavaplayer.tools.io.ThreadLocalContextAccessPointManager;
+import com.sedmelluq.discord.lavaplayer.tools.io.ThreadLocalHttpInterfaceManager;
 import com.sedmelluq.discord.lavaplayer.track.AudioItem;
 import com.sedmelluq.discord.lavaplayer.track.AudioReference;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
@@ -34,13 +34,13 @@ public class TwitchStreamAudioSourceManager implements AudioSourceManager {
 
   public static final String CLIENT_ID = "jzkbprff40iqj646a697cyrvl0zt2m6";
 
-  private final HttpAccessPointManager accessPointManager;
+  private final HttpInterfaceManager httpInterfaceManager;
 
   /**
    * Create an instance.
    */
   public TwitchStreamAudioSourceManager() {
-    accessPointManager = new ThreadLocalContextAccessPointManager(HttpClientTools.createSharedCookiesHttpBuilder());
+    httpInterfaceManager = new ThreadLocalHttpInterfaceManager(HttpClientTools.createSharedCookiesHttpBuilder());
   }
 
   @Override
@@ -118,10 +118,10 @@ public class TwitchStreamAudioSourceManager implements AudioSourceManager {
   }
 
   /**
-   * @return Get an HTTP access point for a playing track.
+   * @return Get an HTTP interface for a playing track.
    */
-  public HttpAccessPoint getAccessPoint() {
-    return accessPointManager.getAccessPoint();
+  public HttpInterface getHttpInterface() {
+    return httpInterfaceManager.getInterface();
   }
 
   private static HttpUriRequest addClientHeaders(HttpUriRequest request) {
@@ -130,10 +130,10 @@ public class TwitchStreamAudioSourceManager implements AudioSourceManager {
   }
 
   private JsonBrowser fetchStreamChannelInfo(String name) {
-    try (HttpAccessPoint accessPoint = getAccessPoint()) {
+    try (HttpInterface httpInterface = getHttpInterface()) {
       HttpUriRequest request = createGetRequest("https://api.twitch.tv/api/channels/" + name + "/ember?on_site=1");
 
-      try (CloseableHttpResponse response = accessPoint.execute(request)) {
+      try (CloseableHttpResponse response = httpInterface.execute(request)) {
         int statusCode = response.getStatusLine().getStatusCode();
 
         if (statusCode == 404) {

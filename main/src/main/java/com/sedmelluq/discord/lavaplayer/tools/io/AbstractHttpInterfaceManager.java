@@ -1,37 +1,25 @@
 package com.sedmelluq.discord.lavaplayer.tools.io;
 
-import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 
 import java.io.IOException;
 
-public class ThreadLocalContextAccessPointManager implements HttpAccessPointManager {
+/**
+ * Base class for an HTTP interface manager with lazily initialized http client instance.
+ */
+public abstract class AbstractHttpInterfaceManager implements HttpInterfaceManager {
   private final HttpClientBuilder clientBuilder;
-  private final ThreadLocal<HttpAccessPoint> accessPoints;
   private final Object lock;
   private boolean closed;
   private CloseableHttpClient sharedClient;
 
-  public ThreadLocalContextAccessPointManager(HttpClientBuilder clientBuilder) {
+  /**
+   * @param clientBuilder HTTP client builder to use for creating the client instance.
+   */
+  public AbstractHttpInterfaceManager(HttpClientBuilder clientBuilder) {
     this.clientBuilder = clientBuilder;
     this.lock = new Object();
-
-    this.accessPoints = ThreadLocal.withInitial(() ->
-        new HttpAccessPoint(getSharedClient(), HttpClientContext.create(), false)
-    );
-  }
-
-  @Override
-  public HttpAccessPoint getAccessPoint() {
-    HttpAccessPoint accessPoint = accessPoints.get();
-    if (accessPoint.acquire()) {
-      return accessPoint;
-    }
-
-    accessPoint = new HttpAccessPoint(getSharedClient(), HttpClientContext.create(), false);
-    accessPoint.acquire();
-    return accessPoint;
   }
 
   @Override
@@ -47,7 +35,7 @@ public class ThreadLocalContextAccessPointManager implements HttpAccessPointMana
     }
   }
 
-  private CloseableHttpClient getSharedClient() {
+  protected CloseableHttpClient getSharedClient() {
     synchronized (lock) {
       if (closed) {
         throw new IllegalStateException("Cannot get http client for a closed manager.");

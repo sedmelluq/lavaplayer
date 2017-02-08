@@ -1,6 +1,6 @@
 package com.sedmelluq.discord.lavaplayer.source.youtube;
 
-import com.sedmelluq.discord.lavaplayer.tools.io.HttpAccessPoint;
+import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterface;
 import com.sedmelluq.discord.lavaplayer.tools.io.PersistentHttpStream;
 import org.apache.http.client.utils.URIBuilder;
 
@@ -14,12 +14,12 @@ import java.net.URISyntaxException;
 public class YoutubePersistentHttpStream extends PersistentHttpStream {
 
   /**
-   * @param accessPoint The HttpAccessPoint to use for requests
+   * @param httpInterface The HTTP interface to use for requests
    * @param contentUrl The URL of the resource
    * @param contentLength The length of the resource in bytes
    */
-  public YoutubePersistentHttpStream(HttpAccessPoint accessPoint, URI contentUrl, long contentLength) {
-    super(accessPoint, contentUrl, contentLength);
+  public YoutubePersistentHttpStream(HttpInterface httpInterface, URI contentUrl, long contentLength) {
+    super(httpInterface, contentUrl, contentLength);
   }
 
   @Override

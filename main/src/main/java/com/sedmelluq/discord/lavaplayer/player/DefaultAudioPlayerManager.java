@@ -41,6 +41,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -49,6 +50,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static com.sedmelluq.discord.lavaplayer.tools.FriendlyException.Severity.FAULT;
+import static com.sedmelluq.discord.lavaplayer.tools.FriendlyException.Severity.SUSPICIOUS;
 
 /**
  * The default implementation of audio player manager.
@@ -166,12 +168,29 @@ public class DefaultAudioPlayerManager implements AudioPlayerManager {
 
   @Override
   public Future<Void> loadItem(final String identifier, final AudioLoadResultHandler resultHandler) {
-    return trackInfoExecutorService.submit(createItemLoader(identifier, resultHandler));
+    try {
+      return trackInfoExecutorService.submit(createItemLoader(identifier, resultHandler));
+    } catch (RejectedExecutionException e) {
+      return handleLoadRejected(identifier, resultHandler, e);
+    }
   }
 
   @Override
   public Future<Void> loadItemOrdered(Object orderingKey, final String identifier, final AudioLoadResultHandler resultHandler) {
-    return orderedInfoExecutor.submit(orderingKey, createItemLoader(identifier, resultHandler));
+    try {
+      return orderedInfoExecutor.submit(orderingKey, createItemLoader(identifier, resultHandler));
+    } catch (RejectedExecutionException e) {
+      return handleLoadRejected(identifier, resultHandler, e);
+    }
+  }
+
+  private Future<Void> handleLoadRejected(String identifier, AudioLoadResultHandler resultHandler, RejectedExecutionException e) {
+    FriendlyException exception = new FriendlyException("Cannot queue loading a track, queue is full.", SUSPICIOUS, e);
+    ExceptionTools.log(log, exception, "queueing item " + identifier);
+
+    resultHandler.loadFailed(exception);
+
+    return ExecutorTools.COMPLETED_VOID;
   }
 
   private Callable<Void> createItemLoader(final String identifier, final AudioLoadResultHandler resultHandler) {

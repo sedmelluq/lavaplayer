@@ -3,7 +3,7 @@ package com.sedmelluq.discord.lavaplayer.source.twitch;
 import com.sedmelluq.discord.lavaplayer.tools.DataFormatTools;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.tools.JsonBrowser;
-import com.sedmelluq.discord.lavaplayer.tools.io.HttpAccessPoint;
+import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterface;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.utils.URIBuilder;
@@ -42,16 +42,16 @@ public class TwitchStreamSegmentUrlProvider {
   }
 
   /**
-   * @param accessPoint Http access point to use for requests.
+   * @param httpInterface Http interface to use for requests.
    * @return The URL of the next TS segment.
    */
-  public String getNextSegmentUrl(HttpAccessPoint accessPoint) {
+  public String getNextSegmentUrl(HttpInterface httpInterface) {
     try {
-      if (!obtainSegmentPlaylistUrl(accessPoint)) {
+      if (!obtainSegmentPlaylistUrl(httpInterface)) {
         return null;
       }
 
-      List<String> segments = loadStreamSegmentsList(accessPoint);
+      List<String> segments = loadStreamSegmentsList(httpInterface);
       String segment = chooseNextSegment(segments);
 
       if (segment == null) {
@@ -64,10 +64,10 @@ public class TwitchStreamSegmentUrlProvider {
     }
   }
 
-  private List<String> loadStreamSegmentsList(HttpAccessPoint accessPoint) throws IOException {
+  private List<String> loadStreamSegmentsList(HttpInterface httpInterface) throws IOException {
     List<String> segments = new ArrayList<>();
 
-    for (String lineText : getLinesFromUrl(accessPoint, streamSegmentPlaylistUrl, "stream segments list")) {
+    for (String lineText : getLinesFromUrl(httpInterface, streamSegmentPlaylistUrl, "stream segments list")) {
       ExtendedM3uParser.Line line = ExtendedM3uParser.parseLine(lineText);
 
       if (line.isData()) {
@@ -101,14 +101,14 @@ public class TwitchStreamSegmentUrlProvider {
     return playlistUrl.substring(0, playlistUrl.lastIndexOf('/') + 1) + segmentName;
   }
 
-  private boolean obtainSegmentPlaylistUrl(HttpAccessPoint accessPoint) throws IOException {
+  private boolean obtainSegmentPlaylistUrl(HttpInterface httpInterface) throws IOException {
     if (System.currentTimeMillis() < tokenExpirationTime) {
       return true;
     }
 
-    JsonBrowser token = loadAccessToken(accessPoint);
+    JsonBrowser token = loadAccessToken(httpInterface);
     String channelStreamsUrl = getChannelStreamsUrl(token).toString();
-    ChannelStreams streams = loadChannelStreamsList(getLinesFromUrl(accessPoint, channelStreamsUrl, "channel streams list"));
+    ChannelStreams streams = loadChannelStreamsList(getLinesFromUrl(httpInterface, channelStreamsUrl, "channel streams list"));
 
     if (streams.entries.isEmpty()) {
       throw new IllegalStateException("No streams available on channel.");
@@ -125,11 +125,11 @@ public class TwitchStreamSegmentUrlProvider {
     return true;
   }
 
-  private JsonBrowser loadAccessToken(HttpAccessPoint accessPoint) throws IOException {
+  private JsonBrowser loadAccessToken(HttpInterface httpInterface) throws IOException {
     HttpUriRequest request = createGetRequest("https://api.twitch.tv/api/channels/" + channelName +
         "/access_token?adblock=false&need_https=true&platform=web&player_type=site");
 
-    try (CloseableHttpResponse response = accessPoint.execute(request)) {
+    try (CloseableHttpResponse response = httpInterface.execute(request)) {
       int statusCode = response.getStatusLine().getStatusCode();
       if (statusCode != 200) {
         throw new IOException("Unexpected response code from access token request: " + statusCode);
@@ -181,10 +181,10 @@ public class TwitchStreamSegmentUrlProvider {
     );
   }
 
-  private String[] getLinesFromUrl(HttpAccessPoint accessPoint, String url, String name) throws IOException {
+  private String[] getLinesFromUrl(HttpInterface httpInterface, String url, String name) throws IOException {
     HttpUriRequest request = createGetRequest(url);
 
-    try (CloseableHttpResponse response = accessPoint.execute(request)) {
+    try (CloseableHttpResponse response = httpInterface.execute(request)) {
       int statusCode = response.getStatusLine().getStatusCode();
       if (statusCode != 200) {
         throw new IOException("Unexpected response code " + statusCode + " from " + name);

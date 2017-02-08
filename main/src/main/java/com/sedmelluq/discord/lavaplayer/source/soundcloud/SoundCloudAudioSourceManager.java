@@ -5,10 +5,10 @@ import com.sedmelluq.discord.lavaplayer.source.AudioSourceManager;
 import com.sedmelluq.discord.lavaplayer.tools.DataFormatTools;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.tools.JsonBrowser;
-import com.sedmelluq.discord.lavaplayer.tools.io.HttpAccessPoint;
-import com.sedmelluq.discord.lavaplayer.tools.io.HttpAccessPointManager;
+import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterface;
+import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterfaceManager;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpClientTools;
-import com.sedmelluq.discord.lavaplayer.tools.io.ThreadLocalContextAccessPointManager;
+import com.sedmelluq.discord.lavaplayer.tools.io.ThreadLocalHttpInterfaceManager;
 import com.sedmelluq.discord.lavaplayer.track.AudioItem;
 import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
 import com.sedmelluq.discord.lavaplayer.track.AudioReference;
@@ -71,7 +71,7 @@ public class SoundCloudAudioSourceManager implements AudioSourceManager {
   private static final Pattern likedUserUrnPattern = Pattern.compile(LIKED_USER_URN_REGEX);
   private static final Pattern searchPattern = Pattern.compile(SEARCH_REGEX);
 
-  private final HttpAccessPointManager accessPointManager;
+  private final HttpInterfaceManager httpInterfaceManager;
   private final boolean allowSearch;
 
   /**
@@ -86,7 +86,7 @@ public class SoundCloudAudioSourceManager implements AudioSourceManager {
    * @param allowSearch Whether to allow search queries as identifiers
    */
   public SoundCloudAudioSourceManager(boolean allowSearch) {
-    accessPointManager = new ThreadLocalContextAccessPointManager(HttpClientTools.createSharedCookiesHttpBuilder());
+    httpInterfaceManager = new ThreadLocalHttpInterfaceManager(HttpClientTools.createSharedCookiesHttpBuilder());
     this.allowSearch = allowSearch;
   }
 
@@ -146,10 +146,10 @@ public class SoundCloudAudioSourceManager implements AudioSourceManager {
   }
 
   /**
-   * @return Get an HTTP access point for a playing track.
+   * @return Get an HTTP interface for a playing track.
    */
-  public HttpAccessPoint getAccessPoint() {
-    return accessPointManager.getAccessPoint();
+  public HttpInterface getHttpInterface() {
+    return httpInterfaceManager.getInterface();
   }
 
   private AudioTrack processAsSingleTrack(AudioReference reference) {
@@ -177,8 +177,8 @@ public class SoundCloudAudioSourceManager implements AudioSourceManager {
   }
 
   private AudioTrack loadFromTrackPage(String trackWebUrl, String secretToken) {
-    try (HttpAccessPoint accessPoint = getAccessPoint()) {
-      JsonBrowser trackInfoJson = loadTrackInfoFromJson(loadPageConfigJson(accessPoint, trackWebUrl));
+    try (HttpInterface httpInterface = getHttpInterface()) {
+      JsonBrowser trackInfoJson = loadTrackInfoFromJson(loadPageConfigJson(httpInterface, trackWebUrl));
       return buildAudioTrack(trackInfoJson, secretToken);
     } catch (IOException e) {
       throw new FriendlyException("Loading track from SoundCloud failed.", SUSPICIOUS, e);
@@ -199,8 +199,8 @@ public class SoundCloudAudioSourceManager implements AudioSourceManager {
     return new SoundCloudAudioTrack(trackInfo, this);
   }
 
-  private JsonBrowser loadPageConfigJson(HttpAccessPoint accessPoint, String url) throws IOException {
-    try (CloseableHttpResponse response = accessPoint.execute(new HttpGet(url))) {
+  private JsonBrowser loadPageConfigJson(HttpInterface httpInterface, String url) throws IOException {
+    try (CloseableHttpResponse response = httpInterface.execute(new HttpGet(url))) {
       int statusCode = response.getStatusLine().getStatusCode();
 
       if (statusCode == 404) {
@@ -233,12 +233,12 @@ public class SoundCloudAudioSourceManager implements AudioSourceManager {
   }
 
   private AudioPlaylist loadFromSet(String playlistWebUrl) {
-    try (HttpAccessPoint accessPoint = getAccessPoint()) {
-      JsonBrowser playlistInfo = loadPlaylistInfoFromJson(loadPageConfigJson(accessPoint, playlistWebUrl));
+    try (HttpInterface httpInterface = getHttpInterface()) {
+      JsonBrowser playlistInfo = loadPlaylistInfoFromJson(loadPageConfigJson(httpInterface, playlistWebUrl));
 
       return new BasicAudioPlaylist(
           playlistInfo.get("title").text(),
-          loadTracksFromPlaylist(accessPoint, playlistInfo, playlistWebUrl),
+          loadTracksFromPlaylist(httpInterface, playlistInfo, playlistWebUrl),
           null,
           false
       );
@@ -259,12 +259,12 @@ public class SoundCloudAudioSourceManager implements AudioSourceManager {
     throw new IllegalStateException("Could not find playlist information block.");
   }
 
-  private List<AudioTrack> loadTracksFromPlaylist(HttpAccessPoint accessPoint, JsonBrowser playlistInfo, String playlistWebUrl) throws IOException {
+  private List<AudioTrack> loadTracksFromPlaylist(HttpInterface httpInterface, JsonBrowser playlistInfo, String playlistWebUrl) throws IOException {
     List<AudioTrack> tracks = new ArrayList<>();
     List<String> trackIds = loadPlaylistTrackList(playlistInfo);
     URI trackListUrl = buildTrackListUrl(trackIds);
 
-    try (CloseableHttpResponse response = accessPoint.execute(new HttpGet(trackListUrl))) {
+    try (CloseableHttpResponse response = httpInterface.execute(new HttpGet(trackListUrl))) {
       if (response.getStatusLine().getStatusCode() != 200) {
         throw new IOException("Invalid status code for track list response.");
       }
@@ -331,20 +331,20 @@ public class SoundCloudAudioSourceManager implements AudioSourceManager {
   }
 
   private AudioItem loadFromLikedTracks(String likedListUrl) {
-    try (HttpAccessPoint accessPoint = getAccessPoint()) {
-      UserInfo userInfo = findUserIdFromLikedList(accessPoint, likedListUrl);
+    try (HttpInterface httpInterface = getHttpInterface()) {
+      UserInfo userInfo = findUserIdFromLikedList(httpInterface, likedListUrl);
       if (userInfo == null) {
         return AudioReference.NO_TRACK;
       }
 
-      return extractTracksFromLikedList(loadLikedListForUserId(accessPoint, userInfo), userInfo);
+      return extractTracksFromLikedList(loadLikedListForUserId(httpInterface, userInfo), userInfo);
     } catch (IOException e) {
       throw new FriendlyException("Loading liked tracks from SoundCloud failed.", SUSPICIOUS, e);
     }
   }
 
-  private UserInfo findUserIdFromLikedList(HttpAccessPoint accessPoint, String likedListUrl) throws IOException {
-    try (CloseableHttpResponse response = accessPoint.execute(new HttpGet(likedListUrl))) {
+  private UserInfo findUserIdFromLikedList(HttpInterface httpInterface, String likedListUrl) throws IOException {
+    try (CloseableHttpResponse response = httpInterface.execute(new HttpGet(likedListUrl))) {
       int statusCode = response.getStatusLine().getStatusCode();
 
       if (statusCode == 404) {
@@ -358,11 +358,11 @@ public class SoundCloudAudioSourceManager implements AudioSourceManager {
     }
   }
 
-  private JsonBrowser loadLikedListForUserId(HttpAccessPoint accessPoint, UserInfo userInfo) throws IOException {
+  private JsonBrowser loadLikedListForUserId(HttpInterface httpInterface, UserInfo userInfo) throws IOException {
     HttpUriRequest request = new HttpGet("https://api-v2.soundcloud.com/users/" + userInfo.id + "/likes?client_id="
         + CLIENT_ID + "&limit=200&offset=0");
 
-    try (CloseableHttpResponse response = accessPoint.execute(request)) {
+    try (CloseableHttpResponse response = httpInterface.execute(request)) {
       int statusCode = response.getStatusLine().getStatusCode();
 
       if (statusCode != 200) {
@@ -416,15 +416,15 @@ public class SoundCloudAudioSourceManager implements AudioSourceManager {
   private AudioItem loadSearchResult(String query, int offset, int rawLimit) {
     int limit = Math.min(rawLimit, MAXIMUM_SEARCH_RESULTS);
 
-    try (HttpAccessPoint accessPoint = getAccessPoint()) {
-      return loadSearchResultsFromUrl(accessPoint, query, buildSearchUri(query, offset, limit));
+    try (HttpInterface httpInterface = getHttpInterface()) {
+      return loadSearchResultsFromUrl(httpInterface, query, buildSearchUri(query, offset, limit));
     } catch (IOException e) {
       throw new FriendlyException("Loading search results from SoundCloud failed.", SUSPICIOUS, e);
     }
   }
 
-  private AudioItem loadSearchResultsFromUrl(HttpAccessPoint accessPoint, String query, URI uri) throws IOException {
-    HttpResponse response = accessPoint.execute(new HttpGet(uri));
+  private AudioItem loadSearchResultsFromUrl(HttpInterface httpInterface, String query, URI uri) throws IOException {
+    HttpResponse response = httpInterface.execute(new HttpGet(uri));
 
     try {
       JsonBrowser searchResults = JsonBrowser.parse(response.getEntity().getContent());
