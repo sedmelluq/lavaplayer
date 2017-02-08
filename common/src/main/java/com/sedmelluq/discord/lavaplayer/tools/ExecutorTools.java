@@ -5,7 +5,9 @@ import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.RejectedExecutionHandler;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
@@ -54,18 +56,24 @@ public class ExecutorTools {
    * @param coreSize Number of threads that are always alive
    * @param maximumSize The maximum number of threads in the pool
    * @param timeout Non-core thread timeout in milliseconds
-   * @param poolName Name of the daemon thread pool to create
+   * @param threadFactory Thread factory to create pool threads with
    * @return An eagerly scaling thread pool executor
    */
-  public static ExecutorService createEagerlyScalingExecutor(int coreSize, int maximumSize, long timeout, String poolName) {
+  public static ThreadPoolExecutor createEagerlyScalingExecutor(int coreSize, int maximumSize, long timeout,
+                                                                int queueCapacity, ThreadFactory threadFactory) {
+
     ThreadPoolExecutor executor = new ThreadPoolExecutor(coreSize, maximumSize, timeout, TimeUnit.MILLISECONDS,
-        new EagerlyScalingTaskQueue(), new DaemonThreadFactory(poolName));
+        new EagerlyScalingTaskQueue(queueCapacity), threadFactory);
 
     executor.setRejectedExecutionHandler(new EagerlyScalingRejectionHandler());
     return executor;
   }
 
   private static class EagerlyScalingTaskQueue extends LinkedBlockingQueue<Runnable> {
+    public EagerlyScalingTaskQueue(int capacity) {
+      super(capacity);
+    }
+
     @Override
     public boolean offer(Runnable runnable) {
       return isEmpty() && super.offer(runnable);
@@ -73,12 +81,12 @@ public class ExecutorTools {
   }
 
   private static class EagerlyScalingRejectionHandler implements RejectedExecutionHandler {
+    private final ThreadPoolExecutor.AbortPolicy abortPolicy = new ThreadPoolExecutor.AbortPolicy();
+
     @Override
     public void rejectedExecution(Runnable runnable, ThreadPoolExecutor executor) {
-      try {
-        executor.getQueue().put(runnable);
-      } catch (InterruptedException e) {
-        Thread.currentThread().interrupt();
+      if (!executor.getQueue().add(runnable)) {
+        abortPolicy.rejectedExecution(runnable, executor);
       }
     }
   }

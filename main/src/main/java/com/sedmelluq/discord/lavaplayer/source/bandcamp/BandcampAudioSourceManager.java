@@ -6,7 +6,10 @@ import com.sedmelluq.discord.lavaplayer.tools.DataFormatTools;
 import com.sedmelluq.discord.lavaplayer.tools.ExceptionTools;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.tools.JsonBrowser;
+import com.sedmelluq.discord.lavaplayer.tools.io.HttpAccessPoint;
+import com.sedmelluq.discord.lavaplayer.tools.io.HttpAccessPointManager;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpClientTools;
+import com.sedmelluq.discord.lavaplayer.tools.io.ThreadLocalContextAccessPointManager;
 import com.sedmelluq.discord.lavaplayer.track.AudioItem;
 import com.sedmelluq.discord.lavaplayer.track.AudioReference;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
@@ -15,8 +18,6 @@ import com.sedmelluq.discord.lavaplayer.track.BasicAudioPlaylist;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClientBuilder;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -39,13 +40,13 @@ public class BandcampAudioSourceManager implements AudioSourceManager {
   private static final Pattern trackUrlPattern = Pattern.compile(TRACK_URL_REGEX);
   private static final Pattern albumUrlPattern = Pattern.compile(ALBUM_URL_REGEX);
 
-  private final HttpClientBuilder httpClientBuilder;
+  private final HttpAccessPointManager accessPointManager;
 
   /**
    * Create an instance.
    */
   public BandcampAudioSourceManager() {
-    httpClientBuilder = HttpClientTools.createSharedCookiesHttpBuilder();
+    accessPointManager = new ThreadLocalContextAccessPointManager(HttpClientTools.createSharedCookiesHttpBuilder());
   }
 
   @Override
@@ -132,17 +133,17 @@ public class BandcampAudioSourceManager implements AudioSourceManager {
   }
 
   private AudioItem extractFromPage(String url, AudioItemExtractor extractor) {
-    try (CloseableHttpClient httpClient = httpClientBuilder.build()) {
-      return extractFromPageWithClient(httpClient, url, extractor);
+    try (HttpAccessPoint accessPoint = accessPointManager.getAccessPoint()) {
+      return extractFromPageWithAccessPoint(accessPoint, url, extractor);
     } catch (Exception e) {
       throw ExceptionTools.wrapUnfriendlyExceptions("Loading information for a Bandcamp track failed.", FAULT, e);
     }
   }
 
-  private AudioItem extractFromPageWithClient(CloseableHttpClient httpClient, String url, AudioItemExtractor extractor) throws Exception {
+  private AudioItem extractFromPageWithAccessPoint(HttpAccessPoint accessPoint, String url, AudioItemExtractor extractor) throws Exception {
     String responseText;
 
-    try (CloseableHttpResponse response = httpClient.execute(new HttpGet(url))) {
+    try (CloseableHttpResponse response = accessPoint.execute(new HttpGet(url))) {
       int statusCode = response.getStatusLine().getStatusCode();
 
       if (statusCode == 404) {
@@ -154,7 +155,7 @@ public class BandcampAudioSourceManager implements AudioSourceManager {
       responseText = IOUtils.toString(response.getEntity().getContent(), StandardCharsets.UTF_8);
     }
 
-    return extractor.extract(httpClient, responseText);
+    return extractor.extract(accessPoint, responseText);
   }
 
   @Override
@@ -174,17 +175,17 @@ public class BandcampAudioSourceManager implements AudioSourceManager {
 
   @Override
   public void shutdown() {
-    // Nothing to do
+    IOUtils.closeQuietly(accessPointManager);
   }
 
   /**
-   * @return A new HttpClient instance. All instances returned from this method use the same cookie jar.
+   * @return Get an HTTP access point for a playing track.
    */
-  public CloseableHttpClient createHttpClient() {
-    return httpClientBuilder.build();
+  public HttpAccessPoint getAccessPoint() {
+    return accessPointManager.getAccessPoint();
   }
 
   private interface AudioItemExtractor {
-    AudioItem extract(CloseableHttpClient httpClient, String text) throws Exception;
+    AudioItem extract(HttpAccessPoint accessPoint, String text) throws Exception;
   }
 }

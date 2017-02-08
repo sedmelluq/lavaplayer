@@ -148,6 +148,11 @@ public interface AudioPlayerManager {
   void setPlayerCleanupThreshold(long cleanupThreshold);
 
   /**
+   * Sets the number of threads used for loading processing item load requests.
+   */
+  void setItemsLoaderThreadPoolSize(int poolSize);
+
+  /**
    * @return New audio player.
    */
   AudioPlayer createPlayer();

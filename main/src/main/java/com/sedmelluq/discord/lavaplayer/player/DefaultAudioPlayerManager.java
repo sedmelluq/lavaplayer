@@ -58,6 +58,8 @@ public class DefaultAudioPlayerManager implements AudioPlayerManager {
   private static final int DEFAULT_CLEANUP_THRESHOLD = (int) TimeUnit.MINUTES.toMillis(1);
 
   private static final int MAXIMUM_LOAD_REDIRECTS = 5;
+  private static final int DEFAULT_LOADER_POOL_SIZE = 10;
+  private static final int LOADER_QUEUE_CAPACITY = 5000;
 
   private static final Logger log = LoggerFactory.getLogger(DefaultAudioPlayerManager.class);
 
@@ -65,7 +67,7 @@ public class DefaultAudioPlayerManager implements AudioPlayerManager {
 
   // Executors
   private final ExecutorService trackPlaybackExecutorService;
-  private final ExecutorService trackInfoExecutorService;
+  private final ThreadPoolExecutor trackInfoExecutorService;
   private final ScheduledExecutorService scheduledExecutorService;
   private final OrderedExecutor orderedInfoExecutor;
 
@@ -82,6 +84,7 @@ public class DefaultAudioPlayerManager implements AudioPlayerManager {
   private final GarbageCollectionMonitor garbageCollectionMonitor;
   private final AudioPlayerLifecycleManager lifecycleManager;
 
+
   /**
    * Create a new instance
    */
@@ -91,7 +94,8 @@ public class DefaultAudioPlayerManager implements AudioPlayerManager {
     // Executors
     trackPlaybackExecutorService = new ThreadPoolExecutor(1, Integer.MAX_VALUE, 10, TimeUnit.SECONDS,
         new SynchronousQueue<>(), new DaemonThreadFactory("playback"));
-    trackInfoExecutorService = ExecutorTools.createEagerlyScalingExecutor(1, 10, TimeUnit.SECONDS.toMillis(30), "info-loader");
+    trackInfoExecutorService = ExecutorTools.createEagerlyScalingExecutor(1, DEFAULT_LOADER_POOL_SIZE,
+        TimeUnit.SECONDS.toMillis(30), LOADER_QUEUE_CAPACITY, new DaemonThreadFactory("info-loader"));
     scheduledExecutorService = Executors.newScheduledThreadPool(1, new DaemonThreadFactory("manager"));
     orderedInfoExecutor = new OrderedExecutor(trackInfoExecutorService);
 
@@ -345,6 +349,11 @@ public class DefaultAudioPlayerManager implements AudioPlayerManager {
   @Override
   public void setPlayerCleanupThreshold(long cleanupThreshold) {
     this.cleanupThreshold.set(cleanupThreshold);
+  }
+
+  @Override
+  public void setItemsLoaderThreadPoolSize(int poolSize) {
+    trackInfoExecutorService.setMaximumPoolSize(poolSize);
   }
 
   private boolean checkSourcesForItem(AudioReference reference, AudioLoadResultHandler resultHandler) {

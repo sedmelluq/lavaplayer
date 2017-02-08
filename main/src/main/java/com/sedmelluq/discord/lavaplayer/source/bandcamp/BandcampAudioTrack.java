@@ -3,6 +3,7 @@ package com.sedmelluq.discord.lavaplayer.source.bandcamp;
 import com.sedmelluq.discord.lavaplayer.container.mp3.Mp3AudioTrack;
 import com.sedmelluq.discord.lavaplayer.source.AudioSourceManager;
 import com.sedmelluq.discord.lavaplayer.tools.JsonBrowser;
+import com.sedmelluq.discord.lavaplayer.tools.io.HttpAccessPoint;
 import com.sedmelluq.discord.lavaplayer.tools.io.PersistentHttpStream;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo;
@@ -11,7 +12,6 @@ import com.sedmelluq.discord.lavaplayer.track.playback.LocalAudioTrackExecutor;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.CloseableHttpClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,20 +39,20 @@ public class BandcampAudioTrack extends DelegatedAudioTrack {
 
   @Override
   public void process(LocalAudioTrackExecutor localExecutor) throws Exception {
-    try (CloseableHttpClient httpClient = sourceManager.createHttpClient()) {
+    try (HttpAccessPoint accessPoint = sourceManager.getAccessPoint()) {
       log.debug("Loading Bandcamp track page from URL: {}", trackInfo.identifier);
 
-      String trackMediaUrl = getTrackMediaUrl(httpClient);
+      String trackMediaUrl = getTrackMediaUrl(accessPoint);
       log.debug("Starting Bandcamp track from URL: {}", trackMediaUrl);
 
-      try (PersistentHttpStream stream = new PersistentHttpStream(httpClient, new URI(trackMediaUrl), null)) {
+      try (PersistentHttpStream stream = new PersistentHttpStream(accessPoint, new URI(trackMediaUrl), null)) {
         processDelegate(new Mp3AudioTrack(trackInfo, stream), localExecutor);
       }
     }
   }
 
-  private String getTrackMediaUrl(CloseableHttpClient httpClient) throws IOException {
-    try (CloseableHttpResponse response = httpClient.execute(new HttpGet(trackInfo.identifier))) {
+  private String getTrackMediaUrl(HttpAccessPoint accessPoint) throws IOException {
+    try (CloseableHttpResponse response = accessPoint.execute(new HttpGet(trackInfo.identifier))) {
       int statusCode = response.getStatusLine().getStatusCode();
       if (statusCode != 200) {
         throw new IOException("Invalid status code " + statusCode + " for track page.");

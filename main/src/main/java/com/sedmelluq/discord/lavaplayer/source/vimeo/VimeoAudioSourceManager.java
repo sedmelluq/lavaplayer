@@ -5,7 +5,10 @@ import com.sedmelluq.discord.lavaplayer.source.AudioSourceManager;
 import com.sedmelluq.discord.lavaplayer.tools.DataFormatTools;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.tools.JsonBrowser;
+import com.sedmelluq.discord.lavaplayer.tools.io.HttpAccessPoint;
+import com.sedmelluq.discord.lavaplayer.tools.io.HttpAccessPointManager;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpClientTools;
+import com.sedmelluq.discord.lavaplayer.tools.io.ThreadLocalContextAccessPointManager;
 import com.sedmelluq.discord.lavaplayer.track.AudioItem;
 import com.sedmelluq.discord.lavaplayer.track.AudioReference;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
@@ -13,8 +16,6 @@ import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClientBuilder;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -31,13 +32,13 @@ public class VimeoAudioSourceManager implements AudioSourceManager {
   private static final String TRACK_URL_REGEX = "^https://vimeo.com/[0-9]+(?:\\?.*|)$";
   private static final Pattern trackUrlPattern = Pattern.compile(TRACK_URL_REGEX);
 
-  private final HttpClientBuilder httpClientBuilder;
+  private final HttpAccessPointManager accessPointManager;
 
   /**
    * Create an instance.
    */
   public VimeoAudioSourceManager() {
-    httpClientBuilder = HttpClientTools.createSharedCookiesHttpBuilder();
+    accessPointManager = new ThreadLocalContextAccessPointManager(HttpClientTools.createSharedCookiesHttpBuilder());
   }
 
   @Override
@@ -51,8 +52,8 @@ public class VimeoAudioSourceManager implements AudioSourceManager {
       return null;
     }
 
-    try (CloseableHttpClient httpClient = httpClientBuilder.build()) {
-      return loadFromTrackPage(httpClient, reference.identifier);
+    try (HttpAccessPoint accessPoint = accessPointManager.getAccessPoint()) {
+      return loadFromTrackPage(accessPoint, reference.identifier);
     } catch (IOException e) {
       throw new FriendlyException("Loading Vimeo track information failed.", SUSPICIOUS, e);
     }
@@ -79,10 +80,10 @@ public class VimeoAudioSourceManager implements AudioSourceManager {
   }
 
   /**
-   * @return A new HttpClient instance. All instances returned from this method use the same cookie jar.
+   * @return Get an HTTP access point for a playing track.
    */
-  public CloseableHttpClient createHttpClient() {
-    return httpClientBuilder.build();
+  public HttpAccessPoint getAccessPoint() {
+    return accessPointManager.getAccessPoint();
   }
 
   JsonBrowser loadConfigJsonFromPageContent(String content) throws IOException {
@@ -95,8 +96,8 @@ public class VimeoAudioSourceManager implements AudioSourceManager {
     return null;
   }
 
-  private AudioItem loadFromTrackPage(CloseableHttpClient httpClient, String trackUrl) throws IOException {
-    try (CloseableHttpResponse response = httpClient.execute(new HttpGet(trackUrl))) {
+  private AudioItem loadFromTrackPage(HttpAccessPoint accessPoint, String trackUrl) throws IOException {
+    try (CloseableHttpResponse response = accessPoint.execute(new HttpGet(trackUrl))) {
       int statusCode = response.getStatusLine().getStatusCode();
 
       if (statusCode == 404) {

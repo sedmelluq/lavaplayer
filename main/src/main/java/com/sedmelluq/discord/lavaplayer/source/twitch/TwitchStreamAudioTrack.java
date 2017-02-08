@@ -5,13 +5,13 @@ import com.sedmelluq.discord.lavaplayer.container.mpegts.MpegTsElementaryInputSt
 import com.sedmelluq.discord.lavaplayer.container.mpegts.PesPacketInputStream;
 import com.sedmelluq.discord.lavaplayer.source.AudioSourceManager;
 import com.sedmelluq.discord.lavaplayer.tools.io.ChainedInputStream;
+import com.sedmelluq.discord.lavaplayer.tools.io.HttpAccessPoint;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo;
 import com.sedmelluq.discord.lavaplayer.track.DelegatedAudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.playback.LocalAudioTrackExecutor;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.impl.client.CloseableHttpClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -47,8 +47,8 @@ public class TwitchStreamAudioTrack extends DelegatedAudioTrack {
   public void process(LocalAudioTrackExecutor localExecutor) throws Exception {
     log.debug("Starting to play Twitch channel {}.", channelName);
 
-    try (final CloseableHttpClient httpClient = sourceManager.createHttpClient()) {
-      try (ChainedInputStream chainedInputStream = new ChainedInputStream(() -> getSegmentInputStream(httpClient))) {
+    try (final HttpAccessPoint accessPoint = sourceManager.getAccessPoint()) {
+      try (ChainedInputStream chainedInputStream = new ChainedInputStream(() -> getSegmentInputStream(accessPoint))) {
         MpegTsElementaryInputStream elementaryInputStream = new MpegTsElementaryInputStream(chainedInputStream, ADTS_ELEMENTARY_STREAM);
         PesPacketInputStream pesPacketInputStream = new PesPacketInputStream(elementaryInputStream);
 
@@ -57,8 +57,8 @@ public class TwitchStreamAudioTrack extends DelegatedAudioTrack {
     }
   }
 
-  private InputStream getSegmentInputStream(CloseableHttpClient httpClient) {
-    String url = segmentUrlProvider.getNextSegmentUrl(httpClient);
+  private InputStream getSegmentInputStream(HttpAccessPoint accessPoint) {
+    String url = segmentUrlProvider.getNextSegmentUrl(accessPoint);
     if (url == null) {
       return null;
     }
@@ -67,7 +67,7 @@ public class TwitchStreamAudioTrack extends DelegatedAudioTrack {
     boolean success = false;
 
     try {
-      response = httpClient.execute(createGetRequest(url));
+      response = accessPoint.execute(createGetRequest(url));
       int statusCode = response.getStatusLine().getStatusCode();
 
       if (statusCode != 200) {

@@ -6,6 +6,7 @@ import com.sedmelluq.discord.lavaplayer.source.AudioSourceManager;
 import com.sedmelluq.discord.lavaplayer.tools.DataFormatTools;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.tools.JsonBrowser;
+import com.sedmelluq.discord.lavaplayer.tools.io.HttpAccessPoint;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo;
 import com.sedmelluq.discord.lavaplayer.track.DelegatedAudioTrack;
@@ -14,7 +15,6 @@ import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.http.entity.ContentType;
-import org.apache.http.impl.client.CloseableHttpClient;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -56,21 +56,21 @@ public class YoutubeAudioTrack extends DelegatedAudioTrack {
 
   @Override
   public void process(LocalAudioTrackExecutor localExecutor) throws Exception {
-    try (CloseableHttpClient httpClient = sourceManager.createHttpClient()) {
-      FormatWithUrl format = loadBestFormatWithUrl(httpClient);
+    try (HttpAccessPoint accessPoint = sourceManager.getAccessPoint()) {
+      FormatWithUrl format = loadBestFormatWithUrl(accessPoint);
 
       log.debug("Starting track from URL: {}", format.signedUrl);
 
       if (trackInfo.isStream) {
-        processStream(localExecutor, httpClient, format);
+        processStream(localExecutor, accessPoint, format);
       } else {
-        processStatic(localExecutor, httpClient, format);
+        processStatic(localExecutor, accessPoint, format);
       }
     }
   }
 
-  private void processStatic(LocalAudioTrackExecutor localExecutor, CloseableHttpClient httpClient, FormatWithUrl format) throws Exception {
-    try (YoutubePersistentHttpStream stream = new YoutubePersistentHttpStream(httpClient, format.signedUrl, format.details.getContentLength())) {
+  private void processStatic(LocalAudioTrackExecutor localExecutor, HttpAccessPoint accessPoint, FormatWithUrl format) throws Exception {
+    try (YoutubePersistentHttpStream stream = new YoutubePersistentHttpStream(accessPoint, format.signedUrl, format.details.getContentLength())) {
       if (MIME_AUDIO_WEBM.equals(format.details.getType().getMimeType())) {
         processDelegate(new MatroskaAudioTrack(trackInfo, stream), localExecutor);
       } else {
@@ -79,22 +79,22 @@ public class YoutubeAudioTrack extends DelegatedAudioTrack {
     }
   }
 
-  private void processStream(LocalAudioTrackExecutor localExecutor, CloseableHttpClient httpClient, FormatWithUrl format) throws Exception {
+  private void processStream(LocalAudioTrackExecutor localExecutor, HttpAccessPoint accessPoint, FormatWithUrl format) throws Exception {
     if (MIME_AUDIO_WEBM.equals(format.details.getType().getMimeType())) {
       throw new FriendlyException("YouTube WebM streams are currently not supported.", COMMON, null);
     } else {
-      processDelegate(new YoutubeMpegStreamAudioTrack(trackInfo, httpClient, format.signedUrl), localExecutor);
+      processDelegate(new YoutubeMpegStreamAudioTrack(trackInfo, accessPoint, format.signedUrl), localExecutor);
     }
   }
 
-  private FormatWithUrl loadBestFormatWithUrl(CloseableHttpClient httpClient) throws Exception {
-    JsonBrowser info = getTrackInfo(httpClient);
+  private FormatWithUrl loadBestFormatWithUrl(HttpAccessPoint accessPoint) throws Exception {
+    JsonBrowser info = getTrackInfo(accessPoint);
 
     String playerScript = extractPlayerScriptFromInfo(info);
-    List<YoutubeTrackFormat> formats = loadTrackFormats(info, httpClient, playerScript);
+    List<YoutubeTrackFormat> formats = loadTrackFormats(info, accessPoint, playerScript);
     YoutubeTrackFormat format = findBestSupportedFormat(formats);
 
-    URI signedUrl = sourceManager.getCipherManager().getValidUrl(httpClient, playerScript, format);
+    URI signedUrl = sourceManager.getCipherManager().getValidUrl(accessPoint, playerScript, format);
 
     return new FormatWithUrl(format, signedUrl);
   }
@@ -109,11 +109,11 @@ public class YoutubeAudioTrack extends DelegatedAudioTrack {
     return sourceManager;
   }
 
-  private JsonBrowser getTrackInfo(CloseableHttpClient httpClient) throws Exception {
-    return sourceManager.getTrackInfoFromMainPage(httpClient, getIdentifier(), true);
+  private JsonBrowser getTrackInfo(HttpAccessPoint accessPoint) throws Exception {
+    return sourceManager.getTrackInfoFromMainPage(accessPoint, getIdentifier(), true);
   }
 
-  private List<YoutubeTrackFormat> loadTrackFormats(JsonBrowser info, CloseableHttpClient httpClient, String playerScript) throws Exception {
+  private List<YoutubeTrackFormat> loadTrackFormats(JsonBrowser info, HttpAccessPoint accessPoint, String playerScript) throws Exception {
     String adaptiveFormats = info.safeGet("args").safeGet("adaptive_fmts").text();
     if (adaptiveFormats != null) {
       return loadTrackFormatsFromAdaptive(adaptiveFormats);
@@ -121,7 +121,7 @@ public class YoutubeAudioTrack extends DelegatedAudioTrack {
 
     String dashUrl = info.safeGet("args").safeGet("dashmpd").text();
     if (dashUrl != null) {
-      return loadTrackFormatsFromDash(dashUrl, httpClient, playerScript);
+      return loadTrackFormatsFromDash(dashUrl, accessPoint, playerScript);
     }
 
     throw new FriendlyException("Unable to play this YouTube track.", SUSPICIOUS,
@@ -146,10 +146,10 @@ public class YoutubeAudioTrack extends DelegatedAudioTrack {
     return tracks;
   }
 
-  private List<YoutubeTrackFormat> loadTrackFormatsFromDash(String dashUrl, CloseableHttpClient httpClient, String playerScript) throws Exception {
-    String resolvedDashUrl = sourceManager.getCipherManager().getValidDashUrl(httpClient, playerScript, dashUrl);
+  private List<YoutubeTrackFormat> loadTrackFormatsFromDash(String dashUrl, HttpAccessPoint accessPoint, String playerScript) throws Exception {
+    String resolvedDashUrl = sourceManager.getCipherManager().getValidDashUrl(accessPoint, playerScript, dashUrl);
 
-    try (CloseableHttpResponse response = httpClient.execute(new HttpGet(resolvedDashUrl))) {
+    try (CloseableHttpResponse response = accessPoint.execute(new HttpGet(resolvedDashUrl))) {
       if (response.getStatusLine().getStatusCode() != 200) {
         throw new IOException("Invalid status code for track info page response.");
       }

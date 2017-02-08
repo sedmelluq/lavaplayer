@@ -5,8 +5,6 @@ import org.apache.http.HttpHeaders;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.util.EntityUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,7 +23,7 @@ public class PersistentHttpStream extends SeekableInputStream implements AutoClo
 
   private static final long MAX_SKIP_DISTANCE = 512L * 1024L;
 
-  private final CloseableHttpClient httpClient;
+  private final HttpAccessPoint accessPoint;
   protected final URI contentUrl;
   private int lastStatusCode;
   private CloseableHttpResponse currentResponse;
@@ -33,14 +31,14 @@ public class PersistentHttpStream extends SeekableInputStream implements AutoClo
   protected long position;
 
   /**
-   * @param httpClient The HttpClient to use for requests
+   * @param accessPoint The HttpAccessPoint to use for requests
    * @param contentUrl The URL of the resource
    * @param contentLength The length of the resource in bytes
    */
-  public PersistentHttpStream(CloseableHttpClient httpClient, URI contentUrl, Long contentLength) {
+  public PersistentHttpStream(HttpAccessPoint accessPoint, URI contentUrl, Long contentLength) {
     super(contentLength == null ? Long.MAX_VALUE : contentLength, MAX_SKIP_DISTANCE);
 
-    this.httpClient = httpClient;
+    this.accessPoint = accessPoint;
     this.contentUrl = contentUrl;
     this.position = 0;
   }
@@ -93,7 +91,7 @@ public class PersistentHttpStream extends SeekableInputStream implements AutoClo
 
   private void connect(boolean skipStatusCheck) throws IOException {
     if (currentResponse == null) {
-      currentResponse = httpClient.execute(getConnectRequest());
+      currentResponse = accessPoint.execute(getConnectRequest());
       lastStatusCode = currentResponse.getStatusLine().getStatusCode();
 
       if (!skipStatusCheck) {
