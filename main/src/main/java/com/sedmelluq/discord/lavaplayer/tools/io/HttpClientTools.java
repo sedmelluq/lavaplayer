@@ -146,7 +146,13 @@ public class HttpClientTools {
     }
 
     private static HttpClientConnectionManager createConnectionManager() {
-      return new PoolingHttpClientConnectionManager(createConnectionSocketFactory(), createConnectionFactory());
+      PoolingHttpClientConnectionManager manager = new PoolingHttpClientConnectionManager(createConnectionSocketFactory(),
+          createConnectionFactory());
+
+      manager.setMaxTotal(3000);
+      manager.setDefaultMaxPerRoute(1500);
+
+      return manager;
     }
 
     private static Registry<ConnectionSocketFactory> createConnectionSocketFactory() {

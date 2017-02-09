@@ -19,12 +19,10 @@ import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo;
 import com.sedmelluq.discord.lavaplayer.tools.JsonBrowser;
 import com.sedmelluq.discord.lavaplayer.tools.DataFormatTools;
 import org.apache.commons.io.IOUtils;
-import org.apache.http.client.CookieStore;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.client.utils.URLEncodedUtils;
-import org.apache.http.impl.client.BasicCookieStore;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -107,7 +105,7 @@ public class YoutubeAudioSourceManager implements AudioSourceManager {
     signatureCipherManager = new YoutubeSignatureCipherManager();
     mixLoadingExecutor = new ThreadPoolExecutor(0, 10, 5, TimeUnit.SECONDS, new LinkedBlockingQueue<>(MIX_QUEUE_CAPACITY),
         new DaemonThreadFactory("yt-mix"));
-    httpInterfaceManager = new ThreadLocalHttpInterfaceManager(createSharedCookiesHttpBuilder());
+    httpInterfaceManager = new ThreadLocalHttpInterfaceManager(HttpClientTools.createSharedCookiesHttpBuilder());
     this.allowSearch = allowSearch;
     playlistPageCount = 6;
   }
@@ -169,13 +167,6 @@ public class YoutubeAudioSourceManager implements AudioSourceManager {
    */
   public HttpInterface getHttpInterface() {
     return httpInterfaceManager.getInterface();
-  }
-
-  private static HttpClientBuilder createSharedCookiesHttpBuilder() {
-    CookieStore cookieStore = new BasicCookieStore();
-    HttpClientBuilder httpClientBuilder = HttpClientBuilder.create();
-    httpClientBuilder.setDefaultCookieStore(cookieStore);
-    return httpClientBuilder;
   }
 
   private AudioItem loadItemOnce(AudioReference reference) {

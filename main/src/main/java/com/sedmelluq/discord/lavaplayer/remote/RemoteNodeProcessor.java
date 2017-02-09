@@ -14,6 +14,7 @@ import com.sedmelluq.discord.lavaplayer.remote.message.TrackStoppedMessage;
 import com.sedmelluq.discord.lavaplayer.tools.ExceptionTools;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.tools.RingBufferMath;
+import com.sedmelluq.discord.lavaplayer.tools.io.HttpClientTools;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterface;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterfaceManager;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
@@ -389,7 +390,7 @@ public class RemoteNodeProcessor implements RemoteNode, Runnable {
         .setConnectionRequestTimeout(CONNECT_TIMEOUT)
         .setSocketTimeout(SOCKET_TIMEOUT);
 
-    HttpClientBuilder builder = HttpClientBuilder.create();
+    HttpClientBuilder builder = HttpClientTools.createSharedCookiesHttpBuilder();
     builder.setDefaultRequestConfig(requestBuilder.build());
     return builder;
   }

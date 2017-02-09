@@ -12,6 +12,7 @@ import com.sedmelluq.discord.lavaplayer.track.TrackStateListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.InterruptedIOException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -19,6 +20,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static com.sedmelluq.discord.lavaplayer.tools.ExceptionTools.findDeepException;
 import static com.sedmelluq.discord.lavaplayer.tools.FriendlyException.Severity.FAULT;
 import static com.sedmelluq.discord.lavaplayer.tools.FriendlyException.Severity.SUSPICIOUS;
 import static com.sedmelluq.discord.lavaplayer.track.TrackMarkerHandler.MarkerState.ENDED;
@@ -235,28 +237,54 @@ public class LocalAudioTrackExecutor implements AudioTrackExecutor {
 
         // Must not finish before terminator frame has been consumed the user may still want to perform seeks until then
         waitOnEnd();
-      } catch (InterruptedException interruption) {
-        Thread.interrupted();
-
-        if (checkStopped()) {
-          proceed = false;
-          markerTracker.trigger(STOPPED);
-        } else if (checkPendingSeek(seekExecutor)) {
-          // Double-check, might have received a stop request while seeking
-          if (checkStopped()) {
-            proceed = false;
-            markerTracker.trigger(STOPPED);
-          } else {
-            proceed = true;
-          }
-        } else {
-          Thread.currentThread().interrupt();
-          throw new FriendlyException("The track was unexpectedly terminated.", SUSPICIOUS, interruption);
-        }
       } catch (Exception e) {
-        throw ExceptionTools.wrapUnfriendlyExceptions("Something went wrong when decoding the track.", FAULT, e);
+        InterruptedException interruption = findInterrupt(e);
+
+        if (interruption != null) {
+          proceed = handlePlaybackInterrupt(interruption, seekExecutor);
+        } else {
+          throw ExceptionTools.wrapUnfriendlyExceptions("Something went wrong when decoding the track.", FAULT, e);
+        }
       }
     }
+  }
+
+  private boolean handlePlaybackInterrupt(InterruptedException interruption, SeekExecutor seekExecutor) {
+    Thread.interrupted();
+
+    if (checkStopped()) {
+      markerTracker.trigger(STOPPED);
+      return false;
+    } else if (checkPendingSeek(seekExecutor)) {
+      // Double-check, might have received a stop request while seeking
+      if (checkStopped()) {
+        markerTracker.trigger(STOPPED);
+        return false;
+      } else {
+        return true;
+      }
+    } else {
+      Thread.currentThread().interrupt();
+      throw new FriendlyException("The track was unexpectedly terminated.", SUSPICIOUS, interruption);
+    }
+  }
+
+  private InterruptedException findInterrupt(Throwable throwable) {
+    InterruptedException exception = findDeepException(throwable, InterruptedException.class);
+
+    if (exception == null) {
+      InterruptedIOException ioException = findDeepException(throwable, InterruptedIOException.class);
+
+      if (ioException != null) {
+        exception = new InterruptedException(ioException.getMessage());
+      }
+    }
+
+    if (exception == null && Thread.interrupted()) {
+      return new InterruptedException();
+    }
+
+    return exception;
   }
 
   /**

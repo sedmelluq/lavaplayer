@@ -56,6 +56,26 @@ public class ExceptionTools {
   }
 
   /**
+   * Finds the first exception which is an instance of the specified class from the throwable cause chain.
+   *
+   * @param throwable Throwable to scan.
+   * @param klass The throwable class to scan for.
+   * @param <T> The throwable class to scan for.
+   * @return The first exception in the cause chain (including itself) which is an instance of the specified class.
+   */
+  public static <T extends Throwable> T findDeepException(Throwable throwable, Class<T> klass) {
+    while (throwable != null) {
+      if (klass.isAssignableFrom(throwable.getClass())) {
+        return (T) throwable;
+      }
+
+      throwable = throwable.getCause();
+    }
+
+    return null;
+  }
+
+  /**
    * Makes sure thread is set to interrupted state when the throwable is an InterruptedException
    * @param throwable Throwable to check
    */

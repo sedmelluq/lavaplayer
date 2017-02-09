@@ -1,5 +1,33 @@
 # Change Log
 
+## [1.2.9] - 2017-02-09
+### Fixed
+- Fixed reused clients restricting the number of concurrent connections to a very low value.
+- Fixed track stop or seek throwing an exception in some conditions due to InterruptedException getting wrapped.
+
+## [1.2.8] - 2017-02-09
+### Changed
+- Track info loader queue full exception is passed to loadFailed instead of being thrown directly.
+
+### Fixed
+- Fixed using wrong version of lavaplayer-common dependency (again).
+
+## [1.2.7] - 2017-02-09
+### Fixed
+- Fixed track loading queue throwing "queue full" exception when the queue is not empty.
+
+## [1.2.6] - 2017-02-08
+### Fixed
+- Fixed using wrong version of lavaplayer-common dependency.
+
+## [1.2.5] - 2017-02-08
+### Added
+- Added the option to increase the number of threads used to load tracks.
+
+## Changed
+- Reusing HTTP client objects as much as possible.
+- Limited the size of the track info loader queue.
+
 ## [1.2.4] - 2017-02-08
 ### Fixed
 - Fixed YouTube live streams opening a new connection for each request.
