@@ -152,7 +152,7 @@ public interface AudioPlayerManager {
    *
    * @param poolSize Maximum number of concurrent threads used for loading items.
    */
-  void setItemsLoaderThreadPoolSize(int poolSize);
+  void setItemLoaderThreadPoolSize(int poolSize);
 
   /**
    * @return New audio player.

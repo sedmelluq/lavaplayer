@@ -371,7 +371,7 @@ public class DefaultAudioPlayerManager implements AudioPlayerManager {
   }
 
   @Override
-  public void setItemsLoaderThreadPoolSize(int poolSize) {
+  public void setItemLoaderThreadPoolSize(int poolSize) {
     trackInfoExecutorService.setMaximumPoolSize(poolSize);
   }
 
