@@ -7,6 +7,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.RejectedExecutionHandler;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -85,15 +86,17 @@ public class ExecutorTools {
     public boolean offer(Runnable runnable) {
       return isEmpty() && super.offer(runnable);
     }
+
+    public boolean offerDirectly(Runnable runnable) {
+      return super.offer(runnable);
+    }
   }
 
   private static class EagerlyScalingRejectionHandler implements RejectedExecutionHandler {
-    private final ThreadPoolExecutor.AbortPolicy abortPolicy = new ThreadPoolExecutor.AbortPolicy();
-
     @Override
     public void rejectedExecution(Runnable runnable, ThreadPoolExecutor executor) {
-      if (!executor.getQueue().add(runnable)) {
-        abortPolicy.rejectedExecution(runnable, executor);
+      if (!((EagerlyScalingTaskQueue) executor.getQueue()).offerDirectly(runnable)) {
+        throw new RejectedExecutionException("Task " + runnable.toString() + " rejected from " + runnable.toString());
       }
     }
   }
