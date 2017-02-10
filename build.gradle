@@ -20,13 +20,17 @@ group = 'com.sedmelluq'
 import org.apache.tools.ant.taskdefs.condition.Os
 
 def getBuildParameters(base, bits) {
-  def bitSuffix = (bits == 32) ? 'x86' : 'x86-64'
+  def bitSuffix = bits
+
+  if (bits == '32' || bits == '64') {
+    bitSuffix = (bits == '32') ? 'x86' : 'x86-64'
+  }
 
   if (Os.isFamily(Os.FAMILY_WINDOWS)) {
     return [
         'identifier': "win-${bitSuffix}",
         'library': "${base}.dll",
-        'setupArguments': ["-DBITZ:STRING=${bits}", '-A', (bits == 64 ? 'x64' : 'Win32')],
+        'setupArguments': ["-DBITZ:STRING=${bits}", '-A', (bits == '64' ? 'x64' : 'Win32')],
         'buildArguments': ['--config', 'Release'],
         'env': [:]
     ]
@@ -36,7 +40,7 @@ def getBuildParameters(base, bits) {
         'library': "lib${base}.dylib",
         'setupArguments': ["-DBITZ:STRING=${bits}"],
         'buildArguments': [],
-        'env': ['CXXFLAGS': "-m${bits}", 'CFLAGS': "-m${bits}", 'LDFLAGS': "-m${bits}"]
+        'env': ['CFLAGS': "-m${bits}", 'CXXFLAGS': "-m${bits}"]
     ]
   } else {
     return [
@@ -44,7 +48,7 @@ def getBuildParameters(base, bits) {
         'library': "lib${base}.so",
         'setupArguments': ["-DBITZ:STRING=${bits}"],
         'buildArguments': [],
-        'env': ['CXXFLAGS': "-m${bits}", 'CFLAGS': "-m${bits}", 'LDFLAGS': "-m${bits}"]
+        'env': ['CFLAGS': "-m${bits}", 'CXXFLAGS': "-m${bits}"]
     ]
   }
 }
@@ -61,7 +65,7 @@ def createBuildTask(tasksHolder, config, bits) {
   def deployDirectory = "${config.deployBase}/src/main/resources/natives/${parameters.identifier}"
   def taskBase = "${config.name}-${bits}"
 
-  if (Os.isFamily(Os.FAMILY_MAC) && bits != 64) {
+  if (Os.isFamily(Os.FAMILY_MAC) && bits != '64') {
     return
   }
 
