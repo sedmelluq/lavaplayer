@@ -85,7 +85,8 @@ JNIEXPORT jint JNICALL Java_com_sedmelluq_discord_lavaplayer_natives_vorbis_Vorb
 	size_t chunk = available > buffer_length ? buffer_length : available;
 
 	if (chunk > 0) {
-		for (int i = 0; i < state->info.channels; i++) {
+		int i;
+		for (i = 0; i < state->info.channels; i++) {
 			jfloatArray channel = (*jni)->GetObjectArrayElement(jni, channels, i);
 
 			if (channel != NULL) {
