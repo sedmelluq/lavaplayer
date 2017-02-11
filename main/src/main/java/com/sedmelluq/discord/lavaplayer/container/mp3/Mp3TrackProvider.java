@@ -305,7 +305,8 @@ public class Mp3TrackProvider {
       String tagName = readTagName();
 
       if (tagName != null) {
-        return new FrameHeader(tagName, readSyncProofInteger(), dataInput.readUnsignedShort());
+        int size = version == 3 ? dataInput.readInt() : readSyncProofInteger();
+        return new FrameHeader(tagName, size, dataInput.readUnsignedShort());
       }
     }
 
