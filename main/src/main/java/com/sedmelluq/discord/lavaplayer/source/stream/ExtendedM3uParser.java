@@ -1,4 +1,6 @@
-package com.sedmelluq.discord.lavaplayer.source.twitch;
+package com.sedmelluq.discord.lavaplayer.source.stream;
+
+import com.sedmelluq.discord.lavaplayer.tools.DataFormatTools;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -11,7 +13,7 @@ import java.util.regex.Pattern;
  * #SOMETHING:FOO="thing",BAR=4
  */
 public class ExtendedM3uParser {
-  private static final Pattern directiveArgumentPattern = Pattern.compile("([A-Z-]+)=(?:\"([^\"]*)\"|[^,]*)(?:,|\\z)");
+  private static final Pattern directiveArgumentPattern = Pattern.compile("([A-Z-]+)=(?:\"([^\"]*)\"|([^,]*))(?:,|\\z)");
 
   /**
    * Parses one line.
@@ -41,7 +43,7 @@ public class ExtendedM3uParser {
     Map<String, String> arguments = new HashMap<>();
 
     while (matcher.find()) {
-      arguments.put(matcher.group(1), matcher.group(2));
+      arguments.put(matcher.group(1), DataFormatTools.defaultOnNull(matcher.group(2), matcher.group(3)));
     }
 
     return new Line(null, parts[0].substring(1), arguments);

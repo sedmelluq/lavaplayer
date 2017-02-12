@@ -1,5 +1,6 @@
 package com.sedmelluq.discord.lavaplayer.source.twitch;
 
+import com.sedmelluq.discord.lavaplayer.source.stream.ExtendedM3uParser;
 import com.sedmelluq.discord.lavaplayer.tools.DataFormatTools;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.tools.JsonBrowser;

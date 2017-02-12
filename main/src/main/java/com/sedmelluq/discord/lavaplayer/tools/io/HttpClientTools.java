@@ -1,6 +1,8 @@
 package com.sedmelluq.discord.lavaplayer.tools.io;
 
+import com.sedmelluq.discord.lavaplayer.tools.DataFormatTools;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
+import com.sedmelluq.discord.lavaplayer.tools.JsonBrowser;
 import org.apache.http.Header;
 import org.apache.http.HttpRequest;
 import org.apache.http.HttpResponse;
@@ -11,6 +13,7 @@ import org.apache.http.ProtocolVersion;
 import org.apache.http.client.CookieStore;
 import org.apache.http.client.RedirectStrategy;
 import org.apache.http.client.config.RequestConfig;
+import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.config.MessageConstraints;
 import org.apache.http.config.Registry;
@@ -42,10 +45,13 @@ import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.X509TrustManager;
 
+import java.io.IOException;
 import java.net.SocketException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
 
+import static com.sedmelluq.discord.lavaplayer.source.twitch.TwitchStreamAudioSourceManager.createGetRequest;
 import static com.sedmelluq.discord.lavaplayer.tools.FriendlyException.Severity.COMMON;
 import static com.sedmelluq.discord.lavaplayer.tools.FriendlyException.Severity.SUSPICIOUS;
 
@@ -239,5 +245,31 @@ public class HttpClientTools {
    */
   public static boolean isConnectionResetException(Throwable exception) {
     return exception instanceof SocketException && "Connection reset".equals(exception.getMessage());
+  }
+
+  public static JsonBrowser fetchResponseAsJson(HttpInterface httpInterface, HttpUriRequest request) throws IOException {
+    try (CloseableHttpResponse response = httpInterface.execute(request)) {
+      int statusCode = response.getStatusLine().getStatusCode();
+
+      if (statusCode == 404) {
+        return null;
+      } else if (statusCode != 200) {
+        throw new FriendlyException("Server responded with an error.", SUSPICIOUS,
+            new IllegalStateException("Response code from channel info is " + statusCode));
+      }
+
+      return JsonBrowser.parse(response.getEntity().getContent());
+    }
+  }
+
+  public static String[] fetchResponseLines(HttpInterface httpInterface, HttpUriRequest request, String name) throws IOException {
+    try (CloseableHttpResponse response = httpInterface.execute(request)) {
+      int statusCode = response.getStatusLine().getStatusCode();
+      if (statusCode != 200) {
+        throw new IOException("Unexpected response code " + statusCode + " from " + name);
+      }
+
+      return DataFormatTools.streamToLines(response.getEntity().getContent(), StandardCharsets.UTF_8);
+    }
   }
 }
