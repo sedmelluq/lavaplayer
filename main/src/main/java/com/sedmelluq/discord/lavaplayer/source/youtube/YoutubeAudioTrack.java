@@ -114,7 +114,7 @@ public class YoutubeAudioTrack extends DelegatedAudioTrack {
   }
 
   private List<YoutubeTrackFormat> loadTrackFormats(JsonBrowser info, HttpInterface httpInterface, String playerScript) throws Exception {
-    String adaptiveFormats = info.safeGet("args").safeGet("adaptive_fmts").text();
+    String adaptiveFormats = getAdaptiveFormatsText(info);
     if (adaptiveFormats != null) {
       return loadTrackFormatsFromAdaptive(adaptiveFormats);
     }
@@ -126,6 +126,14 @@ public class YoutubeAudioTrack extends DelegatedAudioTrack {
 
     throw new FriendlyException("Unable to play this YouTube track.", SUSPICIOUS,
         new IllegalStateException("No adaptive formats, no dash."));
+  }
+
+  private String getAdaptiveFormatsText(JsonBrowser info) {
+    JsonBrowser args = info.safeGet("args");
+
+    return args.safeGet("adaptive_fmts").isNull() ?
+        args.safeGet("url_encoded_fmt_stream_map").text() :
+        args.safeGet("adaptive_fmts").text();
   }
 
   private List<YoutubeTrackFormat> loadTrackFormatsFromAdaptive(String adaptiveFormats) throws Exception {

@@ -1,5 +1,9 @@
 # Change Log
 
+## [1.2.12] - 2017-02-18
+### Added
+- Support for alternative YouTube JSON format (adaptive_fmts -> url_encoded_fmt_stream_map).
+
 ## [1.2.11] - 2017-02-18
 ### Fixed
 - Fixed interrupts from previous tracks may be carried over to executors of new tracks.
