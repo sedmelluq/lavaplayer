@@ -34,15 +34,12 @@ import java.util.concurrent.ScheduledExecutorService;
 public class BotApplicationManager extends ListenerAdapter {
   private static final Logger log = LoggerFactory.getLogger(BotApplicationManager.class);
 
-  private final JDA jda;
   private final Map<Long, BotGuildContext> guildContexts;
   private final BotControllerManager controllerManager;
   private final AudioPlayerManager playerManager;
   private final ScheduledExecutorService executorService;
 
-  public BotApplicationManager(JDA jda) {
-    this.jda = jda;
-
+  public BotApplicationManager() {
     guildContexts = new HashMap<>();
     controllerManager = new BotControllerManager();
 

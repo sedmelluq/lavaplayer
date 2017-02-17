@@ -76,6 +76,10 @@ public class LocalAudioTrackExecutor implements AudioTrackExecutor {
   public void execute(TrackStateListener listener) {
     boolean interrupted = false;
 
+    if (Thread.interrupted()) {
+      log.debug("Cleared a stray interrupt.");
+    }
+
     if (playingThread.compareAndSet(null, Thread.currentThread())) {
       log.debug("Starting to play track {} locally with listener {}", audioTrack.getInfo().identifier, listener);
 
@@ -233,6 +237,11 @@ public class LocalAudioTrackExecutor implements AudioTrackExecutor {
       proceed = false;
 
       try {
+        // An interrupt may have been placed while we were handling the previous one.
+        if (Thread.interrupted() && !handlePlaybackInterrupt(null, seekExecutor)) {
+          break;
+        }
+
         readExecutor.performRead();
 
         // Must not finish before terminator frame has been consumed the user may still want to perform seeks until then
@@ -263,9 +272,11 @@ public class LocalAudioTrackExecutor implements AudioTrackExecutor {
       } else {
         return true;
       }
-    } else {
+    } else if (interruption != null) {
       Thread.currentThread().interrupt();
       throw new FriendlyException("The track was unexpectedly terminated.", SUSPICIOUS, interruption);
+    } else {
+      return true;
     }
   }
 

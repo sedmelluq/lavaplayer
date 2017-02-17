@@ -8,11 +8,10 @@ import net.dv8tion.jda.core.JDABuilder;
 
 public class Bootstrap {
   public static void main(String[] args) throws Exception {
-    JDA jda = new JDABuilder(AccountType.BOT)
+    new JDABuilder(AccountType.BOT)
         .setToken(System.getProperty("botToken"))
         .setAudioSendFactory(new NativeAudioSendFactory())
-        .buildBlocking();
-
-    jda.addEventListener(new BotApplicationManager(jda));
+        .addListener(new BotApplicationManager())
+        .buildAsync();
   }
 }

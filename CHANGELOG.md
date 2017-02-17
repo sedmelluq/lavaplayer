@@ -1,5 +1,13 @@
 # Change Log
 
+## [1.2.11] - 2017-02-18
+### Fixed
+- Fixed interrupts from previous tracks may be carried over to executors of new tracks.
+
+## [1.2.10] - 2017-02-11
+### Added
+- Beam.pro source manager.
+
 ## [1.2.9] - 2017-02-09
 ### Fixed
 - Fixed reused clients restricting the number of concurrent connections to a very low value.

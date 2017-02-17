@@ -1,11 +1,13 @@
 package com.sedmelluq.discord.lavaplayer.source.twitch;
 
 import com.sedmelluq.discord.lavaplayer.source.stream.ExtendedM3uParser;
-import com.sedmelluq.discord.lavaplayer.tools.DataFormatTools;
+import com.sedmelluq.discord.lavaplayer.source.stream.M3uStreamSegmentUrlProvider;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.tools.JsonBrowser;
+import com.sedmelluq.discord.lavaplayer.tools.io.HttpClientTools;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterface;
 import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.utils.URIBuilder;
 import org.slf4j.Logger;
@@ -14,8 +16,6 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.List;
 
 import static com.sedmelluq.discord.lavaplayer.source.twitch.TwitchStreamAudioSourceManager.createGetRequest;
@@ -24,7 +24,7 @@ import static com.sedmelluq.discord.lavaplayer.tools.FriendlyException.Severity.
 /**
  * Provider for Twitch segment URLs from a channel.
  */
-public class TwitchStreamSegmentUrlProvider {
+public class TwitchStreamSegmentUrlProvider extends M3uStreamSegmentUrlProvider {
   private static final String TOKEN_PARAMETER = "token";
 
   private static final Logger log = LoggerFactory.getLogger(TwitchStreamSegmentUrlProvider.class);
@@ -42,6 +42,11 @@ public class TwitchStreamSegmentUrlProvider {
     this.tokenExpirationTime = -1;
   }
 
+  @Override
+  protected String getQualityFromM3uDirective(ExtendedM3uParser.Line directiveLine) {
+    return directiveLine.directiveArguments.get("VIDEO");
+  }
+
   /**
    * @param httpInterface Http interface to use for requests.
    * @return The URL of the next TS segment.
@@ -52,50 +57,17 @@ public class TwitchStreamSegmentUrlProvider {
         return null;
       }
 
-      List<String> segments = loadStreamSegmentsList(httpInterface);
-      String segment = chooseNextSegment(segments);
+      List<String> segments = loadStreamSegmentsList(httpInterface, streamSegmentPlaylistUrl);
+      lastSegment = chooseNextSegment(segments, lastSegment);
 
-      if (segment == null) {
+      if (lastSegment == null) {
         return null;
       }
 
-      return createSegmentUrl(streamSegmentPlaylistUrl, segment);
+      return createSegmentUrl(streamSegmentPlaylistUrl, lastSegment);
     } catch (IOException e) {
       throw new FriendlyException("Failed to get next part of the stream.", SUSPICIOUS, e);
     }
-  }
-
-  private List<String> loadStreamSegmentsList(HttpInterface httpInterface) throws IOException {
-    List<String> segments = new ArrayList<>();
-
-    for (String lineText : getLinesFromUrl(httpInterface, streamSegmentPlaylistUrl, "stream segments list")) {
-      ExtendedM3uParser.Line line = ExtendedM3uParser.parseLine(lineText);
-
-      if (line.isData()) {
-        segments.add(line.lineData);
-      }
-    }
-
-    return segments;
-  }
-
-  private String chooseNextSegment(List<String> segments) {
-    String selected = null;
-
-    for (int i = segments.size() - 1; i >= 0; i--) {
-      String current = segments.get(i);
-      if (current.equals(lastSegment)) {
-        break;
-      }
-
-      selected = current;
-    }
-
-    if (selected != null) {
-      lastSegment = selected;
-    }
-
-    return selected;
   }
 
   private static String createSegmentUrl(String playlistUrl, String segmentName) {
@@ -108,8 +80,8 @@ public class TwitchStreamSegmentUrlProvider {
     }
 
     JsonBrowser token = loadAccessToken(httpInterface);
-    String channelStreamsUrl = getChannelStreamsUrl(token).toString();
-    ChannelStreams streams = loadChannelStreamsList(getLinesFromUrl(httpInterface, channelStreamsUrl, "channel streams list"));
+    HttpUriRequest request = new HttpGet(getChannelStreamsUrl(token).toString());
+    ChannelStreams streams = loadChannelStreamsInfo(HttpClientTools.fetchResponseLines(httpInterface, request, "channel streams list"));
 
     if (streams.entries.isEmpty()) {
       throw new IllegalStateException("No streams available on channel.");
@@ -140,36 +112,22 @@ public class TwitchStreamSegmentUrlProvider {
     }
   }
 
-  private ChannelStreams loadChannelStreamsList(String[] lines) throws IOException {
+  private ChannelStreams loadChannelStreamsInfo(String[] lines) throws IOException {
+    List<ChannelStreamInfo> streams = loadChannelStreamsList(lines);
     ExtendedM3uParser.Line twitchInfoLine = null;
-    ExtendedM3uParser.Line streamInfoLine = null;
-
-    List<ChannelStreamInfo> streams = new ArrayList<>();
 
     for (String lineText : lines) {
       ExtendedM3uParser.Line line = ExtendedM3uParser.parseLine(lineText);
 
-      if (line.isData() && streamInfoLine != null) {
-        String quality = streamInfoLine.directiveArguments.get("VIDEO");
-
-        if (quality != null) {
-          streams.add(new ChannelStreamInfo(quality, line.lineData));
-        }
-
-        streamInfoLine = null;
-      } else if (line.isDirective()) {
-        if ("EXT-X-TWITCH-INFO".equals(line.directiveName)) {
-          twitchInfoLine = line;
-        } else if ("EXT-X-STREAM-INF".equals(line.directiveName)) {
-          streamInfoLine = line;
-        }
+      if (line.isDirective() && "EXT-X-TWITCH-INFO".equals(line.directiveName)) {
+        twitchInfoLine = line;
       }
     }
 
-    return buildChannelStreamsList(twitchInfoLine, streams);
+    return buildChannelStreamsInfo(twitchInfoLine, streams);
   }
 
-  private ChannelStreams buildChannelStreamsList(ExtendedM3uParser.Line twitchInfoLine, List<ChannelStreamInfo> streams) {
+  private ChannelStreams buildChannelStreamsInfo(ExtendedM3uParser.Line twitchInfoLine, List<ChannelStreamInfo> streams) {
     String serverTimeValue = twitchInfoLine != null ? twitchInfoLine.directiveArguments.get("SERVER-TIME") : null;
 
     if (serverTimeValue == null) {
@@ -180,19 +138,6 @@ public class TwitchStreamSegmentUrlProvider {
         (long) (Double.valueOf(serverTimeValue) * 1000.0),
         streams
     );
-  }
-
-  private String[] getLinesFromUrl(HttpInterface httpInterface, String url, String name) throws IOException {
-    HttpUriRequest request = createGetRequest(url);
-
-    try (CloseableHttpResponse response = httpInterface.execute(request)) {
-      int statusCode = response.getStatusLine().getStatusCode();
-      if (statusCode != 200) {
-        throw new IOException("Unexpected response code " + statusCode + " from " + name);
-      }
-
-      return DataFormatTools.streamToLines(response.getEntity().getContent(), StandardCharsets.UTF_8);
-    }
   }
 
   private URI getChannelStreamsUrl(JsonBrowser token) {
@@ -217,16 +162,6 @@ public class TwitchStreamSegmentUrlProvider {
     private ChannelStreams(long serverTime, List<ChannelStreamInfo> entries) {
       this.serverTime = serverTime;
       this.entries = entries;
-    }
-  }
-
-  private static class ChannelStreamInfo {
-    private final String quality;
-    private final String url;
-
-    private ChannelStreamInfo(String quality, String url) {
-      this.quality = quality;
-      this.url = url;
     }
   }
 }
