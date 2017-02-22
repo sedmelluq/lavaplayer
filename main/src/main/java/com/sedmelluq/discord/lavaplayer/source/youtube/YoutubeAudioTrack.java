@@ -71,7 +71,7 @@ public class YoutubeAudioTrack extends DelegatedAudioTrack {
 
   private void processStatic(LocalAudioTrackExecutor localExecutor, HttpInterface httpInterface, FormatWithUrl format) throws Exception {
     try (YoutubePersistentHttpStream stream = new YoutubePersistentHttpStream(httpInterface, format.signedUrl, format.details.getContentLength())) {
-      if (MIME_AUDIO_WEBM.equals(format.details.getType().getMimeType())) {
+      if (format.details.getType().getMimeType().endsWith("/webm")) {
         processDelegate(new MatroskaAudioTrack(trackInfo, stream), localExecutor);
       } else {
         processDelegate(new MpegAudioTrack(trackInfo, stream), localExecutor);
@@ -114,26 +114,25 @@ public class YoutubeAudioTrack extends DelegatedAudioTrack {
   }
 
   private List<YoutubeTrackFormat> loadTrackFormats(JsonBrowser info, HttpInterface httpInterface, String playerScript) throws Exception {
-    String adaptiveFormats = getAdaptiveFormatsText(info);
+    JsonBrowser args = info.safeGet("args");
+
+    String adaptiveFormats = args.safeGet("adaptive_fmts").text();
     if (adaptiveFormats != null) {
       return loadTrackFormatsFromAdaptive(adaptiveFormats);
     }
 
-    String dashUrl = info.safeGet("args").safeGet("dashmpd").text();
+    String dashUrl = args.safeGet("dashmpd").text();
     if (dashUrl != null) {
       return loadTrackFormatsFromDash(dashUrl, httpInterface, playerScript);
     }
 
+    String formatStreamMap = args.safeGet("url_encoded_fmt_stream_map").text();
+    if (formatStreamMap != null) {
+      return loadTrackFormatsFromFormatStreamMap(formatStreamMap);
+    }
+
     throw new FriendlyException("Unable to play this YouTube track.", SUSPICIOUS,
         new IllegalStateException("No adaptive formats, no dash."));
-  }
-
-  private String getAdaptiveFormatsText(JsonBrowser info) {
-    JsonBrowser args = info.safeGet("args");
-
-    return args.safeGet("adaptive_fmts").isNull() ?
-        args.safeGet("url_encoded_fmt_stream_map").text() :
-        args.safeGet("adaptive_fmts").text();
   }
 
   private List<YoutubeTrackFormat> loadTrackFormatsFromAdaptive(String adaptiveFormats) throws Exception {
@@ -152,6 +151,44 @@ public class YoutubeAudioTrack extends DelegatedAudioTrack {
     }
 
     return tracks;
+  }
+
+  private List<YoutubeTrackFormat> loadTrackFormatsFromFormatStreamMap(String adaptiveFormats) throws Exception {
+    List<YoutubeTrackFormat> tracks = new ArrayList<>();
+
+    for (String formatString : adaptiveFormats.split(",")) {
+      Map<String, String> format = convertToMapLayout(URLEncodedUtils.parse(formatString, Charset.forName(CHARSET)));
+      String url = format.get("url");
+      String contentLength = DataFormatTools.extractBetween(url, "clen=", "&");
+
+      if (contentLength == null) {
+        log.debug("Could not find content length from URL {}, skipping format", url);
+        continue;
+      }
+
+      tracks.add(new YoutubeTrackFormat(
+          ContentType.parse(format.get("type")),
+          qualityToBitrateValue(format.get("quality")),
+          Long.parseLong(contentLength),
+          url,
+          format.get("s")
+      ));
+    }
+
+    return tracks;
+  }
+
+  private long qualityToBitrateValue(String quality) {
+    // Return negative bitrate values to indicate missing bitrate info, but still retain the relative order.
+    if ("small".equals(quality)) {
+      return -10;
+    } else if ("medium".equals(quality)) {
+      return -5;
+    } else if ("hd720".equals(quality)) {
+      return -4;
+    } else {
+      return -1;
+    }
   }
 
   private List<YoutubeTrackFormat> loadTrackFormatsFromDash(String dashUrl, HttpInterface httpInterface, String playerScript) throws Exception {

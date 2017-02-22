@@ -10,7 +10,8 @@ import static com.sedmelluq.discord.lavaplayer.container.Formats.*;
 public enum YoutubeFormatInfo {
   WEBM_OPUS(MIME_AUDIO_WEBM, CODEC_OPUS),
   WEBM_VORBIS(MIME_AUDIO_WEBM, CODEC_VORBIS),
-  MP4_AAC_LC(MIME_AUDIO_MP4, CODEC_AAC_LC);
+  MP4_AAC_LC(MIME_AUDIO_MP4, CODEC_AAC_LC),
+  WEBM_VIDEO_VORBIS(MIME_VIDEO_WEBM, CODEC_VORBIS);
 
   /**
    * Mime type of the format
@@ -35,11 +36,20 @@ public enum YoutubeFormatInfo {
     String mimeType = contentType.getMimeType();
     String codec = contentType.getParameter("codecs");
 
+    // Check accurate matches
     for (YoutubeFormatInfo formatInfo : YoutubeFormatInfo.class.getEnumConstants()) {
       if (formatInfo.mimeType.equals(mimeType) && formatInfo.codec.equals(codec)) {
         return formatInfo;
       }
     }
+
+    // Check for substring matches
+    for (YoutubeFormatInfo formatInfo : YoutubeFormatInfo.class.getEnumConstants()) {
+      if (formatInfo.mimeType.equals(mimeType) && codec.contains(formatInfo.codec)) {
+        return formatInfo;
+      }
+    }
+
     return null;
   }
 }
