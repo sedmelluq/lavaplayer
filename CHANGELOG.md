@@ -1,5 +1,9 @@
 # Change Log
 
+## [1.2.13] - 2017-02-22
+### Fixed
+- Fixed a regression with YouTube dashmpd-only tracks not working.
+
 ## [1.2.12] - 2017-02-18
 ### Added
 - Support for alternative YouTube JSON format (adaptive_fmts -> url_encoded_fmt_stream_map).
