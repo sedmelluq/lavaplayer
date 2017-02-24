@@ -88,7 +88,7 @@ public class LocalAudioTrackExecutor implements AudioTrackExecutor {
       try {
         audioTrack.process(this);
 
-        log.info("Playing track {} finished or was stopped.", audioTrack.getIdentifier());
+        log.debug("Playing track {} finished or was stopped.", audioTrack.getIdentifier());
       } catch (Throwable e) {
         // Temporarily clear the interrupted status so it would not disrupt listener methods.
         interrupted = e instanceof InterruptedException || Thread.interrupted();

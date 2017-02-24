@@ -72,11 +72,14 @@ public class PersistentHttpStream extends SeekableInputStream implements AutoClo
     return true;
   }
 
-  private static void validateStatusCode(HttpResponse response) {
+  private static boolean validateStatusCode(HttpResponse response, boolean returnOnServerError) {
     int statusCode = response.getStatusLine().getStatusCode();
-    if (statusCode != 200 && statusCode != 206) {
+    if (returnOnServerError && statusCode >= 500 && statusCode <= 599) {
+      return false;
+    } else if (statusCode != 200 && statusCode != 206) {
       throw new RuntimeException("Not success status code: " + statusCode);
     }
+    return true;
   }
 
   private HttpGet getConnectRequest() {
@@ -91,27 +94,39 @@ public class PersistentHttpStream extends SeekableInputStream implements AutoClo
 
   private void connect(boolean skipStatusCheck) throws IOException {
     if (currentResponse == null) {
-      currentResponse = httpInterface.execute(getConnectRequest());
-      lastStatusCode = currentResponse.getStatusLine().getStatusCode();
-
-      if (!skipStatusCheck) {
-        validateStatusCode(currentResponse);
-      }
-
-      currentContent = new BufferedInputStream(currentResponse.getEntity().getContent());
-
-      if (contentLength == Long.MAX_VALUE) {
-        Header header = currentResponse.getFirstHeader("Content-Length");
-
-        if (header != null) {
-          contentLength = Long.valueOf(header.getValue());
+      for (int i = 1; i >= 0; i--) {
+        if (attemptConnect(skipStatusCheck, i > 0)) {
+          break;
         }
       }
     }
   }
 
+  private boolean attemptConnect(boolean skipStatusCheck, boolean retryOnServerError) throws IOException {
+    currentResponse = httpInterface.execute(getConnectRequest());
+    lastStatusCode = currentResponse.getStatusLine().getStatusCode();
+
+    if (!skipStatusCheck) {
+      if (!validateStatusCode(currentResponse, retryOnServerError)) {
+        return false;
+      }
+    }
+
+    currentContent = new BufferedInputStream(currentResponse.getEntity().getContent());
+
+    if (contentLength == Long.MAX_VALUE) {
+      Header header = currentResponse.getFirstHeader("Content-Length");
+
+      if (header != null) {
+        contentLength = Long.valueOf(header.getValue());
+      }
+    }
+
+    return true;
+  }
+
   private void handleSocketException(SocketException exception, boolean attemptReconnect) throws IOException {
-    if (!attemptReconnect || !HttpClientTools.isConnectionResetException(exception)) {
+    if (!attemptReconnect || !HttpClientTools.isRetriableSocketException(exception)) {
       throw exception;
     }
 

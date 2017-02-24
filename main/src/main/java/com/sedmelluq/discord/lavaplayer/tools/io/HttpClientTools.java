@@ -8,10 +8,12 @@ import org.apache.http.HttpRequest;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpResponseFactory;
 import org.apache.http.HttpStatus;
+import org.apache.http.NoHttpResponseException;
 import org.apache.http.ProtocolException;
 import org.apache.http.ProtocolVersion;
 import org.apache.http.client.CookieStore;
 import org.apache.http.client.RedirectStrategy;
+import org.apache.http.client.config.CookieSpecs;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpUriRequest;
@@ -27,6 +29,7 @@ import org.apache.http.conn.util.PublicSuffixMatcherLoader;
 import org.apache.http.impl.DefaultHttpResponseFactory;
 import org.apache.http.impl.client.BasicCookieStore;
 import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.DefaultHttpRequestRetryHandler;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.conn.DefaultHttpResponseParser;
 import org.apache.http.impl.conn.ManagedHttpClientConnectionFactory;
@@ -43,6 +46,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLException;
 import javax.net.ssl.X509TrustManager;
 
 import java.io.IOException;
@@ -51,7 +55,6 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 
-import static com.sedmelluq.discord.lavaplayer.source.twitch.TwitchStreamAudioSourceManager.createGetRequest;
 import static com.sedmelluq.discord.lavaplayer.tools.FriendlyException.Severity.COMMON;
 import static com.sedmelluq.discord.lavaplayer.tools.FriendlyException.Severity.SUSPICIOUS;
 
@@ -68,15 +71,15 @@ public class HttpClientTools {
    */
   public static HttpClientBuilder createSharedCookiesHttpBuilder() {
     CookieStore cookieStore = new BasicCookieStore();
-    final HttpClientBuilder httpClientBuilder = new CustomHttpClientBuilder();
-    httpClientBuilder.setDefaultCookieStore(cookieStore);
-    httpClientBuilder.setDefaultRequestConfig(
-        RequestConfig.custom()
-            .setConnectTimeout(3000)
-            .build()
-    );
 
-    return httpClientBuilder;
+    return new CustomHttpClientBuilder()
+        .setDefaultCookieStore(cookieStore)
+        .setRetryHandler(NoResponseRetryHandler.INSTANCE)
+        .setDefaultRequestConfig(
+            RequestConfig.custom()
+                .setConnectTimeout(3000)
+                .build()
+        );
   }
 
   private static SSLContext setupSslContext() {
@@ -241,10 +244,15 @@ public class HttpClientTools {
 
   /**
    * @param exception Exception to check.
-   * @return True if the exception denotes a socket reset.
+   * @return True if retrying to connect after receiving this exception is likely to succeed.
    */
-  public static boolean isConnectionResetException(Throwable exception) {
-    return exception instanceof SocketException && "Connection reset".equals(exception.getMessage());
+  public static boolean isRetriableSocketException(Throwable exception) {
+    if (exception instanceof SocketException && "Connection reset".equals(exception.getMessage())) {
+      return true;
+    } else if (exception instanceof SSLException && "SSL peer shut down incorrectly".equals(exception.getMessage())) {
+      return true;
+    }
+    return false;
   }
 
   public static JsonBrowser fetchResponseAsJson(HttpInterface httpInterface, HttpUriRequest request) throws IOException {
@@ -270,6 +278,21 @@ public class HttpClientTools {
       }
 
       return DataFormatTools.streamToLines(response.getEntity().getContent(), StandardCharsets.UTF_8);
+    }
+  }
+
+  private static class NoResponseRetryHandler extends DefaultHttpRequestRetryHandler {
+    private static final NoResponseRetryHandler INSTANCE = new NoResponseRetryHandler();
+
+    @Override
+    public boolean retryRequest(IOException exception, int executionCount, HttpContext context) {
+      boolean retry = super.retryRequest(exception, executionCount, context);
+
+      if (!retry && exception instanceof NoHttpResponseException && executionCount < 5) {
+        return true;
+      } else {
+        return retry;
+      }
     }
   }
 }

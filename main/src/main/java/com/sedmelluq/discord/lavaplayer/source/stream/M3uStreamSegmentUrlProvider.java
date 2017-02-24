@@ -32,7 +32,7 @@ public abstract class M3uStreamSegmentUrlProvider {
       int statusCode = response.getStatusLine().getStatusCode();
 
       if (statusCode != 200) {
-        throw new IOException("Invalid status code " + statusCode + " from segment data URL.");
+        throw new IOException("Invalid status code from segment data URL: " + statusCode);
       }
 
       success = true;

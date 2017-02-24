@@ -1,28 +1,22 @@
 package com.sedmelluq.discord.lavaplayer.source.beam;
 
-import com.sedmelluq.discord.lavaplayer.container.adts.AdtsAudioTrack;
-import com.sedmelluq.discord.lavaplayer.container.mpegts.MpegTsElementaryInputStream;
-import com.sedmelluq.discord.lavaplayer.container.mpegts.PesPacketInputStream;
 import com.sedmelluq.discord.lavaplayer.source.AudioSourceManager;
-import com.sedmelluq.discord.lavaplayer.tools.io.ChainedInputStream;
+import com.sedmelluq.discord.lavaplayer.source.stream.M3uStreamAudioTrack;
+import com.sedmelluq.discord.lavaplayer.source.stream.M3uStreamSegmentUrlProvider;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterface;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo;
-import com.sedmelluq.discord.lavaplayer.track.DelegatedAudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.playback.LocalAudioTrackExecutor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static com.sedmelluq.discord.lavaplayer.container.mpegts.MpegTsElementaryInputStream.ADTS_ELEMENTARY_STREAM;
-
 /**
  * Audio track that handles processing Beam.pro tracks.
  */
-public class BeamAudioTrack extends DelegatedAudioTrack {
+public class BeamAudioTrack extends M3uStreamAudioTrack {
   private static final Logger log = LoggerFactory.getLogger(BeamAudioTrack.class);
 
   private final BeamAudioSourceManager sourceManager;
-  private final BeamSegmentUrlProvider segmentUrlProvider;
 
   /**
    * @param trackInfo Track info
@@ -32,21 +26,23 @@ public class BeamAudioTrack extends DelegatedAudioTrack {
     super(trackInfo);
 
     this.sourceManager = sourceManager;
-    this.segmentUrlProvider = new BeamSegmentUrlProvider(getChannelId());
+  }
+
+  @Override
+  protected M3uStreamSegmentUrlProvider createSegmentProvider() {
+    return new BeamSegmentUrlProvider(getChannelId());
+  }
+
+  @Override
+  protected HttpInterface getHttpInterface() {
+    return sourceManager.getHttpInterface();
   }
 
   @Override
   public void process(LocalAudioTrackExecutor localExecutor) throws Exception {
     log.debug("Starting to play Beam channel {}.", getChannelUrl());
 
-    try (final HttpInterface httpInterface = sourceManager.getHttpInterface()) {
-      try (ChainedInputStream chainedInputStream = new ChainedInputStream(() -> segmentUrlProvider.getNextSegmentStream(httpInterface))) {
-        MpegTsElementaryInputStream elementaryInputStream = new MpegTsElementaryInputStream(chainedInputStream, ADTS_ELEMENTARY_STREAM);
-        PesPacketInputStream pesPacketInputStream = new PesPacketInputStream(elementaryInputStream);
-
-        processDelegate(new AdtsAudioTrack(trackInfo, pesPacketInputStream), localExecutor);
-      }
-    }
+    super.process(localExecutor);
   }
 
   @Override

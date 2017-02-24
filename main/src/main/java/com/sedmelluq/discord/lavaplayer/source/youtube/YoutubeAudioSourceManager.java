@@ -23,7 +23,6 @@ import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.client.utils.URLEncodedUtils;
-import org.apache.http.impl.client.HttpClientBuilder;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -128,7 +127,7 @@ public class YoutubeAudioSourceManager implements AudioSourceManager {
       return loadItemOnce(reference);
     } catch (FriendlyException exception) {
       // In case of a connection reset exception, try once more.
-      if (HttpClientTools.isConnectionResetException(exception.getCause())) {
+      if (HttpClientTools.isRetriableSocketException(exception.getCause())) {
         return loadItemOnce(reference);
       } else {
         throw exception;
@@ -237,8 +236,9 @@ public class YoutubeAudioSourceManager implements AudioSourceManager {
 
   JsonBrowser getTrackInfoFromMainPage(HttpInterface httpInterface, String videoId, boolean mustExist) throws Exception {
     try (CloseableHttpResponse response = httpInterface.execute(new HttpGet("https://www.youtube.com/watch?v=" + videoId))) {
-      if (response.getStatusLine().getStatusCode() != 200) {
-        throw new IOException("Invalid status code for video page response.");
+      int statusCode = response.getStatusLine().getStatusCode();
+      if (statusCode != 200) {
+        throw new IOException("Invalid status code for video page response: " + statusCode);
       }
 
       String html = IOUtils.toString(response.getEntity().getContent(), Charset.forName(CHARSET));
@@ -260,8 +260,9 @@ public class YoutubeAudioSourceManager implements AudioSourceManager {
 
   private boolean determineFailureReason(HttpInterface httpInterface, String videoId, boolean mustExist) throws Exception {
     try (CloseableHttpResponse response = httpInterface.execute(new HttpGet("https://www.youtube.com/get_video_info?hl=en_GB&video_id=" + videoId))) {
-      if (response.getStatusLine().getStatusCode() != 200) {
-        throw new IOException("Invalid status code for video info response.");
+      int statusCode = response.getStatusLine().getStatusCode();
+      if (statusCode != 200) {
+        throw new IOException("Invalid status code for video info response: " + statusCode);
       }
 
       Map<String, String> format = convertToMapLayout(URLEncodedUtils.parse(response.getEntity()));
@@ -292,8 +293,9 @@ public class YoutubeAudioSourceManager implements AudioSourceManager {
 
   private JsonBrowser loadTrackBaseInfoFromEmbedPage(HttpInterface httpInterface, String videoId) throws Exception {
     try (CloseableHttpResponse response = httpInterface.execute(new HttpGet("https://www.youtube.com/embed/" + videoId))) {
-      if (response.getStatusLine().getStatusCode() != 200) {
-        throw new IOException("Invalid status code for embed video page response.");
+      int statusCode = response.getStatusLine().getStatusCode();
+      if (statusCode != 200) {
+        throw new IOException("Invalid status code for embed video page response: " + statusCode);
       }
 
       String html = IOUtils.toString(response.getEntity().getContent(), Charset.forName(CHARSET));
@@ -312,8 +314,9 @@ public class YoutubeAudioSourceManager implements AudioSourceManager {
     String url = "https://www.youtube.com/get_video_info?hl=en_GB&video_id=" + videoId + "&sts=" + sts;
 
     try (CloseableHttpResponse response = httpInterface.execute(new HttpGet(url))) {
-      if (response.getStatusLine().getStatusCode() != 200) {
-        throw new IOException("Invalid status code for video info response.");
+      int statusCode = response.getStatusLine().getStatusCode();
+      if (statusCode != 200) {
+        throw new IOException("Invalid status code for video info response: " + statusCode);
       }
 
       return convertToMapLayout(URLEncodedUtils.parse(response.getEntity()));
@@ -337,8 +340,9 @@ public class YoutubeAudioSourceManager implements AudioSourceManager {
 
     try (HttpInterface httpInterface = getHttpInterface()) {
       try (CloseableHttpResponse response = httpInterface.execute(new HttpGet("https://www.youtube.com/playlist?list=" + playlistId))) {
-        if (response.getStatusLine().getStatusCode() != 200) {
-          throw new IOException("Invalid status code for playlist response.");
+        int statusCode = response.getStatusLine().getStatusCode();
+        if (statusCode != 200) {
+          throw new IOException("Invalid status code for playlist response: " + statusCode);
         }
 
         Document document = Jsoup.parse(response.getEntity().getContent(), CHARSET, "");
@@ -372,8 +376,9 @@ public class YoutubeAudioSourceManager implements AudioSourceManager {
     // Also load the next pages, each result gives us a JSON with separate values for list html and next page loader html
     while (loadMoreUrl != null && ++loadCount < pageCount) {
       try (CloseableHttpResponse response = httpInterface.execute(new HttpGet("https://www.youtube.com" + loadMoreUrl))) {
-        if (response.getStatusLine().getStatusCode() != 200) {
-          throw new IOException("Invalid status code for playlist response.");
+        int statusCode = response.getStatusLine().getStatusCode();
+        if (statusCode != 200) {
+          throw new IOException("Invalid status code for playlist response: " + statusCode);
         }
 
         JsonBrowser json = JsonBrowser.parse(response.getEntity().getContent());
@@ -446,8 +451,9 @@ public class YoutubeAudioSourceManager implements AudioSourceManager {
       String mixUrl = "https://www.youtube.com/watch?v=" + selectedVideoId + "&list=" + mixId;
 
       try (CloseableHttpResponse response = httpInterface.execute(new HttpGet(mixUrl))) {
-        if (response.getStatusLine().getStatusCode() != 200) {
-          throw new IOException("Invalid status code for mix response.");
+        int statusCode = response.getStatusLine().getStatusCode();
+        if (statusCode != 200) {
+          throw new IOException("Invalid status code for mix response: " + statusCode);
         }
 
         Document document = Jsoup.parse(response.getEntity().getContent(), CHARSET, "");
@@ -506,7 +512,11 @@ public class YoutubeAudioSourceManager implements AudioSourceManager {
           tracks.add((AudioTrack) item);
         }
       } catch (ExecutionException e) {
-        log.warn("Failed to load a track from a mix.", e);
+        if (e.getCause() instanceof FriendlyException) {
+          ExceptionTools.log(log, (FriendlyException) e.getCause(), "Loading a track from a mix.");
+        } else {
+          log.warn("Failed to load a track from a mix.", e);
+        }
       }
     }
   }
@@ -518,8 +528,9 @@ public class YoutubeAudioSourceManager implements AudioSourceManager {
       URI url = new URIBuilder("https://www.youtube.com/results").addParameter("search_query", query).build();
 
       try (CloseableHttpResponse response = httpInterface.execute(new HttpGet(url))) {
-        if (response.getStatusLine().getStatusCode() != 200) {
-          throw new IOException("Invalid status code for search response.");
+        int statusCode = response.getStatusLine().getStatusCode();
+        if (statusCode != 200) {
+          throw new IOException("Invalid status code for search response: " + statusCode);
         }
 
         Document document = Jsoup.parse(response.getEntity().getContent(), CHARSET, "");

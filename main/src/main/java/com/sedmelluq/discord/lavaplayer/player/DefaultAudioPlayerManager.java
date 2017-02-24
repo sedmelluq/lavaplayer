@@ -195,16 +195,22 @@ public class DefaultAudioPlayerManager implements AudioPlayerManager {
 
   private Callable<Void> createItemLoader(final String identifier, final AudioLoadResultHandler resultHandler) {
     return () -> {
+      boolean[] reported = new boolean[1];
+
       try {
-        if (!checkSourcesForItem(new AudioReference(identifier, null), resultHandler)) {
+        if (!checkSourcesForItem(new AudioReference(identifier, null), resultHandler, reported)) {
           log.debug("No matches for track with identifier {}.", identifier);
           resultHandler.noMatches();
         }
       } catch (Throwable throwable) {
-        FriendlyException exception = ExceptionTools.wrapUnfriendlyExceptions("Something went wrong when looking up the track", FAULT, throwable);
-        ExceptionTools.log(log, exception, "loading item " + identifier);
+        if (reported[0]) {
+          log.warn("Load result handler for {} threw an exception", identifier, throwable);
+        } else {
+          FriendlyException exception = ExceptionTools.wrapUnfriendlyExceptions("Something went wrong when looking up the track", FAULT, throwable);
+          ExceptionTools.log(log, exception, "loading item " + identifier);
 
-        resultHandler.loadFailed(exception);
+          resultHandler.loadFailed(exception);
+        }
 
         ExceptionTools.rethrowErrors(throwable);
       }
@@ -375,11 +381,11 @@ public class DefaultAudioPlayerManager implements AudioPlayerManager {
     trackInfoExecutorService.setMaximumPoolSize(poolSize);
   }
 
-  private boolean checkSourcesForItem(AudioReference reference, AudioLoadResultHandler resultHandler) {
+  private boolean checkSourcesForItem(AudioReference reference, AudioLoadResultHandler resultHandler, boolean[] reported) {
     AudioReference currentReference = reference;
 
     for (int redirects = 0; redirects < MAXIMUM_LOAD_REDIRECTS && currentReference.identifier != null; redirects++) {
-      AudioItem item = checkSourcesForItemOnce(currentReference, resultHandler);
+      AudioItem item = checkSourcesForItemOnce(currentReference, resultHandler, reported);
       if (item == null) {
         return false;
       } else if (!(item instanceof AudioReference)) {
@@ -391,16 +397,18 @@ public class DefaultAudioPlayerManager implements AudioPlayerManager {
     return false;
   }
 
-  private AudioItem checkSourcesForItemOnce(AudioReference reference, AudioLoadResultHandler resultHandler) {
+  private AudioItem checkSourcesForItemOnce(AudioReference reference, AudioLoadResultHandler resultHandler, boolean[] reported) {
     for (AudioSourceManager sourceManager : sourceManagers) {
       AudioItem item = sourceManager.loadItem(this, reference);
 
       if (item != null) {
         if (item instanceof AudioTrack) {
           log.debug("Loaded a track with identifier {} using {}.", reference.identifier, sourceManager.getClass().getSimpleName());
+          reported[0] = true;
           resultHandler.trackLoaded((AudioTrack) item);
         } else if (item instanceof AudioPlaylist) {
           log.debug("Loaded a playlist with identifier {} using {}.", reference.identifier, sourceManager.getClass().getSimpleName());
+          reported[0] = true;
           resultHandler.playlistLoaded((AudioPlaylist) item);
         }
         return item;

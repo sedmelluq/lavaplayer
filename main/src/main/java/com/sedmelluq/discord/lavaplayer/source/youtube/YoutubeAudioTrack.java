@@ -195,8 +195,9 @@ public class YoutubeAudioTrack extends DelegatedAudioTrack {
     String resolvedDashUrl = sourceManager.getCipherManager().getValidDashUrl(httpInterface, playerScript, dashUrl);
 
     try (CloseableHttpResponse response = httpInterface.execute(new HttpGet(resolvedDashUrl))) {
-      if (response.getStatusLine().getStatusCode() != 200) {
-        throw new IOException("Invalid status code for track info page response.");
+      int statusCode = response.getStatusLine().getStatusCode();
+      if (statusCode != 200) {
+        throw new IOException("Invalid status code for track info page response: " + statusCode);
       }
 
       Document document = Jsoup.parse(response.getEntity().getContent(), CHARSET, "", Parser.xmlParser());

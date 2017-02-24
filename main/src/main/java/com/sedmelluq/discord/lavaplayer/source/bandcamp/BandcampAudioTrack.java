@@ -55,7 +55,7 @@ public class BandcampAudioTrack extends DelegatedAudioTrack {
     try (CloseableHttpResponse response = httpInterface.execute(new HttpGet(trackInfo.identifier))) {
       int statusCode = response.getStatusLine().getStatusCode();
       if (statusCode != 200) {
-        throw new IOException("Invalid status code " + statusCode + " for track page.");
+        throw new IOException("Invalid status code for track page: " + statusCode);
       }
 
       String responseText = IOUtils.toString(response.getEntity().getContent(), StandardCharsets.UTF_8);

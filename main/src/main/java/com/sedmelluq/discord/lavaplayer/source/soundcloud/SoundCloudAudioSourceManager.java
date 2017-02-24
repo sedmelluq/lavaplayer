@@ -206,7 +206,7 @@ public class SoundCloudAudioSourceManager implements AudioSourceManager {
       if (statusCode == 404) {
         throw new FriendlyException("That track does not exist.", COMMON, null);
       } else if (statusCode != 200) {
-        throw new IOException("Invalid status code for video page response.");
+        throw new IOException("Invalid status code for video page response: " + statusCode);
       }
 
       String html = IOUtils.toString(response.getEntity().getContent(), Charset.forName(CHARSET));
@@ -265,8 +265,9 @@ public class SoundCloudAudioSourceManager implements AudioSourceManager {
     URI trackListUrl = buildTrackListUrl(trackIds);
 
     try (CloseableHttpResponse response = httpInterface.execute(new HttpGet(trackListUrl))) {
-      if (response.getStatusLine().getStatusCode() != 200) {
-        throw new IOException("Invalid status code for track list response.");
+      int statusCode = response.getStatusLine().getStatusCode();
+      if (statusCode != 200) {
+        throw new IOException("Invalid status code for track list response: " + statusCode);
       }
 
       JsonBrowser trackList = JsonBrowser.parse(response.getEntity().getContent());
@@ -350,7 +351,7 @@ public class SoundCloudAudioSourceManager implements AudioSourceManager {
       if (statusCode == 404) {
         return null;
       } else if (statusCode != 200) {
-        throw new IOException("Invalid status code for track list response.");
+        throw new IOException("Invalid status code for track list response: " + statusCode);
       }
 
       Matcher matcher = likedUserUrnPattern.matcher(IOUtils.toString(response.getEntity().getContent(), StandardCharsets.UTF_8));
@@ -366,7 +367,7 @@ public class SoundCloudAudioSourceManager implements AudioSourceManager {
       int statusCode = response.getStatusLine().getStatusCode();
 
       if (statusCode != 200) {
-        throw new IOException("Invalid status code for liked tracks response.");
+        throw new IOException("Invalid status code for liked tracks response: " + statusCode);
       }
 
       return JsonBrowser.parse(response.getEntity().getContent());

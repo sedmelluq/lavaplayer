@@ -133,18 +133,7 @@ public class TwitchStreamAudioSourceManager implements AudioSourceManager {
     try (HttpInterface httpInterface = getHttpInterface()) {
       HttpUriRequest request = createGetRequest("https://api.twitch.tv/api/channels/" + name + "/ember?on_site=1");
 
-      try (CloseableHttpResponse response = httpInterface.execute(request)) {
-        int statusCode = response.getStatusLine().getStatusCode();
-
-        if (statusCode == 404) {
-          return null;
-        } else if (statusCode != 200) {
-          throw new FriendlyException("Server responded with an error.", SUSPICIOUS,
-              new IllegalStateException("Response code from channel info is " + statusCode));
-        }
-
-        return JsonBrowser.parse(response.getEntity().getContent());
-      }
+      return HttpClientTools.fetchResponseAsJson(httpInterface, request);
     } catch (IOException e) {
       throw new FriendlyException("Loading Twitch channel information failed.", SUSPICIOUS, e);
     }
