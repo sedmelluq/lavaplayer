@@ -1,5 +1,19 @@
 # Change Log
 
+## [1.2.15] - 2017-02-25
+### Fixed
+- Fixed a possible crash when a Vorbis track was shut down before being successfully initialised.
+
+## [1.2.14] - 2017-02-22
+### Fixed
+- Retry stream connection on NoHttpResponseException, which may be caused by connection reuse.
+- Retry stream connection on SSL errors, which may be caused by severed connection.
+- Retry stream connection once on 500 series errors, due to possibly flaky server side issues.
+- Fixed loadFailed being called for exceptions in other callbacks.
+
+### Changed
+- Improved logging to know causes of all failed requests and changes some inappropriate logging levels.
+
 ## [1.2.13] - 2017-02-22
 ### Fixed
 - Fixed a regression with YouTube dashmpd-only tracks not working.

@@ -23,7 +23,7 @@ static void build_ogg_packet(JNIEnv* jni, ogg_packet* packet, jobject direct_buf
 }
 
 JNIEXPORT jlong JNICALL Java_com_sedmelluq_discord_lavaplayer_natives_vorbis_VorbisDecoderLibrary_create(JNIEnv *jni, jobject me) {
-	vorbis_state_t* state = malloc(sizeof(*state));
+	vorbis_state_t* state = calloc(1, sizeof(*state));
 
 	if (state == NULL) {
 		return NULL;
