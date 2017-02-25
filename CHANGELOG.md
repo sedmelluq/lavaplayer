@@ -4,7 +4,7 @@
 ### Fixed
 - Fixed a possible crash when a Vorbis track was shut down before being successfully initialised.
 
-## [1.2.14] - 2017-02-22
+## [1.2.14] - 2017-02-24
 ### Fixed
 - Retry stream connection on NoHttpResponseException, which may be caused by connection reuse.
 - Retry stream connection on SSL errors, which may be caused by severed connection.
