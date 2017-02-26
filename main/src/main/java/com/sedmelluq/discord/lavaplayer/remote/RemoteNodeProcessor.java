@@ -69,6 +69,7 @@ public class RemoteNodeProcessor implements RemoteNode, Runnable {
   private final String nodeAddress;
   private final ScheduledThreadPoolExecutor scheduledExecutor;
   private final HttpInterfaceManager httpInterfaceManager;
+  private final AbandonedTrackManager abandonedTrackManager;
   private final BlockingQueue<RemoteMessage> queuedMessages;
   private final ConcurrentMap<Long, RemoteAudioTrackExecutor> playingTracks;
   private final RemoteMessageMapper mapper;
@@ -86,14 +87,17 @@ public class RemoteNodeProcessor implements RemoteNode, Runnable {
    * @param nodeAddress Address of this node
    * @param scheduledExecutor Scheduler to use to schedule reconnects
    * @param httpInterfaceManager HTTP interface manager to use for communicating with node
+   * @param abandonedTrackManager Abandoned track manager, where the playing tracks are sent if node goes offline
    */
   public RemoteNodeProcessor(DefaultAudioPlayerManager playerManager, String nodeAddress,
-                             ScheduledThreadPoolExecutor scheduledExecutor, HttpInterfaceManager httpInterfaceManager) {
+                             ScheduledThreadPoolExecutor scheduledExecutor, HttpInterfaceManager httpInterfaceManager,
+                             AbandonedTrackManager abandonedTrackManager) {
 
     this.playerManager = playerManager;
     this.nodeAddress = nodeAddress;
     this.scheduledExecutor = scheduledExecutor;
     this.httpInterfaceManager = httpInterfaceManager;
+    this.abandonedTrackManager = abandonedTrackManager;
     queuedMessages = new LinkedBlockingQueue<>();
     playingTracks = new ConcurrentHashMap<>();
     mapper = new RemoteMessageMapper();
@@ -118,10 +122,11 @@ public class RemoteNodeProcessor implements RemoteNode, Runnable {
     AudioTrack track = executor.getTrack();
 
     if (playingTracks.putIfAbsent(executor.getExecutorId(), executor) == null) {
-      log.info("Sending request to play {} {}", track.getIdentifier(), executor.getExecutorId());
+      long position = executor.getNextInputTimecode();
+      log.info("Sending request to play {} {} from position {}", track.getIdentifier(), executor.getExecutorId(), position);
 
       queuedMessages.add(new TrackStartRequestMessage(executor.getExecutorId(), track.getInfo(), playerManager.encodeTrackDetails(track),
-          executor.getVolume(), executor.getConfiguration()));
+          executor.getVolume(), executor.getConfiguration(), position));
     }
   }
 
@@ -180,6 +185,7 @@ public class RemoteNodeProcessor implements RemoteNode, Runnable {
 
       ExceptionTools.rethrowErrors(e);
     } finally {
+      processHealthCheck(true);
       connectionState.set(ConnectionState.OFFLINE.id());
 
       aliveTickCounter = Math.min(-1, aliveTickCounter - 1);
@@ -417,8 +423,7 @@ public class RemoteNodeProcessor implements RemoteNode, Runnable {
       RemoteAudioTrackExecutor executor = playingTracks.remove(executorId);
 
       if (executor != null) {
-        executor.dispatchException(new FriendlyException("The machine processing this song went offline.", SUSPICIOUS, null));
-        executor.stop();
+        abandonedTrackManager.add(executor);
       }
     }
   }

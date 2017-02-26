@@ -27,6 +27,10 @@ public class TrackStartRequestMessage implements RemoteMessage {
    * Configuration to use for audio processing
    */
   public final AudioConfiguration configuration;
+  /**
+   * Position to start playing at in milliseconds
+   */
+  public final long position;
 
   /**
    * @param executorId The ID for the track executor
@@ -34,12 +38,16 @@ public class TrackStartRequestMessage implements RemoteMessage {
    * @param encodedTrack Track specific extra information that is required to initialise the track object
    * @param volume Initial volume of the track
    * @param configuration Configuration to use for audio processing
+   * @param position Position to start playing at in milliseconds
    */
-  public TrackStartRequestMessage(long executorId, AudioTrackInfo trackInfo, byte[] encodedTrack, int volume, AudioConfiguration configuration) {
+  public TrackStartRequestMessage(long executorId, AudioTrackInfo trackInfo, byte[] encodedTrack, int volume,
+                                  AudioConfiguration configuration, long position) {
+
     this.executorId = executorId;
     this.encodedTrack = encodedTrack;
     this.trackInfo = trackInfo;
     this.volume = volume;
     this.configuration = configuration;
+    this.position = position;
   }
 }

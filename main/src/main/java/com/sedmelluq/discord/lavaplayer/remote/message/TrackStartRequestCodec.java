@@ -14,6 +14,7 @@ import java.io.IOException;
  */
 public class TrackStartRequestCodec implements RemoteMessageCodec<TrackStartRequestMessage> {
   private static final int VERSION_WITH_FORMAT = 2;
+  private static final int VERSION_WITH_POSITION = 3;
 
   @Override
   public Class<TrackStartRequestMessage> getMessageClass() {
@@ -24,18 +25,24 @@ public class TrackStartRequestCodec implements RemoteMessageCodec<TrackStartRequ
   public int version(RemoteMessage message) {
     // Backwards compatibility with older nodes.
     if (message instanceof TrackStartRequestMessage) {
+      if (((TrackStartRequestMessage) message).position != 0) {
+        return VERSION_WITH_POSITION;
+      }
+
       AudioDataFormat format = ((TrackStartRequestMessage) message).configuration.getOutputFormat();
 
-      if (format.equals(StandardAudioDataFormats.DISCORD_OPUS)) {
-        return 1;
+      if (!format.equals(StandardAudioDataFormats.DISCORD_OPUS)) {
+        return VERSION_WITH_FORMAT;
       }
     }
 
-    return 2;
+    return VERSION_WITH_POSITION;
   }
 
   @Override
   public void encode(DataOutput out, TrackStartRequestMessage message) throws IOException {
+    int version = version(message);
+
     out.writeLong(message.executorId);
     out.writeUTF(message.trackInfo.title);
     out.writeUTF(message.trackInfo.author);
@@ -48,12 +55,16 @@ public class TrackStartRequestCodec implements RemoteMessageCodec<TrackStartRequ
     out.writeUTF(message.configuration.getResamplingQuality().name());
     out.writeInt(message.configuration.getOpusEncodingQuality());
 
-    if (version(message) >= VERSION_WITH_FORMAT) {
+    if (version >= VERSION_WITH_FORMAT) {
       AudioDataFormat format = message.configuration.getOutputFormat();
       out.writeInt(format.channelCount);
       out.writeInt(format.sampleRate);
       out.writeInt(format.chunkSampleCount);
       out.writeUTF(format.codec.name());
+    }
+
+    if (version >= VERSION_WITH_POSITION) {
+      out.writeLong(message.position);
     }
   }
 
@@ -77,6 +88,12 @@ public class TrackStartRequestCodec implements RemoteMessageCodec<TrackStartRequ
       configuration.setOutputFormat(format);
     }
 
-    return new TrackStartRequestMessage(executorId, trackInfo, encodedTrack, volume, configuration);
+    long position = 0;
+
+    if (version >= VERSION_WITH_POSITION) {
+      position = in.readLong();
+    }
+
+    return new TrackStartRequestMessage(executorId, trackInfo, encodedTrack, volume, configuration, position);
   }
 }

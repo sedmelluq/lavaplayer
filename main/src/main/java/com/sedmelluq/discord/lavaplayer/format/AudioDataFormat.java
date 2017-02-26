@@ -50,6 +50,13 @@ public class AudioDataFormat {
     return chunkSampleCount * channelCount * sampleSize;
   }
 
+  /**
+   * @return The duration in milliseconds of one frame in this format.
+   */
+  public long frameDuration() {
+    return chunkSampleCount * 1000L / sampleRate;
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;

@@ -51,6 +51,7 @@ public class TwitchStreamSegmentUrlProvider extends M3uStreamSegmentUrlProvider 
    * @param httpInterface Http interface to use for requests.
    * @return The URL of the next TS segment.
    */
+  @Override
   public String getNextSegmentUrl(HttpInterface httpInterface) {
     try {
       if (!obtainSegmentPlaylistUrl(httpInterface)) {

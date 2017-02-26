@@ -13,7 +13,6 @@ import org.apache.http.ProtocolException;
 import org.apache.http.ProtocolVersion;
 import org.apache.http.client.CookieStore;
 import org.apache.http.client.RedirectStrategy;
-import org.apache.http.client.config.CookieSpecs;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpUriRequest;
@@ -74,7 +73,7 @@ public class HttpClientTools {
 
     return new CustomHttpClientBuilder()
         .setDefaultCookieStore(cookieStore)
-        .setRetryHandler(NoResponseRetryHandler.INSTANCE)
+        .setRetryHandler(NoResponseRetryHandler.RETRY_INSTANCE)
         .setDefaultRequestConfig(
             RequestConfig.custom()
                 .setConnectTimeout(3000)
@@ -247,14 +246,25 @@ public class HttpClientTools {
    * @return True if retrying to connect after receiving this exception is likely to succeed.
    */
   public static boolean isRetriableSocketException(Throwable exception) {
-    if (exception instanceof SocketException && "Connection reset".equals(exception.getMessage())) {
-      return true;
-    } else if (exception instanceof SSLException && "SSL peer shut down incorrectly".equals(exception.getMessage())) {
-      return true;
-    }
-    return false;
+    return isConnectionResetException(exception) || isIncorrectSslShutdownException(exception);
   }
 
+  private static boolean isConnectionResetException(Throwable exception) {
+    return exception instanceof SocketException && "Connection reset".equals(exception.getMessage());
+  }
+
+  private static boolean isIncorrectSslShutdownException(Throwable exception) {
+    return exception instanceof SSLException && "SSL peer shut down incorrectly".equals(exception.getMessage());
+  }
+
+  /**
+   * Executes an HTTP request and returns the response as a JsonBrowser instance.
+   *
+   * @param httpInterface HTTP interface to use for the request.
+   * @param request Request to perform.
+   * @return Response as a JsonBrowser instance. null in case of 404.
+   * @throws IOException On network error or for non-200 response code.
+   */
   public static JsonBrowser fetchResponseAsJson(HttpInterface httpInterface, HttpUriRequest request) throws IOException {
     try (CloseableHttpResponse response = httpInterface.execute(request)) {
       int statusCode = response.getStatusLine().getStatusCode();
@@ -270,6 +280,15 @@ public class HttpClientTools {
     }
   }
 
+  /**
+   * Executes an HTTP request and returns the response as an array of lines.
+   *
+   * @param httpInterface HTTP interface to use for the request.
+   * @param request Request to perform.
+   * @param name Name of the operation to include in exception messages.
+   * @return Array of lines from the response
+   * @throws IOException On network error or for non-200 response code.
+   */
   public static String[] fetchResponseLines(HttpInterface httpInterface, HttpUriRequest request, String name) throws IOException {
     try (CloseableHttpResponse response = httpInterface.execute(request)) {
       int statusCode = response.getStatusLine().getStatusCode();
@@ -282,7 +301,7 @@ public class HttpClientTools {
   }
 
   private static class NoResponseRetryHandler extends DefaultHttpRequestRetryHandler {
-    private static final NoResponseRetryHandler INSTANCE = new NoResponseRetryHandler();
+    private static final NoResponseRetryHandler RETRY_INSTANCE = new NoResponseRetryHandler();
 
     @Override
     public boolean retryRequest(IOException exception, int executionCount, HttpContext context) {

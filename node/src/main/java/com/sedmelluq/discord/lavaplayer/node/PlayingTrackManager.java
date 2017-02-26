@@ -9,6 +9,7 @@ import com.sedmelluq.discord.lavaplayer.remote.message.TrackStartResponseMessage
 import com.sedmelluq.discord.lavaplayer.remote.message.TrackFrameDataMessage;
 import com.sedmelluq.discord.lavaplayer.remote.message.TrackFrameRequestMessage;
 import com.sedmelluq.discord.lavaplayer.remote.message.TrackStoppedMessage;
+import com.sedmelluq.discord.lavaplayer.source.AudioSourceManagers;
 import com.sedmelluq.discord.lavaplayer.source.bandcamp.BandcampAudioSourceManager;
 import com.sedmelluq.discord.lavaplayer.source.http.HttpAudioSourceManager;
 import com.sedmelluq.discord.lavaplayer.source.soundcloud.SoundCloudAudioSourceManager;
@@ -53,12 +54,7 @@ public class PlayingTrackManager {
     tracks = new ConcurrentHashMap<>();
 
     manager.setUseSeekGhosting(false);
-    manager.registerSourceManager(new YoutubeAudioSourceManager());
-    manager.registerSourceManager(new SoundCloudAudioSourceManager());
-    manager.registerSourceManager(new BandcampAudioSourceManager());
-    manager.registerSourceManager(new VimeoAudioSourceManager());
-    manager.registerSourceManager(new TwitchStreamAudioSourceManager());
-    manager.registerSourceManager(new HttpAudioSourceManager());
+    AudioSourceManagers.registerRemoteSources(manager);
   }
 
   @MessageHandler
@@ -67,16 +63,23 @@ public class PlayingTrackManager {
     String failureReason = null;
 
     if (audioTrack != null) {
-      PlayingTrack playingTrack = new PlayingTrack(message.executorId, message.volume, audioTrack);
+      if (message.position != 0) {
+        audioTrack.setPosition(message.position);
+      }
 
-      if (tracks.putIfAbsent(message.executorId, playingTrack) == null) {
-        log.info("Track start request for {} (context {})", message.trackInfo.identifier, message.executorId);
+      PlayingTrack playingTrack = new PlayingTrack(message.executorId, message.volume, audioTrack);
+      PlayingTrack existingTrack = tracks.putIfAbsent(message.executorId, playingTrack);
+
+      if (existingTrack == null) {
+        log.info("Track start request for {} (context {}, position {})", message.trackInfo.identifier, message.executorId, message.position);
 
         manager.executeTrack(playingTrack, audioTrack, message.configuration, playingTrack.volume);
         statisticsManager.increaseTrackCount();
       } else {
-        log.info("Start request for an already playing track {} (context {})", message.trackInfo.identifier, message.executorId);
-        failureReason = "Track is already playing.";
+        log.info("Start request for an already playing track {} (context {}), applying seek to {} from it.",
+            message.trackInfo.identifier, message.executorId, message.position);
+
+        existingTrack.audioTrack.setPosition(message.position);
       }
     } else {
       log.warn("Unable to find a matching source for track {} (context {})", message.trackInfo.identifier, message.executorId);

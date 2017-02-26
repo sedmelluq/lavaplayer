@@ -203,4 +203,22 @@ public class AudioFrameBuffer implements AudioFrameConsumer, AudioFrameProvider 
       audioFrames.add(rebuilder.rebuild(frame));
     }
   }
+
+  /**
+   * @return The timecode of the last frame in the buffer, null if the buffer is empty or is marked to be cleared upon
+   *         receiving the next frame.
+   */
+  public Long getLastInputTimecode() {
+    Long lastTimecode = null;
+
+    synchronized (synchronizer) {
+      if (!clearOnInsert) {
+        for (AudioFrame frame : audioFrames) {
+          lastTimecode = frame.timecode;
+        }
+      }
+    }
+
+    return lastTimecode;
+  }
 }

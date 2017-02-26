@@ -22,12 +22,18 @@ import java.util.regex.Pattern;
 
 import static com.sedmelluq.discord.lavaplayer.tools.FriendlyException.Severity.SUSPICIOUS;
 
+/**
+ * Audio source manager which detects Beam.pro tracks by URL.
+ */
 public class BeamAudioSourceManager implements AudioSourceManager {
   private static final String STREAM_NAME_REGEX = "^https://(?:www\\.)?beam.pro/([^/]+)$";
   private static final Pattern streamNameRegex = Pattern.compile(STREAM_NAME_REGEX);
 
   private final HttpInterfaceManager httpInterfaceManager;
 
+  /**
+   * Create an instance.
+   */
   public BeamAudioSourceManager() {
     this.httpInterfaceManager = new ThreadLocalHttpInterfaceManager(HttpClientTools.createSharedCookiesHttpBuilder());
   }
@@ -78,12 +84,12 @@ public class BeamAudioSourceManager implements AudioSourceManager {
 
   @Override
   public AudioTrack decodeTrack(AudioTrackInfo trackInfo, DataInput input) throws IOException {
-    return null;
+    return new BeamAudioTrack(trackInfo, this);
   }
 
   @Override
   public void shutdown() {
-
+    // Nothing to shut down.
   }
 
   private static String getChannelNameFromUrl(String url) {
@@ -103,6 +109,9 @@ public class BeamAudioSourceManager implements AudioSourceManager {
     }
   }
 
+  /**
+   * @return Get an HTTP interface for a playing track.
+   */
   public HttpInterface getHttpInterface() {
     return httpInterfaceManager.getInterface();
   }

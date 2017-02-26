@@ -13,11 +13,35 @@ import java.util.List;
 import static com.sedmelluq.discord.lavaplayer.source.twitch.TwitchStreamAudioSourceManager.createGetRequest;
 import static com.sedmelluq.discord.lavaplayer.tools.io.HttpClientTools.fetchResponseLines;
 
+/**
+ * Provides track segment URLs for streams which use the M3U segment format. There is a base M3U containing the list of
+ * different available streams. Those point to segment M3U urls, which always give the direct stream URLs of last X
+ * segments. The segment provider fetches the stream for the next segment on each call to
+ * {@link M3uStreamSegmentUrlProvider#getNextSegmentStream}.
+ */
 public abstract class M3uStreamSegmentUrlProvider {
+  /**
+   * If applicable, extracts the quality information from the M3U directive which describes one stream in the root M3U.
+   *
+   * @param directiveLine Directive line with arguments.
+   * @return The quality name extracted from the directive line.
+   */
   protected abstract String getQualityFromM3uDirective(ExtendedM3uParser.Line directiveLine);
 
+  /**
+   * Implementation specific logic for getting the URL for the next segment.
+   *
+   * @param httpInterface HTTP interface to use for any requests required to perform to find the segment URL.
+   * @return The direct stream URL of the next segment.
+   */
   protected abstract String getNextSegmentUrl(HttpInterface httpInterface);
 
+  /**
+   * Fetches the input stream for the next segment in the M3U stream.
+   *
+   * @param httpInterface HTTP interface to use for any requests required to perform to find the segment URL.
+   * @return Input stream of the next segment.
+   */
   public InputStream getNextSegmentStream(HttpInterface httpInterface) {
     String url = getNextSegmentUrl(httpInterface);
     if (url == null) {
@@ -101,7 +125,13 @@ public abstract class M3uStreamSegmentUrlProvider {
   }
 
   protected static class ChannelStreamInfo {
+    /**
+     * Stream quality extracted from stream M3U directive.
+     */
     public final String quality;
+    /**
+     * URL for stream segment list.
+     */
     public final String url;
 
     private ChannelStreamInfo(String quality, String url) {

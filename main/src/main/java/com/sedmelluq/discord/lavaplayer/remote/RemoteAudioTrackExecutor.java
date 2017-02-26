@@ -225,4 +225,31 @@ public class RemoteAudioTrackExecutor implements AudioTrackExecutor {
   public boolean failedBeforeLoad() {
     return trackException != null && !hasReceivedData;
   }
+
+  /**
+   * @return The expected timecode of the next frame to receive from the remote node.
+   */
+  public long getNextInputTimecode() {
+    boolean dataReceived = hasReceivedData;
+    long frameDuration = configuration.getOutputFormat().frameDuration();
+
+    if (dataReceived) {
+      Long lastBufferTimecode = frameBuffer.getLastInputTimecode();
+      if (lastBufferTimecode != null) {
+        return lastBufferTimecode + frameDuration;
+      }
+    }
+
+    long seekPosition = pendingSeek.get();
+    if (seekPosition != NO_SEEK) {
+      return seekPosition;
+    }
+
+    return dataReceived ? lastFrameTimecode.get() + frameDuration : lastFrameTimecode.get();
+  }
+
+  @Override
+  public String toString() {
+    return "RemoteExec " + executorId + ", " + track.getIdentifier();
+  }
 }

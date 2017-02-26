@@ -206,10 +206,7 @@ public class DefaultAudioPlayerManager implements AudioPlayerManager {
         if (reported[0]) {
           log.warn("Load result handler for {} threw an exception", identifier, throwable);
         } else {
-          FriendlyException exception = ExceptionTools.wrapUnfriendlyExceptions("Something went wrong when looking up the track", FAULT, throwable);
-          ExceptionTools.log(log, exception, "loading item " + identifier);
-
-          resultHandler.loadFailed(exception);
+          dispatchItemLoadFailure(identifier, resultHandler, throwable);
         }
 
         ExceptionTools.rethrowErrors(throwable);
@@ -217,6 +214,13 @@ public class DefaultAudioPlayerManager implements AudioPlayerManager {
 
       return null;
     };
+  }
+
+  private void dispatchItemLoadFailure(String identifier, AudioLoadResultHandler resultHandler, Throwable throwable) {
+    FriendlyException exception = ExceptionTools.wrapUnfriendlyExceptions("Something went wrong when looking up the track", FAULT, throwable);
+    ExceptionTools.log(log, exception, "loading item " + identifier);
+
+    resultHandler.loadFailed(exception);
   }
 
   @Override

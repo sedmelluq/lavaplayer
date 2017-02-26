@@ -15,7 +15,7 @@ plugins {
 
 apply plugin: 'spring-boot'
 
-version = '1.2.13'
+version = '1.2.16'
 
 dependencies {
   compile project(':main')

@@ -1,5 +1,13 @@
 # Change Log
 
+## [1.2.16] - 2017-02-26
+### Changed
+- When remote nodes go offline, their tracks are slowly taken over by other nodes.
+
+### Fixed
+- Fixed Beam.pro tracks not playable in nodes.
+- Fixed seeking on tracks which had not been started yet.
+
 ## [1.2.15] - 2017-02-25
 ### Fixed
 - Fixed a possible crash when a Vorbis track was shut down before being successfully initialised.

@@ -87,7 +87,7 @@ public class PrimordialAudioTrackExecutor implements AudioTrackExecutor {
    */
   public void applyStateToExecutor(AudioTrackExecutor executor) {
     if (position != 0) {
-      executor.setPosition(0);
+      executor.setPosition(position);
     }
 
     executor.setMarker(markerTracker.remove());

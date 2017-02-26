@@ -30,6 +30,7 @@ public class RemoteNodeManager extends AudioEventAdapter implements RemoteNodeRe
   private final DefaultAudioPlayerManager playerManager;
   private final HttpInterfaceManager httpInterfaceManager;
   private final List<RemoteNodeProcessor> processors;
+  private final AbandonedTrackManager abandonedTrackManager;
   private final AtomicBoolean enabled;
   private final Object lock;
   private volatile ScheduledThreadPoolExecutor scheduler;
@@ -42,6 +43,7 @@ public class RemoteNodeManager extends AudioEventAdapter implements RemoteNodeRe
     this.playerManager = playerManager;
     this.httpInterfaceManager = new SimpleHttpInterfaceManager(RemoteNodeProcessor.createHttpClientBuilder());
     this.processors = new ArrayList<>();
+    this.abandonedTrackManager = new AbandonedTrackManager();
     this.enabled = new AtomicBoolean();
     this.lock = new Object();
     this.activeProcessors = new ArrayList<>();
@@ -71,7 +73,9 @@ public class RemoteNodeManager extends AudioEventAdapter implements RemoteNodeRe
       }
 
       for (String nodeAddress : newNodeAddresses) {
-        RemoteNodeProcessor processor = new RemoteNodeProcessor(playerManager, nodeAddress, scheduler, httpInterfaceManager);
+        RemoteNodeProcessor processor = new RemoteNodeProcessor(playerManager, nodeAddress, scheduler,
+            httpInterfaceManager, abandonedTrackManager);
+
         scheduler.submit(processor);
         processors.add(processor);
       }
@@ -94,6 +98,8 @@ public class RemoteNodeManager extends AudioEventAdapter implements RemoteNodeRe
       for (RemoteNodeProcessor processor : processors) {
         processor.processHealthCheck(true);
       }
+
+      abandonedTrackManager.shutdown();
 
       IOUtils.closeQuietly(httpInterfaceManager);
 
@@ -159,6 +165,9 @@ public class RemoteNodeManager extends AudioEventAdapter implements RemoteNodeRe
     for (RemoteNodeProcessor processor : activeProcessors) {
       processor.processHealthCheck(false);
     }
+
+    abandonedTrackManager.drainExpired();
+    abandonedTrackManager.distribute(processors);
   }
 
   @Override
