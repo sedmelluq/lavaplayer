@@ -5,19 +5,26 @@ import org.apache.commons.io.IOUtils;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.utils.URIBuilder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Handles parsing and caching of signature ciphers
  */
 public class YoutubeSignatureCipherManager {
+  private static final Logger log = LoggerFactory.getLogger(YoutubeSignatureCipherManager.class);
+
   private static final String VARIABLE_PART = "[a-zA-Z_\\$][a-zA-Z_0-9]*";
   private static final String REVERSE_PART = ":function\\(a\\)\\{(?:return )?a\\.reverse\\(\\)\\}";
   private static final String SLICE_PART = ":function\\(a,b\\)\\{return a\\.slice\\(b\\)\\}";
@@ -114,11 +121,15 @@ public class YoutubeSignatureCipherManager {
 
     if (cipherKey == null) {
       synchronized (cipherLoadLock) {
+        log.debug("Parsing cipher from player script {}.", cipherScriptUrl);
+
         try (CloseableHttpResponse response = httpInterface.execute(new HttpGet(parseTokenScriptUrl(cipherScriptUrl)))) {
           validateResponseCode(response);
 
           cipherKey = extractTokensFromScript(IOUtils.toString(response.getEntity().getContent(), "UTF-8"));
           cipherCache.put(cipherScriptUrl, cipherKey);
+
+          cipherSanityCheck(cipherKey, cipherScriptUrl);
         }
       }
     }
@@ -132,6 +143,19 @@ public class YoutubeSignatureCipherManager {
     if (statusCode != 200) {
       throw new IOException("Received non-success response code " + statusCode);
     }
+  }
+
+  private void cipherSanityCheck(YoutubeSignatureCipher cipher, String cipherScriptUrl) {
+    if (cipher.isEmpty()) {
+      log.warn("No operations detected from cipher extracted from {}.", cipherScriptUrl);
+    }
+  }
+
+  private List<String> getQuotedFunctions(String... functionNames) {
+    return Stream.of(functionNames)
+        .filter(function -> function != null)
+        .map(Pattern::quote)
+        .collect(Collectors.toList());
   }
 
   private YoutubeSignatureCipher extractTokensFromScript(String script) {
@@ -149,7 +173,7 @@ public class YoutubeSignatureCipherManager {
 
     Pattern extractor = Pattern.compile(
         "(?:a=)?" + Pattern.quote(actions.group(1)) + "\\.(" +
-        String.join("|", reverseKey, slicePart, splicePart, swapKey) +
+        String.join("|", getQuotedFunctions(reverseKey, slicePart, splicePart, swapKey)) +
         ")\\(a,(\\d+)\\)"
     );
 

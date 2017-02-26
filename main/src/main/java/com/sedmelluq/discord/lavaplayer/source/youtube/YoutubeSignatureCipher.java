@@ -45,4 +45,11 @@ public class YoutubeSignatureCipher {
   public void addOperation(YoutubeCipherOperation operation) {
     operations.add(operation);
   }
+
+  /**
+   * @return True if the cipher contains no operations.
+   */
+  public boolean isEmpty() {
+    return operations.isEmpty();
+  }
 }
