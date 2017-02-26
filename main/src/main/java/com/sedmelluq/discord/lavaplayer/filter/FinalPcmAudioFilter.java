@@ -134,7 +134,7 @@ public class FinalPcmAudioFilter implements FloatPcmAudioFilter, ShortPcmAudioFi
 
     for (int i = 0; i < length; i++) {
       if (ignoredFrames > 0) {
-        ignoredFrames--;
+        ignoredFrames -= 2;
       } else {
         frameBuffer.put(decodeSample(buffer[0][offset + i]));
         frameBuffer.put(decodeSample(buffer[secondChannelIndex][offset + i]));
