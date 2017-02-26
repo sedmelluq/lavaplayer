@@ -127,7 +127,7 @@ public class YoutubeAudioSourceManager implements AudioSourceManager {
       return loadItemOnce(reference);
     } catch (FriendlyException exception) {
       // In case of a connection reset exception, try once more.
-      if (HttpClientTools.isRetriableSocketException(exception.getCause())) {
+      if (HttpClientTools.isRetriableNetworkException(exception.getCause())) {
         return loadItemOnce(reference);
       } else {
         throw exception;

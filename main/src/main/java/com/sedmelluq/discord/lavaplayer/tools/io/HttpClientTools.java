@@ -246,7 +246,7 @@ public class HttpClientTools {
    * @param exception Exception to check.
    * @return True if retrying to connect after receiving this exception is likely to succeed.
    */
-  public static boolean isRetriableSocketException(Throwable exception) {
+  public static boolean isRetriableNetworkException(Throwable exception) {
     return isConnectionResetException(exception) ||
         isIncorrectSslShutdownException(exception) ||
         isPrematureEndException(exception);

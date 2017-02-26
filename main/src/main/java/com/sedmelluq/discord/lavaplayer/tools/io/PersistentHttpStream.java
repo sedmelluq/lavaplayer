@@ -11,7 +11,6 @@ import org.slf4j.LoggerFactory;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.SocketException;
 import java.net.URI;
 
 /**
@@ -123,8 +122,8 @@ public class PersistentHttpStream extends SeekableInputStream implements AutoClo
     return true;
   }
 
-  private void handleSocketException(SocketException exception, boolean attemptReconnect) throws IOException {
-    if (!attemptReconnect || !HttpClientTools.isRetriableSocketException(exception)) {
+  private void handleNetworkException(IOException exception, boolean attemptReconnect) throws IOException {
+    if (!attemptReconnect || !HttpClientTools.isRetriableNetworkException(exception)) {
       throw exception;
     }
 
@@ -140,8 +139,8 @@ public class PersistentHttpStream extends SeekableInputStream implements AutoClo
         position++;
       }
       return result;
-    } catch (SocketException e) {
-      handleSocketException(e, attemptReconnect);
+    } catch (IOException e) {
+      handleNetworkException(e, attemptReconnect);
       return internalRead(false);
     }
   }
@@ -160,8 +159,8 @@ public class PersistentHttpStream extends SeekableInputStream implements AutoClo
         position += result;
       }
       return result;
-    } catch (SocketException e) {
-      handleSocketException(e, attemptReconnect);
+    } catch (IOException e) {
+      handleNetworkException(e, attemptReconnect);
       return internalRead(b, off, len, false);
     }
   }
@@ -180,8 +179,8 @@ public class PersistentHttpStream extends SeekableInputStream implements AutoClo
         position += result;
       }
       return result;
-    } catch (SocketException e) {
-      handleSocketException(e, attemptReconnect);
+    } catch (IOException e) {
+      handleNetworkException(e, attemptReconnect);
       return internalSkip(n, false);
     }
   }
@@ -196,8 +195,8 @@ public class PersistentHttpStream extends SeekableInputStream implements AutoClo
 
     try {
       return currentContent.available();
-    } catch (SocketException e) {
-      handleSocketException(e, attemptReconnect);
+    } catch (IOException e) {
+      handleNetworkException(e, attemptReconnect);
       return internalAvailable(false);
     }
   }
