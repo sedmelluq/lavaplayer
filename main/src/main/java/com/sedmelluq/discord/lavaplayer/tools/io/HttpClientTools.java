@@ -3,6 +3,7 @@ package com.sedmelluq.discord.lavaplayer.tools.io;
 import com.sedmelluq.discord.lavaplayer.tools.DataFormatTools;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.tools.JsonBrowser;
+import org.apache.http.ConnectionClosedException;
 import org.apache.http.Header;
 import org.apache.http.HttpRequest;
 import org.apache.http.HttpResponse;
@@ -246,7 +247,9 @@ public class HttpClientTools {
    * @return True if retrying to connect after receiving this exception is likely to succeed.
    */
   public static boolean isRetriableSocketException(Throwable exception) {
-    return isConnectionResetException(exception) || isIncorrectSslShutdownException(exception);
+    return isConnectionResetException(exception) ||
+        isIncorrectSslShutdownException(exception) ||
+        isPrematureEndException(exception);
   }
 
   private static boolean isConnectionResetException(Throwable exception) {
@@ -255,6 +258,11 @@ public class HttpClientTools {
 
   private static boolean isIncorrectSslShutdownException(Throwable exception) {
     return exception instanceof SSLException && "SSL peer shut down incorrectly".equals(exception.getMessage());
+  }
+
+  private static boolean isPrematureEndException(Throwable exception) {
+    return exception instanceof ConnectionClosedException && exception.getMessage() != null &&
+        exception.getMessage().startsWith("Premature end of Content-Length");
   }
 
   /**
