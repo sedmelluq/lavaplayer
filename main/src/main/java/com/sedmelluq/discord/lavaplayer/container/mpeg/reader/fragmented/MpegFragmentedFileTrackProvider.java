@@ -51,6 +51,11 @@ public class MpegFragmentedFileTrackProvider implements MpegFileTrackProvider {
 
     try (ReadableByteChannel channel = new DetachedByteChannel(Channels.newChannel(reader.seek))) {
       while ((moof = reader.nextChild(root)) != null) {
+        if (!"moof".equals(moof.type)) {
+          reader.skip(moof);
+          continue;
+        }
+
         MpegTrackFragmentHeader fragment = parseTrackMovieFragment(moof, consumer.getTrack().trackId);
         MpegSectionInfo mdat = reader.nextChild(root);
 

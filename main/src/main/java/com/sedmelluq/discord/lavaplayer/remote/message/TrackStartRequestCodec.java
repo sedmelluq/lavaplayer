@@ -13,6 +13,7 @@ import java.io.IOException;
  * Codec for track start message.
  */
 public class TrackStartRequestCodec implements RemoteMessageCodec<TrackStartRequestMessage> {
+  private static final int VERSION_INITIAL = 1;
   private static final int VERSION_WITH_FORMAT = 2;
   private static final int VERSION_WITH_POSITION = 3;
 
@@ -36,7 +37,7 @@ public class TrackStartRequestCodec implements RemoteMessageCodec<TrackStartRequ
       }
     }
 
-    return VERSION_WITH_POSITION;
+    return VERSION_INITIAL;
   }
 
   @Override
