@@ -167,7 +167,6 @@ public class RemoteNodeManager extends AudioEventAdapter implements RemoteNodeRe
     }
 
     abandonedTrackManager.drainExpired();
-    abandonedTrackManager.distribute(processors);
   }
 
   @Override

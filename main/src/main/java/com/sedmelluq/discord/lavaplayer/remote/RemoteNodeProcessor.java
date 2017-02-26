@@ -39,6 +39,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -236,6 +237,9 @@ public class RemoteNodeProcessor implements RemoteNode, Runnable {
   private boolean dispatchOneTick(HttpInterface httpInterface, TickBuilder tickBuilder) throws Exception {
     boolean success = false;
     HttpPost post = new HttpPost("http://" + nodeAddress + "/tick");
+
+    abandonedTrackManager.distribute(Collections.singletonList(this));
+
     ByteArrayEntity entity = new ByteArrayEntity(buildRequestBody());
     post.setEntity(entity);
 

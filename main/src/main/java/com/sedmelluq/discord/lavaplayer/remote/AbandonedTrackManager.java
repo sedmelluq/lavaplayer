@@ -63,14 +63,18 @@ public class AbandonedTrackManager {
 
     List<Adopter> adopters = findAdopters(nodes);
     AbandonedExecutor executor;
+    long currentTime = System.currentTimeMillis();
     int maximum = getMaximumAdoptions(adopters);
     int assigned = 0;
 
-    while (assigned++ < maximum && (executor = abandonedExecutors.poll()) != null) {
-      Adopter adopter = selectNextAdopter(adopters);
-      log.debug("Node {} is adopting {}.", adopter.node.getAddress(), executor.executor);
+    while (assigned < maximum && (executor = abandonedExecutors.poll()) != null) {
+      if (checkValidity(executor, currentTime)) {
+        Adopter adopter = selectNextAdopter(adopters);
+        log.debug("Node {} is adopting {}.", adopter.node.getAddress(), executor.executor);
 
-      adopter.node.startPlaying(executor.executor);
+        adopter.node.startPlaying(executor.executor);
+        assigned++;
+      }
     }
   }
 
@@ -91,27 +95,29 @@ public class AbandonedTrackManager {
    */
   public void drainExpired() {
     AbandonedExecutor executor;
-    long expirationTime = System.currentTimeMillis() - EXPIRE_THRESHOLD;
+    long currentTime = System.currentTimeMillis();
 
     while ((executor = abandonedExecutors.peek()) != null) {
-      if (executor.executor.getState() == AudioTrackState.FINISHED) {
-        if (abandonedExecutors.poll() != executor) {
-          log.warn("Removed unexpected executor when draining stopped abandoned track.");
-        }
-
-        log.debug("{} has been cleared from adoption queue because it was stopped.", executor.executor);
-      } else if (executor.orphanedTime < expirationTime) {
-        if (abandonedExecutors.poll() != executor) {
-          log.warn("Removed unexpected executor when draining expired abandoned tracks.");
-        }
-
-        log.debug("{} has been cleared from adoption queue because it expired.", executor.executor);
-
-        executor.executor.dispatchException(new FriendlyException("Could not find next node to play on.", COMMON, null));
-        executor.executor.stop();
-      } else {
-        break;
+      if (!checkValidity(executor, currentTime)) {
+        abandonedExecutors.remove(executor);
       }
+    }
+  }
+
+  private boolean checkValidity(AbandonedExecutor executor, long currentTime) {
+    long expirationTime = currentTime - EXPIRE_THRESHOLD;
+
+    if (executor.executor.getState() == AudioTrackState.FINISHED) {
+      log.debug("{} has been cleared from adoption queue because it was stopped.", executor.executor);
+      return false;
+    } else if (executor.orphanedTime < expirationTime) {
+      log.debug("{} has been cleared from adoption queue because it expired.", executor.executor);
+
+      executor.executor.dispatchException(new FriendlyException("Could not find next node to play on.", COMMON, null));
+      executor.executor.stop();
+      return false;
+    } else {
+      return true;
     }
   }
 
