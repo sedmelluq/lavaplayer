@@ -1,5 +1,27 @@
 # Change Log
 
+## [1.2.21] - 2017-02-26
+### Fixed
+- Fixed exploding on seekable YouTube live streams.
+- Fixed using an unnecessary high track start message version when communicating with node.
+
+## [1.2.20] - 2017-02-26
+### Fixed
+- Fixed a potential issue with YouTube ciphers not being detected correctly (403 error) and added more cipher logging.
+
+## [1.2.19] - 2017-02-26
+### Fixed
+- Fixed some reconnect cases for HTTP connections not actually working.
+- Fixed inaccurate seek on resampled streams.
+
+## [1.2.18] - 2017-02-26
+### Fixed
+- Retry connection also on premature HTTP response end exception.
+
+## [1.2.17] - 2017-02-26
+### Changed
+- Abandoned tracks are taken over by other nodes more quickly.
+
 ## [1.2.16] - 2017-02-26
 ### Changed
 - When remote nodes go offline, their tracks are slowly taken over by other nodes.
