@@ -37,6 +37,7 @@ public class PcmChunkDecoder implements AudioChunkDecoder {
     encodedAsShort.limit(encodedAsByte.position() / 2);
 
     buffer.put(encodedAsShort);
+    buffer.rewind();
   }
 
   @Override
