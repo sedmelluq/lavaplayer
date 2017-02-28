@@ -18,7 +18,7 @@ ext.logbackVersion = '1.1.8'
 
 dependencies {
   compile 'com.github.austinv11:Discord4j:2.7.0'
-  compile 'com.sedmelluq:lavaplayer:1.2.21'
+  compile 'com.sedmelluq:lavaplayer:1.2.22'
 
   runtime "ch.qos.logback:logback-classic:$logbackVersion"
   runtime "ch.qos.logback:logback-core:$logbackVersion"

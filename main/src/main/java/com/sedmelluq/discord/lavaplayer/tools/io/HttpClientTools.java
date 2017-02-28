@@ -14,6 +14,7 @@ import org.apache.http.ProtocolException;
 import org.apache.http.ProtocolVersion;
 import org.apache.http.client.CookieStore;
 import org.apache.http.client.RedirectStrategy;
+import org.apache.http.client.config.CookieSpecs;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpUriRequest;
@@ -78,6 +79,7 @@ public class HttpClientTools {
         .setDefaultRequestConfig(
             RequestConfig.custom()
                 .setConnectTimeout(3000)
+                .setCookieSpec(CookieSpecs.STANDARD)
                 .build()
         );
   }

@@ -76,4 +76,20 @@ public class DataFormatTools {
     String text = IOUtils.toString(inputStream, charset);
     return lineSplitPattern.split(text);
   }
+
+  /**
+   * Converts duration in the format HH:mm:ss (or mm:ss or ss) to milliseconds. Does not support day count.
+   *
+   * @param durationText Duration in text format.
+   * @return Duration in milliseconds.
+   */
+  public static int durationTextToMillis(String durationText) {
+    int length = 0;
+
+    for (String part : durationText.split(":")) {
+      length = length * 60 + Integer.valueOf(part);
+    }
+
+    return length;
+  }
 }

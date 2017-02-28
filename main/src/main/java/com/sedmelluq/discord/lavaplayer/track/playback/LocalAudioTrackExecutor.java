@@ -286,7 +286,7 @@ public class LocalAudioTrackExecutor implements AudioTrackExecutor {
     if (exception == null) {
       InterruptedIOException ioException = findDeepException(throwable, InterruptedIOException.class);
 
-      if (ioException != null) {
+      if (ioException != null && (ioException.getMessage() == null || !ioException.getMessage().contains("timed out"))) {
         exception = new InterruptedException(ioException.getMessage());
       }
     }

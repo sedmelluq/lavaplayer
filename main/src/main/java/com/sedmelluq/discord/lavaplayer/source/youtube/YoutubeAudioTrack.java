@@ -132,7 +132,7 @@ public class YoutubeAudioTrack extends DelegatedAudioTrack {
     }
 
     throw new FriendlyException("Unable to play this YouTube track.", SUSPICIOUS,
-        new IllegalStateException("No adaptive formats, no dash."));
+        new IllegalStateException("No adaptive formats, no dash, no stream map."));
   }
 
   private List<YoutubeTrackFormat> loadTrackFormatsFromAdaptive(String adaptiveFormats) throws Exception {

@@ -1,5 +1,9 @@
 # Change Log
 
+## [1.2.22] - 2017-03-01
+### Added
+- Added NicoNico source manager.
+
 ## [1.2.21] - 2017-02-26
 ### Fixed
 - Fixed exploding on seekable YouTube live streams.

@@ -221,6 +221,11 @@ public class YoutubeAudioSourceManager implements AudioSourceManager {
       }
 
       JsonBrowser args = info.get("args");
+
+      if ("fail".equals(args.get("status").text())) {
+        throw new FriendlyException(args.get("reason").text(), COMMON, null);
+      }
+
       boolean isStream = "1".equals(args.get("live_playback").text());
       long duration = isStream ? Long.MAX_VALUE : args.get("length_seconds").as(Long.class) * 1000;
 
@@ -416,10 +421,9 @@ public class YoutubeAudioSourceManager implements AudioSourceManager {
         String videoId = video.attr("data-video-id").trim();
         String title = video.attr("data-title").trim();
         String author = video.select(".pl-video-owner a").text().trim();
+        long duration = DataFormatTools.durationTextToMillis(lengthElements.first().text());
 
-        int lengthInSeconds = lengthTextToSeconds(lengthElements.first().text());
-
-        AudioTrackInfo info = new AudioTrackInfo(title, author, lengthInSeconds * 1000, videoId, false);
+        AudioTrackInfo info = new AudioTrackInfo(title, author, duration, videoId, false);
         tracks.add(new YoutubeAudioTrack(info, this));
       }
     }
@@ -432,16 +436,6 @@ public class YoutubeAudioSourceManager implements AudioSourceManager {
     }
 
     return null;
-  }
-
-  private static int lengthTextToSeconds(String durationText) {
-    int length = 0;
-
-    for (String part : durationText.split(":")) {
-      length = length * 60 + Integer.valueOf(part);
-    }
-
-    return length;
   }
 
   private AudioPlaylist loadMixWithId(String mixId, String selectedVideoId) {
@@ -568,11 +562,11 @@ public class YoutubeAudioSourceManager implements AudioSourceManager {
       return;
     }
 
-    long length = lengthTextToSeconds(durationElement.text()) * 1000L;
+    long duration = DataFormatTools.durationTextToMillis(durationElement.text());
 
     String title = contentElement.select(".yt-lockup-title > a").text();
     String author = contentElement.select(".yt-lockup-byline > a").text();
 
-    tracks.add(new YoutubeAudioTrack(new AudioTrackInfo(title, author, length, videoId, false), this));
+    tracks.add(new YoutubeAudioTrack(new AudioTrackInfo(title, author, duration, videoId, false), this));
   }
 }
