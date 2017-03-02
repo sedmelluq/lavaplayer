@@ -4,14 +4,15 @@ import com.sedmelluq.discord.lavaplayer.player.DefaultAudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.source.AudioSourceManager;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.tools.JsonBrowser;
+import com.sedmelluq.discord.lavaplayer.tools.io.HttpConfigurable;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterface;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterfaceManager;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpClientTools;
-import com.sedmelluq.discord.lavaplayer.tools.io.ThreadLocalHttpInterfaceManager;
 import com.sedmelluq.discord.lavaplayer.track.AudioItem;
 import com.sedmelluq.discord.lavaplayer.track.AudioReference;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo;
+import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpUriRequest;
 
@@ -19,6 +20,7 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.net.URI;
+import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -27,7 +29,7 @@ import static com.sedmelluq.discord.lavaplayer.tools.FriendlyException.Severity.
 /**
  * Audio source manager which detects Twitch tracks by URL.
  */
-public class TwitchStreamAudioSourceManager implements AudioSourceManager {
+public class TwitchStreamAudioSourceManager implements AudioSourceManager, HttpConfigurable {
   private static final String STREAM_NAME_REGEX = "^https://(?:www\\.)?twitch.tv/([^/]+)$";
   private static final Pattern streamNameRegex = Pattern.compile(STREAM_NAME_REGEX);
 
@@ -39,7 +41,7 @@ public class TwitchStreamAudioSourceManager implements AudioSourceManager {
    * Create an instance.
    */
   public TwitchStreamAudioSourceManager() {
-    httpInterfaceManager = new ThreadLocalHttpInterfaceManager(HttpClientTools.createSharedCookiesHttpBuilder());
+    httpInterfaceManager = HttpClientTools.createDefaultThreadLocalManager();
   }
 
   @Override
@@ -121,6 +123,11 @@ public class TwitchStreamAudioSourceManager implements AudioSourceManager {
    */
   public HttpInterface getHttpInterface() {
     return httpInterfaceManager.getInterface();
+  }
+
+  @Override
+  public void configureRequests(Function<RequestConfig, RequestConfig> configurator) {
+    httpInterfaceManager.configureRequests(configurator);
   }
 
   private static HttpUriRequest addClientHeaders(HttpUriRequest request) {

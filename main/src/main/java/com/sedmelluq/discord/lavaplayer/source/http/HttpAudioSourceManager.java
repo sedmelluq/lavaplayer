@@ -7,6 +7,7 @@ import com.sedmelluq.discord.lavaplayer.container.MediaContainerProbe;
 import com.sedmelluq.discord.lavaplayer.player.DefaultAudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.source.ProbingAudioSourceManager;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
+import com.sedmelluq.discord.lavaplayer.tools.io.HttpConfigurable;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterface;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterfaceManager;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpClientTools;
@@ -17,12 +18,14 @@ import com.sedmelluq.discord.lavaplayer.track.AudioReference;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo;
 import org.apache.http.HttpStatus;
+import org.apache.http.client.config.RequestConfig;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.function.Function;
 
 import static com.sedmelluq.discord.lavaplayer.tools.FriendlyException.Severity.COMMON;
 import static com.sedmelluq.discord.lavaplayer.tools.FriendlyException.Severity.SUSPICIOUS;
@@ -30,7 +33,7 @@ import static com.sedmelluq.discord.lavaplayer.tools.FriendlyException.Severity.
 /**
  * Audio source manager which implements finding audio files from HTTP addresses.
  */
-public class HttpAudioSourceManager extends ProbingAudioSourceManager {
+public class HttpAudioSourceManager extends ProbingAudioSourceManager implements HttpConfigurable {
   private final HttpInterfaceManager httpInterfaceManager;
 
   /**
@@ -40,7 +43,8 @@ public class HttpAudioSourceManager extends ProbingAudioSourceManager {
     httpInterfaceManager = new ThreadLocalHttpInterfaceManager(
         HttpClientTools
             .createSharedCookiesHttpBuilder()
-            .setRedirectStrategy(new HttpClientTools.NoRedirectsStrategy())
+            .setRedirectStrategy(new HttpClientTools.NoRedirectsStrategy()),
+        HttpClientTools.DEFAULT_REQUEST_CONFIG
     );
   }
 
@@ -69,6 +73,11 @@ public class HttpAudioSourceManager extends ProbingAudioSourceManager {
    */
   public HttpInterface getHttpInterface() {
     return httpInterfaceManager.getInterface();
+  }
+
+  @Override
+  public void configureRequests(Function<RequestConfig, RequestConfig> configurator) {
+    httpInterfaceManager.configureRequests(configurator);
   }
 
   private AudioReference getAsHttpReference(AudioReference reference) {

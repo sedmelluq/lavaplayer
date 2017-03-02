@@ -17,6 +17,7 @@ import com.sedmelluq.discord.lavaplayer.tools.RingBufferMath;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpClientTools;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterface;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterfaceManager;
+import com.sedmelluq.discord.lavaplayer.tools.io.SimpleHttpInterfaceManager;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.InternalAudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.playback.AudioFrame;
@@ -392,17 +393,18 @@ public class RemoteNodeProcessor implements RemoteNode, Runnable {
   }
 
   /**
-   * @return An HTTP client builder with appropriate timeouts for node requests.
+   * @return An HTTP interface manager with appropriate timeouts for node requests.
    */
-  public static HttpClientBuilder createHttpClientBuilder() {
-    RequestConfig.Builder requestBuilder = RequestConfig.custom()
+  public static HttpInterfaceManager createHttpInterfaceManager() {
+    RequestConfig requestConfig = RequestConfig.custom()
         .setConnectTimeout(CONNECT_TIMEOUT)
         .setConnectionRequestTimeout(CONNECT_TIMEOUT)
-        .setSocketTimeout(SOCKET_TIMEOUT);
+        .setSocketTimeout(SOCKET_TIMEOUT)
+        .build();
 
     HttpClientBuilder builder = HttpClientTools.createSharedCookiesHttpBuilder();
-    builder.setDefaultRequestConfig(requestBuilder.build());
-    return builder;
+    builder.setDefaultRequestConfig(requestConfig);
+    return new SimpleHttpInterfaceManager(builder, requestConfig);
   }
 
   /**

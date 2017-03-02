@@ -5,10 +5,10 @@ import com.sedmelluq.discord.lavaplayer.tools.DaemonThreadFactory;
 import com.sedmelluq.discord.lavaplayer.tools.ExceptionTools;
 import com.sedmelluq.discord.lavaplayer.tools.ExecutorTools;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
+import com.sedmelluq.discord.lavaplayer.tools.io.HttpConfigurable;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterface;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterfaceManager;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpClientTools;
-import com.sedmelluq.discord.lavaplayer.tools.io.ThreadLocalHttpInterfaceManager;
 import com.sedmelluq.discord.lavaplayer.track.AudioItem;
 import com.sedmelluq.discord.lavaplayer.source.AudioSourceManager;
 import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
@@ -19,6 +19,7 @@ import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo;
 import com.sedmelluq.discord.lavaplayer.tools.JsonBrowser;
 import com.sedmelluq.discord.lavaplayer.tools.DataFormatTools;
 import org.apache.commons.io.IOUtils;
+import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.utils.URIBuilder;
@@ -44,6 +45,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -55,7 +57,7 @@ import static com.sedmelluq.discord.lavaplayer.tools.FriendlyException.Severity.
 /**
  * Audio source manager that implements finding Youtube videos or playlists based on an URL or ID.
  */
-public class YoutubeAudioSourceManager implements AudioSourceManager {
+public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfigurable {
   private static final Logger log = LoggerFactory.getLogger(YoutubeAudioSourceManager.class);
   static final String CHARSET = "UTF-8";
 
@@ -104,7 +106,7 @@ public class YoutubeAudioSourceManager implements AudioSourceManager {
     signatureCipherManager = new YoutubeSignatureCipherManager();
     mixLoadingExecutor = new ThreadPoolExecutor(0, 10, 5, TimeUnit.SECONDS, new LinkedBlockingQueue<>(MIX_QUEUE_CAPACITY),
         new DaemonThreadFactory("yt-mix"));
-    httpInterfaceManager = new ThreadLocalHttpInterfaceManager(HttpClientTools.createSharedCookiesHttpBuilder());
+    httpInterfaceManager = HttpClientTools.createDefaultThreadLocalManager();
     this.allowSearch = allowSearch;
     playlistPageCount = 6;
   }
@@ -166,6 +168,11 @@ public class YoutubeAudioSourceManager implements AudioSourceManager {
    */
   public HttpInterface getHttpInterface() {
     return httpInterfaceManager.getInterface();
+  }
+
+  @Override
+  public void configureRequests(Function<RequestConfig, RequestConfig> configurator) {
+    httpInterfaceManager.configureRequests(configurator);
   }
 
   private AudioItem loadItemOnce(AudioReference reference) {

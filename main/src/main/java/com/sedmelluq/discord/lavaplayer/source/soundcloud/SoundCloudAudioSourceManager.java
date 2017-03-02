@@ -5,10 +5,10 @@ import com.sedmelluq.discord.lavaplayer.source.AudioSourceManager;
 import com.sedmelluq.discord.lavaplayer.tools.DataFormatTools;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.tools.JsonBrowser;
+import com.sedmelluq.discord.lavaplayer.tools.io.HttpConfigurable;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterface;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterfaceManager;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpClientTools;
-import com.sedmelluq.discord.lavaplayer.tools.io.ThreadLocalHttpInterfaceManager;
 import com.sedmelluq.discord.lavaplayer.track.AudioItem;
 import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
 import com.sedmelluq.discord.lavaplayer.track.AudioReference;
@@ -17,6 +17,7 @@ import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo;
 import com.sedmelluq.discord.lavaplayer.track.BasicAudioPlaylist;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpResponse;
+import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpUriRequest;
@@ -38,6 +39,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.StringJoiner;
+import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -47,7 +49,7 @@ import static com.sedmelluq.discord.lavaplayer.tools.FriendlyException.Severity.
 /**
  * Audio source manager that implements finding SoundCloud tracks based on URL.
  */
-public class SoundCloudAudioSourceManager implements AudioSourceManager {
+public class SoundCloudAudioSourceManager implements AudioSourceManager, HttpConfigurable {
   private static final Logger log = LoggerFactory.getLogger(SoundCloudAudioSourceManager.class);
 
   private static final int DEFAULT_SEARCH_RESULTS = 10;
@@ -86,7 +88,7 @@ public class SoundCloudAudioSourceManager implements AudioSourceManager {
    * @param allowSearch Whether to allow search queries as identifiers
    */
   public SoundCloudAudioSourceManager(boolean allowSearch) {
-    httpInterfaceManager = new ThreadLocalHttpInterfaceManager(HttpClientTools.createSharedCookiesHttpBuilder());
+    httpInterfaceManager = HttpClientTools.createDefaultThreadLocalManager();
     this.allowSearch = allowSearch;
   }
 
@@ -150,6 +152,11 @@ public class SoundCloudAudioSourceManager implements AudioSourceManager {
    */
   public HttpInterface getHttpInterface() {
     return httpInterfaceManager.getInterface();
+  }
+
+  @Override
+  public void configureRequests(Function<RequestConfig, RequestConfig> configurator) {
+    httpInterfaceManager.configureRequests(configurator);
   }
 
   private AudioTrack processAsSingleTrack(AudioReference reference) {

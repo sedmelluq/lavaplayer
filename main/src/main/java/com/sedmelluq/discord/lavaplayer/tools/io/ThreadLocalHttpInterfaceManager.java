@@ -1,5 +1,6 @@
 package com.sedmelluq.discord.lavaplayer.tools.io;
 
+import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.impl.client.HttpClientBuilder;
 
@@ -13,9 +14,10 @@ public class ThreadLocalHttpInterfaceManager extends AbstractHttpInterfaceManage
 
   /**
    * @param clientBuilder HTTP client builder to use for creating the client instance.
+   * @param requestConfig Request config used by the client builder
    */
-  public ThreadLocalHttpInterfaceManager(HttpClientBuilder clientBuilder) {
-    super(clientBuilder);
+  public ThreadLocalHttpInterfaceManager(HttpClientBuilder clientBuilder, RequestConfig requestConfig) {
+    super(clientBuilder, requestConfig);
 
     this.httpInterfaces = ThreadLocal.withInitial(() ->
         new HttpInterface(getSharedClient(), HttpClientContext.create(), false)

@@ -67,6 +67,11 @@ public class HttpClientTools {
 
   private static final SSLContext sslContext = setupSslContext();
 
+  public static final RequestConfig DEFAULT_REQUEST_CONFIG = RequestConfig.custom()
+      .setConnectTimeout(3000)
+      .setCookieSpec(CookieSpecs.STANDARD)
+      .build();
+
   /**
    * @return An HttpClientBuilder which uses the same cookie store for all clients
    */
@@ -76,12 +81,14 @@ public class HttpClientTools {
     return new CustomHttpClientBuilder()
         .setDefaultCookieStore(cookieStore)
         .setRetryHandler(NoResponseRetryHandler.RETRY_INSTANCE)
-        .setDefaultRequestConfig(
-            RequestConfig.custom()
-                .setConnectTimeout(3000)
-                .setCookieSpec(CookieSpecs.STANDARD)
-                .build()
-        );
+        .setDefaultRequestConfig(DEFAULT_REQUEST_CONFIG);
+  }
+
+  /**
+   * @return Default HTTP interface manager with thread-local context
+   */
+  public static HttpInterfaceManager createDefaultThreadLocalManager() {
+    return new ThreadLocalHttpInterfaceManager(createSharedCookiesHttpBuilder(), DEFAULT_REQUEST_CONFIG);
   }
 
   private static SSLContext setupSslContext() {

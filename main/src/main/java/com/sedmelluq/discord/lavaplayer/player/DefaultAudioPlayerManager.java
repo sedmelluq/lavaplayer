@@ -12,6 +12,7 @@ import com.sedmelluq.discord.lavaplayer.tools.ExecutorTools;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.tools.OrderedExecutor;
 import com.sedmelluq.discord.lavaplayer.tools.GarbageCollectionMonitor;
+import com.sedmelluq.discord.lavaplayer.tools.io.HttpConfigurable;
 import com.sedmelluq.discord.lavaplayer.tools.io.MessageInput;
 import com.sedmelluq.discord.lavaplayer.tools.io.MessageOutput;
 import com.sedmelluq.discord.lavaplayer.track.AudioItem;
@@ -24,6 +25,7 @@ import com.sedmelluq.discord.lavaplayer.track.InternalAudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.TrackStateListener;
 import com.sedmelluq.discord.lavaplayer.track.playback.AudioTrackExecutor;
 import com.sedmelluq.discord.lavaplayer.track.playback.LocalAudioTrackExecutor;
+import org.apache.http.client.config.RequestConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -48,6 +50,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Function;
 
 import static com.sedmelluq.discord.lavaplayer.tools.FriendlyException.Severity.FAULT;
 import static com.sedmelluq.discord.lavaplayer.tools.FriendlyException.Severity.SUSPICIOUS;
@@ -66,6 +69,7 @@ public class DefaultAudioPlayerManager implements AudioPlayerManager {
   private static final Logger log = LoggerFactory.getLogger(DefaultAudioPlayerManager.class);
 
   private final List<AudioSourceManager> sourceManagers;
+  private volatile Function<RequestConfig, RequestConfig> httpConfigurator;
 
   // Executors
   private final ExecutorService trackPlaybackExecutorService;
@@ -153,6 +157,14 @@ public class DefaultAudioPlayerManager implements AudioPlayerManager {
   @Override
   public void registerSourceManager(AudioSourceManager sourceManager) {
     sourceManagers.add(sourceManager);
+
+    if (sourceManager instanceof HttpConfigurable) {
+      Function<RequestConfig, RequestConfig> configurator = httpConfigurator;
+
+      if (httpConfigurator != null) {
+        ((HttpConfigurable) sourceManager).configureRequests(configurator);
+      }
+    }
   }
 
   @Override
@@ -442,5 +454,18 @@ public class DefaultAudioPlayerManager implements AudioPlayerManager {
   @Override
   public RemoteNodeRegistry getRemoteNodeRegistry() {
     return remoteNodeManager;
+  }
+
+  @Override
+  public void setHttpRequestConfigurator(Function<RequestConfig, RequestConfig> configurator) {
+    this.httpConfigurator = configurator;
+
+    if (configurator != null) {
+      for (AudioSourceManager sourceManager : sourceManagers) {
+        if (sourceManager instanceof HttpConfigurable) {
+          ((HttpConfigurable) sourceManager).configureRequests(configurator);
+        }
+      }
+    }
   }
 }

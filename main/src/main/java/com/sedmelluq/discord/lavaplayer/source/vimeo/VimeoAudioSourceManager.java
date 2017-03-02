@@ -5,15 +5,16 @@ import com.sedmelluq.discord.lavaplayer.source.AudioSourceManager;
 import com.sedmelluq.discord.lavaplayer.tools.DataFormatTools;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.tools.JsonBrowser;
+import com.sedmelluq.discord.lavaplayer.tools.io.HttpConfigurable;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterface;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterfaceManager;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpClientTools;
-import com.sedmelluq.discord.lavaplayer.tools.io.ThreadLocalHttpInterfaceManager;
 import com.sedmelluq.discord.lavaplayer.track.AudioItem;
 import com.sedmelluq.discord.lavaplayer.track.AudioReference;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo;
 import org.apache.commons.io.IOUtils;
+import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 
@@ -21,6 +22,7 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.function.Function;
 import java.util.regex.Pattern;
 
 import static com.sedmelluq.discord.lavaplayer.tools.FriendlyException.Severity.SUSPICIOUS;
@@ -28,17 +30,17 @@ import static com.sedmelluq.discord.lavaplayer.tools.FriendlyException.Severity.
 /**
  * Audio source manager which detects Vimeo tracks by URL.
  */
-public class VimeoAudioSourceManager implements AudioSourceManager {
+public class VimeoAudioSourceManager implements AudioSourceManager, HttpConfigurable {
   private static final String TRACK_URL_REGEX = "^https://vimeo.com/[0-9]+(?:\\?.*|)$";
   private static final Pattern trackUrlPattern = Pattern.compile(TRACK_URL_REGEX);
 
-  private final HttpInterfaceManager httpIntefaceManager;
+  private final HttpInterfaceManager httpInterfaceManager;
 
   /**
    * Create an instance.
    */
   public VimeoAudioSourceManager() {
-    httpIntefaceManager = new ThreadLocalHttpInterfaceManager(HttpClientTools.createSharedCookiesHttpBuilder());
+    httpInterfaceManager = HttpClientTools.createDefaultThreadLocalManager();
   }
 
   @Override
@@ -52,7 +54,7 @@ public class VimeoAudioSourceManager implements AudioSourceManager {
       return null;
     }
 
-    try (HttpInterface httpInterface = httpIntefaceManager.getInterface()) {
+    try (HttpInterface httpInterface = httpInterfaceManager.getInterface()) {
       return loadFromTrackPage(httpInterface, reference.identifier);
     } catch (IOException e) {
       throw new FriendlyException("Loading Vimeo track information failed.", SUSPICIOUS, e);
@@ -83,7 +85,12 @@ public class VimeoAudioSourceManager implements AudioSourceManager {
    * @return Get an HTTP interface for a playing track.
    */
   public HttpInterface getHttpInterface() {
-    return httpIntefaceManager.getInterface();
+    return httpInterfaceManager.getInterface();
+  }
+
+  @Override
+  public void configureRequests(Function<RequestConfig, RequestConfig> configurator) {
+    httpInterfaceManager.configureRequests(configurator);
   }
 
   JsonBrowser loadConfigJsonFromPageContent(String content) throws IOException {

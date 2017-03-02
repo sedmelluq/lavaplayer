@@ -7,7 +7,6 @@ import com.sedmelluq.discord.lavaplayer.tools.DaemonThreadFactory;
 import com.sedmelluq.discord.lavaplayer.tools.ExecutorTools;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterfaceManager;
-import com.sedmelluq.discord.lavaplayer.tools.io.SimpleHttpInterfaceManager;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackEndReason;
 import com.sedmelluq.discord.lavaplayer.track.InternalAudioTrack;
@@ -41,7 +40,7 @@ public class RemoteNodeManager extends AudioEventAdapter implements RemoteNodeRe
    */
   public RemoteNodeManager(DefaultAudioPlayerManager playerManager) {
     this.playerManager = playerManager;
-    this.httpInterfaceManager = new SimpleHttpInterfaceManager(RemoteNodeProcessor.createHttpClientBuilder());
+    this.httpInterfaceManager = RemoteNodeProcessor.createHttpInterfaceManager();
     this.processors = new ArrayList<>();
     this.abandonedTrackManager = new AbandonedTrackManager();
     this.enabled = new AtomicBoolean();

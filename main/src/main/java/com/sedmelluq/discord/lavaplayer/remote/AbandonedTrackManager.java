@@ -98,8 +98,8 @@ public class AbandonedTrackManager {
     long currentTime = System.currentTimeMillis();
 
     while ((executor = abandonedExecutors.peek()) != null) {
-      if (!checkValidity(executor, currentTime)) {
-        abandonedExecutors.remove(executor);
+      if (!checkValidity(executor, currentTime) && abandonedExecutors.remove(executor)) {
+        log.debug("Abandoned executor {} removed from queue.", executor.executor);
       }
     }
   }
