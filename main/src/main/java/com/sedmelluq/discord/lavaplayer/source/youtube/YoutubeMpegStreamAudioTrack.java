@@ -7,8 +7,12 @@ import com.sedmelluq.discord.lavaplayer.container.mpeg.reader.MpegFileTrackProvi
 import com.sedmelluq.discord.lavaplayer.tools.DataFormatTools;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterface;
+import com.sedmelluq.discord.lavaplayer.tools.io.PersistentHttpStream;
+import com.sedmelluq.discord.lavaplayer.tools.io.SeekableInputStream;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo;
+import com.sedmelluq.discord.lavaplayer.track.playback.AudioProcessingContext;
 import com.sedmelluq.discord.lavaplayer.track.playback.LocalAudioTrackExecutor;
+import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.utils.URIBuilder;
 
 import java.io.IOException;
@@ -24,6 +28,8 @@ import static com.sedmelluq.discord.lavaplayer.tools.FriendlyException.Severity.
  * responds to a segment request with 204.
  */
 public class YoutubeMpegStreamAudioTrack extends MpegAudioTrack {
+  private static final RequestConfig streamingRequestConfig = RequestConfig.custom().setConnectTimeout(10000).build();
+
   private final HttpInterface httpInterface;
   private final URI signedUrl;
 
@@ -37,6 +43,9 @@ public class YoutubeMpegStreamAudioTrack extends MpegAudioTrack {
 
     this.httpInterface = httpInterface;
     this.signedUrl = signedUrl;
+
+    // YouTube does not return a segment until it is ready, this might trigger a connect timeout otherwise.
+    httpInterface.getContext().setRequestConfig(streamingRequestConfig);
   }
 
   @Override
@@ -47,7 +56,7 @@ public class YoutubeMpegStreamAudioTrack extends MpegAudioTrack {
   }
 
   private void execute(LocalAudioTrackExecutor localExecutor) throws InterruptedException {
-    TrackState state = new TrackState();
+    TrackState state = new TrackState(signedUrl);
 
     try {
       while (!state.finished) {
@@ -70,34 +79,44 @@ public class YoutubeMpegStreamAudioTrack extends MpegAudioTrack {
         return;
       }
 
-      MpegFileLoader file = new MpegFileLoader(stream);
-      file.parseHeaders();
+      // If we were redirected, use that URL as a base for the next segment URL. Otherwise we will likely get redirected
+      // again on every other request, which is inefficient (redirects across domains, the original URL is always
+      // closing the connection, whereas the final URL is keep-alive).
+      state.baseUrl = httpInterface.getFinalLocation();
 
-      state.absoluteSequence = extractAbsoluteSequenceFromEvent(file.getLastEventMessage());
+      processSegmentStream(stream, localExecutor.getProcessingContext(), state);
 
-      if (state.trackConsumer == null) {
-        state.trackConsumer = loadAudioTrack(file, localExecutor.getProcessingContext());
-      }
-
-      MpegFileTrackProvider fileReader = file.loadReader(state.trackConsumer);
-      if (fileReader == null) {
-        throw new FriendlyException("Unknown MP4 format.", SUSPICIOUS, null);
-      }
-
-      fileReader.provideFrames();
       stream.releaseConnection();
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
   }
 
+  private void processSegmentStream(SeekableInputStream stream, AudioProcessingContext context, TrackState state) throws InterruptedException {
+    MpegFileLoader file = new MpegFileLoader(stream);
+    file.parseHeaders();
+
+    state.absoluteSequence = extractAbsoluteSequenceFromEvent(file.getLastEventMessage());
+
+    if (state.trackConsumer == null) {
+      state.trackConsumer = loadAudioTrack(file, context);
+    }
+
+    MpegFileTrackProvider fileReader = file.loadReader(state.trackConsumer);
+    if (fileReader == null) {
+      throw new FriendlyException("Unknown MP4 format.", SUSPICIOUS, null);
+    }
+
+    fileReader.provideFrames();
+  }
+
   private URI getNextSegmentUrl(TrackState state) {
-    URIBuilder builder = new URIBuilder(signedUrl)
-        .addParameter("rn", String.valueOf(state.relativeSequence))
-        .addParameter("rbuf", "0");
+    URIBuilder builder = new URIBuilder(state.baseUrl)
+        .setParameter("rn", String.valueOf(state.relativeSequence))
+        .setParameter("rbuf", "0");
 
     if (state.absoluteSequence != null) {
-      builder.addParameter("sq", String.valueOf(state.absoluteSequence + 1));
+      builder.setParameter("sq", String.valueOf(state.absoluteSequence + 1));
     }
 
     try {
@@ -123,5 +142,10 @@ public class YoutubeMpegStreamAudioTrack extends MpegAudioTrack {
     private Long absoluteSequence;
     private MpegTrackConsumer trackConsumer;
     private boolean finished;
+    private URI baseUrl;
+
+    public TrackState(URI baseUrl) {
+      this.baseUrl = baseUrl;
+    }
   }
 }

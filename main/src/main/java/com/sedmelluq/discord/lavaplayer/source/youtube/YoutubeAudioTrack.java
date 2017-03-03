@@ -62,7 +62,7 @@ public class YoutubeAudioTrack extends DelegatedAudioTrack {
       log.debug("Starting track from URL: {}", format.signedUrl);
 
       if (trackInfo.isStream) {
-        processStream(localExecutor, httpInterface, format);
+        processStream(localExecutor, format);
       } else {
         processStatic(localExecutor, httpInterface, format);
       }
@@ -79,11 +79,13 @@ public class YoutubeAudioTrack extends DelegatedAudioTrack {
     }
   }
 
-  private void processStream(LocalAudioTrackExecutor localExecutor, HttpInterface httpInterface, FormatWithUrl format) throws Exception {
+  private void processStream(LocalAudioTrackExecutor localExecutor, FormatWithUrl format) throws Exception {
     if (MIME_AUDIO_WEBM.equals(format.details.getType().getMimeType())) {
       throw new FriendlyException("YouTube WebM streams are currently not supported.", COMMON, null);
     } else {
-      processDelegate(new YoutubeMpegStreamAudioTrack(trackInfo, httpInterface, format.signedUrl), localExecutor);
+      try (HttpInterface streamingInterface = sourceManager.getHttpInterface()) {
+        processDelegate(new YoutubeMpegStreamAudioTrack(trackInfo, streamingInterface, format.signedUrl), localExecutor);
+      }
     }
   }
 

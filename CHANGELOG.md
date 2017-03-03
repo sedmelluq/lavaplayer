@@ -1,5 +1,17 @@
 # Change Log
 
+## [1.2.24] - 2017-03-04
+### Fixed
+- Fixed read timeout exception thrown when playing some YouTube live streams.
+- Fixed excessive amount of requests made for YouTube live streams.
+
+## [1.2.23] - 2017-03-02
+### Added
+- Added a way to configure HTTP request settings for source managers.
+
+### Fixed
+- Changing volume with PCM output rebuilds frame buffer into silence.
+
 ## [1.2.22] - 2017-03-01
 ### Added
 - Added NicoNico source manager.

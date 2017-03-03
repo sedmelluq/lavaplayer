@@ -2,11 +2,13 @@ package com.sedmelluq.discord.lavaplayer.tools.io;
 
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpUriRequest;
+import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.protocol.HttpContext;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.net.URI;
+import java.util.List;
 
 /**
  * An HTTP interface for performing HTTP requests in one specific thread. This also means it is not thread safe and should
@@ -15,8 +17,9 @@ import java.io.IOException;
  */
 public class HttpInterface implements Closeable {
   private final CloseableHttpClient client;
-  private final HttpContext context;
+  private final HttpClientContext context;
   private final boolean ownedClient;
+  private HttpUriRequest lastRequest;
   private boolean available;
 
   /**
@@ -24,7 +27,7 @@ public class HttpInterface implements Closeable {
    * @param context The http context instance used.
    * @param ownedClient True if the client should be closed when this instance is closed.
    */
-  public HttpInterface(CloseableHttpClient client, HttpContext context, boolean ownedClient) {
+  public HttpInterface(CloseableHttpClient client, HttpClientContext context, boolean ownedClient) {
     this.client = client;
     this.context = context;
     this.ownedClient = ownedClient;
@@ -53,7 +56,29 @@ public class HttpInterface implements Closeable {
    * @throws IOException On network error.
    */
   public CloseableHttpResponse execute(HttpUriRequest request) throws IOException {
+    lastRequest = request;
     return client.execute(request, context);
+  }
+
+  /**
+   * @return The final URL after redirects for the last processed request. Original URL if no redirects were performed.
+   *         Null if no requests have been executed. Undefined state if last request threw an exception.
+   */
+  public URI getFinalLocation() {
+    List<URI> redirectLocations = context.getRedirectLocations();
+
+    if (redirectLocations != null && redirectLocations.size() > 0) {
+      return redirectLocations.get(redirectLocations.size() - 1);
+    } else {
+      return lastRequest != null ? lastRequest.getURI() : null;
+    }
+  }
+
+  /**
+   * @return Http client context used by this interface.
+   */
+  public HttpClientContext getContext() {
+    return context;
   }
 
   @Override
