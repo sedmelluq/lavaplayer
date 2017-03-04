@@ -61,8 +61,6 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
   private static final Logger log = LoggerFactory.getLogger(YoutubeAudioSourceManager.class);
   static final String CHARSET = "UTF-8";
 
-  private static final int MIX_QUEUE_CAPACITY = 5000;
-
   private static final String VIDEO_ID_REGEX = "([a-zA-Z0-9_-]{11})";
   private static final String PLAYLIST_REGEX = "((PL|LL|FL|UU)[a-zA-Z0-9_-]+)";
   private static final String MIX_REGEX = "(RD[a-zA-Z0-9_-]+)";
@@ -86,8 +84,9 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
   private static final Pattern mixEmbeddedPattern = Pattern.compile(LIST_PARAMETER + MIX_REGEX);
 
   private final YoutubeSignatureCipherManager signatureCipherManager;
-  private final ExecutorService mixLoadingExecutor;
   private final HttpInterfaceManager httpInterfaceManager;
+  private final YoutubeSearchProvider searchProvider;
+  private final YoutubeMixProvider mixProvider;
   private final boolean allowSearch;
   private volatile int playlistPageCount;
 
@@ -104,11 +103,11 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
    */
   public YoutubeAudioSourceManager(boolean allowSearch) {
     signatureCipherManager = new YoutubeSignatureCipherManager();
-    mixLoadingExecutor = new ThreadPoolExecutor(0, 10, 5, TimeUnit.SECONDS, new LinkedBlockingQueue<>(MIX_QUEUE_CAPACITY),
-        new DaemonThreadFactory("yt-mix"));
     httpInterfaceManager = HttpClientTools.createDefaultThreadLocalManager();
     this.allowSearch = allowSearch;
     playlistPageCount = 6;
+    searchProvider = new YoutubeSearchProvider(this);
+    mixProvider = new YoutubeMixProvider(this);
   }
 
   /**
@@ -156,7 +155,7 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
   public void shutdown() {
     IOUtils.closeQuietly(httpInterfaceManager);
 
-    ExecutorTools.shutdownExecutor(mixLoadingExecutor, "youtube mix");
+    mixProvider.shutdown();
   }
 
   public YoutubeSignatureCipherManager getCipherManager() {
@@ -179,7 +178,7 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
     AudioItem result;
 
     if (allowSearch && reference.identifier.startsWith(SEARCH_PREFIX)) {
-      return loadSearchResult(reference.identifier.substring(SEARCH_PREFIX.length()).trim());
+      return searchProvider.loadSearchResult(reference.identifier.substring(SEARCH_PREFIX.length()).trim());
     }
 
     if ((result = loadTrack(reference.identifier)) == null) {
@@ -189,38 +188,14 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
     return result;
   }
 
-  private AudioItem loadTrack(String identifier) {
-    for (Pattern pattern : validTrackPatterns) {
-      Matcher matcher = pattern.matcher(identifier);
-
-      if (matcher.matches()) {
-        Matcher playlistMatcher = playlistEmbeddedPattern.matcher(identifier);
-        Matcher mixMatcher = mixEmbeddedPattern.matcher(identifier);
-
-        if (playlistMatcher.find()) {
-          return loadLinkedPlaylistWithId(playlistMatcher.group(1), matcher.group(1));
-        } else if (mixMatcher.find()) {
-          return loadMixWithId(mixMatcher.group(1), matcher.group(1));
-        } else {
-          return loadTrackWithVideoId(matcher.group(1), false);
-        }
-      }
-    }
-
-    return null;
-  }
-
-  private AudioItem loadLinkedPlaylistWithId(String playlistId, String videoId) {
-    AudioPlaylist playlist = loadPlaylistWithId(playlistId, videoId);
-
-    if (playlist == null) {
-      return loadTrackWithVideoId(videoId, false);
-    } else {
-      return playlist;
-    }
-  }
-
-  private AudioItem loadTrackWithVideoId(String videoId, boolean mustExist) {
+  /**
+   * Loads a single track from video ID.
+   *
+   * @param videoId ID of the YouTube video.
+   * @param mustExist True if it should throw an exception on missing track, otherwise returns AudioReference.NO_TRACK.
+   * @return Loaded YouTube track.
+   */
+  public AudioItem loadTrackWithVideoId(String videoId, boolean mustExist) {
     try (HttpInterface httpInterface = getHttpInterface()) {
       JsonBrowser info = getTrackInfoFromMainPage(httpInterface, videoId, mustExist);
       if (info == null) {
@@ -246,7 +221,54 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
     }
   }
 
-  JsonBrowser getTrackInfoFromMainPage(HttpInterface httpInterface, String videoId, boolean mustExist) throws Exception {
+  /**
+   * @param tracks List of tracks to search from.
+   * @param selectedVideoId Selected track identifier.
+   * @return The selected track from the track list, or null if it is not present.
+   */
+  public AudioTrack findSelectedTrack(List<AudioTrack> tracks, String selectedVideoId) {
+    if (selectedVideoId != null) {
+      for (AudioTrack track : tracks) {
+        if (selectedVideoId.equals(track.getIdentifier())) {
+          return track;
+        }
+      }
+    }
+    return null;
+  }
+
+  private AudioItem loadTrack(String identifier) {
+    for (Pattern pattern : validTrackPatterns) {
+      Matcher matcher = pattern.matcher(identifier);
+
+      if (matcher.matches()) {
+        Matcher playlistMatcher = playlistEmbeddedPattern.matcher(identifier);
+        Matcher mixMatcher = mixEmbeddedPattern.matcher(identifier);
+
+        if (playlistMatcher.find()) {
+          return loadLinkedPlaylistWithId(playlistMatcher.group(1), matcher.group(1));
+        } else if (mixMatcher.find()) {
+          return mixProvider.loadMixWithId(mixMatcher.group(1), matcher.group(1));
+        } else {
+          return loadTrackWithVideoId(matcher.group(1), false);
+        }
+      }
+    }
+
+    return null;
+  }
+
+  private AudioItem loadLinkedPlaylistWithId(String playlistId, String videoId) {
+    AudioPlaylist playlist = loadPlaylistWithId(playlistId, videoId);
+
+    if (playlist == null) {
+      return loadTrackWithVideoId(videoId, false);
+    } else {
+      return playlist;
+    }
+  }
+
+  public JsonBrowser getTrackInfoFromMainPage(HttpInterface httpInterface, String videoId, boolean mustExist) throws Exception {
     try (CloseableHttpResponse response = httpInterface.execute(new HttpGet("https://www.youtube.com/watch?v=" + videoId))) {
       int statusCode = response.getStatusLine().getStatusCode();
       if (statusCode != 200) {
@@ -408,17 +430,6 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
     return new BasicAudioPlaylist(playlistName, tracks, findSelectedTrack(tracks, selectedVideoId), false);
   }
 
-  private AudioTrack findSelectedTrack(List<AudioTrack> tracks, String selectedVideoId) {
-    if (selectedVideoId != null) {
-      for (AudioTrack track : tracks) {
-        if (selectedVideoId.equals(track.getIdentifier())) {
-          return track;
-        }
-      }
-    }
-    return null;
-  }
-
   private String extractPlaylistTracks(Element videoContainer, Element loadMoreContainer, List<AudioTrack> tracks) {
     for (Element video : videoContainer.select(".pl-video")) {
       Elements lengthElements = video.select(".timestamp span");
@@ -443,137 +454,5 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
     }
 
     return null;
-  }
-
-  private AudioPlaylist loadMixWithId(String mixId, String selectedVideoId) {
-    List<String> videoIds = new ArrayList<>();
-
-    try (HttpInterface httpInterface = getHttpInterface()) {
-      String mixUrl = "https://www.youtube.com/watch?v=" + selectedVideoId + "&list=" + mixId;
-
-      try (CloseableHttpResponse response = httpInterface.execute(new HttpGet(mixUrl))) {
-        int statusCode = response.getStatusLine().getStatusCode();
-        if (statusCode != 200) {
-          throw new IOException("Invalid status code for mix response: " + statusCode);
-        }
-
-        Document document = Jsoup.parse(response.getEntity().getContent(), CHARSET, "");
-        extractVideoIdsFromMix(document, videoIds);
-      }
-    } catch (IOException e) {
-      throw new FriendlyException("Could not read mix page.", SUSPICIOUS, e);
-    }
-
-    if (videoIds.isEmpty()) {
-      throw new FriendlyException("Could not find tracks from mix.", SUSPICIOUS, null);
-    }
-
-    return loadTracksAsynchronously(videoIds, selectedVideoId);
-  }
-
-  private void extractVideoIdsFromMix(Document document, List<String> videoIds) {
-    for (Element videoList : document.select("#playlist-autoscroll-list")) {
-      for (Element item : videoList.select("li")) {
-        videoIds.add(item.attr("data-video-id"));
-      }
-    }
-  }
-
-  private AudioPlaylist loadTracksAsynchronously(List<String> videoIds, String selectedVideoId) {
-    ExecutorCompletionService<AudioItem> completion = new ExecutorCompletionService<>(mixLoadingExecutor);
-    List<AudioTrack> tracks = new ArrayList<>();
-
-    for (final String videoId : videoIds) {
-      completion.submit(() -> loadTrackWithVideoId(videoId, true));
-    }
-
-    try {
-      fetchTrackResultsFromExecutor(completion, tracks, videoIds.size());
-    } catch (InterruptedException e) {
-      Thread.currentThread().interrupt();
-    }
-
-    AudioTrack selectedTrack = findSelectedTrack(tracks, selectedVideoId);
-
-    if (tracks.isEmpty()) {
-      throw new FriendlyException("No tracks from the mix loaded succesfully.", SUSPICIOUS, null);
-    } else if (selectedTrack == null) {
-      throw new FriendlyException("The selected track of the mix failed to load.", SUSPICIOUS, null);
-    }
-
-    return new BasicAudioPlaylist("YouTube mix", tracks, selectedTrack, false);
-  }
-
-  private void fetchTrackResultsFromExecutor(ExecutorCompletionService<AudioItem> completion, List<AudioTrack> tracks, int size) throws InterruptedException {
-    for (int i = 0; i < size; i++) {
-      try {
-        AudioItem item = completion.take().get();
-
-        if (item instanceof AudioTrack) {
-          tracks.add((AudioTrack) item);
-        }
-      } catch (ExecutionException e) {
-        if (e.getCause() instanceof FriendlyException) {
-          ExceptionTools.log(log, (FriendlyException) e.getCause(), "Loading a track from a mix.");
-        } else {
-          log.warn("Failed to load a track from a mix.", e);
-        }
-      }
-    }
-  }
-
-  private AudioItem loadSearchResult(String query) {
-    log.debug("Performing a search with query {}", query);
-
-    try (HttpInterface httpInterface = getHttpInterface()) {
-      URI url = new URIBuilder("https://www.youtube.com/results").addParameter("search_query", query).build();
-
-      try (CloseableHttpResponse response = httpInterface.execute(new HttpGet(url))) {
-        int statusCode = response.getStatusLine().getStatusCode();
-        if (statusCode != 200) {
-          throw new IOException("Invalid status code for search response: " + statusCode);
-        }
-
-        Document document = Jsoup.parse(response.getEntity().getContent(), CHARSET, "");
-        return extractSearchResults(document, query);
-      }
-    } catch (Exception e) {
-      throw ExceptionTools.wrapUnfriendlyExceptions(e);
-    }
-  }
-
-  private AudioItem extractSearchResults(Document document, String query) {
-    List<AudioTrack> tracks = new ArrayList<>();
-
-    for (Element results : document.select("#page > #content #results")) {
-      for (Element result : results.select(".yt-lockup-video")) {
-        if (!result.hasAttr("data-ad-impressions") && result.select(".standalone-ypc-badge-renderer-label").isEmpty()) {
-          extractTrackFromResultEntry(tracks, result);
-        }
-      }
-    }
-
-    if (tracks.isEmpty()) {
-      return AudioReference.NO_TRACK;
-    } else {
-      return new BasicAudioPlaylist("Search results for: " + query, tracks, null, true);
-    }
-  }
-
-  private void extractTrackFromResultEntry(List<AudioTrack> tracks, Element element) {
-    Element durationElement = element.select(".video-time").first();
-    Element contentElement = element.select(".yt-lockup-content").first();
-    String videoId = element.attr("data-context-item-id");
-
-    if (durationElement == null || contentElement == null || videoId.isEmpty()) {
-      return;
-    }
-
-    long duration = DataFormatTools.durationTextToMillis(durationElement.text());
-
-    String title = contentElement.select(".yt-lockup-title > a").text();
-    String author = contentElement.select(".yt-lockup-byline > a").text();
-
-    tracks.add(new YoutubeAudioTrack(new AudioTrackInfo(title, author, duration, videoId, false), this));
   }
 }
