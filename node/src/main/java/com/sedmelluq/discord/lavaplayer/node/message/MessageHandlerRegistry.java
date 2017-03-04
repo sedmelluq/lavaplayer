@@ -2,6 +2,7 @@ package com.sedmelluq.discord.lavaplayer.node.message;
 
 import com.sedmelluq.discord.lavaplayer.remote.message.RemoteMessage;
 import com.sedmelluq.discord.lavaplayer.remote.message.RemoteMessageType;
+import com.sedmelluq.discord.lavaplayer.remote.message.UnknownMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.config.BeanPostProcessor;
@@ -10,6 +11,7 @@ import org.springframework.stereotype.Component;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
@@ -26,6 +28,8 @@ public class MessageHandlerRegistry implements BeanPostProcessor {
     for (RemoteMessageType type : RemoteMessageType.class.getEnumConstants()) {
       mapping.put(type.codec.getMessageClass(), new ArrayList<>());
     }
+
+    mapping.put(UnknownMessage.class, Collections.emptyList());
   }
 
   public void processMessage(RemoteMessage message, MessageOutput messageOutput) {
