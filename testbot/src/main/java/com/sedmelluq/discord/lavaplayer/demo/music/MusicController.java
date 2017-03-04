@@ -13,6 +13,7 @@ import com.sedmelluq.discord.lavaplayer.remote.RemoteNode;
 import com.sedmelluq.discord.lavaplayer.remote.message.NodeStatisticsMessage;
 import com.sedmelluq.discord.lavaplayer.source.youtube.YoutubeAudioSourceManager;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
+import com.sedmelluq.discord.lavaplayer.tools.PlayerLibrary;
 import com.sedmelluq.discord.lavaplayer.tools.io.MessageInput;
 import com.sedmelluq.discord.lavaplayer.tools.io.MessageOutput;
 import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
@@ -188,6 +189,11 @@ public class MusicController implements BotController {
     forPlayingTrack(track -> {
       track.setMarker(null);
     });
+  }
+
+  @BotCommandHandler
+  private void version(Message message) {
+    message.getChannel().sendMessage(PlayerLibrary.VERSION).queue();
   }
 
   @BotCommandHandler
