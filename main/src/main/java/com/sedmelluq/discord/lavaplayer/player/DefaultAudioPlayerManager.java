@@ -122,7 +122,7 @@ public class DefaultAudioPlayerManager implements AudioPlayerManager {
 
   @Override
   public void shutdown() {
-    remoteNodeManager.shutdown();
+    remoteNodeManager.shutdown(true);
     garbageCollectionMonitor.disable();
     lifecycleManager.shutdown();
 
@@ -145,7 +145,7 @@ public class DefaultAudioPlayerManager implements AudioPlayerManager {
     if (nodeAddresses.length > 0) {
       remoteNodeManager.initialise(Arrays.asList(nodeAddresses));
     } else {
-      remoteNodeManager.shutdown();
+      remoteNodeManager.shutdown(false);
     }
   }
 

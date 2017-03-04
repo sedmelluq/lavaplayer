@@ -1,5 +1,9 @@
 # Change Log
 
+## [1.2.25] - 2017-03-04
+### Fixed
+- Fixed using nodes not working after node list is cleared once.
+
 ## [1.2.24] - 2017-03-04
 ### Fixed
 - Fixed read timeout exception thrown when playing some YouTube live streams.

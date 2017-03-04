@@ -85,8 +85,9 @@ public class RemoteNodeManager extends AudioEventAdapter implements RemoteNodeRe
 
   /**
    * Shut down, freeing all threads and stopping all tracks executed on remote nodes.
+   * @param terminal True if initialise will never be called again.
    */
-  public void shutdown() {
+  public void shutdown(boolean terminal) {
     synchronized (lock) {
       if (!enabled.compareAndSet(true, false)) {
         return;
@@ -100,10 +101,12 @@ public class RemoteNodeManager extends AudioEventAdapter implements RemoteNodeRe
 
       abandonedTrackManager.shutdown();
 
-      IOUtils.closeQuietly(httpInterfaceManager);
-
       processors.clear();
       activeProcessors = new ArrayList<>(processors);
+    }
+
+    if (terminal) {
+      IOUtils.closeQuietly(httpInterfaceManager);
     }
   }
 

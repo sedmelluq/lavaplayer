@@ -178,12 +178,17 @@ public class RemoteNodeProcessor implements RemoteNode, Runnable {
         aliveTickCounter = Math.max(1, aliveTickCounter + 1);
         lastAliveTime = System.currentTimeMillis();
       }
-    } catch (Throwable e) {
+    } catch (InterruptedException e) {
+      log.info("Node {} processing was stopped.", nodeAddress);
+      Thread.currentThread().interrupt();
+    } catch (IOException e) {
       if (aliveTickCounter > 0) {
         log.error("Node {} went offline with exception.", nodeAddress, e);
       } else {
-        log.debug("Retry, node {} is still offline.", nodeAddress);
+        log.debug("Retry, node {} is still offline.", nodeAddress, e);
       }
+    } catch (Throwable e) {
+      log.error("Node {} appears offline due to unexpected exception.", nodeAddress, e);
 
       ExceptionTools.rethrowErrors(e);
     } finally {
