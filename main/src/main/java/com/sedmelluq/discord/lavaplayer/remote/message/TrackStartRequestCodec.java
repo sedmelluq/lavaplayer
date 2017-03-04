@@ -35,9 +35,11 @@ public class TrackStartRequestCodec implements RemoteMessageCodec<TrackStartRequ
       if (!format.equals(StandardAudioDataFormats.DISCORD_OPUS)) {
         return VERSION_WITH_FORMAT;
       }
+
+      return VERSION_INITIAL;
     }
 
-    return VERSION_INITIAL;
+    return VERSION_WITH_POSITION;
   }
 
   @Override
