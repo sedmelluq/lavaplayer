@@ -1,6 +1,7 @@
 package com.sedmelluq.discord.lavaplayer.container.mpeg;
 
 import com.sedmelluq.discord.lavaplayer.container.MediaContainerDetectionResult;
+import com.sedmelluq.discord.lavaplayer.container.MediaContainerHints;
 import com.sedmelluq.discord.lavaplayer.container.MediaContainerProbe;
 import com.sedmelluq.discord.lavaplayer.container.mpeg.reader.MpegFileTrackProvider;
 import com.sedmelluq.discord.lavaplayer.tools.DataFormatTools;
@@ -28,6 +29,11 @@ public class MpegContainerProbe implements MediaContainerProbe {
   @Override
   public String getName() {
     return "mp4";
+  }
+
+  @Override
+  public boolean matchesHints(MediaContainerHints hints) {
+    return false;
   }
 
   @Override

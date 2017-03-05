@@ -17,6 +17,12 @@ public interface MediaContainerProbe {
   String getName();
 
   /**
+   * @param hints The available hints about the possible container.
+   * @return True if the hints match the format this probe detects. Should always return false if all hints are null.
+   */
+  boolean matchesHints(MediaContainerHints hints);
+
+  /**
    * Detect whether the file readable from the input stream is using this container and if this specific file uses
    * a format and codec that is supported for playback.
    *

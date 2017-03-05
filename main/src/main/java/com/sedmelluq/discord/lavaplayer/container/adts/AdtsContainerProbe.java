@@ -2,6 +2,7 @@ package com.sedmelluq.discord.lavaplayer.container.adts;
 
 import com.sedmelluq.discord.lavaplayer.container.MediaContainerDetection;
 import com.sedmelluq.discord.lavaplayer.container.MediaContainerDetectionResult;
+import com.sedmelluq.discord.lavaplayer.container.MediaContainerHints;
 import com.sedmelluq.discord.lavaplayer.container.MediaContainerProbe;
 import com.sedmelluq.discord.lavaplayer.tools.io.SeekableInputStream;
 import com.sedmelluq.discord.lavaplayer.track.AudioReference;
@@ -21,6 +22,11 @@ public class AdtsContainerProbe implements MediaContainerProbe {
   @Override
   public String getName() {
     return "adts";
+  }
+
+  @Override
+  public boolean matchesHints(MediaContainerHints hints) {
+    return false;
   }
 
   @Override

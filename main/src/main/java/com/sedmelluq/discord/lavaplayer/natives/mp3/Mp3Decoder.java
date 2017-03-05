@@ -40,7 +40,6 @@ public class Mp3Decoder extends NativeResourceHolder {
       throw new IllegalArgumentException("Arguments must be direct buffers.");
     }
 
-    directOutput.clear();
     int result = library.decode(instance, directInput, directInput.remaining(), directOutput, directOutput.remaining() * 2);
 
     if (result == -10 || result == -11) {
@@ -120,6 +119,16 @@ public class Mp3Decoder extends NativeResourceHolder {
     return isMpegVersionOne(buffer, offset) ? getFrameSampleRateV1(buffer, offset) : getFrameSampleRateV2(buffer, offset);
   }
 
+  /**
+   * Get the number of channels in the current frame
+   * @param buffer Buffer which contains the frame header
+   * @param offset Offset to the frame header
+   * @return Number of channels
+   */
+  public static int getFrameChannelCount(byte[] buffer, int offset) {
+    return (buffer[offset + 3] & 0xC0) == 0xC0 ? 1 : 2;
+  }
+
   private static int getFrameSampleRateV1(byte[] buffer, int offset) {
     switch ((buffer[offset + 2] & 0x0C) >>> 2) {
       case 0: return 44100;
@@ -157,7 +166,7 @@ public class Mp3Decoder extends NativeResourceHolder {
         || (third & 0xF0) == 0x00 // No defined bitrate
         || (third & 0xF0) == 0xF0 // Invalid bitrate
         || (third & 0x0C) == 0x0C // Invalid sampling rate
-        || (buffer[offset + 3] & 0x80) == 0x80; // Not dealing with mono
+        || (buffer[offset + 3] & 0xC0) == 0x80; // Not dealing with dual channel mono
 
     if (invalid) {
       return 0;

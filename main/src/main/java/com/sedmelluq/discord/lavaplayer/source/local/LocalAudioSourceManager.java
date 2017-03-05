@@ -2,6 +2,7 @@ package com.sedmelluq.discord.lavaplayer.source.local;
 
 import com.sedmelluq.discord.lavaplayer.container.MediaContainerDetection;
 import com.sedmelluq.discord.lavaplayer.container.MediaContainerDetectionResult;
+import com.sedmelluq.discord.lavaplayer.container.MediaContainerHints;
 import com.sedmelluq.discord.lavaplayer.container.MediaContainerProbe;
 import com.sedmelluq.discord.lavaplayer.player.DefaultAudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.source.ProbingAudioSourceManager;
@@ -45,7 +46,7 @@ public class LocalAudioSourceManager extends ProbingAudioSourceManager {
 
   private MediaContainerDetectionResult detectContainerForFile(AudioReference reference, File file) {
     try (LocalSeekableInputStream inputStream = new LocalSeekableInputStream(file)) {
-      return MediaContainerDetection.detectContainer(reference, inputStream);
+      return MediaContainerDetection.detectContainer(reference, inputStream, MediaContainerHints.from(null, null));
     } catch (IOException e) {
       throw new FriendlyException("Failed to open file for reading.", SUSPICIOUS, e);
     }

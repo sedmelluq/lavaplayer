@@ -29,26 +29,53 @@ public class MediaContainerDetection {
   /**
    * @param reference Reference to the track with an identifier, used in the AudioTrackInfo in result
    * @param inputStream Input stream of the file
+   * @param hints Hints about the format (mime type, extension)
    * @return Result of detection
    */
-  public static MediaContainerDetectionResult detectContainer(AudioReference reference, SeekableInputStream inputStream) {
+  public static MediaContainerDetectionResult detectContainer(AudioReference reference, SeekableInputStream inputStream, MediaContainerHints hints) {
+    MediaContainerDetectionResult result;
+
     try {
       SavedHeadSeekableInputStream savedHeadInputStream = new SavedHeadSeekableInputStream(inputStream, HEAD_MARK_LIMIT);
       savedHeadInputStream.loadHead();
 
-      for (MediaContainer container : MediaContainer.class.getEnumConstants()) {
-        savedHeadInputStream.seek(0);
-        MediaContainerDetectionResult result = checkContainer(container, reference, savedHeadInputStream);
+      boolean[] anyProbesChecked = new boolean[1];
 
-        if (result != null) {
-          return result;
-        }
+      result = detectContainer(reference, savedHeadInputStream, hints, anyProbesChecked, true);
+
+      if (!anyProbesChecked[0]) {
+        result = detectContainer(reference, savedHeadInputStream, hints, null, false);
       }
     } catch (Exception e) {
       throw ExceptionTools.wrapUnfriendlyExceptions("Could not read the file for detecting file type.", SUSPICIOUS, e);
     }
 
-    return new MediaContainerDetectionResult();
+    return result != null ? result : new MediaContainerDetectionResult();
+  }
+
+  private static MediaContainerDetectionResult detectContainer(AudioReference reference, SeekableInputStream inputStream, MediaContainerHints hints,
+                                                               boolean[] anyProbesChecked, boolean matchHints) throws IOException {
+
+    for (MediaContainer container : MediaContainer.class.getEnumConstants()) {
+      if (matchHints) {
+        if (container.probe.matchesHints(hints)) {
+          anyProbesChecked[0] = true;
+        } else {
+          continue;
+        }
+      } else if (container.probe.matchesHints(hints)) {
+        continue;
+      }
+
+      inputStream.seek(0);
+      MediaContainerDetectionResult result = checkContainer(container, reference, inputStream);
+
+      if (result != null) {
+        return result;
+      }
+    }
+
+    return null;
   }
 
   private static MediaContainerDetectionResult checkContainer(MediaContainer container, AudioReference reference, SeekableInputStream inputStream) {

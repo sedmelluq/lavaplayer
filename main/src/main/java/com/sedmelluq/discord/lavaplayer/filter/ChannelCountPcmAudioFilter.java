@@ -15,6 +15,7 @@ public class ChannelCountPcmAudioFilter implements ShortPcmAudioFilter {
   private final int outputChannels;
   private final ShortBuffer outputBuffer;
   private final int inputChannels;
+  private final ShortBuffer inputSet;
   private int nextChannelIndex;
   private short lastSample;
 
@@ -28,6 +29,7 @@ public class ChannelCountPcmAudioFilter implements ShortPcmAudioFilter {
     this.inputChannels = inputChannels;
     this.outputChannels = outputChannels;
     this.outputBuffer = ShortBuffer.allocate(2048 * inputChannels);
+    this.inputSet = ShortBuffer.allocate(inputChannels);
     this.nextChannelIndex = 0;
   }
 
@@ -36,7 +38,11 @@ public class ChannelCountPcmAudioFilter implements ShortPcmAudioFilter {
     if (canPassThrough(length)) {
       downstream.process(input, offset, length);
     } else {
-      processNormalizer(ShortBuffer.wrap(input, offset, length));
+      if (inputChannels == 1 && outputChannels == 2) {
+        processMonoToStereo(ShortBuffer.wrap(input, offset, length));
+      } else {
+        processNormalizer(ShortBuffer.wrap(input, offset, length));
+      }
     }
   }
 
@@ -45,53 +51,57 @@ public class ChannelCountPcmAudioFilter implements ShortPcmAudioFilter {
     if (canPassThrough(buffer.remaining())) {
       downstream.process(buffer);
     } else {
-      processNormalizer(buffer);
+      if (inputChannels == 1 && outputChannels == 2) {
+        processMonoToStereo(buffer);
+      } else {
+        processNormalizer(buffer);
+      }
     }
   }
 
   private void processNormalizer(ShortBuffer buffer) throws InterruptedException {
-    int frameRemaining = inputChannels - nextChannelIndex;
     int commonChannels = Math.min(outputChannels, inputChannels);
+    int channelsToAdd = outputChannels - commonChannels;
 
-    while (buffer.remaining() >= frameRemaining) {
-      for (; nextChannelIndex < commonChannels; nextChannelIndex++) {
-        lastSample = buffer.get();
-        outputBuffer.put(lastSample);
+    while (buffer.hasRemaining()) {
+      inputSet.put(buffer.get());
+
+      if (!inputSet.hasRemaining()) {
+        for (int i = 0; i < commonChannels; i++) {
+          outputBuffer.put(inputSet.get());
+        }
+
+        for (int i = 0; i < channelsToAdd; i++) {
+          outputBuffer.put(inputSet.get(0));
+        }
+
+        if (!outputBuffer.hasRemaining()) {
+          outputBuffer.flip();
+          downstream.process(outputBuffer);
+          outputBuffer.clear();
+        }
+
+        inputSet.position(0);
       }
-
-      for (; nextChannelIndex < inputChannels; nextChannelIndex++) {
-        buffer.get();
-      }
-
-      for (; nextChannelIndex < outputChannels; nextChannelIndex++) {
-        outputBuffer.put(lastSample);
-      }
-
-      nextChannelIndex = 0;
     }
+  }
 
-    outputBuffer.flip();
-    downstream.process(outputBuffer);
-    outputBuffer.clear();
+  private void processMonoToStereo(ShortBuffer buffer) throws InterruptedException {
+    while (buffer.hasRemaining()) {
+      short sample = buffer.get();
+      outputBuffer.put(sample);
+      outputBuffer.put(sample);
 
-    int remainingInputChannels = buffer.remaining();
-
-    if (remainingInputChannels > 0) {
-      int remainingCommonChannels = Math.min(outputChannels, remainingInputChannels);
-
-      for (; nextChannelIndex < remainingCommonChannels; nextChannelIndex++) {
-        lastSample = buffer.get();
-        outputBuffer.put(lastSample);
-      }
-
-      for (; nextChannelIndex < remainingInputChannels; nextChannelIndex++) {
-        buffer.get();
+      if (!outputBuffer.hasRemaining()) {
+        outputBuffer.flip();
+        downstream.process(outputBuffer);
+        outputBuffer.clear();
       }
     }
   }
 
   private boolean canPassThrough(int length) {
-    return nextChannelIndex == 0 && inputChannels == outputChannels && (length % inputChannels) == 0;
+    return inputSet.position() == 0 && inputChannels == outputChannels && (length % inputChannels) == 0;
   }
 
   @Override

@@ -1,6 +1,7 @@
 package com.sedmelluq.discord.lavaplayer.container.matroska;
 
 import com.sedmelluq.discord.lavaplayer.container.MediaContainerDetectionResult;
+import com.sedmelluq.discord.lavaplayer.container.MediaContainerHints;
 import com.sedmelluq.discord.lavaplayer.container.MediaContainerProbe;
 import com.sedmelluq.discord.lavaplayer.container.matroska.format.MatroskaFileTrack;
 import com.sedmelluq.discord.lavaplayer.tools.io.SeekableInputStream;
@@ -34,6 +35,11 @@ public class MatroskaContainerProbe implements MediaContainerProbe {
   @Override
   public String getName() {
     return "matroska/webm";
+  }
+
+  @Override
+  public boolean matchesHints(MediaContainerHints hints) {
+    return false;
   }
 
   @Override

@@ -40,6 +40,7 @@ public class Mp3TrackProvider {
   private final Map<String, String> tags;
 
   private int sampleRate;
+  private int channelCount;
   private ShortPcmAudioFilter downstream;
   private Mp3Seeker seeker;
 
@@ -73,7 +74,8 @@ public class Mp3TrackProvider {
     }
 
     sampleRate = Mp3Decoder.getFrameSampleRate(frameBuffer, 0);
-    downstream = context != null ? FilterChainBuilder.forShortPcm(context, 2, sampleRate, true) : null;
+    channelCount = Mp3Decoder.getFrameChannelCount(frameBuffer, 0);
+    downstream = context != null ? FilterChainBuilder.forShortPcm(context, channelCount, sampleRate, true) : null;
 
     initialiseSeeker();
   }
@@ -108,6 +110,8 @@ public class Mp3TrackProvider {
         inputBuffer.put(frameBuffer, 0, frameReader.getFrameSize());
         inputBuffer.flip();
 
+        outputBuffer.clear();
+        outputBuffer.limit(channelCount * (int) SAMPLES_PER_FRAME);
         int produced = mp3Decoder.decode(inputBuffer, outputBuffer);
 
         if (produced > 0) {

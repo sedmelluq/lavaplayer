@@ -3,6 +3,7 @@ package com.sedmelluq.discord.lavaplayer.source.http;
 import com.sedmelluq.discord.lavaplayer.container.MediaContainer;
 import com.sedmelluq.discord.lavaplayer.container.MediaContainerDetection;
 import com.sedmelluq.discord.lavaplayer.container.MediaContainerDetectionResult;
+import com.sedmelluq.discord.lavaplayer.container.MediaContainerHints;
 import com.sedmelluq.discord.lavaplayer.container.MediaContainerProbe;
 import com.sedmelluq.discord.lavaplayer.player.DefaultAudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.source.ProbingAudioSourceManager;
@@ -29,6 +30,7 @@ import java.util.function.Function;
 
 import static com.sedmelluq.discord.lavaplayer.tools.FriendlyException.Severity.COMMON;
 import static com.sedmelluq.discord.lavaplayer.tools.FriendlyException.Severity.SUSPICIOUS;
+import static com.sedmelluq.discord.lavaplayer.tools.io.HttpClientTools.getHeaderValue;
 
 /**
  * Audio source manager which implements finding audio files from HTTP addresses.
@@ -114,7 +116,8 @@ public class HttpAudioSourceManager extends ProbingAudioSourceManager implements
         throw new FriendlyException("That URL is not playable.", COMMON, new IllegalStateException("Status code " + statusCode));
       }
 
-      return MediaContainerDetection.detectContainer(reference, inputStream);
+      MediaContainerHints hints = MediaContainerHints.from(getHeaderValue(inputStream.getCurrentResponse(), "Content-Type"), null);
+      return MediaContainerDetection.detectContainer(reference, inputStream, hints);
     } catch (URISyntaxException e) {
       throw new FriendlyException("Not a valid URL.", COMMON, e);
     }

@@ -1,6 +1,7 @@
 package com.sedmelluq.discord.lavaplayer.container.playlists;
 
 import com.sedmelluq.discord.lavaplayer.container.MediaContainerDetectionResult;
+import com.sedmelluq.discord.lavaplayer.container.MediaContainerHints;
 import com.sedmelluq.discord.lavaplayer.container.MediaContainerProbe;
 import com.sedmelluq.discord.lavaplayer.tools.DataFormatTools;
 import com.sedmelluq.discord.lavaplayer.tools.io.SeekableInputStream;
@@ -34,6 +35,11 @@ public class PlsPlaylistContainerProbe implements MediaContainerProbe {
   @Override
   public String getName() {
     return "pls";
+  }
+
+  @Override
+  public boolean matchesHints(MediaContainerHints hints) {
+    return false;
   }
 
   @Override

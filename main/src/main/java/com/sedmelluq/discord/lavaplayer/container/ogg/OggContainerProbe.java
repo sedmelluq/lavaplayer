@@ -1,6 +1,7 @@
 package com.sedmelluq.discord.lavaplayer.container.ogg;
 
 import com.sedmelluq.discord.lavaplayer.container.MediaContainerDetectionResult;
+import com.sedmelluq.discord.lavaplayer.container.MediaContainerHints;
 import com.sedmelluq.discord.lavaplayer.container.MediaContainerProbe;
 import com.sedmelluq.discord.lavaplayer.tools.io.SeekableInputStream;
 import com.sedmelluq.discord.lavaplayer.track.AudioReference;
@@ -25,6 +26,11 @@ public class OggContainerProbe implements MediaContainerProbe {
   @Override
   public String getName() {
     return "ogg";
+  }
+
+  @Override
+  public boolean matchesHints(MediaContainerHints hints) {
+    return false;
   }
 
   @Override

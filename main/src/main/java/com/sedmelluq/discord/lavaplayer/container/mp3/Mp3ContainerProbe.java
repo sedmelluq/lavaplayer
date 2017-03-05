@@ -1,6 +1,7 @@
 package com.sedmelluq.discord.lavaplayer.container.mp3;
 
 import com.sedmelluq.discord.lavaplayer.container.MediaContainerDetectionResult;
+import com.sedmelluq.discord.lavaplayer.container.MediaContainerHints;
 import com.sedmelluq.discord.lavaplayer.container.MediaContainerProbe;
 import com.sedmelluq.discord.lavaplayer.tools.io.SeekableInputStream;
 import com.sedmelluq.discord.lavaplayer.track.AudioReference;
@@ -30,6 +31,13 @@ public class Mp3ContainerProbe implements MediaContainerProbe {
   @Override
   public String getName() {
     return "mp3";
+  }
+
+  @Override
+  public boolean matchesHints(MediaContainerHints hints) {
+    boolean invalidMimeType = hints.mimeType != null && !"audio/mpeg".equalsIgnoreCase(hints.mimeType);
+    boolean invalidFileExtension = hints.fileExtension != null && !"mp3".equalsIgnoreCase(hints.mimeType);
+    return !invalidMimeType && !invalidFileExtension;
   }
 
   @Override
