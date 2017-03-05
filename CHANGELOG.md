@@ -3,6 +3,7 @@
 ## [1.2.26] - 2017-03-05
 ### Added
 - Support for mono MP3 format.
+- PlayerLibrary which exposes the library version.
 
 ## [1.2.25] - 2017-03-04
 ### Fixed
