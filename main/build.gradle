@@ -26,14 +26,14 @@ dependencies {
 
 compileJava.dependsOn(':natives:checkNatives')
 
-jar {
-  doFirst {
-    new File("$projectDir/src/main/resources/com/sedmelluq/discord/lavaplayer/tools/version.txt").with {
-      it.parentFile.mkdirs()
-      it.text = version
-    }
+task updateVersion {
+  new File("$projectDir/src/main/resources/com/sedmelluq/discord/lavaplayer/tools/version.txt").with {
+    it.parentFile.mkdirs()
+    it.text = version
   }
 }
+
+classes.finalizedBy(tasks['updateVersion'])
 
 task sourceJar(type: Jar) {
   from sourceSets.main.allJava
