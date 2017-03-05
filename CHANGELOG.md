@@ -1,5 +1,9 @@
 # Change Log
 
+## [1.2.26] - 2017-03-05
+### Added
+- Support for mono MP3 format.
+
 ## [1.2.25] - 2017-03-04
 ### Fixed
 - Fixed using nodes not working after node list is cleared once.

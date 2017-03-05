@@ -317,6 +317,16 @@ public class HttpClientTools {
     }
   }
 
+  /**
+   * @param response Http response to get the header value from.
+   * @param name Name of the header.
+   * @return Value if header was present, null otherwise.
+   */
+  public static String getHeaderValue(HttpResponse response, String name) {
+    Header header = response.getFirstHeader(name);
+    return header != null ? header.getValue() : null;
+  }
+
   private static class NoResponseRetryHandler extends DefaultHttpRequestRetryHandler {
     private static final NoResponseRetryHandler RETRY_INSTANCE = new NoResponseRetryHandler();
 
