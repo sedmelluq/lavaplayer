@@ -11,6 +11,7 @@ import com.sedmelluq.discord.lavaplayer.track.playback.LocalAudioTrackExecutor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.net.URI;
 
 /**
@@ -33,15 +34,34 @@ public class SoundCloudAudioTrack extends DelegatedAudioTrack {
 
   @Override
   public void process(LocalAudioTrackExecutor localExecutor) throws Exception {
-    String trackUrl = sourceManager.getTrackUrlFromId(trackInfo.identifier);
-
     try (HttpInterface httpInterface = sourceManager.getHttpInterface()) {
-      log.debug("Starting SoundCloud track from URL: {}", trackUrl);
+      if (!attemptLoadStream(localExecutor, httpInterface, true)) {
+        sourceManager.updateClientId();
 
-      try (PersistentHttpStream stream = new PersistentHttpStream(httpInterface, new URI(trackUrl), null)) {
-        processDelegate(new Mp3AudioTrack(trackInfo, stream), localExecutor);
+        attemptLoadStream(localExecutor, httpInterface, false);
       }
     }
+  }
+
+  private boolean attemptLoadStream(LocalAudioTrackExecutor localExecutor, HttpInterface httpInterface, boolean checkUnauthorized) throws Exception {
+    String trackUrl = sourceManager.getTrackUrlFromId(trackInfo.identifier);
+    log.debug("Starting SoundCloud track from URL: {}", trackUrl);
+
+    try (PersistentHttpStream stream = new PersistentHttpStream(httpInterface, new URI(trackUrl), null)) {
+      if (checkUnauthorized) {
+        int statusCode = stream.checkStatusCode();
+
+        if (statusCode == 401) {
+          return false;
+        } else if (statusCode != 200) {
+          throw new IOException("Invalid status code for soundcloud stream: " + statusCode);
+        }
+      }
+
+      processDelegate(new Mp3AudioTrack(trackInfo, stream), localExecutor);
+    }
+
+    return true;
   }
 
   @Override

@@ -39,6 +39,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.StringJoiner;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -55,8 +56,10 @@ public class SoundCloudAudioSourceManager implements AudioSourceManager, HttpCon
   private static final int DEFAULT_SEARCH_RESULTS = 10;
   private static final int MAXIMUM_SEARCH_RESULTS = 200;
 
+  private static final long CLIENT_ID_REFRESH_INTERVAL = TimeUnit.HOURS.toMillis(1);
+
   private static final String CHARSET = "UTF-8";
-  private static final String CLIENT_ID = "fDoItMDbsbZz8dY16ZzARCZmzgHBPotA";
+  private static final String LATEST_CLIENT_ID = "2t9loNQH90kzJcsFCODdigxfp325aq4z";
   private static final String TRACK_URL_REGEX = "^(?:http://|https://|)(?:www\\.|)soundcloud\\.com/([a-zA-Z0-9-_]+)/([a-zA-Z0-9-_]+)(?:\\?.*|)$";
   private static final String UNLISTED_URL_REGEX = "^(?:http://|https://|)(?:www\\.|)soundcloud\\.com/([a-zA-Z0-9-_]+)/([a-zA-Z0-9-_]+)/s-([a-zA-Z0-9-_]+)(?:\\?.*|)$";
   private static final String PLAYLIST_URL_REGEX = "^(?:http://|https://|)(?:www\\.|)soundcloud\\.com/([a-zA-Z0-9-_]+)/sets/([a-zA-Z0-9-_]+)(?:\\?.*|)$";
@@ -65,6 +68,8 @@ public class SoundCloudAudioSourceManager implements AudioSourceManager, HttpCon
   private static final String SEARCH_PREFIX = "scsearch";
   private static final String SEARCH_PREFIX_DEFAULT = "scsearch:";
   private static final String SEARCH_REGEX = SEARCH_PREFIX + "\\[([0-9]{1,9}),([0-9]{1,9})\\]:\\s*(.*)\\s*";
+  private static final String PAGE_APP_SCRIPT_REGEX = "https://[A-Za-z0-9-.]+/assets/app-[a-f0-9-]+\\.js";
+  private static final String APP_SCRIPT_CLIENT_ID_REGEX = ",client_id:\"([a-zA-Z0-9-_]+)\"";
 
   private static final Pattern trackUrlPattern = Pattern.compile(TRACK_URL_REGEX);
   private static final Pattern unlistedUrlPattern = Pattern.compile(UNLISTED_URL_REGEX);
@@ -72,9 +77,14 @@ public class SoundCloudAudioSourceManager implements AudioSourceManager, HttpCon
   private static final Pattern likedUrlPattern = Pattern.compile(LIKED_URL_REGEX);
   private static final Pattern likedUserUrnPattern = Pattern.compile(LIKED_USER_URN_REGEX);
   private static final Pattern searchPattern = Pattern.compile(SEARCH_REGEX);
+  private static final Pattern pageAppScriptPattern = Pattern.compile(PAGE_APP_SCRIPT_REGEX);
+  private static final Pattern appScriptClientIdPattern = Pattern.compile(APP_SCRIPT_CLIENT_ID_REGEX);
 
   private final HttpInterfaceManager httpInterfaceManager;
+  private final Object clientIdLock;
   private final boolean allowSearch;
+  private long lastClientIdUpdate;
+  private volatile String clientId;
 
   /**
    * Create an instance with default settings.
@@ -90,8 +100,11 @@ public class SoundCloudAudioSourceManager implements AudioSourceManager, HttpCon
   public SoundCloudAudioSourceManager(boolean allowSearch) {
     httpInterfaceManager = HttpClientTools.createDefaultThreadLocalManager();
     this.allowSearch = allowSearch;
-  }
+    this.clientIdLock = new Object();
+    this.lastClientIdUpdate = 0;
 
+    setClientId(LATEST_CLIENT_ID);
+  }
 
   @Override
   public String getSourceName() {
@@ -141,9 +154,9 @@ public class SoundCloudAudioSourceManager implements AudioSourceManager, HttpCon
     String[] parts = trackId.split("\\|");
 
     if (parts.length < 2) {
-      return "https://api.soundcloud.com/tracks/" + trackId + "/stream?client_id=" + CLIENT_ID;
+      return "https://api.soundcloud.com/tracks/" + trackId + "/stream?client_id=" + getClientId();
     } else {
-      return "https://api.soundcloud.com/tracks/" + parts[0] + "/stream?client_id=" + CLIENT_ID + "&secret_token=" + parts[1];
+      return "https://api.soundcloud.com/tracks/" + parts[0] + "/stream?client_id=" + getClientId() + "&secret_token=" + parts[1];
     }
   }
 
@@ -157,6 +170,81 @@ public class SoundCloudAudioSourceManager implements AudioSourceManager, HttpCon
   @Override
   public void configureRequests(Function<RequestConfig, RequestConfig> configurator) {
     httpInterfaceManager.configureRequests(configurator);
+  }
+
+  public void updateClientId() {
+    synchronized (clientIdLock) {
+      long now = System.currentTimeMillis();
+      if (now - lastClientIdUpdate < CLIENT_ID_REFRESH_INTERVAL) {
+        log.debug("Client ID was recently updated, not updating again right away.");
+        return;
+      }
+
+      lastClientIdUpdate = now;
+      log.info("Updating SoundCloud client ID (current is {}).", clientId);
+
+      try {
+        clientId = findClientIdFromSite();
+        log.info("Updating SoundCloud client ID succeeded, new ID is {}.", clientId);
+      } catch (Exception e) {
+        log.error("SoundCloud client ID update failed.", e);
+      }
+    }
+  }
+
+  public void setClientId(String clientId) {
+    synchronized (clientIdLock) {
+      this.clientId = clientId;
+    }
+  }
+
+  public String getClientId() {
+    synchronized (clientIdLock) {
+      return clientId;
+    }
+  }
+
+  private String findClientIdFromSite() throws IOException {
+    try (HttpInterface httpInterface = getHttpInterface()) {
+      String scriptUrl = findApplicationScriptUrl(httpInterface);
+      return findClientIdFromApplicationScript(httpInterface, scriptUrl);
+    }
+  }
+
+  private String findApplicationScriptUrl(HttpInterface httpInterface) throws IOException {
+    try (CloseableHttpResponse response = httpInterface.execute(new HttpGet("https://soundcloud.com"))) {
+      int statusCode = response.getStatusLine().getStatusCode();
+      if (statusCode != 200) {
+        throw new IOException("Invalid status code for main page response: " + statusCode);
+      }
+
+      String page = EntityUtils.toString(response.getEntity());
+      Matcher scriptMatcher = pageAppScriptPattern.matcher(page);
+
+      if (scriptMatcher.find()) {
+        return scriptMatcher.group(0);
+      } else {
+        throw new IllegalStateException("Could not find application script from main page.");
+      }
+    }
+  }
+
+  private String findClientIdFromApplicationScript(HttpInterface httpInterface, String scriptUrl) throws IOException {
+    try (CloseableHttpResponse response = httpInterface.execute(new HttpGet(scriptUrl))) {
+      int statusCode = response.getStatusLine().getStatusCode();
+      if (statusCode != 200) {
+        throw new IOException("Invalid status code for application script response: " + statusCode);
+      }
+
+      String page = EntityUtils.toString(response.getEntity());
+      Matcher clientIdMatcher = appScriptClientIdPattern.matcher(page);
+
+      if (clientIdMatcher.find()) {
+        return clientIdMatcher.group(1);
+      } else {
+        throw new IllegalStateException("Could not find client ID from application script.");
+      }
+    }
   }
 
   private AudioTrack processAsSingleTrack(AudioReference reference) {
@@ -315,7 +403,7 @@ public class SoundCloudAudioSourceManager implements AudioSourceManager, HttpCon
 
       return new URIBuilder("https://api-v2.soundcloud.com/tracks")
           .addParameter("ids", joiner.toString())
-          .addParameter("client_id", CLIENT_ID)
+          .addParameter("client_id", clientId)
           .build();
     } catch (URISyntaxException e) {
       throw new RuntimeException(e);
@@ -368,7 +456,7 @@ public class SoundCloudAudioSourceManager implements AudioSourceManager, HttpCon
 
   private JsonBrowser loadLikedListForUserId(HttpInterface httpInterface, UserInfo userInfo) throws IOException {
     HttpUriRequest request = new HttpGet("https://api-v2.soundcloud.com/users/" + userInfo.id + "/likes?client_id="
-        + CLIENT_ID + "&limit=200&offset=0");
+        + clientId + "&limit=200&offset=0");
 
     try (CloseableHttpResponse response = httpInterface.execute(request)) {
       int statusCode = response.getStatusLine().getStatusCode();
@@ -442,11 +530,11 @@ public class SoundCloudAudioSourceManager implements AudioSourceManager, HttpCon
     }
   }
 
-  private static URI buildSearchUri(String query, int offset, int limit) {
+  private URI buildSearchUri(String query, int offset, int limit) {
     try {
       return new URIBuilder("https://api-v2.soundcloud.com/search/tracks")
           .addParameter("q", query)
-          .addParameter("client_id", CLIENT_ID)
+          .addParameter("client_id", clientId)
           .addParameter("offset", String.valueOf(offset))
           .addParameter("limit", String.valueOf(limit))
           .build();
