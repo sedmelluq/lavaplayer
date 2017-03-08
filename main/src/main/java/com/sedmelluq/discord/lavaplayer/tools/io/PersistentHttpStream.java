@@ -84,7 +84,7 @@ public class PersistentHttpStream extends SeekableInputStream implements AutoClo
   private HttpGet getConnectRequest() {
     HttpGet request = new HttpGet(getConnectUrl());
 
-    if (useHeadersForRange()) {
+    if (position > 0 && useHeadersForRange()) {
       request.setHeader(HttpHeaders.RANGE, "bytes=" + position + "-");
     }
 

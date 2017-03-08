@@ -29,18 +29,21 @@ import org.slf4j.LoggerFactory;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.StringJoiner;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -355,30 +358,34 @@ public class SoundCloudAudioSourceManager implements AudioSourceManager, HttpCon
   }
 
   private List<AudioTrack> loadTracksFromPlaylist(HttpInterface httpInterface, JsonBrowser playlistInfo, String playlistWebUrl) throws IOException {
-    List<AudioTrack> tracks = new ArrayList<>();
     List<String> trackIds = loadPlaylistTrackList(playlistInfo);
-    URI trackListUrl = buildTrackListUrl(trackIds);
 
-    try (CloseableHttpResponse response = httpInterface.execute(new HttpGet(trackListUrl))) {
-      int statusCode = response.getStatusLine().getStatusCode();
-      if (statusCode != 200) {
-        throw new IOException("Invalid status code for track list response: " + statusCode);
+    return withClientIdRetry(httpInterface,
+        (response) -> handlePlaylistTracksResponse(response, playlistWebUrl, trackIds),
+        () -> buildTrackListUrl(trackIds)
+    );
+  }
+
+  private List<AudioTrack> handlePlaylistTracksResponse(HttpResponse response, String playlistWebUrl, List<String> trackIds) throws IOException {
+    List<AudioTrack> tracks = new ArrayList<>();
+    int statusCode = response.getStatusLine().getStatusCode();
+    if (statusCode != 200) {
+      throw new IOException("Invalid status code for track list response: " + statusCode);
+    }
+
+    JsonBrowser trackList = JsonBrowser.parse(response.getEntity().getContent());
+    int blockedCount = 0;
+
+    for (JsonBrowser trackInfoJson : trackList.values()) {
+      if ("BLOCK".equals(trackInfoJson.get("policy").text())) {
+        blockedCount++;
+      } else {
+        tracks.add(buildAudioTrack(trackInfoJson, null));
       }
+    }
 
-      JsonBrowser trackList = JsonBrowser.parse(response.getEntity().getContent());
-      int blockedCount = 0;
-
-      for (JsonBrowser trackInfoJson : trackList.values()) {
-        if ("BLOCK".equals(trackInfoJson.get("policy").text())) {
-          blockedCount++;
-        } else {
-          tracks.add(buildAudioTrack(trackInfoJson, null));
-        }
-      }
-
-      if (blockedCount > 0) {
-        log.debug("In soundcloud playlist {}, {} tracks were omitted because they are blocked.", playlistWebUrl, blockedCount);
-      }
+    if (blockedCount > 0) {
+      log.debug("In soundcloud playlist {}, {} tracks were omitted because they are blocked.", playlistWebUrl, blockedCount);
     }
 
     sortPlaylistTracks(tracks, trackIds);
@@ -403,7 +410,7 @@ public class SoundCloudAudioSourceManager implements AudioSourceManager, HttpCon
 
       return new URIBuilder("https://api-v2.soundcloud.com/tracks")
           .addParameter("ids", joiner.toString())
-          .addParameter("client_id", clientId)
+          .addParameter("client_id", getClientId())
           .build();
     } catch (URISyntaxException e) {
       throw new RuntimeException(e);
@@ -416,10 +423,7 @@ public class SoundCloudAudioSourceManager implements AudioSourceManager, HttpCon
       positions.put(trackIds.get(i), i);
     }
 
-    Collections.sort(tracks, (o1, o2) -> Integer.compare(
-        getSortPosition(positions, o1),
-        getSortPosition(positions, o2)
-    ));
+    Collections.sort(tracks, Comparator.comparingInt(o -> getSortPosition(positions, o)));
   }
 
   private static int getSortPosition(Map<String, Integer> positions, AudioTrack track) {
@@ -455,10 +459,7 @@ public class SoundCloudAudioSourceManager implements AudioSourceManager, HttpCon
   }
 
   private JsonBrowser loadLikedListForUserId(HttpInterface httpInterface, UserInfo userInfo) throws IOException {
-    HttpUriRequest request = new HttpGet("https://api-v2.soundcloud.com/users/" + userInfo.id + "/likes?client_id="
-        + clientId + "&limit=200&offset=0");
-
-    try (CloseableHttpResponse response = httpInterface.execute(request)) {
+    return withClientIdRetry(httpInterface, (response) -> {
       int statusCode = response.getStatusLine().getStatusCode();
 
       if (statusCode != 200) {
@@ -466,7 +467,9 @@ public class SoundCloudAudioSourceManager implements AudioSourceManager, HttpCon
       }
 
       return JsonBrowser.parse(response.getEntity().getContent());
-    }
+    }, () ->
+        new URI("https://api-v2.soundcloud.com/users/" + userInfo.id + "/likes?client_id=" + getClientId() + "&limit=200&offset=0")
+    );
   }
 
   private AudioItem extractTracksFromLikedList(JsonBrowser likedTracks, UserInfo userInfo) {
@@ -513,15 +516,16 @@ public class SoundCloudAudioSourceManager implements AudioSourceManager, HttpCon
     int limit = Math.min(rawLimit, MAXIMUM_SEARCH_RESULTS);
 
     try (HttpInterface httpInterface = getHttpInterface()) {
-      return loadSearchResultsFromUrl(httpInterface, query, buildSearchUri(query, offset, limit));
+      return withClientIdRetry(httpInterface,
+          (response) -> loadSearchResultsFromResponse(response, query),
+          () -> buildSearchUri(query, offset, limit)
+      );
     } catch (IOException e) {
       throw new FriendlyException("Loading search results from SoundCloud failed.", SUSPICIOUS, e);
     }
   }
 
-  private AudioItem loadSearchResultsFromUrl(HttpInterface httpInterface, String query, URI uri) throws IOException {
-    HttpResponse response = httpInterface.execute(new HttpGet(uri));
-
+  private AudioItem loadSearchResultsFromResponse(HttpResponse response, String query) throws IOException {
     try {
       JsonBrowser searchResults = JsonBrowser.parse(response.getEntity().getContent());
       return extractTracksFromSearchResults(query, searchResults);
@@ -534,10 +538,36 @@ public class SoundCloudAudioSourceManager implements AudioSourceManager, HttpCon
     try {
       return new URIBuilder("https://api-v2.soundcloud.com/search/tracks")
           .addParameter("q", query)
-          .addParameter("client_id", clientId)
+          .addParameter("client_id", getClientId())
           .addParameter("offset", String.valueOf(offset))
           .addParameter("limit", String.valueOf(limit))
           .build();
+    } catch (URISyntaxException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  private <T> T withClientIdRetry(HttpInterface httpInterface, ResponseHandler<T> handler, URIProvider uriProvider) throws IOException {
+    try {
+      HttpResponse response = httpInterface.execute(new HttpGet(uriProvider.provide()));
+      int statusCode = response.getStatusLine().getStatusCode();
+
+      try {
+        if (statusCode != 401) {
+          return handler.handle(response);
+        }
+      } finally {
+        EntityUtils.consumeQuietly(response.getEntity());
+      }
+
+      updateClientId();
+      response = httpInterface.execute(new HttpGet(uriProvider.provide()));
+
+      try {
+        return handler.handle(response);
+      } finally {
+        EntityUtils.consumeQuietly(response.getEntity());
+      }
     } catch (URISyntaxException e) {
       throw new RuntimeException(e);
     }
@@ -553,5 +583,13 @@ public class SoundCloudAudioSourceManager implements AudioSourceManager, HttpCon
     }
 
     return new BasicAudioPlaylist("Search results for: " + query, tracks, null, true);
+  }
+
+  private interface ResponseHandler<T> {
+    T handle(HttpResponse response) throws IOException;
+  }
+
+  private interface URIProvider {
+    URI provide() throws URISyntaxException;
   }
 }

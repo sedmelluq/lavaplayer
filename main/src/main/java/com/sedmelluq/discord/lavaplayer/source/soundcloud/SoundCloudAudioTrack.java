@@ -53,7 +53,7 @@ public class SoundCloudAudioTrack extends DelegatedAudioTrack {
 
         if (statusCode == 401) {
           return false;
-        } else if (statusCode != 200) {
+        } else if (statusCode < 200 && statusCode >= 300) {
           throw new IOException("Invalid status code for soundcloud stream: " + statusCode);
         }
       }

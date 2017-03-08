@@ -6,7 +6,7 @@ plugins {
 }
 
 ext.moduleName = 'lavaplayer'
-version = '1.2.27'
+version = '1.2.28'
 
 dependencies {
   compile project(':common')
