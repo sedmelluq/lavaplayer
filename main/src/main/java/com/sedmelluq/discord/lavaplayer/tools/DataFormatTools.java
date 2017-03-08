@@ -3,6 +3,8 @@ package com.sedmelluq.discord.lavaplayer.tools;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.NameValuePair;
 
+import java.io.DataInput;
+import java.io.DataOutput;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
@@ -91,5 +93,18 @@ public class DataFormatTools {
     }
 
     return length * 1000L;
+  }
+
+  public static void writeNullableText(DataOutput output, String text) throws IOException {
+    output.writeBoolean(text != null);
+
+    if (text != null) {
+      output.writeUTF(text);
+    }
+  }
+
+  public static String readNullableText(DataInput input) throws IOException {
+    boolean exists = input.readBoolean();
+    return exists ? input.readUTF() : null;
   }
 }

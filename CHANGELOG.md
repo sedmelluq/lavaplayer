@@ -1,5 +1,20 @@
 # Change Log
 
+## [1.2.29] - 2017-03-08
+### Added
+- Added track URL field to track info object.
+
+## [1.2.28] - 2017-03-06
+### Fixed
+- Fixed SoundCloud client ID not updated if expiration was discovered on a request for search or playlist.
+
+## [1.2.27] - 2017-03-06
+### Fixed
+- Fixed SoundCloud not working due to client ID change.
+
+### Changed
+- SoundCloud client ID now fetched from their page now, not hardcoded.
+
 ## [1.2.26] - 2017-03-05
 ### Added
 - Support for mono MP3 format.

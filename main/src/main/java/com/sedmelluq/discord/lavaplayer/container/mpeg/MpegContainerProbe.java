@@ -65,8 +65,9 @@ public class MpegContainerProbe implements MediaContainerProbe {
         DataFormatTools.defaultOnNull(file.getTextMetadata("Artist"), UNKNOWN_ARTIST),
         fileReader.getDuration(),
         reference.identifier,
-        false)
-    );
+        false,
+        reference.identifier
+    ));
   }
 
   @Override

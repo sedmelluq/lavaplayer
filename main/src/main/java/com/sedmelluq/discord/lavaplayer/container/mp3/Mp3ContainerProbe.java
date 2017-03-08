@@ -64,7 +64,8 @@ public class Mp3ContainerProbe implements MediaContainerProbe {
           defaultOnNull(file.getIdv3Tag(ARTIST_TAG), UNKNOWN_ARTIST),
           file.getDuration(),
           reference.identifier,
-          !file.isSeekable()
+          !file.isSeekable(),
+          reference.identifier
       ));
     } finally {
       file.close();

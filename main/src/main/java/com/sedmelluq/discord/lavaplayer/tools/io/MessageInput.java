@@ -16,6 +16,7 @@ public class MessageInput {
   private final CountingInputStream countingInputStream;
   private final DataInputStream dataInputStream;
   private int messageSize;
+  private int messageFlags;
 
   /**
    * @param inputStream Input stream to read from.
@@ -33,12 +34,22 @@ public class MessageInput {
    * @throws IOException On IO error
    */
   public DataInput nextMessage() throws IOException {
-    messageSize = dataInputStream.readInt();
+    int value = dataInputStream.readInt();
+    messageFlags = (int) ((value & 0xC0000000L) >> 30L);
+    messageSize = value & 0x3FFFFFFF;
+
     if (messageSize == 0) {
       return null;
     }
 
     return new DataInputStream(new BoundedInputStream(countingInputStream, messageSize));
+  }
+
+  /**
+   * @return Flags (values 0-3) of the last message for which nextMessage() was called.
+   */
+  public int getMessageFlags() {
+    return messageFlags;
   }
 
   /**

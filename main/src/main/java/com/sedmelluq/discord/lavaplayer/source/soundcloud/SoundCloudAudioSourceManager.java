@@ -291,7 +291,8 @@ public class SoundCloudAudioSourceManager implements AudioSourceManager, HttpCon
         trackInfoJson.get("user").get("username").text(),
         trackInfoJson.get("duration").as(Integer.class),
         secretToken != null ? trackId + "|" + secretToken : trackId,
-        false
+        false,
+        trackInfoJson.get("permalink_url").text()
     );
 
     return new SoundCloudAudioTrack(trackInfo, this);

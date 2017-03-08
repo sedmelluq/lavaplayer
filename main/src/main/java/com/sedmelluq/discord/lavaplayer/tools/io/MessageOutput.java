@@ -44,6 +44,16 @@ public class MessageOutput {
   }
 
   /**
+   * Commit previously started message to the underlying output stream.
+   * @param flags Flags to use when committing the message (0-3).
+   * @throws IOException On IO error
+   */
+  public void commitMessage(int flags) throws IOException {
+    dataOutputStream.writeInt(messageByteOutput.size() | flags << 30);
+    messageByteOutput.writeTo(outputStream);
+  }
+
+  /**
    * Write an end marker to the stream so that decoder knows to return null at this position.
    * @throws IOException On IO error
    */

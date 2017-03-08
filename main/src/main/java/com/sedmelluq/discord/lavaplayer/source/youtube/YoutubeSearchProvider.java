@@ -94,6 +94,6 @@ public class YoutubeSearchProvider {
     String title = contentElement.select(".yt-lockup-title > a").text();
     String author = contentElement.select(".yt-lockup-byline > a").text();
 
-    tracks.add(new YoutubeAudioTrack(new AudioTrackInfo(title, author, duration, videoId, false), sourceManager));
+    tracks.add(sourceManager.buildTrackObject(videoId, title, author, false, duration));
   }
 }

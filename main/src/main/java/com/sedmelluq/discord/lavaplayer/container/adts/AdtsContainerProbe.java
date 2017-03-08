@@ -44,7 +44,8 @@ public class AdtsContainerProbe implements MediaContainerProbe {
         MediaContainerDetection.UNKNOWN_ARTIST,
         Long.MAX_VALUE,
         reference.identifier,
-        true
+        true,
+        reference.identifier
     ));
   }
 

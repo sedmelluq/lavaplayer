@@ -1,9 +1,7 @@
 package com.sedmelluq.discord.lavaplayer.source.youtube;
 
 import com.sedmelluq.discord.lavaplayer.player.DefaultAudioPlayerManager;
-import com.sedmelluq.discord.lavaplayer.tools.DaemonThreadFactory;
 import com.sedmelluq.discord.lavaplayer.tools.ExceptionTools;
-import com.sedmelluq.discord.lavaplayer.tools.ExecutorTools;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpConfigurable;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterface;
@@ -22,7 +20,6 @@ import org.apache.commons.io.IOUtils;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.client.utils.URLEncodedUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -34,17 +31,10 @@ import org.slf4j.LoggerFactory;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-import java.net.URI;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorCompletionService;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -211,11 +201,7 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
       boolean isStream = "1".equals(args.get("live_playback").text());
       long duration = isStream ? Long.MAX_VALUE : args.get("length_seconds").as(Long.class) * 1000;
 
-      AudioTrackInfo trackInfo = new AudioTrackInfo(
-          args.get("title").text(), args.get("author").text(), duration, videoId, isStream
-      );
-
-      return new YoutubeAudioTrack(trackInfo, this);
+      return buildTrackObject(videoId, args.get("title").text(), args.get("author").text(), isStream, duration);
     } catch (Exception e) {
       throw ExceptionTools.wrapUnfriendlyExceptions("Loading information for a YouTube track failed.", FAULT, e);
     }
@@ -269,7 +255,7 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
   }
 
   public JsonBrowser getTrackInfoFromMainPage(HttpInterface httpInterface, String videoId, boolean mustExist) throws Exception {
-    try (CloseableHttpResponse response = httpInterface.execute(new HttpGet("https://www.youtube.com/watch?v=" + videoId))) {
+    try (CloseableHttpResponse response = httpInterface.execute(new HttpGet(getWatchUrl(videoId)))) {
       int statusCode = response.getStatusLine().getStatusCode();
       if (statusCode != 200) {
         throw new IOException("Invalid status code for video page response: " + statusCode);
@@ -441,8 +427,7 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
         String author = video.select(".pl-video-owner a").text().trim();
         long duration = DataFormatTools.durationTextToMillis(lengthElements.first().text());
 
-        AudioTrackInfo info = new AudioTrackInfo(title, author, duration, videoId, false);
-        tracks.add(new YoutubeAudioTrack(info, this));
+        tracks.add(buildTrackObject(videoId, title, author, false, duration));
       }
     }
 
@@ -454,5 +439,13 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
     }
 
     return null;
+  }
+
+  public YoutubeAudioTrack buildTrackObject(String videoId, String title, String uploader, boolean isStream, long duration) {
+    return new YoutubeAudioTrack(new AudioTrackInfo(title, uploader, duration, videoId, isStream, getWatchUrl(videoId)), this);
+  }
+
+  private static String getWatchUrl(String videoId) {
+    return "https://www.youtube.com/watch?v=" + videoId;
   }
 }

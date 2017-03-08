@@ -51,7 +51,8 @@ public class FlacContainerProbe implements MediaContainerProbe {
         defaultOnNull(trackInfo.tags.get(ARTIST_TAG), UNKNOWN_ARTIST),
         trackInfo.duration,
         reference.identifier,
-        false
+        false,
+        reference.identifier
     ));
   }
 

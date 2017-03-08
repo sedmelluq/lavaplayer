@@ -7,6 +7,7 @@ import com.sedmelluq.discord.lavaplayer.remote.RemoteNodeManager;
 import com.sedmelluq.discord.lavaplayer.remote.RemoteNodeRegistry;
 import com.sedmelluq.discord.lavaplayer.source.AudioSourceManager;
 import com.sedmelluq.discord.lavaplayer.tools.DaemonThreadFactory;
+import com.sedmelluq.discord.lavaplayer.tools.DataFormatTools;
 import com.sedmelluq.discord.lavaplayer.tools.ExceptionTools;
 import com.sedmelluq.discord.lavaplayer.tools.ExecutorTools;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
@@ -38,7 +39,9 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -59,6 +62,9 @@ import static com.sedmelluq.discord.lavaplayer.tools.FriendlyException.Severity.
  * The default implementation of audio player manager.
  */
 public class DefaultAudioPlayerManager implements AudioPlayerManager {
+  private static final int TRACK_INFO_VERSIONED = 1;
+  private static final int TRACK_INFO_VERSION = 2;
+
   private static final int DEFAULT_FRAME_BUFFER_DURATION = (int) TimeUnit.SECONDS.toMillis(5);
   private static final int DEFAULT_CLEANUP_THRESHOLD = (int) TimeUnit.MINUTES.toMillis(1);
 
@@ -238,6 +244,7 @@ public class DefaultAudioPlayerManager implements AudioPlayerManager {
   @Override
   public void encodeTrack(MessageOutput stream, AudioTrack track) throws IOException {
     DataOutput output = stream.startMessage();
+    output.write(TRACK_INFO_VERSION);
 
     AudioTrackInfo trackInfo = track.getInfo();
     output.writeUTF(trackInfo.title);
@@ -245,11 +252,12 @@ public class DefaultAudioPlayerManager implements AudioPlayerManager {
     output.writeLong(trackInfo.length);
     output.writeUTF(trackInfo.identifier);
     output.writeBoolean(trackInfo.isStream);
+    DataFormatTools.writeNullableText(output, trackInfo.uri);
 
     encodeTrackDetails(track, output);
     output.writeLong(track.getPosition());
 
-    stream.commitMessage();
+    stream.commitMessage(TRACK_INFO_VERSIONED);
   }
 
   @Override
@@ -259,7 +267,10 @@ public class DefaultAudioPlayerManager implements AudioPlayerManager {
       return null;
     }
 
-    AudioTrackInfo trackInfo = new AudioTrackInfo(input.readUTF(), input.readUTF(), input.readLong(), input.readUTF(), input.readBoolean());
+    int version = (stream.getMessageFlags() & TRACK_INFO_VERSIONED) != 0 ? (input.readByte() & 0xFF) : 1;
+
+    AudioTrackInfo trackInfo = new AudioTrackInfo(input.readUTF(), input.readUTF(), input.readLong(), input.readUTF(),
+        input.readBoolean(), version >= 2 ? DataFormatTools.readNullableText(input) : null);
     AudioTrack track = decodeTrackDetails(trackInfo, input);
     long position = input.readLong();
 

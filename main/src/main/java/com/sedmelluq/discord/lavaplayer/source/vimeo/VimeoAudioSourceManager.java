@@ -130,7 +130,8 @@ public class VimeoAudioSourceManager implements AudioSourceManager, HttpConfigur
         config.get("owner").get("display_name").text(),
         (long) (config.get("clip").get("duration").get("raw").as(Double.class) * 1000.0),
         trackUrl,
-        false
+        false,
+        trackUrl
     ), this);
   }
 }

@@ -185,7 +185,7 @@ public class RemoteNodeProcessor implements RemoteNode, Runnable {
       if (aliveTickCounter > 0) {
         log.error("Node {} went offline with exception.", nodeAddress, e);
       } else {
-        log.debug("Retry, node {} is still offline.", nodeAddress, e);
+        log.debug("Retry, node {} is still offline.", nodeAddress);
       }
     } catch (Throwable e) {
       log.error("Node {} appears offline due to unexpected exception.", nodeAddress, e);

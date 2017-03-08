@@ -49,7 +49,8 @@ public class WavContainerProbe implements MediaContainerProbe {
         UNKNOWN_ARTIST,
         fileInfo.getDuration(),
         reference.identifier,
-        false
+        false,
+        reference.identifier
     ));
   }
 

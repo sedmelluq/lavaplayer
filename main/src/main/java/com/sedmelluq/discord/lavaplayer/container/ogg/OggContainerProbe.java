@@ -46,7 +46,8 @@ public class OggContainerProbe implements MediaContainerProbe {
         UNKNOWN_ARTIST,
         Long.MAX_VALUE,
         reference.identifier,
-        true
+        true,
+        reference.identifier
     ));
   }
 

@@ -101,7 +101,7 @@ public class NicoAudioSourceManager implements AudioSourceManager, HttpConfigura
       String title = element.select("title").first().text();
       long duration = DataFormatTools.durationTextToMillis(element.select("length").first().text());
 
-      return new NicoAudioTrack(new AudioTrackInfo(title, uploader, duration, videoId, false), this);
+      return new NicoAudioTrack(new AudioTrackInfo(title, uploader, duration, videoId, false, getWatchUrl(videoId)), this);
     }
 
     return null;
@@ -172,5 +172,9 @@ public class NicoAudioSourceManager implements AudioSourceManager, HttpConfigura
         throw new FriendlyException("Exception when trying to log into NicoNico", SUSPICIOUS, e);
       }
     }
+  }
+
+  private static String getWatchUrl(String videoId) {
+    return "http://www.nicovideo.jp/watch/" + videoId;
   }
 }

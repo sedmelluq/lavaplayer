@@ -24,6 +24,10 @@ public class AudioTrackInfo {
    * True if this track is a stream
    */
   public final boolean isStream;
+  /**
+   * URL of the track, or local path to the file.
+   */
+  public final String uri;
 
   /**
    * @param title Track title
@@ -31,12 +35,14 @@ public class AudioTrackInfo {
    * @param length Length of the track in milliseconds
    * @param identifier Audio source specific track identifier
    * @param isStream True if this track is a stream
+   * @param uri URL of the track or path to its file.
    */
-  public AudioTrackInfo(String title, String author, long length, String identifier, boolean isStream) {
+  public AudioTrackInfo(String title, String author, long length, String identifier, boolean isStream, String uri) {
     this.title = title;
     this.author = author;
     this.length = length;
     this.identifier = identifier;
     this.isStream = isStream;
+    this.uri = uri;
   }
 }

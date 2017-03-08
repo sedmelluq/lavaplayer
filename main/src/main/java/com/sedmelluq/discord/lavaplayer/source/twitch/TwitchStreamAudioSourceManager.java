@@ -68,7 +68,8 @@ public class TwitchStreamAudioSourceManager implements AudioSourceManager, HttpC
           displayName,
           Long.MAX_VALUE,
           reference.identifier,
-          true
+          true,
+          reference.identifier
       ), this);
     }
   }

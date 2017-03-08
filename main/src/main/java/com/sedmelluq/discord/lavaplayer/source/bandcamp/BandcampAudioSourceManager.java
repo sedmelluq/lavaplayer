@@ -93,12 +93,15 @@ public class BandcampAudioSourceManager implements AudioSourceManager, HttpConfi
   }
 
   private AudioTrack extractTrack(JsonBrowser trackInfo, String bandUrl, String artist) {
+    String trackPageUrl = bandUrl + trackInfo.get("title_link").text();
+
     return new BandcampAudioTrack(new AudioTrackInfo(
         trackInfo.get("title").text(),
         artist,
         (long) (trackInfo.get("duration").as(Double.class) * 1000.0),
         bandUrl + trackInfo.get("title_link").text(),
-        false
+        false,
+        trackPageUrl
     ), this);
   }
 
