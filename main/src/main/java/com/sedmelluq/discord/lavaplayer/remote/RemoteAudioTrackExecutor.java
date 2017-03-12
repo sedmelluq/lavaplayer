@@ -61,7 +61,7 @@ public class RemoteAudioTrackExecutor implements AudioTrackExecutor {
     this.remoteNodeManager = remoteNodeManager;
     this.volumeLevel = volumeLevel;
     this.executorId = System.nanoTime();
-    this.frameBuffer = new AudioFrameBuffer(BUFFER_DURATION_MS, configuration.getOutputFormat());
+    this.frameBuffer = new AudioFrameBuffer(BUFFER_DURATION_MS, configuration.getOutputFormat(), null);
   }
 
   /**
@@ -203,13 +203,19 @@ public class RemoteAudioTrackExecutor implements AudioTrackExecutor {
 
   @Override
   public AudioFrame provide() {
-    return AudioFrameProviderTools.delegateToTimedProvide(this);
+    AudioFrame frame = frameBuffer.provide();
+    processProvidedFrame(frame);
+    return frame;
   }
 
   @Override
   public AudioFrame provide(long timeout, TimeUnit unit) throws TimeoutException, InterruptedException {
     AudioFrame frame = frameBuffer.provide(timeout, unit);
+    processProvidedFrame(frame);
+    return frame;
+  }
 
+  private void processProvidedFrame(AudioFrame frame) {
     if (frame != null && !frame.isTerminator()) {
       lastFrameTimecode.set(frame.timecode);
 
@@ -217,8 +223,6 @@ public class RemoteAudioTrackExecutor implements AudioTrackExecutor {
         markerTracker.checkPlaybackTimecode(frame.timecode);
       }
     }
-
-    return frame;
   }
 
   @Override

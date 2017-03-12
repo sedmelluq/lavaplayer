@@ -187,7 +187,7 @@ public class AudioPlayer implements AudioFrameProvider, TrackStateListener {
     }
 
     while ((track = activeTrack) != null) {
-      AudioFrame frame = track.provide(timeout, unit);
+      AudioFrame frame = timeout > 0 ? track.provide(timeout, unit) : track.provide();
 
       if (frame != null) {
         lastReceiveTime = System.nanoTime();

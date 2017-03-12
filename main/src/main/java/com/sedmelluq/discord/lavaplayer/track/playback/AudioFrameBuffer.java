@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * A frame buffer. Stores the specified duration worth of frames in the internal buffer.
@@ -21,6 +22,7 @@ public class AudioFrameBuffer implements AudioFrameConsumer, AudioFrameProvider 
   private final int fullCapacity;
   private final ArrayBlockingQueue<AudioFrame> audioFrames;
   private final AudioDataFormat format;
+  private final AtomicBoolean stopping;
   private volatile boolean locked;
   private volatile boolean receivedFrames;
   private boolean terminated;
@@ -31,11 +33,12 @@ public class AudioFrameBuffer implements AudioFrameConsumer, AudioFrameProvider 
    * @param bufferDuration The length of the internal buffer in milliseconds
    * @param format The format of the frames held in this buffer
    */
-  public AudioFrameBuffer(int bufferDuration, AudioDataFormat format) {
+  public AudioFrameBuffer(int bufferDuration, AudioDataFormat format, AtomicBoolean stopping) {
     synchronizer = new Object();
     fullCapacity = bufferDuration / 20 + 1;
     audioFrames = new ArrayBlockingQueue<>(fullCapacity);
     this.format = format;
+    this.stopping = stopping;
     terminated = false;
     terminateOnEmpty = false;
     clearOnInsert = false;
@@ -44,6 +47,13 @@ public class AudioFrameBuffer implements AudioFrameConsumer, AudioFrameProvider 
 
   @Override
   public void consume(AudioFrame frame) throws InterruptedException {
+    // If an interrupt sent along with setting the stopping status was silently consumed elsewhere, this check should
+    // still trigger. Guarantees that stopped tracks cannot get stuck in this method. Possible performance improvement:
+    // offer with timeout, check stopping if timed out, then put?
+    if (stopping != null && stopping.get()) {
+      throw new InterruptedException();
+    }
+
     if (!locked) {
       receivedFrames = true;
 
@@ -103,11 +113,13 @@ public class AudioFrameBuffer implements AudioFrameConsumer, AudioFrameProvider 
         return terminator;
       }
 
-      frame = audioFrames.poll(timeout, unit);
-      terminator = fetchPendingTerminator();
+      if (timeout > 0) {
+        frame = audioFrames.poll(timeout, unit);
+        terminator = fetchPendingTerminator();
 
-      if (terminator != null) {
-        return terminator;
+        if (terminator != null) {
+          return terminator;
+        }
       }
     }
 

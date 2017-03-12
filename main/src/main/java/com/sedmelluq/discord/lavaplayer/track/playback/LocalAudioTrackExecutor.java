@@ -58,7 +58,7 @@ public class LocalAudioTrackExecutor implements AudioTrackExecutor {
 
     this.audioTrack = audioTrack;
     AudioDataFormat currentFormat = configuration.getOutputFormat();
-    this.frameBuffer = new AudioFrameBuffer(bufferDuration, currentFormat);
+    this.frameBuffer = new AudioFrameBuffer(bufferDuration, currentFormat, isStopping);
     this.processingContext = new AudioProcessingContext(configuration, frameBuffer, volumeLevel, currentFormat);
     this.useSeekGhosting = useSeekGhosting;
   }
@@ -74,7 +74,7 @@ public class LocalAudioTrackExecutor implements AudioTrackExecutor {
 
   @Override
   public void execute(TrackStateListener listener) {
-    boolean interrupted = false;
+    InterruptedException interrupt = null;
 
     if (Thread.interrupted()) {
       log.debug("Cleared a stray interrupt.");
@@ -91,19 +91,24 @@ public class LocalAudioTrackExecutor implements AudioTrackExecutor {
         log.debug("Playing track {} finished or was stopped.", audioTrack.getIdentifier());
       } catch (Throwable e) {
         // Temporarily clear the interrupted status so it would not disrupt listener methods.
-        interrupted = e instanceof InterruptedException || Thread.interrupted();
-        frameBuffer.setTerminateOnEmpty();
+        interrupt = findInterrupt(e);
 
-        FriendlyException exception = ExceptionTools.wrapUnfriendlyExceptions("Something broke when playing the track.", FAULT, e);
-        ExceptionTools.log(log, exception, "playback of " + audioTrack.getIdentifier());
+        if (interrupt != null && checkStopped()) {
+          log.debug("Track {} was interrupted outside of execution loop.");
+        } else {
+          frameBuffer.setTerminateOnEmpty();
 
-        trackException = exception;
-        listener.onTrackException(audioTrack, exception);
+          FriendlyException exception = ExceptionTools.wrapUnfriendlyExceptions("Something broke when playing the track.", FAULT, e);
+          ExceptionTools.log(log, exception, "playback of " + audioTrack.getIdentifier());
 
-        ExceptionTools.rethrowErrors(e);
+          trackException = exception;
+          listener.onTrackException(audioTrack, exception);
+
+          ExceptionTools.rethrowErrors(e);
+        }
       } finally {
         synchronized (actionSynchronizer) {
-          interrupted = interrupted || Thread.interrupted();
+          interrupt = interrupt != null ? interrupt : findInterrupt(null);
 
           playingThread.compareAndSet(Thread.currentThread(), null);
 
@@ -111,7 +116,7 @@ public class LocalAudioTrackExecutor implements AudioTrackExecutor {
           state.set(AudioTrackState.FINISHED);
         }
 
-        if (interrupted) {
+        if (interrupt != null) {
           Thread.currentThread().interrupt();
         }
       }
@@ -345,13 +350,19 @@ public class LocalAudioTrackExecutor implements AudioTrackExecutor {
 
   @Override
   public AudioFrame provide() {
-    return AudioFrameProviderTools.delegateToTimedProvide(this);
+    AudioFrame frame = frameBuffer.provide();
+    processProvidedFrame(frame);
+    return frame;
   }
 
   @Override
   public AudioFrame provide(long timeout, TimeUnit unit) throws TimeoutException, InterruptedException {
     AudioFrame frame = frameBuffer.provide(timeout, unit);
+    processProvidedFrame(frame);
+    return frame;
+  }
 
+  private void processProvidedFrame(AudioFrame frame) {
     if (frame != null && !frame.isTerminator()) {
       if (!isPerformingSeek()) {
         markerTracker.checkPlaybackTimecode(frame.timecode);
@@ -359,8 +370,6 @@ public class LocalAudioTrackExecutor implements AudioTrackExecutor {
 
       lastFrameTimecode.set(frame.timecode);
     }
-
-    return frame;
   }
 
   /**
