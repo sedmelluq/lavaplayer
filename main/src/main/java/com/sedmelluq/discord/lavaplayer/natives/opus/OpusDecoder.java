@@ -23,7 +23,8 @@ public class OpusDecoder extends NativeResourceHolder {
     this.channels = channels;
 
     if (instance == 0) {
-      throw new IllegalStateException("Failed to create a decoder instance");
+      throw new IllegalStateException("Failed to create a decoder instance with sample rate " +
+          sampleRate + " and channel count " + channels);
     }
   }
 

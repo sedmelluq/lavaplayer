@@ -43,6 +43,7 @@ public class LocalAudioTrackExecutor implements AudioTrackExecutor {
   private final AtomicReference<AudioTrackState> state = new AtomicReference<>(AudioTrackState.INACTIVE);
   private final Object actionSynchronizer = new Object();
   private final TrackMarkerTracker markerTracker = new TrackMarkerTracker();
+  private boolean interruptibleForSeek = false;
   private volatile Throwable trackException;
 
   /**
@@ -94,7 +95,7 @@ public class LocalAudioTrackExecutor implements AudioTrackExecutor {
         interrupt = findInterrupt(e);
 
         if (interrupt != null && checkStopped()) {
-          log.debug("Track {} was interrupted outside of execution loop.");
+          log.debug("Track {} was interrupted outside of execution loop.", audioTrack.getIdentifier());
         } else {
           frameBuffer.setTerminateOnEmpty();
 
@@ -197,11 +198,7 @@ public class LocalAudioTrackExecutor implements AudioTrackExecutor {
         frameBuffer.clear();
       }
 
-      if (interrupt()) {
-        log.debug("Interrupting playing thread to perform a seek {}", audioTrack.getIdentifier());
-      } else {
-        log.debug("Seeking on a track which is not playing {}", audioTrack.getIdentifier());
-      }
+      interruptForSeek();
     }
   }
 
@@ -247,11 +244,14 @@ public class LocalAudioTrackExecutor implements AudioTrackExecutor {
           break;
         }
 
+        setInterruptibleForSeek(true);
         readExecutor.performRead();
+        setInterruptibleForSeek(false);
 
         // Must not finish before terminator frame has been consumed the user may still want to perform seeks until then
         waitOnEnd();
       } catch (Exception e) {
+        setInterruptibleForSeek(false);
         InterruptedException interruption = findInterrupt(e);
 
         if (interruption != null) {
@@ -260,6 +260,34 @@ public class LocalAudioTrackExecutor implements AudioTrackExecutor {
           throw ExceptionTools.wrapUnfriendlyExceptions("Something went wrong when decoding the track.", FAULT, e);
         }
       }
+    }
+  }
+
+  private void setInterruptibleForSeek(boolean state) {
+    synchronized (actionSynchronizer) {
+      interruptibleForSeek = state;
+    }
+  }
+
+  private void interruptForSeek() {
+    boolean interrupted = false;
+
+    synchronized (actionSynchronizer) {
+      if (interruptibleForSeek) {
+        interruptibleForSeek = false;
+        Thread thread = playingThread.get();
+
+        if (thread != null) {
+          thread.interrupt();
+          interrupted = true;
+        }
+      }
+    }
+
+    if (interrupted) {
+      log.debug("Interrupting playing thread to perform a seek {}", audioTrack.getIdentifier());
+    } else {
+      log.debug("Seeking on track {} while not in playback loop.", audioTrack.getIdentifier());
     }
   }
 

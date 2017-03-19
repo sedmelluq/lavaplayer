@@ -262,7 +262,7 @@ public class RemoteNodeProcessor implements RemoteNode, Runnable {
       if (connectionState.compareAndSet(ConnectionState.PENDING.id(), ConnectionState.ONLINE.id())) {
         log.info("Node {} came online.", nodeAddress);
       } else if (connectionState.get() != ConnectionState.ONLINE.id()) {
-        log.warn("Node {} received successful response, but had already lost control of its tracks.");
+        log.warn("Node {} received successful response, but had already lost control of its tracks.", nodeAddress);
         return false;
       }
 
@@ -330,11 +330,11 @@ public class RemoteNodeProcessor implements RemoteNode, Runnable {
         }
       }
     } catch (InterruptedException interruption) {
-      log.error("Node processing thread was interrupted.");
+      log.error("Node {} processing thread was interrupted.", nodeAddress);
       Thread.currentThread().interrupt();
       return false;
     } catch (Throwable e) {
-      log.error("Error when processing response from node.", e);
+      log.error("Error when processing response from node {}.", nodeAddress, e);
       ExceptionTools.rethrowErrors(e);
     } finally {
       tickBuilder.responseSize = countingStream.getCount();
@@ -353,7 +353,7 @@ public class RemoteNodeProcessor implements RemoteNode, Runnable {
         executor.dispatchException(new FriendlyException("Remote machine failed to start track: " + message.failureReason, SUSPICIOUS, null));
         executor.stop();
       } else {
-        log.debug("Received failed track start for an already stopped executor {}.", message.executorId);
+        log.debug("Received failed track start for an already stopped executor {} from node {}.", message.executorId, nodeAddress);
       }
     }
   }

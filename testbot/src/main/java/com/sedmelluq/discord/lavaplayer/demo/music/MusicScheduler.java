@@ -110,7 +110,7 @@ public class MusicScheduler extends AudioEventAdapter implements Runnable {
       Message message = boxMessage.getAndSet(null);
 
       if (message != null) {
-        message.deleteMessage();
+        message.delete();
       }
     }
 
