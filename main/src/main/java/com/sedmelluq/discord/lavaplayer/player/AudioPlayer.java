@@ -267,7 +267,7 @@ public class AudioPlayer implements AudioFrameProvider, TrackStateListener {
    * @param listener New listener
    */
   public void addListener(AudioEventListener listener) {
-    synchronized (listeners) {
+    synchronized (trackSwitchLock) {
       listeners.add(listener);
     }
   }
@@ -277,7 +277,7 @@ public class AudioPlayer implements AudioFrameProvider, TrackStateListener {
    * @param listener The listener to remove
    */
   public void removeListener(AudioEventListener listener) {
-    synchronized (listeners) {
+    synchronized (trackSwitchLock) {
       for (Iterator<AudioEventListener> iterator = listeners.iterator(); iterator.hasNext(); ) {
         if (iterator.next() == listener) {
           iterator.remove();
@@ -289,7 +289,7 @@ public class AudioPlayer implements AudioFrameProvider, TrackStateListener {
   private void dispatchEvent(AudioEvent event) {
     log.debug("Firing an event with class {}", event.getClass().getSimpleName());
 
-    synchronized (listeners) {
+    synchronized (trackSwitchLock) {
       for (AudioEventListener listener : listeners) {
         try {
           listener.onEvent(event);
