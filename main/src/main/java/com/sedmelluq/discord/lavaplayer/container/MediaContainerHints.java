@@ -20,6 +20,10 @@ public class MediaContainerHints {
     this.fileExtension = fileExtension;
   }
 
+  public boolean present() {
+    return mimeType != null || fileExtension != null;
+  }
+
   /**
    * @param mimeType Mime type
    * @param fileExtension File extension

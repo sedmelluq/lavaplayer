@@ -39,12 +39,10 @@ public class MediaContainerDetection {
       SavedHeadSeekableInputStream savedHeadInputStream = new SavedHeadSeekableInputStream(inputStream, HEAD_MARK_LIMIT);
       savedHeadInputStream.loadHead();
 
-      boolean[] anyProbesChecked = new boolean[1];
+      result = detectContainer(reference, savedHeadInputStream, hints, true);
 
-      result = detectContainer(reference, savedHeadInputStream, hints, anyProbesChecked, true);
-
-      if (!anyProbesChecked[0]) {
-        result = detectContainer(reference, savedHeadInputStream, hints, null, false);
+      if (result == null) {
+        result = detectContainer(reference, savedHeadInputStream, hints, false);
       }
     } catch (Exception e) {
       throw ExceptionTools.wrapUnfriendlyExceptions("Could not read the file for detecting file type.", SUSPICIOUS, e);
@@ -54,28 +52,23 @@ public class MediaContainerDetection {
   }
 
   private static MediaContainerDetectionResult detectContainer(AudioReference reference, SeekableInputStream inputStream, MediaContainerHints hints,
-                                                               boolean[] anyProbesChecked, boolean matchHints) throws IOException {
+                                                               boolean matchHints) throws IOException {
+    boolean checked = false;
 
     for (MediaContainer container : MediaContainer.class.getEnumConstants()) {
-      if (matchHints) {
-        if (container.probe.matchesHints(hints)) {
-          anyProbesChecked[0] = true;
-        } else {
-          continue;
+      if (matchHints == container.probe.matchesHints(hints)) {
+        inputStream.seek(0);
+        MediaContainerDetectionResult result = checkContainer(container, reference, inputStream);
+
+        if (result != null) {
+          return result;
         }
-      } else if (container.probe.matchesHints(hints)) {
-        continue;
-      }
 
-      inputStream.seek(0);
-      MediaContainerDetectionResult result = checkContainer(container, reference, inputStream);
-
-      if (result != null) {
-        return result;
+        checked = true;
       }
     }
 
-    return null;
+    return checked ? new MediaContainerDetectionResult() : null;
   }
 
   private static MediaContainerDetectionResult checkContainer(MediaContainer container, AudioReference reference, SeekableInputStream inputStream) {
