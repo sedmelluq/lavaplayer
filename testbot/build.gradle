@@ -11,8 +11,8 @@ ext.logbackVersion = '1.1.8'
 dependencies {
   compile project(':main')
 
-  compile 'com.sedmelluq:jda-nas:1.0.3'
-  compile 'net.dv8tion:JDA:3.0.0_156'
+  compile 'com.sedmelluq:jda-nas:1.0.4'
+  compile 'net.dv8tion:JDA:3.0.0_160'
 
   runtime "ch.qos.logback:logback-classic:$logbackVersion"
   runtime "ch.qos.logback:logback-core:$logbackVersion"
