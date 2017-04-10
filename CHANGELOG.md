@@ -1,5 +1,33 @@
 # Change Log
 
+## [1.2.36] - 2017-04-09
+### Fixed
+- Fixed YouTube tracks with only mixed audio-video MP4.
+
+## [1.2.35] - 2017-04-08
+### Changed
+- Twitch stream title is now stream status rather than channel name.
+
+## [1.2.34] - 2017-03-22
+### Fixed
+- Fixed MP3 not working with local files.
+
+## [1.2.33] - 2017-03-22
+### Fixed
+- Fixed only MP3 working with local files.
+
+## [1.2.32] - 2017-03-21
+### Fixed
+- Fixed deadlock when starting tracks from exception event
+
+## [1.2.31] - 2017-03-19
+### Fixed
+- Fixed seeking while track is initialising possibly interrupting load.
+
+## [1.2.30] - 2017-03-12
+### Fixed
+- Fixed stopped track threads sometimes not exiting.
+
 ## [1.2.29] - 2017-03-08
 ### Added
 - Added track URL field to track info object.
