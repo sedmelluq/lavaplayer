@@ -3,19 +3,12 @@ plugins {
   id 'application'
 }
 
-sourceCompatibility = 1.8
-targetCompatibility = 1.8
-
-ext.logbackVersion = '1.1.8'
-
 dependencies {
   compile project(':main')
 
   compile 'com.sedmelluq:jda-nas:1.0.4'
   compile 'net.dv8tion:JDA:3.0.0_171'
-
-  runtime "ch.qos.logback:logback-classic:$logbackVersion"
-  runtime "ch.qos.logback:logback-core:$logbackVersion"
+  runtime 'ch.qos.logback:logback-classic:1.1.8'
 }
 
 mainClassName = 'com.sedmelluq.discord.lavaplayer.demo.Bootstrap'

@@ -1,24 +1,16 @@
 plugins {
   id 'java'
   id 'application'
-  id 'idea'
 }
-
-sourceCompatibility = 1.8
-targetCompatibility = 1.8
 
 repositories {
   jcenter()
 }
 
-ext.logbackVersion = '1.1.8'
-
 dependencies {
-  compile 'net.dv8tion:JDA:3.0.0_171'
+  compile 'net.dv8tion:JDA:3.0.0_175'
   compile 'com.sedmelluq:lavaplayer:1.2.36'
-
-  runtime "ch.qos.logback:logback-classic:$logbackVersion"
-  runtime "ch.qos.logback:logback-core:$logbackVersion"
+  runtime 'ch.qos.logback:logback-classic:1.1.8'
 }
 
 mainClassName = 'com.sedmelluq.discord.lavaplayer.demo.jda.Main'
