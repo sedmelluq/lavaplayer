@@ -44,7 +44,7 @@ public class ExecutorTools {
     executorService.shutdownNow();
 
     try {
-      if (!executorService.awaitTermination(WAIT_TIME, TimeUnit.SECONDS)) {
+      if (!executorService.awaitTermination(WAIT_TIME, TimeUnit.MILLISECONDS)) {
         log.debug("Executor {} did not shut down in {}", description, WAIT_TIME);
       } else {
         log.debug("Executor {} successfully shut down", description);
