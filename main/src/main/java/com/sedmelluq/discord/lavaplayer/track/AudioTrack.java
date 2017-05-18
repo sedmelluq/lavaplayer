@@ -62,4 +62,23 @@ public interface AudioTrack extends AudioItem {
    * @return The source manager which created this track. Null if not created by a source manager directly.
    */
   AudioSourceManager getSourceManager();
+
+  /**
+   * Attach an object with this track which can later be retrieved with {@link #getUserData()}. Useful for retrieving
+   * application-specific object from the track in callbacks.
+   *
+   * @param userData Object to store.
+   */
+  void setUserData(Object userData);
+
+  /**
+   * @return Object previously stored with {@link #setUserData(Object)}
+   */
+  Object getUserData();
+
+  /**
+   * @return Object previously stored with {@link #setUserData(Object)} if it is of the specified type. If it is set,
+   * but with a different type, null is returned.
+   */
+  <T> T getUserData(Class<T> klass);
 }

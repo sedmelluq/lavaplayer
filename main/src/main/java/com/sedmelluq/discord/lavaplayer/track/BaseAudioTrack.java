@@ -20,6 +20,7 @@ public abstract class BaseAudioTrack implements InternalAudioTrack {
   private volatile AudioTrackExecutor activeExecutor;
   protected final AudioTrackInfo trackInfo;
   protected final AtomicLong accurateDuration;
+  private volatile Object userData;
 
   /**
    * @param trackInfo Track info
@@ -124,5 +125,27 @@ public abstract class BaseAudioTrack implements InternalAudioTrack {
   @Override
   public AudioTrackExecutor createLocalExecutor(AudioPlayerManager playerManager) {
     return null;
+  }
+
+  @Override
+  public void setUserData(Object userData) {
+    this.userData = userData;
+  }
+
+  @Override
+  public Object getUserData() {
+    return userData;
+  }
+
+  @Override
+  @SuppressWarnings("unchecked")
+  public <T> T getUserData(Class<T> klass) {
+    Object data = userData;
+
+    if (data != null && klass.isAssignableFrom(data.getClass())) {
+      return (T) data;
+    } else {
+      return null;
+    }
   }
 }

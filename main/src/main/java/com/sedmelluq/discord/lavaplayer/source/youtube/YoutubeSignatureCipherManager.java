@@ -11,7 +11,13 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.regex.Matcher;
@@ -26,6 +32,10 @@ public class YoutubeSignatureCipherManager {
   private static final Logger log = LoggerFactory.getLogger(YoutubeSignatureCipherManager.class);
 
   private static final String VARIABLE_PART = "[a-zA-Z_\\$][a-zA-Z_0-9]*";
+  private static final String VARIABLE_PART_DEFINE = "\\\"?" + VARIABLE_PART + "\\\"?";
+  private static final String BEFORE_ACCESS = "(?:\\[\\\"|\\.)";
+  private static final String AFTER_ACCESS = "(?:\\\"\\]|)";
+  private static final String VARIABLE_PART_ACCESS = BEFORE_ACCESS + VARIABLE_PART + AFTER_ACCESS;
   private static final String REVERSE_PART = ":function\\(a\\)\\{(?:return )?a\\.reverse\\(\\)\\}";
   private static final String SLICE_PART = ":function\\(a,b\\)\\{return a\\.slice\\(b\\)\\}";
   private static final String SPLICE_PART = ":function\\(a,b\\)\\{a\\.splice\\(0,b\\)\\}";
@@ -35,21 +45,21 @@ public class YoutubeSignatureCipherManager {
   private static final Pattern functionPattern = Pattern.compile("" +
       "function(?: " + VARIABLE_PART + ")?\\(a\\)\\{" +
       "a=a\\.split\\(\"\"\\);\\s*" +
-      "((?:(?:a=)?" + VARIABLE_PART + "\\." + VARIABLE_PART + "\\(a,\\d+\\);)+)" +
+      "((?:(?:a=)?" + VARIABLE_PART + VARIABLE_PART_ACCESS + "\\(a,\\d+\\);)+)" +
       "return a\\.join\\(\"\"\\)" +
       "\\}"
   );
 
   private static final Pattern actionsPattern = Pattern.compile("" +
       "var (" + VARIABLE_PART + ")=\\{((?:(?:" +
-      VARIABLE_PART + REVERSE_PART + "|" +
-      VARIABLE_PART + SLICE_PART + "|" +
-      VARIABLE_PART + SPLICE_PART + "|" +
-      VARIABLE_PART + SWAP_PART +
+      VARIABLE_PART_DEFINE + REVERSE_PART + "|" +
+      VARIABLE_PART_DEFINE + SLICE_PART + "|" +
+      VARIABLE_PART_DEFINE + SPLICE_PART + "|" +
+      VARIABLE_PART_DEFINE + SWAP_PART +
       "),?\\n?)+)\\};"
   );
 
-  private static final String PATTERN_PREFIX = "(?:^|,)(" + VARIABLE_PART + ")";
+  private static final String PATTERN_PREFIX = "(?:^|,)\\\"?(" + VARIABLE_PART + ")\\\"?";
 
   private static final Pattern reversePattern = Pattern.compile(PATTERN_PREFIX + REVERSE_PART, Pattern.MULTILINE);
   private static final Pattern slicePattern = Pattern.compile(PATTERN_PREFIX + SLICE_PART, Pattern.MULTILINE);
@@ -59,6 +69,7 @@ public class YoutubeSignatureCipherManager {
   private static final Pattern signatureExtraction = Pattern.compile("/s/([^/]+)/");
 
   private final ConcurrentMap<String, YoutubeSignatureCipher> cipherCache;
+  private final Set<String> dumpedScriptUrls;
   private final Object cipherLoadLock;
 
   /**
@@ -66,6 +77,7 @@ public class YoutubeSignatureCipherManager {
    */
   public YoutubeSignatureCipherManager() {
     this.cipherCache = new ConcurrentHashMap<>();
+    this.dumpedScriptUrls = new HashSet<>();
     this.cipherLoadLock = new Object();
   }
 
@@ -126,10 +138,8 @@ public class YoutubeSignatureCipherManager {
         try (CloseableHttpResponse response = httpInterface.execute(new HttpGet(parseTokenScriptUrl(cipherScriptUrl)))) {
           validateResponseCode(response);
 
-          cipherKey = extractTokensFromScript(IOUtils.toString(response.getEntity().getContent(), "UTF-8"));
+          cipherKey = extractTokensFromScript(IOUtils.toString(response.getEntity().getContent(), "UTF-8"), cipherScriptUrl);
           cipherCache.put(cipherScriptUrl, cipherKey);
-
-          cipherSanityCheck(cipherKey, cipherScriptUrl);
         }
       }
     }
@@ -145,12 +155,6 @@ public class YoutubeSignatureCipherManager {
     }
   }
 
-  private void cipherSanityCheck(YoutubeSignatureCipher cipher, String cipherScriptUrl) {
-    if (cipher.isEmpty()) {
-      log.warn("No operations detected from cipher extracted from {}.", cipherScriptUrl);
-    }
-  }
-
   private List<String> getQuotedFunctions(String... functionNames) {
     return Stream.of(functionNames)
         .filter(function -> function != null)
@@ -158,10 +162,27 @@ public class YoutubeSignatureCipherManager {
         .collect(Collectors.toList());
   }
 
-  private YoutubeSignatureCipher extractTokensFromScript(String script) {
+  private void dumpProblematicScript(String script, String sourceUrl, String issue) {
+    if (!dumpedScriptUrls.add(sourceUrl)) {
+      return;
+    }
+
+    try {
+      Path path = Files.createTempFile("lavaplayer-yt-player-script", ".js");
+      Files.write(path, script.getBytes(StandardCharsets.UTF_8));
+
+      log.error("Problematic YouTube player script {} detected (issue detected with script: {}). Dumped to {}.",
+          sourceUrl, issue, path.toAbsolutePath());
+    } catch (Exception e) {
+      log.error("Failed to dump problematic YouTube player script {} (issue detected with script: {})", sourceUrl, issue);
+    }
+  }
+
+  private YoutubeSignatureCipher extractTokensFromScript(String script, String sourceUrl) {
     Matcher actions = actionsPattern.matcher(script);
     if (!actions.find()) {
-      throw new IllegalStateException("Must find action functions from script.");
+      dumpProblematicScript(script, sourceUrl, "no actions match");
+      throw new IllegalStateException("Must find action functions from script: " + sourceUrl);
     }
 
     String actionBody = actions.group(2);
@@ -172,13 +193,14 @@ public class YoutubeSignatureCipherManager {
     String swapKey = extractDollarEscapedFirstGroup(swapPattern, actionBody);
 
     Pattern extractor = Pattern.compile(
-        "(?:a=)?" + Pattern.quote(actions.group(1)) + "\\.(" +
+        "(?:a=)?" + Pattern.quote(actions.group(1)) + BEFORE_ACCESS + "(" +
         String.join("|", getQuotedFunctions(reverseKey, slicePart, splicePart, swapKey)) +
-        ")\\(a,(\\d+)\\)"
+        ")" + AFTER_ACCESS + "\\(a,(\\d+)\\)"
     );
 
     Matcher functions = functionPattern.matcher(script);
     if (!functions.find()) {
+      dumpProblematicScript(script, sourceUrl, "no decipher function match");
       throw new IllegalStateException("Must find decipher function from script.");
     }
 
@@ -197,7 +219,14 @@ public class YoutubeSignatureCipherManager {
         cipherKey.addOperation(new YoutubeCipherOperation(YoutubeCipherOperationType.SLICE, Integer.parseInt(matcher.group(2))));
       } else if (type.equals(splicePart)) {
         cipherKey.addOperation(new YoutubeCipherOperation(YoutubeCipherOperationType.SPLICE, Integer.parseInt(matcher.group(2))));
+      } else {
+        dumpProblematicScript(script, sourceUrl, "unknown cipher operation found");
       }
+    }
+
+    if (cipherKey.isEmpty()) {
+      log.error("No operations detected from cipher extracted from {}.", sourceUrl);
+      dumpProblematicScript(script, sourceUrl, "no cipher operations");
     }
 
     return cipherKey;

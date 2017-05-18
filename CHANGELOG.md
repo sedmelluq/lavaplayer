@@ -1,5 +1,18 @@
 # Change Log
 
+## [1.2.39] - 2017-05-18
+### Fixed
+- Properly fixed the YouTube cipher detection (previous one missed some operations).
+
+## [1.2.38] - 2017-05-18
+### Fixed
+- Partially fixed YouTube cipher detection where reserved keywords are function names.
+
+## [1.2.37] - 2017-05-18
+### Added
+- Ability to store one user data object in audio track instances.
+- Dumping YouTube scripts where cipher detection does not work.
+
 ## [1.2.36] - 2017-04-09
 ### Fixed
 - Fixed YouTube tracks with only mixed audio-video MP4.
