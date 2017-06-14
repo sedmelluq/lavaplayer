@@ -109,6 +109,12 @@ public class PersistentHttpStream extends SeekableInputStream implements AutoClo
       return false;
     }
 
+    if (currentResponse.getEntity() == null) {
+      currentContent = EmptyInputStream.INSTANCE;
+      contentLength = 0;
+      return true;
+    }
+
     currentContent = new BufferedInputStream(currentResponse.getEntity().getContent());
 
     if (contentLength == Long.MAX_VALUE) {

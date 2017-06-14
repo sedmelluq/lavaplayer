@@ -74,7 +74,7 @@ public class YoutubeMpegStreamAudioTrack extends MpegAudioTrack {
     URI segmentUrl = getNextSegmentUrl(state);
 
     try (YoutubePersistentHttpStream stream = new YoutubePersistentHttpStream(httpInterface, segmentUrl, Long.MAX_VALUE)) {
-      if (stream.checkStatusCode() == 204) {
+      if (stream.checkStatusCode() == 204 || stream.getContentLength() == 0) {
         state.finished = true;
         return;
       }
