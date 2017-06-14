@@ -165,8 +165,7 @@ public class Mp3Decoder extends NativeResourceHolder {
         || (second & 0x06) != 0x02 // Not Layer III, not dealing with this stuff
         || (third & 0xF0) == 0x00 // No defined bitrate
         || (third & 0xF0) == 0xF0 // Invalid bitrate
-        || (third & 0x0C) == 0x0C // Invalid sampling rate
-        || (buffer[offset + 3] & 0xC0) == 0x80; // Not dealing with dual channel mono
+        || (third & 0x0C) == 0x0C; // Invalid sampling rate
 
     if (invalid) {
       return 0;
