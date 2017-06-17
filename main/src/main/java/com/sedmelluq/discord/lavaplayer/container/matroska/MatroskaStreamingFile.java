@@ -6,12 +6,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import com.sedmelluq.discord.lavaplayer.container.matroska.format.MatroskaBlock;
 import com.sedmelluq.discord.lavaplayer.container.matroska.format.MatroskaCuePoint;
 import com.sedmelluq.discord.lavaplayer.container.matroska.format.MatroskaElement;
 import com.sedmelluq.discord.lavaplayer.container.matroska.format.MatroskaElementType;
 import com.sedmelluq.discord.lavaplayer.container.matroska.format.MatroskaFileReader;
 import com.sedmelluq.discord.lavaplayer.container.matroska.format.MatroskaFileTrack;
-import com.sedmelluq.discord.lavaplayer.container.matroska.format.MatroskaFixedBlock;
 import com.sedmelluq.discord.lavaplayer.tools.io.SeekableInputStream;
 
 /**
@@ -24,13 +24,12 @@ public class MatroskaStreamingFile {
   private long timecodeScale = 1000000;
   private double duration;
   private final ArrayList<MatroskaFileTrack> trackList = new ArrayList<>();
+  private MatroskaElement segmentElement = null;
   private MatroskaElement firstClusterElement = null;
 
   private long minimumTimecode = 0;
   private boolean seeking = false;
 
-  private Long segmentElementPosition = null;
-  private Long segmentEndPosition = null;
   private Long cueElementPosition = null;
   private List<MatroskaCuePoint> cuePoints = null;
 
@@ -44,8 +43,7 @@ public class MatroskaStreamingFile {
   /**
    * @return Timescale for the durations used in this file
    */
-  public long getTimecodeScale()
-  {
+  public long getTimecodeScale() {
     return timecodeScale;
   }
 
@@ -87,16 +85,14 @@ public class MatroskaStreamingFile {
       throw new RuntimeException("EBML Header not the first element in the file");
     }
 
-    MatroskaElement segmentElement = reader.readNextElement(null);
-    segmentElementPosition = segmentElement.position + segmentElement.headerSize;
-    segmentEndPosition = segmentElementPosition + segmentElement.dataSize;
+    segmentElement = reader.readNextElement(null).frozen();
 
     if (segmentElement.is(MatroskaElementType.Segment)) {
       parseSegmentElement(segmentElement);
     }
     else {
       throw new RuntimeException(String.format("Segment not the second element in the file: was %s (%d) instead",
-          segmentElement.type.name(), segmentElement.id));
+          segmentElement.getType().name(), segmentElement.getId()));
     }
   }
 
@@ -125,7 +121,7 @@ public class MatroskaStreamingFile {
       } else if (child.is(MatroskaElementType.Tracks)) {
         parseTracks(child);
       } else if (child.is(MatroskaElementType.Cluster)) {
-        firstClusterElement = child;
+        firstClusterElement = child.frozen();
         break;
       } else if (child.is(MatroskaElementType.SeekHead)) {
         parseSeekInfoForCuePosition(child);
@@ -244,9 +240,9 @@ public class MatroskaStreamingFile {
     seeking = true;
 
     if (cuePoints == null && cueElementPosition != null) {
-      reader.seek(segmentElementPosition + cueElementPosition);
+      reader.seek(segmentElement.getPosition() + cueElementPosition);
 
-      MatroskaElement cuesElement = reader.readNextElement(null);
+      MatroskaElement cuesElement = reader.readNextElement(segmentElement);
       if (!cuesElement.is(MatroskaElementType.Cues)) {
         throw new IllegalStateException("The element here should be cue.");
       }
@@ -258,13 +254,13 @@ public class MatroskaStreamingFile {
       MatroskaCuePoint cuePoint = lastCueNotAfterTimecode(timecode);
 
       if (cuePoint != null && cuePoint.trackClusterOffsets[trackId] >= 0) {
-        reader.seek(segmentElementPosition + cuePoint.trackClusterOffsets[trackId]);
+        reader.seek(segmentElement.getDataPosition() + cuePoint.trackClusterOffsets[trackId]);
         return;
       }
     }
 
     // If there were no cues available, just seek to the beginning and discard until the right timecode
-    reader.seek(firstClusterElement.position);
+    reader.seek(firstClusterElement.getPosition());
   }
 
   private MatroskaCuePoint lastCueNotAfterTimecode(long timecode) {
@@ -292,7 +288,7 @@ public class MatroskaStreamingFile {
     try {
       long position = reader.getPosition();
       MatroskaElement child = position == firstClusterElement.getDataPosition()
-          ? firstClusterElement : reader.readNextElement(null);
+          ? firstClusterElement : reader.readNextElement(segmentElement);
 
       while (child != null) {
         if (child.is(MatroskaElementType.Cluster)) {
@@ -301,11 +297,11 @@ public class MatroskaStreamingFile {
 
         reader.skip(child);
 
-        if (reader.getPosition() >= segmentEndPosition) {
+        if (segmentElement.getRemaining(reader.getPosition()) <= 0) {
           break;
         }
 
-        child = reader.readNextElement(null);
+        child = reader.readNextElement(segmentElement);
       }
     } catch (IOException e) {
       throw new RuntimeException(e);
@@ -332,40 +328,33 @@ public class MatroskaStreamingFile {
   private void parseClusterSimpleBlock(MatroskaElement simpleBlock, MatroskaTrackConsumer consumer, long clusterTimecode)
       throws InterruptedException, IOException {
 
-    MatroskaFixedBlock block = new MatroskaFixedBlock(ByteBuffer.wrap(reader.asBytes(simpleBlock)));
-    block.parseHeader();
+    MatroskaBlock block = reader.readBlockHeader(simpleBlock, consumer.getTrack().index);
 
-    processFrameInBlock(block, consumer, clusterTimecode);
+    if (block != null) {
+      processFrameInBlock(block, consumer, clusterTimecode);
+    }
   }
 
   private void parseClusterBlockGroup(MatroskaElement blockGroup, MatroskaTrackConsumer consumer, long clusterTimecode)
       throws InterruptedException, IOException {
 
     MatroskaElement child;
-    MatroskaFixedBlock block = null;
 
     while ((child = reader.readNextElement(blockGroup)) != null) {
       if (child.is(MatroskaElementType.Block)) {
-        block = new MatroskaFixedBlock(ByteBuffer.wrap(reader.asBytes(child)));
-        block.parseHeader();
+        MatroskaBlock block = reader.readBlockHeader(child, consumer.getTrack().index);
+
+        if (block != null) {
+          processFrameInBlock(block, consumer, clusterTimecode);
+        }
       }
 
       reader.skip(child);
     }
-
-    if (block == null) {
-      throw new NullPointerException("BlockGroup element with no child Block!");
-    }
-
-    processFrameInBlock(block, consumer, clusterTimecode);
   }
 
-  private void processFrameInBlock(MatroskaFixedBlock block, MatroskaTrackConsumer consumer, long clusterTimecode)
-      throws InterruptedException {
-
-    if (consumer.getTrack().index != block.getTrackNumber()) {
-      return;
-    }
+  private void processFrameInBlock(MatroskaBlock block, MatroskaTrackConsumer consumer, long clusterTimecode)
+      throws InterruptedException, IOException {
 
     long timecode = clusterTimecode + block.getTimecode();
 
@@ -378,7 +367,7 @@ public class MatroskaStreamingFile {
       }
 
       for (int i = 0; i < frameCount; i++) {
-        consumer.consume(block.getFrameBuffer(i));
+        consumer.consume(block.getNextFrameBuffer(reader, i));
       }
     }
   }

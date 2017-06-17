@@ -4,40 +4,57 @@ package com.sedmelluq.discord.lavaplayer.container.matroska.format;
  * Matroska container element.
  */
 public class MatroskaElement {
-  /**
-   * The EBML code of the element.
-   */
-  public final long id;
-  /**
-   * Element type, Unknown if not listed in the enum.
-   */
-  public final MatroskaElementType type;
-  /**
-   * Absolute position of the element in the file.
-   */
-  public final long position;
-  /**
-   * Size of the header in bytes.
-   */
-  public final int headerSize;
-  /**
-   * Size of the payload in bytes.
-   */
-  public final int dataSize;
+  protected final int level;
+  protected long id;
+  protected MatroskaElementType type;
+  protected long position;
+  protected int headerSize;
+  protected int dataSize;
+
+  protected MatroskaElement(int level) {
+    this.level = level;
+  }
 
   /**
-   * @param id The EBML code of the element.
-   * @param type Element type, Unknown if not listed in the enum.
-   * @param position Absolute position of the element in the file.
-   * @param headerSize Size of the header in bytes.
-   * @param dataSize Size of the data in bytes.
+   * @return The depth of the element in the element tree.
    */
-  public MatroskaElement(long id, MatroskaElementType type, long position, int headerSize, int dataSize) {
-    this.id = id;
-    this.type = type;
-    this.position = position;
-    this.headerSize = headerSize;
-    this.dataSize = dataSize;
+  public int getLevel() {
+    return level;
+  }
+
+  /**
+   * @return The EBML code of the element.
+   */
+  public long getId() {
+    return id;
+  }
+
+  /**
+   * @return Element type, Unknown if not listed in the enum.
+   */
+  public MatroskaElementType getType() {
+    return type;
+  }
+
+  /**
+   * @return Absolute position of the element in the file.
+   */
+  public long getPosition() {
+    return position;
+  }
+
+  /**
+   * @return Size of the header in bytes.
+   */
+  public int getHeaderSize() {
+    return headerSize;
+  }
+
+  /**
+   * @return Size of the payload in bytes.
+   */
+  public int getDataSize() {
+    return dataSize;
   }
 
   /**
@@ -69,5 +86,18 @@ public class MatroskaElement {
    */
   public long getDataPosition() {
     return position + headerSize;
+  }
+
+  /**
+   * @return A frozen version of the element safe to keep for later use.
+   */
+  public MatroskaElement frozen() {
+    MatroskaElement element = new MatroskaElement(level);
+    element.id = id;
+    element.type = type;
+    element.position = position;
+    element.headerSize = headerSize;
+    element.dataSize = dataSize;
+    return element;
   }
 }

@@ -8,8 +8,8 @@ repositories {
 }
 
 dependencies {
-  compile 'net.dv8tion:JDA:3.0.0_175'
-  compile 'com.sedmelluq:lavaplayer:1.2.36'
+  compile 'net.dv8tion:JDA:3.1.1_212'
+  compile 'com.sedmelluq:lavaplayer:1.2.42'
   runtime 'ch.qos.logback:logback-classic:1.1.8'
 }
 

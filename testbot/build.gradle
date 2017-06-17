@@ -6,8 +6,8 @@ plugins {
 dependencies {
   compile project(':main')
 
-  compile 'com.sedmelluq:jda-nas:1.0.4'
-  compile 'net.dv8tion:JDA:3.0.0_171'
+  compile 'com.sedmelluq:jda-nas:1.0.5'
+  compile 'net.dv8tion:JDA:3.1.1_212'
   runtime 'ch.qos.logback:logback-classic:1.1.8'
 }
 

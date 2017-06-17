@@ -13,6 +13,8 @@ import java.nio.charset.StandardCharsets;
 public class MatroskaFileReader {
   private final SeekableInputStream inputStream;
   private final DataInput dataInput;
+  private final MutableMatroskaElement[] levels;
+  private final MutableMatroskaBlock mutableBlock;
 
   /**
    * @param inputStream Input stream to read from.
@@ -20,11 +22,15 @@ public class MatroskaFileReader {
   public MatroskaFileReader(SeekableInputStream inputStream) {
     this.inputStream = inputStream;
     this.dataInput = new DataInputStream(inputStream);
+    this.levels = new MutableMatroskaElement[8];
+    this.mutableBlock = new MutableMatroskaBlock();
   }
 
   /**
    * @param parent The parent element to use for bounds checking, null is valid.
-   * @return The element whose header was read. Null if the parent/file has ended.
+   * @return The element whose header was read. Null if the parent/file has ended. The contents of this element are only
+   *         valid until the next element at the same level is read, use {@link MatroskaElement#frozen()} to get a
+   *         permanent instance.
    * @throws IOException On read error
    */
   public MatroskaElement readNextElement(MatroskaElement parent) throws IOException {
@@ -41,7 +47,27 @@ public class MatroskaFileReader {
     long dataSize = MatroskaEbmlReader.readEbmlInteger(dataInput, null);
     long dataPosition = inputStream.getPosition();
 
-    return new MatroskaElement(id, MatroskaElementType.find(id), position, (int) (dataPosition - position), (int) dataSize);
+    int level = parent == null ? 0 : parent.getLevel() + 1;
+    MutableMatroskaElement element = levels[level];
+
+    if (element == null) {
+      element = levels[level] = new MutableMatroskaElement(level);
+    }
+
+    element.setId(id);
+    element.setType(MatroskaElementType.find(id));
+    element.setPosition(position);
+    element.setHeaderSize((int) (dataPosition - position));
+    element.setDataSize((int) dataSize);
+    return element;
+  }
+
+  public MatroskaBlock readBlockHeader(MatroskaElement parent, int trackFilter) throws IOException {
+    if (!mutableBlock.parseHeader(this, parent, trackFilter)) {
+      return null;
+    }
+
+    return mutableBlock;
   }
 
   /**
@@ -172,5 +198,9 @@ public class MatroskaFileReader {
    */
   public void seek(long position) throws IOException {
     inputStream.seek(position);
+  }
+
+  public DataInput getDataInput() {
+    return dataInput;
   }
 }

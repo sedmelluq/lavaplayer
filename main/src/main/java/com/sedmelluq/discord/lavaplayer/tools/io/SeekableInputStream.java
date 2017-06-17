@@ -76,17 +76,19 @@ public abstract class SeekableInputStream extends InputStream {
   public void seek(long position) throws IOException {
     long current = getPosition();
 
-    if (current <= position && position - current <= maxSkipDistance) {
-      skipFully(position - current);
-    } else if (!canSeekHard()) {
-      if (current > position) {
-        seekHard(0);
-        skipFully(position);
-      } else {
+    if (current != position) {
+      if (current <= position && position - current <= maxSkipDistance) {
         skipFully(position - current);
+      } else if (!canSeekHard()) {
+        if (current > position) {
+          seekHard(0);
+          skipFully(position);
+        } else {
+          skipFully(position - current);
+        }
+      } else {
+        seekHard(position);
       }
-    } else {
-      seekHard(position);
     }
   }
 }
