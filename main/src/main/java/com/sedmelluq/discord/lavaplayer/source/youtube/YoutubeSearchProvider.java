@@ -6,7 +6,6 @@ import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterface;
 import com.sedmelluq.discord.lavaplayer.track.AudioItem;
 import com.sedmelluq.discord.lavaplayer.track.AudioReference;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
-import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo;
 import com.sedmelluq.discord.lavaplayer.track.BasicAudioPlaylist;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
@@ -81,7 +80,7 @@ public class YoutubeSearchProvider {
   }
 
   private void extractTrackFromResultEntry(List<AudioTrack> tracks, Element element) {
-    Element durationElement = element.select(".video-time").first();
+    Element durationElement = element.select("[class^=video-time]").first();
     Element contentElement = element.select(".yt-lockup-content").first();
     String videoId = element.attr("data-context-item-id");
 
