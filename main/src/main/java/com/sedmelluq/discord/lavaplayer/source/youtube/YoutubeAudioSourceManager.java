@@ -60,7 +60,7 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
 
   private static final Pattern[] validTrackPatterns = new Pattern[] {
       Pattern.compile("^" + VIDEO_ID_REGEX + "$"),
-      Pattern.compile("^" + PROTOCOL_REGEX + "(?:www\\.|)youtube.com/watch\\?v=" + VIDEO_ID_REGEX + SUFFIX_REGEX + "$"),
+      Pattern.compile("^" + PROTOCOL_REGEX + "(?:www\\.|m\\.|)youtube.com/watch\\?v=" + VIDEO_ID_REGEX + SUFFIX_REGEX + "$"),
       Pattern.compile("^" + PROTOCOL_REGEX + "(?:www\\.|)youtu.be/" + VIDEO_ID_REGEX + SUFFIX_REGEX + "$")
   };
 
