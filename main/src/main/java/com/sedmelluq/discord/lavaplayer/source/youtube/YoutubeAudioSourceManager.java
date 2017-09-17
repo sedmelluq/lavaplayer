@@ -51,21 +51,22 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
   private static final Logger log = LoggerFactory.getLogger(YoutubeAudioSourceManager.class);
   static final String CHARSET = "UTF-8";
 
+  private static final String PROTOCOL_REGEX = "(?:http://|https://|)";
   private static final String VIDEO_ID_REGEX = "(?<v>[a-zA-Z0-9_-]{11})";
   private static final String PLAYLIST_ID_REGEX = "(?<list>(PL|LL|FL|UU)[a-zA-Z0-9_-]+)";
   private static final String MIX_ID_REGEX = "(?<mix>RD[a-zA-Z0-9_-]+)";
+  private static final String PLAYLIST_ID_OR_MIX_ID_REGEX = "(?:" + PLAYLIST_ID_REGEX + "|" + MIX_ID_REGEX + ")";
+  private static final String ANY_REGEX = "\\w+=\\w+";
 
-  private static final String PARAMETER_REGEX = "(?:v=" + VIDEO_ID_REGEX + "|list=" + PLAYLIST_ID_REGEX + "|list=" + MIX_ID_REGEX + "|\\w+=\\w+)&?";
+  private static final String PARAMETER_REGEX = "(?:v=" + VIDEO_ID_REGEX + "|list=" + PLAYLIST_ID_OR_MIX_ID_REGEX + "|" + ANY_REGEX + ")&?";
   private static final String PARAMETERS_REGEX = "(?:" + PARAMETER_REGEX + ")+";
 
-  private static final String PROTOCOL_REGEX = "(?:http://|https://|)";
-  private static final String SUFFIX_REGEX = "(?:[?&].*|)";
   private static final String SEARCH_PREFIX = "ytsearch:";
 
   private static final Pattern[] validTrackPatterns = new Pattern[] {
       Pattern.compile("^" + VIDEO_ID_REGEX + "$"),
       Pattern.compile("^" + PROTOCOL_REGEX + "(?:www\\.|m\\.|)youtube.com/watch\\?" + PARAMETERS_REGEX + "$"),
-      Pattern.compile("^" + PROTOCOL_REGEX + "(?:www\\.|)youtu.be/" + VIDEO_ID_REGEX + SUFFIX_REGEX + "$")
+      Pattern.compile("^" + PROTOCOL_REGEX + "(?:www\\.|)youtu.be/" + VIDEO_ID_REGEX + "(?:\\?(?:list=" + PLAYLIST_ID_OR_MIX_ID_REGEX + "|" + ANY_REGEX + ")&?)*$")
   };
 
   private static final Pattern[] validPlaylistPatterns = new Pattern[] {
