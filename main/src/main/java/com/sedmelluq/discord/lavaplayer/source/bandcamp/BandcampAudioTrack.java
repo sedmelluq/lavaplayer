@@ -61,7 +61,7 @@ public class BandcampAudioTrack extends DelegatedAudioTrack {
       String responseText = IOUtils.toString(response.getEntity().getContent(), StandardCharsets.UTF_8);
       JsonBrowser trackInfo = sourceManager.readTrackListInformation(responseText);
 
-      return "https:" + trackInfo.get("trackinfo").index(0).get("file").get("mp3-128").text();
+      return trackInfo.get("trackinfo").index(0).get("file").get("mp3-128").text();
     }
   }
 
