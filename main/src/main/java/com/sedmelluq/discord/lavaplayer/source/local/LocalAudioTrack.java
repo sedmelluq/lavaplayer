@@ -31,6 +31,13 @@ public class LocalAudioTrack extends DelegatedAudioTrack {
     this.sourceManager = sourceManager;
   }
 
+  /**
+   * @return The media probe which handles creating a container-specific delegated track for this track.
+   */
+  public MediaContainerProbe getProbe() {
+    return probe;
+  }
+
   @Override
   public void process(LocalAudioTrackExecutor localExecutor) throws Exception {
     try (LocalSeekableInputStream inputStream = new LocalSeekableInputStream(file)) {

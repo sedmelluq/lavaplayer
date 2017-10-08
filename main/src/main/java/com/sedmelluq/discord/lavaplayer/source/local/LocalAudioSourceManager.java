@@ -1,9 +1,6 @@
 package com.sedmelluq.discord.lavaplayer.source.local;
 
-import com.sedmelluq.discord.lavaplayer.container.MediaContainerDetection;
-import com.sedmelluq.discord.lavaplayer.container.MediaContainerDetectionResult;
-import com.sedmelluq.discord.lavaplayer.container.MediaContainerHints;
-import com.sedmelluq.discord.lavaplayer.container.MediaContainerProbe;
+import com.sedmelluq.discord.lavaplayer.container.*;
 import com.sedmelluq.discord.lavaplayer.player.DefaultAudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.source.ProbingAudioSourceManager;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
@@ -54,17 +51,25 @@ public class LocalAudioSourceManager extends ProbingAudioSourceManager {
 
   @Override
   public boolean isTrackEncodable(AudioTrack track) {
-    return false;
+    return true;
   }
 
   @Override
-  public void encodeTrack(AudioTrack track, DataOutput output) {
-    throw new UnsupportedOperationException();
+  public void encodeTrack(AudioTrack track, DataOutput output) throws IOException {
+    output.writeUTF(((LocalAudioTrack) track).getProbe().getName());
   }
 
   @Override
-  public AudioTrack decodeTrack(AudioTrackInfo trackInfo, DataInput input) {
-    throw new UnsupportedOperationException();
+  public AudioTrack decodeTrack(AudioTrackInfo trackInfo, DataInput input) throws IOException {
+    String probeName = input.readUTF();
+
+    for (MediaContainer container : MediaContainer.class.getEnumConstants()) {
+      if (container.probe.getName().equals(probeName)) {
+        return new LocalAudioTrack(trackInfo, container.probe, this);
+      }
+    }
+
+    return null;
   }
 
   @Override
