@@ -51,27 +51,28 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
   private static final Logger log = LoggerFactory.getLogger(YoutubeAudioSourceManager.class);
   static final String CHARSET = "UTF-8";
 
-  private static final String VIDEO_ID_REGEX = "([a-zA-Z0-9_-]{11})";
-  private static final String PLAYLIST_REGEX = "((PL|LL|FL|UU)[a-zA-Z0-9_-]+)";
-  private static final String MIX_REGEX = "(RD[a-zA-Z0-9_-]+)";
   private static final String PROTOCOL_REGEX = "(?:http://|https://|)";
-  private static final String SUFFIX_REGEX = "(?:\\?.*|&.*|)";
+  private static final String VIDEO_ID_REGEX = "(?<v>[a-zA-Z0-9_-]{11})";
+  private static final String PLAYLIST_ID_REGEX = "(?<list>(PL|LL|FL|UU)[a-zA-Z0-9_-]+)";
+  private static final String MIX_ID_REGEX = "(?<mix>RD[a-zA-Z0-9_-]+)";
+  private static final String PLAYLIST_ID_OR_MIX_ID_REGEX = "(?:" + PLAYLIST_ID_REGEX + "|" + MIX_ID_REGEX + ")";
+  private static final String ANY_REGEX = "\\w+=\\w+";
+
+  private static final String PARAMETER_REGEX = "(?:v=" + VIDEO_ID_REGEX + "|list=" + PLAYLIST_ID_OR_MIX_ID_REGEX + "|" + ANY_REGEX + ")&?";
+  private static final String PARAMETERS_REGEX = "(?:" + PARAMETER_REGEX + ")+";
+
   private static final String SEARCH_PREFIX = "ytsearch:";
 
   private static final Pattern[] validTrackPatterns = new Pattern[] {
       Pattern.compile("^" + VIDEO_ID_REGEX + "$"),
-      Pattern.compile("^" + PROTOCOL_REGEX + "(?:www\\.|)youtube.com/watch\\?v=" + VIDEO_ID_REGEX + SUFFIX_REGEX + "$"),
-      Pattern.compile("^" + PROTOCOL_REGEX + "(?:www\\.|)youtu.be/" + VIDEO_ID_REGEX + SUFFIX_REGEX + "$")
+      Pattern.compile("^" + PROTOCOL_REGEX + "(?:www\\.|m\\.|)youtube.com/watch\\?" + PARAMETERS_REGEX + "$"),
+      Pattern.compile("^" + PROTOCOL_REGEX + "(?:www\\.|)youtu.be/" + VIDEO_ID_REGEX + "(?:\\?(?:list=" + PLAYLIST_ID_OR_MIX_ID_REGEX + "|" + ANY_REGEX + ")&?)*$")
   };
 
   private static final Pattern[] validPlaylistPatterns = new Pattern[] {
-      Pattern.compile("^" + PLAYLIST_REGEX + "$"),
-      Pattern.compile("^" + PROTOCOL_REGEX + "(?:www\\.|)youtube.com/playlist\\?list=" + PLAYLIST_REGEX + SUFFIX_REGEX + "$")
+      Pattern.compile("^" + PLAYLIST_ID_REGEX + "$"),
+      Pattern.compile("^" + PROTOCOL_REGEX + "(?:www\\.|m\\.|)youtube.com/playlist\\?" + PARAMETERS_REGEX + "$")
   };
-
-  private static final String LIST_PARAMETER = "&list=";
-  private static final Pattern playlistEmbeddedPattern = Pattern.compile(LIST_PARAMETER + PLAYLIST_REGEX);
-  private static final Pattern mixEmbeddedPattern = Pattern.compile(LIST_PARAMETER + MIX_REGEX);
 
   private final YoutubeSignatureCipherManager signatureCipherManager;
   private final HttpInterfaceManager httpInterfaceManager;
@@ -228,15 +229,14 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
       Matcher matcher = pattern.matcher(identifier);
 
       if (matcher.matches()) {
-        Matcher playlistMatcher = playlistEmbeddedPattern.matcher(identifier);
-        Matcher mixMatcher = mixEmbeddedPattern.matcher(identifier);
+        String videoId = matcher.group("v");
 
-        if (playlistMatcher.find()) {
-          return loadLinkedPlaylistWithId(playlistMatcher.group(1), matcher.group(1));
-        } else if (mixMatcher.find()) {
-          return mixProvider.loadMixWithId(mixMatcher.group(1), matcher.group(1));
+        if (matcher.group("list") != null) {
+          return loadLinkedPlaylistWithId(matcher.group("list"), videoId);
+        } else if (matcher.group("mix") != null) {
+          return mixProvider.loadMixWithId(matcher.group("mix"), videoId);
         } else {
-          return loadTrackWithVideoId(matcher.group(1), false);
+          return loadTrackWithVideoId(videoId, false);
         }
       }
     }
@@ -348,7 +348,7 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
       Matcher matcher = pattern.matcher(identifier);
 
       if (matcher.matches()) {
-        return loadPlaylistWithId(matcher.group(1), null);
+        return loadPlaylistWithId(matcher.group("list"), null);
       }
     }
 
