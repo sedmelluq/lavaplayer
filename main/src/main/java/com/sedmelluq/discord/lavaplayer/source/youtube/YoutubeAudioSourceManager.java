@@ -56,7 +56,9 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
   private static final String PLAYLIST_ID_REGEX = "(?<list>(PL|LL|FL|UU)[a-zA-Z0-9_-]+)";
   private static final String MIX_ID_REGEX = "(?<mix>RD[a-zA-Z0-9_-]+)";
   private static final String PLAYLIST_ID_OR_MIX_ID_REGEX = "(?:" + PLAYLIST_ID_REGEX + "|" + MIX_ID_REGEX + ")";
-  private static final String ANY_REGEX = "\\w+=\\w+";
+
+  // As mentioned in RFC 3986 (BNF unreserved) https://tools.ietf.org/html/rfc3986#page-50
+  private static final String ANY_REGEX = "[\\w~.-]+=[\\w~.-]+";
 
   private static final String PARAMETER_REGEX = "(?:v=" + VIDEO_ID_REGEX + "|list=" + PLAYLIST_ID_OR_MIX_ID_REGEX + "|" + ANY_REGEX + ")&?";
   private static final String PARAMETERS_REGEX = "(?:" + PARAMETER_REGEX + ")+";
