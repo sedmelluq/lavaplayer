@@ -233,13 +233,17 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
       if (matcher.matches()) {
         String videoId = matcher.group("v");
 
-        if (matcher.group("list") != null) {
-          return loadLinkedPlaylistWithId(matcher.group("list"), videoId);
-        } else if (matcher.group("mix") != null) {
-          return mixProvider.loadMixWithId(matcher.group("mix"), videoId);
-        } else {
-          return loadTrackWithVideoId(videoId, false);
+        try {
+          if (matcher.group("list") != null) {
+            return loadLinkedPlaylistWithId(matcher.group("list"), videoId);
+          } else if (matcher.group("mix") != null) {
+            return mixProvider.loadMixWithId(matcher.group("mix"), videoId);
+          }
+        } catch (IllegalArgumentException groupNotPresent) {
+          // this is fine, although I'd rather have a querying alternative
         }
+
+        return loadTrackWithVideoId(videoId, false);
       }
     }
 
