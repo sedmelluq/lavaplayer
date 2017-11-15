@@ -7,6 +7,7 @@ import org.apache.http.client.methods.HttpGet;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -20,6 +21,11 @@ import static com.sedmelluq.discord.lavaplayer.tools.io.HttpClientTools.fetchRes
  * {@link M3uStreamSegmentUrlProvider#getNextSegmentStream}.
  */
 public abstract class M3uStreamSegmentUrlProvider {
+
+  protected static String createSegmentUrl(String playlistUrl, String segmentName) {
+    return URI.create(playlistUrl).resolve(segmentName).toString();
+  }
+
   /**
    * If applicable, extracts the quality information from the M3U directive which describes one stream in the root M3U.
    *
