@@ -30,7 +30,7 @@ import static com.sedmelluq.discord.lavaplayer.tools.FriendlyException.Severity.
  * Audio source manager which detects Twitch tracks by URL.
  */
 public class TwitchStreamAudioSourceManager implements AudioSourceManager, HttpConfigurable {
-  private static final String STREAM_NAME_REGEX = "^https://(?:www\\.)?twitch.tv/([^/]+)$";
+  private static final String STREAM_NAME_REGEX = "^https://(?:www\\.|go\\.)?twitch.tv/([^/]+)$";
   private static final Pattern streamNameRegex = Pattern.compile(STREAM_NAME_REGEX);
 
   public static final String CLIENT_ID = "jzkbprff40iqj646a697cyrvl0zt2m6";
