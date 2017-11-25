@@ -62,10 +62,6 @@ public class BeamSegmentUrlProvider extends M3uStreamSegmentUrlProvider {
     }
   }
 
-  private static String createSegmentUrl(String playlistUrl, String segmentName) {
-    return playlistUrl.substring(0, playlistUrl.lastIndexOf('/') + 1) + segmentName;
-  }
-
   private boolean obtainSegmentPlaylistUrl(HttpInterface httpInterface) throws IOException {
     if (streamSegmentPlaylistUrl != null) {
       return true;
