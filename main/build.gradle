@@ -6,20 +6,20 @@ plugins {
 }
 
 ext.moduleName = 'lavaplayer'
-version = '1.2.45'
+version = '1.2.46'
 
 dependencies {
   compile project(':common')
 
   compile "org.slf4j:slf4j-api:$slf4jVersion"
 
-  compile 'org.apache.httpcomponents:httpclient:4.5.2'
-  compile 'commons-io:commons-io:2.5'
+  compile 'org.apache.httpcomponents:httpclient:4.5.5'
+  compile 'commons-io:commons-io:2.6'
 
-  compile 'com.fasterxml.jackson.core:jackson-core:2.8.5'
-  compile 'com.fasterxml.jackson.core:jackson-databind:2.8.5'
+  compile 'com.fasterxml.jackson.core:jackson-core:2.9.4'
+  compile 'com.fasterxml.jackson.core:jackson-databind:2.9.4'
 
-  compile 'org.jsoup:jsoup:1.10.1'
+  compile 'org.jsoup:jsoup:1.11.2'
 
   compile 'net.iharder:base64:2.3.9'
 }

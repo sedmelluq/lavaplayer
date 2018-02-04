@@ -8,9 +8,9 @@ repositories {
 }
 
 dependencies {
-  compile 'net.dv8tion:JDA:3.1.1_212'
-  compile 'com.sedmelluq:lavaplayer:1.2.42'
-  runtime 'ch.qos.logback:logback-classic:1.1.8'
+  compile 'net.dv8tion:JDA:3.5.0_334'
+  compile 'com.sedmelluq:lavaplayer:1.2.46'
+  runtime 'ch.qos.logback:logback-classic:1.2.3'
 }
 
 mainClassName = 'com.sedmelluq.discord.lavaplayer.demo.jda.Main'

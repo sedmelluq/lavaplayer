@@ -11,9 +11,9 @@ repositories {
 }
 
 dependencies {
-  compile 'com.github.austinv11:Discord4j:2.7.0'
-  compile 'com.sedmelluq:lavaplayer:1.2.42'
-  runtime 'ch.qos.logback:logback-classic:1.1.8'
+  compile 'com.github.austinv11:Discord4j:2.9.3'
+  compile 'com.sedmelluq:lavaplayer:1.2.46'
+  runtime 'ch.qos.logback:logback-classic:1.2.3'
 }
 
 mainClassName = 'com.sedmelluq.discord.lavaplayer.demo.d4j.Main'

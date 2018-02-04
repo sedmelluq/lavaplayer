@@ -56,7 +56,7 @@ public class Main extends ListenerAdapter {
 
   @Override
   public void onMessageReceived(MessageReceivedEvent event) {
-    String[] command = event.getMessage().getContent().split(" ", 2);
+    String[] command = event.getMessage().getContentRaw().split(" ", 2);
     Guild guild = event.getGuild();
 
     if (guild != null) {

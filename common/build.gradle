@@ -6,11 +6,11 @@ plugins {
 }
 
 ext.moduleName = 'lavaplayer-common'
-version = '1.0.5'
+version = '1.0.6'
 
 dependencies {
   compile "org.slf4j:slf4j-api:$slf4jVersion"
-  compile 'commons-io:commons-io:2.5'
+  compile 'commons-io:commons-io:2.6'
 }
 
 compileJava.dependsOn(':natives:checkNatives')
