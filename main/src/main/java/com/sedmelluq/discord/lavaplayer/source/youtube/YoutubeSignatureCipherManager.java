@@ -40,7 +40,7 @@ public class YoutubeSignatureCipherManager {
   private static final String SLICE_PART = ":function\\(a,b\\)\\{return a\\.slice\\(b\\)\\}";
   private static final String SPLICE_PART = ":function\\(a,b\\)\\{a\\.splice\\(0,b\\)\\}";
   private static final String SWAP_PART = ":function\\(a,b\\)\\{" +
-      "var c=a\\[0\\];a\\[0\\]=a\\[b%a\\.length\\];a\\[b\\]=c(?:;return a)?\\}";
+      "var c=a\\[0\\];a\\[0\\]=a\\[b%a\\.length\\];a\\[b(?:%a.length|)\\]=c(?:;return a)?\\}";
 
   private static final Pattern functionPattern = Pattern.compile("" +
       "function(?: " + VARIABLE_PART + ")?\\(a\\)\\{" +
