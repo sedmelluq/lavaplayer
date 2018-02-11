@@ -39,7 +39,7 @@ public class YoutubeMixProvider {
   private static final int MIX_QUEUE_CAPACITY = 5000;
 
   private final YoutubeAudioSourceManager sourceManager;
-  private final ExecutorService mixLoadingExecutor;
+  private final ThreadPoolExecutor mixLoadingExecutor;
 
   /**
    * @param sourceManager YouTube source manager used for created tracks.
@@ -48,6 +48,13 @@ public class YoutubeMixProvider {
     this.sourceManager = sourceManager;
     mixLoadingExecutor = new ThreadPoolExecutor(0, 10, 5, TimeUnit.SECONDS, new LinkedBlockingQueue<>(MIX_QUEUE_CAPACITY),
         new DaemonThreadFactory("yt-mix"));
+  }
+
+  /**
+   * @param maximumPoolSize Maximum number of threads in mix loader thread pool.
+   */
+  public void setLoaderMaximumPoolSize(int maximumPoolSize) {
+    mixLoadingExecutor.setMaximumPoolSize(maximumPoolSize);
   }
 
   /**

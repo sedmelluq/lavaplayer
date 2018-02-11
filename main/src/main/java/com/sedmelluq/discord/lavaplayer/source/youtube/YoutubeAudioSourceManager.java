@@ -110,6 +110,13 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
     this.playlistPageCount = playlistPageCount;
   }
 
+  /**
+   * @param maximumPoolSize Maximum number of threads in mix loader thread pool.
+   */
+  public void setMixLoaderMaximumPoolSize(int maximumPoolSize) {
+    mixProvider.setLoaderMaximumPoolSize(maximumPoolSize);
+  }
+
   @Override
   public String getSourceName() {
     return "youtube";

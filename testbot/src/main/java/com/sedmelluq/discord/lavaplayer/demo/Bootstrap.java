@@ -11,7 +11,7 @@ public class Bootstrap {
     new JDABuilder(AccountType.BOT)
         .setToken(System.getProperty("botToken"))
         .setAudioSendFactory(new NativeAudioSendFactory())
-        .addListener(new BotApplicationManager())
+        .addEventListener(new BotApplicationManager())
         .buildAsync();
   }
 }
