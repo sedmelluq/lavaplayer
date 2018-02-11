@@ -22,6 +22,7 @@ import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.utils.URIBuilder;
+import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.util.EntityUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,6 +43,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.StringJoiner;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
@@ -173,6 +175,11 @@ public class SoundCloudAudioSourceManager implements AudioSourceManager, HttpCon
   @Override
   public void configureRequests(Function<RequestConfig, RequestConfig> configurator) {
     httpInterfaceManager.configureRequests(configurator);
+  }
+
+  @Override
+  public void configureBuilder(Consumer<HttpClientBuilder> configurator) {
+    httpInterfaceManager.configureBuilder(configurator);
   }
 
   public void updateClientId() {

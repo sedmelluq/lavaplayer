@@ -21,6 +21,7 @@ import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.utils.URLEncodedUtils;
+import org.apache.http.impl.client.HttpClientBuilder;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -35,6 +36,7 @@ import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -172,6 +174,11 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
   @Override
   public void configureRequests(Function<RequestConfig, RequestConfig> configurator) {
     httpInterfaceManager.configureRequests(configurator);
+  }
+
+  @Override
+  public void configureBuilder(Consumer<HttpClientBuilder> configurator) {
+    httpInterfaceManager.configureBuilder(configurator);
   }
 
   private AudioItem loadItemOnce(AudioReference reference) {

@@ -7,6 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 /**
@@ -56,6 +57,20 @@ public abstract class AbstractHttpInterfaceManager implements HttpInterfaceManag
       closed = false;
       requestConfig = configurator.apply(requestConfig);
       clientBuilder.setDefaultRequestConfig(requestConfig);
+    }
+  }
+
+  @Override
+  public void configureBuilder(Consumer<HttpClientBuilder> configurator) {
+    synchronized (lock) {
+      try {
+        close();
+      } catch (Exception e) {
+        log.warn("Failed to close HTTP client.", e);
+      }
+
+      closed = false;
+      configurator.accept(clientBuilder);
     }
   }
 

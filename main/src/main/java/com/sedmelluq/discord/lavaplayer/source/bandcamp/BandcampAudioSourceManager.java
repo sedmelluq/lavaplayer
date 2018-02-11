@@ -19,6 +19,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.HttpClientBuilder;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -26,6 +27,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 
@@ -193,6 +195,11 @@ public class BandcampAudioSourceManager implements AudioSourceManager, HttpConfi
   @Override
   public void configureRequests(Function<RequestConfig, RequestConfig> configurator) {
     httpInterfaceManager.configureRequests(configurator);
+  }
+
+  @Override
+  public void configureBuilder(Consumer<HttpClientBuilder> configurator) {
+    httpInterfaceManager.configureBuilder(configurator);
   }
 
   private interface AudioItemExtractor {

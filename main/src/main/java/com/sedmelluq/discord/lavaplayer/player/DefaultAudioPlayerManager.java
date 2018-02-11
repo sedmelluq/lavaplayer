@@ -27,6 +27,7 @@ import com.sedmelluq.discord.lavaplayer.track.TrackStateListener;
 import com.sedmelluq.discord.lavaplayer.track.playback.AudioTrackExecutor;
 import com.sedmelluq.discord.lavaplayer.track.playback.LocalAudioTrackExecutor;
 import org.apache.http.client.config.RequestConfig;
+import org.apache.http.impl.client.HttpClientBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -53,6 +54,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 import static com.sedmelluq.discord.lavaplayer.tools.FriendlyException.Severity.FAULT;
@@ -76,6 +78,7 @@ public class DefaultAudioPlayerManager implements AudioPlayerManager {
 
   private final List<AudioSourceManager> sourceManagers;
   private volatile Function<RequestConfig, RequestConfig> httpConfigurator;
+  private volatile Consumer<HttpClientBuilder> httpBuilderConfigurator;
 
   // Executors
   private final ExecutorService trackPlaybackExecutorService;
@@ -167,7 +170,7 @@ public class DefaultAudioPlayerManager implements AudioPlayerManager {
     if (sourceManager instanceof HttpConfigurable) {
       Function<RequestConfig, RequestConfig> configurator = httpConfigurator;
 
-      if (httpConfigurator != null) {
+      if (configurator != null) {
         ((HttpConfigurable) sourceManager).configureRequests(configurator);
       }
     }
@@ -475,6 +478,19 @@ public class DefaultAudioPlayerManager implements AudioPlayerManager {
       for (AudioSourceManager sourceManager : sourceManagers) {
         if (sourceManager instanceof HttpConfigurable) {
           ((HttpConfigurable) sourceManager).configureRequests(configurator);
+        }
+      }
+    }
+  }
+
+  @Override
+  public void setHttpBuilderConfigurator(Consumer<HttpClientBuilder> configurator) {
+    this.httpBuilderConfigurator = configurator;
+
+    if (configurator != null) {
+      for (AudioSourceManager sourceManager : sourceManagers) {
+        if (sourceManager instanceof HttpConfigurable) {
+          ((HttpConfigurable) sourceManager).configureBuilder(configurator);
         }
       }
     }

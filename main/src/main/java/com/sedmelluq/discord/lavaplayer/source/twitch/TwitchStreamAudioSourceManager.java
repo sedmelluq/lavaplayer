@@ -15,11 +15,13 @@ import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpUriRequest;
+import org.apache.http.impl.client.HttpClientBuilder;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.net.URI;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -130,6 +132,11 @@ public class TwitchStreamAudioSourceManager implements AudioSourceManager, HttpC
   @Override
   public void configureRequests(Function<RequestConfig, RequestConfig> configurator) {
     httpInterfaceManager.configureRequests(configurator);
+  }
+
+  @Override
+  public void configureBuilder(Consumer<HttpClientBuilder> configurator) {
+    httpInterfaceManager.configureBuilder(configurator);
   }
 
   private static HttpUriRequest addClientHeaders(HttpUriRequest request) {

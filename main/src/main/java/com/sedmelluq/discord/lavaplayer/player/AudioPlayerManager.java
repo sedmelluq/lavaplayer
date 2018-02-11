@@ -8,9 +8,11 @@ import com.sedmelluq.discord.lavaplayer.tools.io.MessageOutput;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.DecodedTrackHolder;
 import org.apache.http.client.config.RequestConfig;
+import org.apache.http.impl.client.HttpClientBuilder;
 
 import java.io.IOException;
 import java.util.concurrent.Future;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 /**
@@ -173,4 +175,12 @@ public interface AudioPlayerManager {
    *                     used.
    */
   void setHttpRequestConfigurator(Function<RequestConfig, RequestConfig> configurator);
+
+  /**
+   * @param configurator Function used to reconfigure the HTTP builder of all sources which perform HTTP requests.
+   *                     Applied to all current and future registered sources. Setting this while sources are already in
+   *                     use will close all active connections, so this should be called before the sources have been
+   *                     used.
+   */
+  void setHttpBuilderConfigurator(Consumer<HttpClientBuilder> configurator);
 }
