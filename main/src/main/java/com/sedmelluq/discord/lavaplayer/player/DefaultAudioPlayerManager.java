@@ -173,6 +173,12 @@ public class DefaultAudioPlayerManager implements AudioPlayerManager {
       if (configurator != null) {
         ((HttpConfigurable) sourceManager).configureRequests(configurator);
       }
+
+      Consumer<HttpClientBuilder> builderConfigurator = httpBuilderConfigurator;
+
+      if (builderConfigurator != null) {
+        ((HttpConfigurable) sourceManager).configureBuilder(builderConfigurator);
+      }
     }
   }
 
