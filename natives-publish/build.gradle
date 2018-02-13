@@ -1,0 +1,29 @@
+plugins {
+  id 'java'
+  id 'com.jfrog.bintray' version '1.7.3'
+}
+
+version = '1.2.50'
+ext.moduleName = 'lavaplayer-natives'
+
+compileJava.dependsOn(':natives:checkNatives')
+
+task sourceJar(type: Jar) {
+  from sourceSets.main.allJava
+}
+
+publishing {
+  publications {
+    mavenJava(MavenPublication) {
+      groupId rootProject.group
+      artifactId moduleName
+      from components.java
+
+      artifact sourceJar {
+        classifier 'sources'
+      }
+    }
+  }
+}
+
+apply from: "${rootDir}/gradle/bintray.gradle"

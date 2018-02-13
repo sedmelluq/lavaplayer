@@ -235,7 +235,7 @@ task checkNatives() { }
 def buildTaskConfig = [
     buildBase: buildDir,
     projectBase: projectDir,
-    deployBase: project(':main').projectDir,
+    deployBase: project(':natives-publish').projectDir,
     setupDependency: tasks.load,
     setupDoFirst: { config, bits -> prepareBuilds(bits, false) },
     compileTask: tasks.compileNatives,

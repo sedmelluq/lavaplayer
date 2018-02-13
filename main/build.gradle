@@ -6,10 +6,11 @@ plugins {
 }
 
 ext.moduleName = 'lavaplayer'
-version = '1.2.49'
+version = '1.2.50'
 
 dependencies {
-  compile project(':common')
+  compile 'com.sedmelluq:lavaplayer-common:1.0.6'
+  compile 'com.sedmelluq:lavaplayer-natives:1.2.50'
 
   compile "org.slf4j:slf4j-api:$slf4jVersion"
 
@@ -23,8 +24,6 @@ dependencies {
 
   compile 'net.iharder:base64:2.3.9'
 }
-
-compileJava.dependsOn(':natives:checkNatives')
 
 task updateVersion {
   new File("$projectDir/src/main/resources/com/sedmelluq/discord/lavaplayer/tools/version.txt").with {
