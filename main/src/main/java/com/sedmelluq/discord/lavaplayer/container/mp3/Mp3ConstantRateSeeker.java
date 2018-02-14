@@ -5,7 +5,7 @@ import com.sedmelluq.discord.lavaplayer.tools.io.SeekableInputStream;
 
 import java.io.IOException;
 
-import static com.sedmelluq.discord.lavaplayer.natives.mp3.Mp3Decoder.SAMPLES_PER_FRAME;
+import static com.sedmelluq.discord.lavaplayer.natives.mp3.Mp3Decoder.MPEG1_SAMPLES_PER_FRAME;
 
 /**
  * MP3 seeking support for constant bitrate files or in cases where the variable bitrate format used by the file is not
@@ -39,7 +39,7 @@ public class Mp3ConstantRateSeeker implements Mp3Seeker {
 
   @Override
   public long getDuration() {
-    return getMaximumFrameCount() * SAMPLES_PER_FRAME * 1000 / sampleRate;
+    return getMaximumFrameCount() * MPEG1_SAMPLES_PER_FRAME * 1000 / sampleRate;
   }
 
   @Override
@@ -52,7 +52,7 @@ public class Mp3ConstantRateSeeker implements Mp3Seeker {
     long maximumFrameCount = getMaximumFrameCount();
 
     long sampleIndex = timecode * sampleRate / 1000;
-    long frameIndex = Math.min(sampleIndex / SAMPLES_PER_FRAME, maximumFrameCount);
+    long frameIndex = Math.min(sampleIndex / MPEG1_SAMPLES_PER_FRAME, maximumFrameCount);
 
     long seekPosition = (long) (frameIndex * averageFrameSize) - 8;
     inputStream.seek(firstFramePosition + seekPosition);

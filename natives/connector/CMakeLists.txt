@@ -20,11 +20,11 @@ endif()
 include_directories("$ENV{JAVA_HOME}/include/")
 
 include_directories("${samplerate_SOURCE_DIR}/src")
-include_directories("../opus/opus-1.1.3/include")
+include_directories("../opus/opus-1.2.1/include")
 include_directories("../fdk-aac/libAACdec/include")
 include_directories("../fdk-aac/libSYS/include")
 include_directories("../vorbis/libvorbis-1.3.5/include")
-include_directories("../vorbis/libogg-1.3.2/include")
+include_directories("../vorbis/libogg-1.3.3/include")
 link_directories("../libs/${BITZ}")
 
 if (DEFINED ENV{DIST_DIR})
@@ -34,7 +34,3 @@ endif()
 
 add_library(connector SHARED samplerate.c fdk-aac.c vorbis.c opus.c mpg123.c ${SYSNAME}/statistics.c)
 target_link_libraries(connector samplerate fdk-aac vorbis opus mpg123)
-
-if ("${CMAKE_C_COMPILER_ID}" STREQUAL "MSVC")
-	target_link_libraries(connector silk_common silk_fixed silk_float celt)
-endif()

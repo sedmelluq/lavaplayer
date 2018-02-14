@@ -24,4 +24,6 @@ class AacDecoderLibrary {
   native int fill(long instance, ByteBuffer directBuffer, int offset, int length);
 
   native int decode(long instance, ShortBuffer directBuffer, int length, boolean flush);
+
+  native long getStreamInfo(long instance);
 }

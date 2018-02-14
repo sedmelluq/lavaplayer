@@ -126,11 +126,10 @@ public class AdtsStreamReader {
   }
 
   private static AdtsPacketHeader readHeader(BitBufferReader reader) {
-    if (reader.asLong(15) != 0x7FF8) {
+    if ((reader.asLong(15) & 0x7FFB) != 0x7FF8) {
       // Possible reasons:
       // 1) Syncword is not present, cannot be an ADTS header
-      // 2) MPEG-2 which is not supported
-      // 3) Layer value is not 0, which must always be 0 for ADTS
+      // 2) Layer value is not 0, which must always be 0 for ADTS
       return null;
     }
 

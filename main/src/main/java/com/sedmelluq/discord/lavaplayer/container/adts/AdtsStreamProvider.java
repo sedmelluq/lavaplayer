@@ -73,6 +73,18 @@ public class AdtsStreamProvider {
 
   private void decodeAndSend(ByteBuffer inputBuffer) throws InterruptedException {
     decoder.fill(inputBuffer);
+
+    if (downstream == null) {
+      AacDecoder.StreamInfo streamInfo = decoder.resolveStreamInfo();
+      if (streamInfo == null) {
+        return;
+      }
+
+      downstream = FilterChainBuilder.forShortPcm(context, streamInfo.channels, streamInfo.sampleRate, true);
+      outputBuffer = ByteBuffer.allocateDirect(2 * streamInfo.frameSize * streamInfo.channels)
+          .order(ByteOrder.nativeOrder()).asShortBuffer();
+    }
+
     outputBuffer.clear();
 
     while (decoder.decode(outputBuffer, false)) {
@@ -84,15 +96,13 @@ public class AdtsStreamProvider {
   private void configureProcessing(AdtsPacketHeader header) {
     if (!header.canUseSameDecoder(previousHeader)) {
       decoder.configure(header.profile, header.sampleRate, header.channels);
-    }
 
-    if (!header.hasSameDecodedFormat(previousHeader)) {
       if (downstream != null) {
         downstream.close();
       }
 
-      downstream = FilterChainBuilder.forShortPcm(context, header.channels, header.sampleRate, true);
-      outputBuffer = ByteBuffer.allocateDirect(2048 * header.channels).order(ByteOrder.nativeOrder()).asShortBuffer();
+      downstream = null;
+      outputBuffer = null;
     }
 
     previousHeader = header;

@@ -9,8 +9,12 @@ import java.nio.ShortBuffer;
  * A wrapper around the native methods of OpusDecoderLibrary.
  */
 public class Mp3Decoder extends NativeResourceHolder {
-  public static final long SAMPLES_PER_FRAME = 1152;
+  public static final long MPEG1_SAMPLES_PER_FRAME = 1152;
+  public static final long MPEG2_SAMPLES_PER_FRAME = 576;
   public static final int HEADER_SIZE = 4;
+
+  private static final int ERROR_NEED_MORE = -10;
+  private static final int ERROR_NEW_FORMAT = -11;
 
   private final Mp3DecoderLibrary library;
   private final long instance;
@@ -42,7 +46,11 @@ public class Mp3Decoder extends NativeResourceHolder {
 
     int result = library.decode(instance, directInput, directInput.remaining(), directOutput, directOutput.remaining() * 2);
 
-    if (result == -10 || result == -11) {
+    while (result == ERROR_NEW_FORMAT) {
+      result = library.decode(instance, directInput, 0, directOutput, directOutput.remaining() * 2);
+    }
+
+    if (result == ERROR_NEED_MORE) {
       result = 0;
     } else if (result < 0) {
       throw new IllegalStateException("Decoding failed with error " + result);
@@ -105,8 +113,8 @@ public class Mp3Decoder extends NativeResourceHolder {
     }
   }
 
-  private static int calculateFrameSize(int bitRate, int sampleRate, boolean hasPadding) {
-    return 144 * bitRate / sampleRate + (hasPadding ? 1 : 0);
+  private static int calculateFrameSize(boolean isVersionOne, int bitRate, int sampleRate, boolean hasPadding) {
+    return (isVersionOne ? 144 : 72) * bitRate / sampleRate + (hasPadding ? 1 : 0);
   }
 
   /**
@@ -175,7 +183,7 @@ public class Mp3Decoder extends NativeResourceHolder {
     int sampleRate = getFrameSampleRate(buffer, offset);
     boolean hasPadding = (third & 0x02) != 0;
 
-    return calculateFrameSize(bitRate, sampleRate, hasPadding);
+    return calculateFrameSize(isMpegVersionOne(buffer, offset), bitRate, sampleRate, hasPadding);
   }
 
   /**
@@ -188,7 +196,16 @@ public class Mp3Decoder extends NativeResourceHolder {
     int bitRate = getFrameBitRate(buffer, offset);
     int sampleRate = getFrameSampleRate(buffer, offset);
 
-    return 144.0 * bitRate / sampleRate;
+    return (isMpegVersionOne(buffer, offset) ? 144.0 : 72.0) * bitRate / sampleRate;
+  }
+
+  /**
+   * @param buffer Buffer which contains the frame header
+   * @param offset Offset to the frame header
+   * @return Number of samples per frame.
+   */
+  public static long getSamplesPerFrame(byte[] buffer, int offset) {
+    return isMpegVersionOne(buffer, offset) ? MPEG1_SAMPLES_PER_FRAME : MPEG2_SAMPLES_PER_FRAME;
   }
 
   private static boolean isMpegVersionOne(byte[] buffer, int offset) {
@@ -196,6 +213,6 @@ public class Mp3Decoder extends NativeResourceHolder {
   }
 
   public static int getMaximumFrameSize() {
-    return calculateFrameSize(320000, 32000, true);
+    return calculateFrameSize(true, 320000, 32000, true);
   }
 }

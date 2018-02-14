@@ -50,14 +50,4 @@ public class AdtsPacketHeader {
         sampleRate == packetHeader.sampleRate &&
         channels == packetHeader.channels;
   }
-
-  /**
-   * @param packetHeader The packet to check against.
-   * @return True if the decoded format of this packet is equal to that of the other one.
-   */
-  public boolean hasSameDecodedFormat(AdtsPacketHeader packetHeader) {
-    return packetHeader != null &&
-        sampleRate == packetHeader.sampleRate &&
-        channels == packetHeader.channels;
-  }
 }

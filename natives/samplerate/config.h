@@ -8,7 +8,7 @@
 #define HAVE_STDINT_H 1
 
 #define PACKAGE "libsamplerate"
-#define VERSION "0.1.8"
+#define VERSION "0.1.9"
 
 #ifdef _MSC_VER
 #define inline __inline

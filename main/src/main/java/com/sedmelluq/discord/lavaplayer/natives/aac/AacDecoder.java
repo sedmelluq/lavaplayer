@@ -16,6 +16,11 @@ import java.nio.ShortBuffer;
 public class AacDecoder extends NativeResourceHolder {
   private static final int TRANSPORT_NONE = 0;
 
+  private static final ShortBuffer NO_BUFFER = ByteBuffer.allocateDirect(0).asShortBuffer();
+
+  private static final int ERROR_NOT_ENOUGH_BITS = 4098;
+  private static final int ERROR_OUTPUT_BUFFER_TOO_SMALL = 8204;
+
   public static final int AAC_LC = 2;
 
   private final AacDecoderLibrary library;
@@ -147,14 +152,11 @@ public class AacDecoder extends NativeResourceHolder {
   }
 
   /**
-   * Decode a frame of audio into the given buffer. The caller is expected to know the frame size (with AAC-LC it is
-   * always 1024 * channel count * Short.BYTES) and the buffer capacity must be at least of that size. Buffer position
-   * and limit are ignored and not updated. Returns true if the frame buffer was filled, false if there was not enough
-   * input for that, and throws an IllegalStateException for any other error.
+   * Decode a frame of audio into the given buffer.
    *
-   * @param buffer DirectBuffer of signed PCM samples where the decoded frame will be stored. The caller is expected to
-   *               know the frame size (with AAC-LC it is always 1024 * channel count * Short.BYTES) and the buffer
-   *               capacity must be at least of that size. Buffer position and limit are ignored and not updated.
+   * @param buffer DirectBuffer of signed PCM samples where the decoded frame will be stored. The buffer size must be at
+   *               least of size <code>frameSize * channels * 2</code>. Buffer position and limit are ignored and not
+   *               updated.
    * @param flush Whether all the buffered data should be flushed, set to true if no more input is expected.
    * @return True if the frame buffer was filled, false if there was not enough input for decoding a full frame.
    *
@@ -170,15 +172,73 @@ public class AacDecoder extends NativeResourceHolder {
     }
 
     int result = library.decode(instance, buffer, buffer.capacity(), flush);
-    if (result != 0 && result != 4098) {
+    if (result != 0 && result != ERROR_NOT_ENOUGH_BITS) {
       throw new IllegalStateException("Error from decoder " + result);
     }
 
     return result == 0;
   }
 
+  /**
+   * @return Correct stream info. The values passed to configure method do not account for SBR and PS and detecting
+   *         these is a part of the decoding process. If there was not enough input for decoding a full frame, null is
+   *         returned.
+   * @throws IllegalStateException If the decoder result produced an unexpected error.
+   */
+  public synchronized StreamInfo resolveStreamInfo() {
+    checkNotReleased();
+
+    int result = library.decode(instance, NO_BUFFER, 0, false);
+
+    if (result == ERROR_NOT_ENOUGH_BITS) {
+      return null;
+    } else if (result != ERROR_OUTPUT_BUFFER_TOO_SMALL) {
+      throw new IllegalStateException("Expected decoding to halt, got: " + result);
+    }
+
+    long combinedValue = library.getStreamInfo(instance);
+    if (combinedValue == 0) {
+      throw new IllegalStateException("Native library failed to detect stream info.");
+    }
+
+    return new StreamInfo(
+        (int) (combinedValue >>> 32L),
+        (int) (combinedValue & 0xFFFF),
+        (int) ((combinedValue >>> 16L) & 0xFFFF)
+    );
+  }
+
   @Override
   protected void freeResources() {
     library.destroy(instance);
+  }
+
+  /**
+   * AAC stream information.
+   */
+  public static class StreamInfo {
+    /**
+     * Sample rate (adjusted to SBR) of the current stream.
+     */
+    public final int sampleRate;
+    /**
+     * Channel count (adjusted to PS) of the current stream.
+     */
+    public final int channels;
+    /**
+     * Number of samples per channel per frame.
+     */
+    public final int frameSize;
+
+    /**
+     * @param sampleRate Sample rate (adjusted to SBR) of the current stream.
+     * @param channels Channel count (adjusted to PS) of the current stream.
+     * @param frameSize Number of samples per channel per frame.
+     */
+    public StreamInfo(int sampleRate, int channels, int frameSize) {
+      this.sampleRate = sampleRate;
+      this.channels = channels;
+      this.frameSize = frameSize;
+    }
   }
 }

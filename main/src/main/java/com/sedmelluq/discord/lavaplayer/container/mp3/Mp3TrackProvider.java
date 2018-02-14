@@ -17,7 +17,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static com.sedmelluq.discord.lavaplayer.natives.mp3.Mp3Decoder.SAMPLES_PER_FRAME;
+import static com.sedmelluq.discord.lavaplayer.natives.mp3.Mp3Decoder.MPEG1_SAMPLES_PER_FRAME;
 
 /**
  * Handles parsing MP3 files, seeking and sending the decoded frames to the specified frame consumer.
@@ -53,7 +53,7 @@ public class Mp3TrackProvider {
     this.context = context;
     this.inputStream = inputStream;
     this.dataInput = new DataInputStream(inputStream);
-    this.outputBuffer = ByteBuffer.allocateDirect((int) SAMPLES_PER_FRAME * 4).order(ByteOrder.nativeOrder()).asShortBuffer();
+    this.outputBuffer = ByteBuffer.allocateDirect((int) MPEG1_SAMPLES_PER_FRAME * 4).order(ByteOrder.nativeOrder()).asShortBuffer();
     this.inputBuffer = ByteBuffer.allocateDirect(Mp3Decoder.getMaximumFrameSize());
     this.frameBuffer = new byte[Mp3Decoder.getMaximumFrameSize()];
     this.tagHeaderBuffer = new byte[4];
@@ -111,7 +111,8 @@ public class Mp3TrackProvider {
         inputBuffer.flip();
 
         outputBuffer.clear();
-        outputBuffer.limit(channelCount * (int) SAMPLES_PER_FRAME);
+        outputBuffer.limit(channelCount * (int) Mp3Decoder.getSamplesPerFrame(frameBuffer, 0));
+
         int produced = mp3Decoder.decode(inputBuffer, outputBuffer);
 
         if (produced > 0) {
@@ -132,7 +133,7 @@ public class Mp3TrackProvider {
   public void seekToTimecode(long timecode) {
     try {
       long frameIndex = seeker.seekAndGetFrameIndex(timecode, inputStream);
-      long actualTimecode = frameIndex * SAMPLES_PER_FRAME * 1000 / sampleRate;
+      long actualTimecode = frameIndex * MPEG1_SAMPLES_PER_FRAME * 1000 / sampleRate;
       downstream.seekPerformed(timecode, actualTimecode);
 
       frameReader.nextFrame();
@@ -190,7 +191,7 @@ public class Mp3TrackProvider {
     // Minor version
     dataInput.readByte();
 
-    if (majorVersion < 2 && majorVersion > 5) {
+    if (majorVersion < 2 || majorVersion > 5) {
       return;
     }
 

@@ -8,7 +8,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
-import static com.sedmelluq.discord.lavaplayer.natives.mp3.Mp3Decoder.SAMPLES_PER_FRAME;
+import static com.sedmelluq.discord.lavaplayer.natives.mp3.Mp3Decoder.MPEG1_SAMPLES_PER_FRAME;
 
 /**
  * Seeking support for VBR files with Xing header.
@@ -33,7 +33,7 @@ public class Mp3XingSeeker implements Mp3Seeker {
     this.frameCount = frameCount;
     this.dataSize = dataSize;
     this.seekMapping = seekMapping;
-    this.duration = frameCount * SAMPLES_PER_FRAME * 1000L / sampleRate;
+    this.duration = frameCount * MPEG1_SAMPLES_PER_FRAME * 1000L / sampleRate;
   }
 
   /**

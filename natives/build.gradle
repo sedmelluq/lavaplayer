@@ -8,13 +8,19 @@ import java.util.regex.Pattern
 
 apply plugin: 'de.undercouch.download'
 
+ext.opusVersion = '1.2.1'
+ext.mpg123Version = '1.25.8'
+ext.oggVersion = '1.3.3'
+ext.vorbisVersion = '1.3.5'
+ext.sampleRateVersion = '0.1.9'
+
 task load { doLast {
   if (!file("$projectDir/samplerate/src").exists()) {
     def downloadPath = "$buildDir/tmp/libsamplerate.tar.gz"
     def unpackPath = "$buildDir/tmp"
 
     download {
-      src 'http://www.mega-nerd.com/SRC/libsamplerate-0.1.8.tar.gz'
+      src "http://www.mega-nerd.com/SRC/libsamplerate-${sampleRateVersion}.tar.gz"
       dest downloadPath
     }
 
@@ -24,7 +30,7 @@ task load { doLast {
     }
 
     copy {
-      from "$unpackPath/libsamplerate-0.1.8/src"
+      from "$unpackPath/libsamplerate-${sampleRateVersion}/src"
       into "$projectDir/samplerate/src"
     }
   }
@@ -49,12 +55,12 @@ task load { doLast {
     }
   }
 
-  if (!file("$projectDir/vorbis/libogg-1.3.2").exists()) {
+  if (!file("$projectDir/vorbis/libogg-${oggVersion}").exists()) {
     def downloadPath = "$buildDir/tmp/temp.zip"
     def unpackPath = "$buildDir"
 
     download {
-      src 'http://downloads.xiph.org/releases/ogg/libogg-1.3.2.zip'
+      src "http://downloads.xiph.org/releases/ogg/libogg-${oggVersion}.zip"
       dest downloadPath
     }
 
@@ -64,7 +70,7 @@ task load { doLast {
     }
 
     download {
-      src 'http://downloads.xiph.org/releases/vorbis/libvorbis-1.3.5.zip'
+      src "http://downloads.xiph.org/releases/vorbis/libvorbis-${vorbisVersion}.zip"
       dest downloadPath
     }
 
@@ -74,12 +80,12 @@ task load { doLast {
     }
   }
 
-  if (!file("$projectDir/opus/opus-1.1.3").exists()) {
+  if (!file("$projectDir/opus/opus-${opusVersion}").exists()) {
     def downloadPath = "$buildDir/tmp/temp.tar.gz"
     def unpackPath = "$buildDir"
 
     download {
-      src 'http://downloads.xiph.org/releases/opus/opus-1.1.3.tar.gz'
+      src "http://downloads.xiph.org/releases/opus/opus-${opusVersion}.tar.gz"
       dest downloadPath
     }
 
@@ -89,12 +95,12 @@ task load { doLast {
     }
   }
 
-  if (!Os.isFamily(Os.FAMILY_WINDOWS) && !file("$projectDir/mp3/mpg123-1.23.8").exists()) {
+  if (!Os.isFamily(Os.FAMILY_WINDOWS) && !file("$projectDir/mp3/mpg123-${mpg123Version}").exists()) {
     def downloadPath = "$buildDir/tmp/temp.tar.bz2"
     def unpackPath = "$buildDir"
 
     download {
-      src "https://www.mpg123.de/download/mpg123-1.23.8.tar.bz2"
+      src "https://www.mpg123.de/download/mpg123-${mpg123Version}.tar.bz2"
       dest downloadPath
     }
 
@@ -123,7 +129,13 @@ def getDevEnvLocation() {
     def matcher = Pattern.compile("working C compiler: ([^\\n]*) -- works").matcher(outStream)
     matcher.find()
 
-    ext.devEnvPath = new File(file(matcher.group(1)).parentFile.parentFile.parentFile, "Common7/IDE/devenv.exe").absolutePath
+    def baseDirectory = file(matcher.group(1))
+
+    while (!new File(baseDirectory, 'Common7').directory && baseDirectory.parentFile?.directory) {
+      baseDirectory = baseDirectory.parentFile
+    }
+
+    ext.devEnvPath = new File(baseDirectory, "Common7/IDE/devenv.exe").absolutePath
   }
 
   return ext.devEnvPath
@@ -131,7 +143,7 @@ def getDevEnvLocation() {
 
 def buildOpusOnWindows(bits, force) {
   def base = "$projectDir/libs/${bits}"
-  def libs = ['opus', 'silk_fixed', 'silk_common', 'silk_float', 'celt']
+  def libs = ['opus']
   def present = libs.every { file("${base}/${it}.lib").exists() }
 
   if (force || !present) {
@@ -142,12 +154,12 @@ def buildOpusOnWindows(bits, force) {
     def platformName = bits == 64 ? "x64" : "Win32"
 
     def process = [devenv, "opus.sln", "/Project", "opus", "/Build", "Release|${platformName}"].
-        execute(null as String[], file("$projectDir/opus/opus-1.1.3/win32/VS2015"))
+        execute(null as String[], file("$projectDir/opus/opus-${opusVersion}/win32/VS2015"))
 
     process.waitForProcessOutput(System.out as Appendable, System.err)
 
     libs.each {
-      assert file("$projectDir/opus/opus-1.1.3/win32/VS2015/${platformName}/Release/${it}.lib").renameTo("${base}/${it}.lib")
+      assert file("$projectDir/opus/opus-${opusVersion}/win32/VS2015/${platformName}/Release/${it}.lib").renameTo("${base}/${it}.lib")
     }
   }
 }
@@ -166,18 +178,18 @@ def buildOpusOnLinux(bits, force) {
   if (force || !present) {
     def flags = "-m${bits} -fPIC -O3"
     def process = ["./configure", "--enable-static", "--with-cpu=" + (bits == 32 ? "x86" : "x64-64"), "--with-pic", "CFLAGS=${flags}", "CXXFLAGS=${flags}", "LDFLAGS=${flags}"].
-        execute(null as String[], file("$projectDir/opus/opus-1.1.3"))
+        execute(null as String[], file("$projectDir/opus/opus-${opusVersion}"))
 
     waitForAndCheckSuccess(process, "Opus ./configure")
 
-    process = ["make", "clean"].execute(null as String[], file("$projectDir/opus/opus-1.1.3"))
+    process = ["make", "clean"].execute(null as String[], file("$projectDir/opus/opus-${opusVersion}"))
     waitForAndCheckSuccess(process, "Opus make clean")
 
-    process = ["make"].execute(null as String[], file("$projectDir/opus/opus-1.1.3"))
+    process = ["make"].execute(null as String[], file("$projectDir/opus/opus-${opusVersion}"))
     waitForAndCheckSuccess(process, "Opus make")
 
     copy {
-      from "$projectDir/opus/opus-1.1.3/.libs/libopus.a"
+      from "$projectDir/opus/opus-${opusVersion}/.libs/libopus.a"
       into "$projectDir/libs/${bits}"
     }
   }
@@ -187,33 +199,33 @@ def buildMpg123OnLinux(bits, force) {
   def present = file("${projectDir}/libs/${bits}/libmpg123.a").exists()
 
   if (force || !present) {
-    def process = ["patch", "-N", "mpg123-1.23.8/configure", "configure.patch"].execute(null as String[], file("$projectDir/mp3"))
+    def process = ["patch", "-N", "mpg123-${mpg123Version}/configure", "configure.patch"].execute(null as String[], file("$projectDir/mp3"))
     process.waitForProcessOutput(System.out as Appendable, System.err)
 
     process = ["./configure", "--enable-static", "--with-cpu=" + (bits == 32 ? "x86" : "x86-64"), "--with-pic", "CFLAGS=-fPIC -O3 -m${bits}", "CXXFLAGS=-fPIC -O3 -m${bits}"].
-        execute(null as String[], file("$projectDir/mp3/mpg123-1.23.8"))
+        execute(null as String[], file("$projectDir/mp3/mpg123-${mpg123Version}"))
 
     waitForAndCheckSuccess(process, "Mpg123 ./configure")
 
-    process = ["make", "clean"].execute(null as String[], file("$projectDir/mp3/mpg123-1.23.8"))
+    process = ["make", "clean"].execute(null as String[], file("$projectDir/mp3/mpg123-${mpg123Version}"))
     waitForAndCheckSuccess(process, "make clean")
 
-    process = ["make"].execute(null as String[], file("$projectDir/mp3/mpg123-1.23.8"))
+    process = ["make"].execute(null as String[], file("$projectDir/mp3/mpg123-${mpg123Version}"))
     waitForAndCheckSuccess(process, "make")
 
     copy {
-      from "$projectDir/mp3/mpg123-1.23.8/src/libmpg123/.libs/libmpg123.a"
+      from "$projectDir/mp3/mpg123-${mpg123Version}/src/libmpg123/.libs/libmpg123.a"
       into "$projectDir/libs/${bits}"
     }
   }
 }
 
 def prepareOggOnLinux(bits, force) {
-  def configured = file("$projectDir/vorbis/libogg-1.3.2/include/ogg/config_types.h").exists()
+  def configured = file("$projectDir/vorbis/libogg-${oggVersion}/include/ogg/config_types.h").exists()
 
   if (force || !configured) {
     def process = ["./configure", "--enable-static", "--build=x86_64-pc-linux-gnu", "--with-pic"].
-        execute(null as String[], file("$projectDir/vorbis/libogg-1.3.2"))
+        execute(null as String[], file("$projectDir/vorbis/libogg-${oggVersion}"))
 
     process.waitForProcessOutput(System.out as Appendable, System.err)
   }
