@@ -12,7 +12,7 @@ repositories {
 
 dependencies {
   compile 'com.github.austinv11:Discord4j:2.9.3'
-  compile 'com.sedmelluq:lavaplayer:1.2.46'
+  compile 'com.sedmelluq:lavaplayer:1.2.50'
   runtime 'ch.qos.logback:logback-classic:1.2.3'
 }
 
