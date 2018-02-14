@@ -1,5 +1,62 @@
 # Change Log
 
+## [1.2.50] - 2018-02-15
+### Fixed
+- Fixed ADTS/AAC streams with SBR and/or PS enabled (also known as AAC+ streams).
+- Fixed ADTS/AAC streams with MPEG version 2 refused.
+- Fixed MPEG2 MP3 file frames read incorrectly, causing artifacts and spam in standard error stream.
+
+## [1.2.49] - 2018-02-12
+### Added
+- Methods to allow reconfiguring HTTP builders used by source managers.
+
+## [1.2.48] - 2018-02-11
+### Added
+- Method to change YouTube mix loader thread pool size.
+
+## [1.2.47] - 2018-02-07
+### Fixed
+- Fixed YouTube ciphers being broken due to slight change to YouTube player script.
+
+## [1.2.46] - 2018-02-04
+### Changed
+- All dependencies updated to latest versions (solves some issues with mismatching versions of Jackson).
+
+## [1.2.45] - 2017-11-25
+### Added
+- Support for twitch streams with domain `go.twitch.tv`.
+- Support for `m.soundcloud.com` domain for Soundcloud URLs.
+
+### Fixed
+- Fixed Twitch stream segment URL resolution occasionally producing incorrect URLs.
+- Fixed YouTube links not working when they contain extra parameters.
+
+## [1.2.44] - 2017-10-08
+### Added
+- Local tracks can now be encoded. 
+
+### Fixed
+- Fixed Bandcamp source being broken due to URL format change.
+
+## [1.2.43] - 2017-08-15
+### Added
+- Support for `mixer.com` (new `beam.pro` domain name).
+
+### Fixed
+- Fixed YouTube search being broken due to page style change.
+
+## [1.2.42] - 2017-06-17
+### Changed
+- Improved efficiency of `.mkv`/`.webm` processing by making it practically garbage-free.
+
+## [1.2.41] - 2017-06-14
+### Fixed
+- Fixed NPE thrown when an MPEG stream ends gracefully.
+
+## [1.2.40] - 2017-06-05
+### Fixed
+- Fixed dual channel mono MP3 files not working.
+
 ## [1.2.39] - 2017-05-18
 ### Fixed
 - Properly fixed the YouTube cipher detection (previous one missed some operations).
