@@ -81,6 +81,13 @@ public class HttpInterface implements Closeable {
     return context;
   }
 
+  /**
+   * @return Http client instance used by this instance.
+   */
+  public CloseableHttpClient getHttpClient() {
+    return client;
+  }
+
   @Override
   public void close() throws IOException {
     available = true;

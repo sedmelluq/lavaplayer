@@ -2,6 +2,7 @@ package com.sedmelluq.discord.lavaplayer.tools.io;
 
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.protocol.HttpClientContext;
+import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 
 /**
@@ -26,12 +27,19 @@ public class ThreadLocalHttpInterfaceManager extends AbstractHttpInterfaceManage
 
   @Override
   public HttpInterface getInterface() {
+    CloseableHttpClient client = getSharedClient();
+
     HttpInterface httpInterface = httpInterfaces.get();
+    if (httpInterface.getHttpClient() != client) {
+      httpInterfaces.remove();
+      httpInterface = httpInterfaces.get();
+    }
+
     if (httpInterface.acquire()) {
       return httpInterface;
     }
 
-    httpInterface = new HttpInterface(getSharedClient(), HttpClientContext.create(), false);
+    httpInterface = new HttpInterface(client, HttpClientContext.create(), false);
     httpInterface.acquire();
     return httpInterface;
   }
