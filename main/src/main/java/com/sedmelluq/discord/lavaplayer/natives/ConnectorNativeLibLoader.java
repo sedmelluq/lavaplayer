@@ -12,7 +12,6 @@ public class ConnectorNativeLibLoader {
    */
   public static void loadConnectorLibrary() {
     NativeLibLoader.load(ConnectorNativeLibLoader.class, "libmpg123-0", WIN_X86_64);
-    NativeLibLoader.load(ConnectorNativeLibLoader.class, "libgcc_s_sjlj-1", WIN_X86);
     NativeLibLoader.load(ConnectorNativeLibLoader.class, "libmpg123-0", WIN_X86);
     NativeLibLoader.load(ConnectorNativeLibLoader.class, "connector");
   }

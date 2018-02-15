@@ -1,5 +1,10 @@
 # Change Log
 
+## [1.2.51] - 2018-02-15
+### Fixed
+- Fixed attempting to load a native library that does not exist since last version on Windows x86.
+- Fixed all consecutive HTTP connections failing after the HTTP of a source manager is reconfigured.
+
 ## [1.2.50] - 2018-02-15
 ### Fixed
 - Fixed ADTS/AAC streams with SBR and/or PS enabled (also known as AAC+ streams).
