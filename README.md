@@ -1,20 +1,20 @@
-# LavaPlayer - Audio player library for Discord
+# LavaPlayer - Audio player library for Discord [![Bintray](https://api.bintray.com/packages/sedmelluq/com.sedmelluq/lavaplayer/images/download.svg)](https://bintray.com/sedmelluq/com.sedmelluq/lavaplayer)
 
 LavaPlayer is an audio player library written in Java which can load audio tracks from various sources and convert them into a stream of Opus frames. It is designed for use with Discord bots, but it can be used anywhere where Opus format output is required.
 
 #### Maven package
 
 * Repository: jcenter
-* Artifact: **com.sedmelluq:lavaplayer:1.2.51**
+* Artifact: **com.sedmelluq:lavaplayer:x.y.z**
 
 Using in Gradle:
-```groovy
+```gradle
 repositories {
   jcenter()
 }
 
 dependencies {
-  compile 'com.sedmelluq:lavaplayer:1.2.51'
+  compile 'com.sedmelluq:lavaplayer:x.y.z'
 }
 ```
 
@@ -32,7 +32,7 @@ Using in Maven:
   <dependency>
     <groupId>com.sedmelluq</groupId>
     <artifactId>lavaplayer</artifactId>
-    <version>1.2.51</version>
+    <version>x.y.z</version>
   </dependency>
 </dependencies>
 ```
