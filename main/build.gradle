@@ -6,7 +6,7 @@ plugins {
 }
 
 ext.moduleName = 'lavaplayer'
-version = '1.2.52'
+version = '1.2.53'
 
 dependencies {
   compile 'com.sedmelluq:lavaplayer-common:1.0.6'
