@@ -1,5 +1,11 @@
 # Change Log
 
+## [1.2.52] - 2018-02-20
+### Fixed
+- Fixed YouTube URLs with extra characters after video ID not working even though YouTube accepts them.
+- Fixed NPE when video ID is not in valid format, now triggers `noMatches` instead.
+- Fixed missing YouTube video triggering `loadFailed` instead of `noMatches`.
+
 ## [1.2.51] - 2018-02-15
 ### Fixed
 - Fixed attempting to load a native library that does not exist since last version on Windows x86.

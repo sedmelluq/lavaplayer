@@ -17,9 +17,11 @@ import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo;
 import com.sedmelluq.discord.lavaplayer.tools.JsonBrowser;
 import com.sedmelluq.discord.lavaplayer.tools.DataFormatTools;
 import org.apache.commons.io.IOUtils;
+import org.apache.http.NameValuePair;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.jsoup.Jsoup;
@@ -32,14 +34,15 @@ import org.slf4j.LoggerFactory;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import static com.sedmelluq.discord.lavaplayer.tools.DataFormatTools.convertToMapLayout;
 import static com.sedmelluq.discord.lavaplayer.tools.FriendlyException.Severity.COMMON;
@@ -54,28 +57,20 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
   static final String CHARSET = "UTF-8";
 
   private static final String PROTOCOL_REGEX = "(?:http://|https://|)";
+  private static final String DOMAIN_REGEX = "(?:www\\.|m\\.|)youtube\\.com";
+  private static final String SHORT_DOMAIN_REGEX = "(?:www\\.|)youtu\\.be";
   private static final String VIDEO_ID_REGEX = "(?<v>[a-zA-Z0-9_-]{11})";
   private static final String PLAYLIST_ID_REGEX = "(?<list>(PL|LL|FL|UU)[a-zA-Z0-9_-]+)";
-  private static final String MIX_ID_REGEX = "(?<mix>RD[a-zA-Z0-9_-]+)";
-  private static final String PLAYLIST_ID_OR_MIX_ID_REGEX = "(?:" + PLAYLIST_ID_REGEX + "|" + MIX_ID_REGEX + ")";
-
-  // As mentioned in RFC 3986 (BNF unreserved) https://tools.ietf.org/html/rfc3986#page-50
-  private static final String ANY_REGEX = "[\\w~.-]+=[\\w~.-]+";
-
-  private static final String PARAMETER_REGEX = "(?:v=" + VIDEO_ID_REGEX + "|list=" + PLAYLIST_ID_OR_MIX_ID_REGEX + "|" + ANY_REGEX + ")&?";
-  private static final String PARAMETERS_REGEX = "(?:" + PARAMETER_REGEX + ")+";
 
   private static final String SEARCH_PREFIX = "ytsearch:";
 
-  private static final Pattern[] validTrackPatterns = new Pattern[] {
-      Pattern.compile("^" + VIDEO_ID_REGEX + "$"),
-      Pattern.compile("^" + PROTOCOL_REGEX + "(?:www\\.|m\\.|)youtube.com/watch\\?" + PARAMETERS_REGEX + "$"),
-      Pattern.compile("^" + PROTOCOL_REGEX + "(?:www\\.|)youtu.be/" + VIDEO_ID_REGEX + "(?:\\?(?:list=" + PLAYLIST_ID_OR_MIX_ID_REGEX + "|" + ANY_REGEX + ")&?)*$")
-  };
+  private static final Pattern directVideoIdPattern = Pattern.compile("^" + VIDEO_ID_REGEX + "$");
 
-  private static final Pattern[] validPlaylistPatterns = new Pattern[] {
-      Pattern.compile("^" + PLAYLIST_ID_REGEX + "$"),
-      Pattern.compile("^" + PROTOCOL_REGEX + "(?:www\\.|m\\.|)youtube.com/playlist\\?" + PARAMETERS_REGEX + "$")
+  private final Extractor[] extractors = new Extractor[] {
+      new Extractor(directVideoIdPattern, (id) -> loadTrackWithVideoId(id, false)),
+      new Extractor(Pattern.compile("^" + PLAYLIST_ID_REGEX + "$"), (id) -> loadPlaylistWithId(id, null)),
+      new Extractor(Pattern.compile("^" + PROTOCOL_REGEX + DOMAIN_REGEX + "/.*"), this::loadFromMainDomain),
+      new Extractor(Pattern.compile("^" + PROTOCOL_REGEX + SHORT_DOMAIN_REGEX + "/.*"), this::loadFromShortDomain)
   };
 
   private final YoutubeSignatureCipherManager signatureCipherManager;
@@ -182,17 +177,11 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
   }
 
   private AudioItem loadItemOnce(AudioReference reference) {
-    AudioItem result;
-
     if (allowSearch && reference.identifier.startsWith(SEARCH_PREFIX)) {
       return searchProvider.loadSearchResult(reference.identifier.substring(SEARCH_PREFIX.length()).trim());
     }
 
-    if ((result = loadTrack(reference.identifier)) == null) {
-      result = loadPlaylist(reference.identifier);
-    }
-
-    return result;
+    return loadNonSearch(reference.identifier);
   }
 
   /**
@@ -240,24 +229,56 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
     return null;
   }
 
-  private AudioItem loadTrack(String identifier) {
-    for (Pattern pattern : validTrackPatterns) {
-      Matcher matcher = pattern.matcher(identifier);
+  private AudioItem loadFromMainDomain(String identifier) {
+    UrlInfo urlInfo = getUrlInfo(identifier, true);
 
-      if (matcher.matches()) {
-        String videoId = matcher.group("v");
+    if ("/watch".equals(urlInfo.path)) {
+      String videoId = urlInfo.parameters.get("v");
 
-        try {
-          if (matcher.group("list") != null) {
-            return loadLinkedPlaylistWithId(matcher.group("list"), videoId);
-          } else if (matcher.group("mix") != null) {
-            return mixProvider.loadMixWithId(matcher.group("mix"), videoId);
-          }
-        } catch (IllegalArgumentException groupNotPresent) {
-          // this is fine, although I'd rather have a querying alternative
+      if (videoId != null) {
+        return loadFromUrlWithVideoId(videoId, urlInfo);
+      }
+    } else if ("/playlist".equals(urlInfo.path)) {
+      String playlistId = urlInfo.parameters.get("list");
+
+      if (playlistId != null) {
+        return loadPlaylistWithId(playlistId, null);
+      }
+    }
+
+    return null;
+  }
+
+  private AudioItem loadFromShortDomain(String identifier) {
+    UrlInfo urlInfo = getUrlInfo(identifier, true);
+    return loadFromUrlWithVideoId(urlInfo.path.substring(1), urlInfo);
+  }
+
+  private AudioItem loadFromUrlWithVideoId(String videoId, UrlInfo urlInfo) {
+    if (videoId.length() > 11) {
+      // YouTube allows extra junk in the end, it redirects to the correct video.
+      videoId = videoId.substring(0, 11);
+    }
+
+    if (!directVideoIdPattern.matcher(videoId).matches()) {
+      return AudioReference.NO_TRACK;
+    } else if (urlInfo.parameters.containsKey("list")) {
+      return loadLinkedPlaylistWithId(urlInfo.parameters.get("list"), videoId);
+    } else if (urlInfo.parameters.containsKey("mix")) {
+      return mixProvider.loadMixWithId(urlInfo.parameters.get("mix"), videoId);
+    } else {
+      return loadTrackWithVideoId(videoId, false);
+    }
+  }
+
+  private AudioItem loadNonSearch(String identifier) {
+    for (Extractor extractor : extractors) {
+      if (extractor.pattern.matcher(identifier).matches()) {
+        AudioItem item = extractor.loader.apply(identifier);
+
+        if (item != null) {
+          return item;
         }
-
-        return loadTrackWithVideoId(videoId, false);
       }
     }
 
@@ -312,7 +333,7 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
 
   private boolean determineFailureReasonFromStatus(String status, String reason, boolean mustExist) {
     if ("fail".equals(status)) {
-      if ("This video does not exist.".equals(reason) && !mustExist) {
+      if (("This video does not exist.".equals(reason) || "This video is unavailable.".equals(reason)) && !mustExist) {
         return true;
       } else if (reason != null) {
         throw new FriendlyException(reason, COMMON, null);
@@ -361,18 +382,6 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
 
       return convertToMapLayout(URLEncodedUtils.parse(response.getEntity()));
     }
-  }
-
-  private AudioPlaylist loadPlaylist(String identifier) {
-    for (Pattern pattern : validPlaylistPatterns) {
-      Matcher matcher = pattern.matcher(identifier);
-
-      if (matcher.matches()) {
-        return loadPlaylistWithId(matcher.group("list"), null);
-      }
-    }
-
-    return null;
   }
 
   private AudioPlaylist loadPlaylistWithId(String playlistId, String selectedVideoId) {
@@ -467,5 +476,43 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
 
   private static String getWatchUrl(String videoId) {
     return "https://www.youtube.com/watch?v=" + videoId;
+  }
+
+  private static UrlInfo getUrlInfo(String url, boolean retryValidPart) {
+    try {
+      if (!url.startsWith("http://") && !url.startsWith("https://")) {
+        url = "https://" + url;
+      }
+
+      URIBuilder builder = new URIBuilder(url);
+      return new UrlInfo(builder.getPath(), builder.getQueryParams().stream()
+          .collect(Collectors.toMap(NameValuePair::getName, NameValuePair::getValue)));
+    } catch (URISyntaxException e) {
+      if (retryValidPart) {
+        return getUrlInfo(url.substring(0, e.getIndex() - 1), false);
+      } else {
+        throw new FriendlyException("Not a valid URL: " + url, COMMON, e);
+      }
+    }
+  }
+
+  private static class UrlInfo {
+    public final String path;
+    public final Map<String, String> parameters;
+
+    private UrlInfo(String path, Map<String, String> parameters) {
+      this.path = path;
+      this.parameters = parameters;
+    }
+  }
+
+  private static class Extractor {
+    private final Pattern pattern;
+    private final Function<String, AudioItem> loader;
+
+    private Extractor(Pattern pattern, Function<String, AudioItem> loader) {
+      this.pattern = pattern;
+      this.loader = loader;
+    }
   }
 }
