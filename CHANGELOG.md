@@ -1,5 +1,9 @@
 # Change Log
 
+## [1.2.53] - 2018-02-21
+### Changed
+- YouTube search result loader performs HTTP requests with cookies disabled by default now.
+
 ## [1.2.52] - 2018-02-20
 ### Fixed
 - Fixed YouTube URLs with extra characters after video ID not working even though YouTube accepts them.

@@ -72,16 +72,16 @@ public class HttpClientTools {
       .setCookieSpec(CookieSpecs.STANDARD)
       .build();
 
+  private static final RequestConfig NO_COOKIES_REQUEST_CONFIG = RequestConfig.custom()
+      .setConnectTimeout(3000)
+      .setCookieSpec(CookieSpecs.IGNORE_COOKIES)
+      .build();
+
   /**
    * @return An HttpClientBuilder which uses the same cookie store for all clients
    */
   public static HttpClientBuilder createSharedCookiesHttpBuilder() {
-    CookieStore cookieStore = new BasicCookieStore();
-
-    return new CustomHttpClientBuilder()
-        .setDefaultCookieStore(cookieStore)
-        .setRetryHandler(NoResponseRetryHandler.RETRY_INSTANCE)
-        .setDefaultRequestConfig(DEFAULT_REQUEST_CONFIG);
+    return createHttpBuilder(DEFAULT_REQUEST_CONFIG);
   }
 
   /**
@@ -89,6 +89,22 @@ public class HttpClientTools {
    */
   public static HttpInterfaceManager createDefaultThreadLocalManager() {
     return new ThreadLocalHttpInterfaceManager(createSharedCookiesHttpBuilder(), DEFAULT_REQUEST_CONFIG);
+  }
+
+  /**
+   * @return HTTP interface manager with thread-local context, ignores cookies
+   */
+  public static HttpInterfaceManager createCookielessThreadLocalManager() {
+    return new ThreadLocalHttpInterfaceManager(createHttpBuilder(NO_COOKIES_REQUEST_CONFIG), NO_COOKIES_REQUEST_CONFIG);
+  }
+
+  private static HttpClientBuilder createHttpBuilder(RequestConfig requestConfig) {
+    CookieStore cookieStore = new BasicCookieStore();
+
+    return new CustomHttpClientBuilder()
+        .setDefaultCookieStore(cookieStore)
+        .setRetryHandler(NoResponseRetryHandler.RETRY_INSTANCE)
+        .setDefaultRequestConfig(requestConfig);
   }
 
   private static SSLContext setupSslContext() {

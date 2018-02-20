@@ -169,11 +169,13 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
   @Override
   public void configureRequests(Function<RequestConfig, RequestConfig> configurator) {
     httpInterfaceManager.configureRequests(configurator);
+    searchProvider.configureRequests(configurator);
   }
 
   @Override
   public void configureBuilder(Consumer<HttpClientBuilder> configurator) {
     httpInterfaceManager.configureBuilder(configurator);
+    searchProvider.configureBuilder(configurator);
   }
 
   private AudioItem loadItemOnce(AudioReference reference) {
