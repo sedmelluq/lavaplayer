@@ -2,6 +2,8 @@
 
 LavaPlayer is an audio player library written in Java which can load audio tracks from various sources and convert them into a stream of Opus frames. It is designed for use with Discord bots, but it can be used anywhere where Opus format output is required.
 
+**Please read the [FAQ](FAQ.md) in case of issues.**
+
 #### Maven package
 
 Replace `x.y.z` with the latest version number: [![Bintray](https://api.bintray.com/packages/sedmelluq/com.sedmelluq/lavaplayer/images/download.svg)](https://bintray.com/sedmelluq/com.sedmelluq/lavaplayer)
