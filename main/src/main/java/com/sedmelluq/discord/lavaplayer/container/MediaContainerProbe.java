@@ -8,7 +8,7 @@ import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo;
 import java.io.IOException;
 
 /**
- * Track information probe for one meida container type and factory for tracks for that container.
+ * Track information probe for one media container type and factory for tracks for that container.
  */
 public interface MediaContainerProbe {
   /**

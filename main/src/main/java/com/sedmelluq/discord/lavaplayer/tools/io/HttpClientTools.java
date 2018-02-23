@@ -52,6 +52,7 @@ import javax.net.ssl.X509TrustManager;
 
 import java.io.IOException;
 import java.net.SocketException;
+import java.net.SocketTimeoutException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
@@ -273,12 +274,17 @@ public class HttpClientTools {
    */
   public static boolean isRetriableNetworkException(Throwable exception) {
     return isConnectionResetException(exception) ||
+        isSocketTimeoutException(exception) ||
         isIncorrectSslShutdownException(exception) ||
         isPrematureEndException(exception);
   }
 
   private static boolean isConnectionResetException(Throwable exception) {
     return exception instanceof SocketException && "Connection reset".equals(exception.getMessage());
+  }
+
+  private static boolean isSocketTimeoutException(Throwable exception) {
+    return exception instanceof SocketTimeoutException && "Read timed out".equals(exception.getMessage());
   }
 
   private static boolean isIncorrectSslShutdownException(Throwable exception) {

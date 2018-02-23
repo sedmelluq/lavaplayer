@@ -1,5 +1,13 @@
 # Change Log
 
+## [1.2.54] - 2018-02-23
+### Changed
+- Attempt to retry connection in case of socket read timeout.
+
+### Fixed
+- Fixed mobile SoundCloud links not working.
+- Fixed 32-bit Windows natives being incompatible.
+
 ## [1.2.53] - 2018-02-21
 ### Changed
 - YouTube search result loader performs HTTP requests with cookies disabled by default now.

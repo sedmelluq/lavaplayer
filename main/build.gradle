@@ -6,11 +6,11 @@ plugins {
 }
 
 ext.moduleName = 'lavaplayer'
-version = '1.2.53'
+version = '1.2.54'
 
 dependencies {
   compile 'com.sedmelluq:lavaplayer-common:1.0.6'
-  compile 'com.sedmelluq:lavaplayer-natives:1.2.50'
+  compile 'com.sedmelluq:lavaplayer-natives:1.2.54'
 
   compile "org.slf4j:slf4j-api:$slf4jVersion"
 

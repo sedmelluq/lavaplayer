@@ -17,6 +17,7 @@ import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo;
 import com.sedmelluq.discord.lavaplayer.track.BasicAudioPlaylist;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpResponse;
+import org.apache.http.HttpStatus;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
@@ -258,24 +259,28 @@ public class SoundCloudAudioSourceManager implements AudioSourceManager, HttpCon
   }
 
   private AudioTrack processAsSingleTrack(AudioReference reference) {
-    Matcher trackUrlMatcher = trackUrlPattern.matcher(reference.identifier);
+    String url = nonMobileUrl(reference.identifier);
+
+    Matcher trackUrlMatcher = trackUrlPattern.matcher(url);
     if (trackUrlMatcher.matches() && !"likes".equals(trackUrlMatcher.group(2))) {
-      return loadFromTrackPage(reference.identifier, null);
+      return loadFromTrackPage(url, null);
     }
 
-    Matcher unlistedUrlMatcher = unlistedUrlPattern.matcher(reference.identifier);
+    Matcher unlistedUrlMatcher = unlistedUrlPattern.matcher(url);
     if (unlistedUrlMatcher.matches()) {
-      return loadFromTrackPage(reference.identifier, "s-" + unlistedUrlMatcher.group(3));
+      return loadFromTrackPage(url, "s-" + unlistedUrlMatcher.group(3));
     }
 
     return null;
   }
 
   private AudioItem processAsPlaylist(AudioReference reference) {
-    if (playlistUrlPattern.matcher(reference.identifier).matches()) {
-      return loadFromSet(reference.identifier);
-    } else if (likedUrlPattern.matcher(reference.identifier).matches()) {
-      return loadFromLikedTracks(reference.identifier);
+    String url = nonMobileUrl(reference.identifier);
+
+    if (playlistUrlPattern.matcher(url).matches()) {
+      return loadFromSet(url);
+    } else if (likedUrlPattern.matcher(url).matches()) {
+      return loadFromLikedTracks(url);
     } else {
       return null;
     }
@@ -309,9 +314,9 @@ public class SoundCloudAudioSourceManager implements AudioSourceManager, HttpCon
     try (CloseableHttpResponse response = httpInterface.execute(new HttpGet(url))) {
       int statusCode = response.getStatusLine().getStatusCode();
 
-      if (statusCode == 404) {
+      if (statusCode == HttpStatus.SC_NOT_FOUND) {
         throw new FriendlyException("That track does not exist.", COMMON, null);
-      } else if (statusCode != 200) {
+      } else if (statusCode != HttpStatus.SC_OK) {
         throw new IOException("Invalid status code for video page response: " + statusCode);
       }
 
@@ -336,6 +341,14 @@ public class SoundCloudAudioSourceManager implements AudioSourceManager, HttpCon
     }
 
     throw new IllegalStateException("Could not find track information block.");
+  }
+
+  private static String nonMobileUrl(String url) {
+    if (url.startsWith("https://m.")) {
+      return "https://" + url.substring("https://m.".length());
+    } else {
+      return url;
+    }
   }
 
   private AudioPlaylist loadFromSet(String playlistWebUrl) {

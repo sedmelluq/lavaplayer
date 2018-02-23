@@ -19,7 +19,7 @@ public class YoutubeSignatureCipher {
     for (YoutubeCipherOperation operation : operations) {
       switch (operation.type) {
         case SWAP:
-          int position = operation.parameter;
+          int position = operation.parameter % text.length();
           char temp = builder.charAt(0);
           builder.setCharAt(0, builder.charAt(position));
           builder.setCharAt(position, temp);
