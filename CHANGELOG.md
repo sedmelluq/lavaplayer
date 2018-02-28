@@ -1,5 +1,16 @@
 # Change Log
 
+## [1.2.56] - 2018-02-28
+### Added
+- Added method to get Twitch track channel name.
+
+### Fixed
+- Fixed NPE when YouTube URL has parameters without values.
+
+## [1.2.55] - 2018-02-27
+### Fixed
+- Fixed Windows native libraries being mixed up.
+
 ## [1.2.54] - 2018-02-23
 ### Changed
 - Attempt to retry connection in case of socket read timeout.
