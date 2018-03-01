@@ -326,7 +326,7 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
   }
 
   private boolean determineFailureReason(HttpInterface httpInterface, String videoId, boolean mustExist) throws Exception {
-    HttpGet get = new HttpGet("https://www.youtube.com/get_video_info?video_id=" + videoId));
+    HttpGet get = new HttpGet("https://www.youtube.com/get_video_info?video_id=" + videoId);
     get.addHeader("accept-language", Locale.getDefault().getLanguage());
     
     try (CloseableHttpResponse response = httpInterface.execute(get)) {
