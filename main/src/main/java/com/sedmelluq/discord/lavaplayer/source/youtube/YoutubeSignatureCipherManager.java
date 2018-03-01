@@ -17,6 +17,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -134,8 +135,11 @@ public class YoutubeSignatureCipherManager {
     if (cipherKey == null) {
       synchronized (cipherLoadLock) {
         log.debug("Parsing cipher from player script {}.", cipherScriptUrl);
-
-        try (CloseableHttpResponse response = httpInterface.execute(new HttpGet(parseTokenScriptUrl(cipherScriptUrl)))) {
+        
+        HttpGet get = new HttpGet(parseTokenScriptUrl(cipherScriptUrl));
+        get.addHeader("accept-language", Locale.getDefault().getLanguage());
+        
+        try (CloseableHttpResponse response = httpInterface.execute(get)) {
           validateResponseCode(response);
 
           cipherKey = extractTokensFromScript(IOUtils.toString(response.getEntity().getContent(), "UTF-8"), cipherScriptUrl);
