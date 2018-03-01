@@ -38,6 +38,7 @@ import java.net.URISyntaxException;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -298,7 +299,10 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
   }
 
   public JsonBrowser getTrackInfoFromMainPage(HttpInterface httpInterface, String videoId, boolean mustExist) throws Exception {
-    try (CloseableHttpResponse response = httpInterface.execute(new HttpGet(getWatchUrl(videoId)))) {
+    HttpGet get = new HttpGet(getWatchUrl(videoId));
+    get.addHeader("accept-language", Locale.getDefault().getLanguage());
+    
+    try (CloseableHttpResponse response = httpInterface.execute(get)) {
       int statusCode = response.getStatusLine().getStatusCode();
       if (statusCode != 200) {
         throw new IOException("Invalid status code for video page response: " + statusCode);
@@ -322,7 +326,10 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
   }
 
   private boolean determineFailureReason(HttpInterface httpInterface, String videoId, boolean mustExist) throws Exception {
-    try (CloseableHttpResponse response = httpInterface.execute(new HttpGet("https://www.youtube.com/get_video_info?hl=en_GB&video_id=" + videoId))) {
+    HttpGet get = new HttpGet("https://www.youtube.com/get_video_info?video_id=" + videoId));
+    get.addHeader("accept-language", Locale.getDefault().getLanguage());
+    
+    try (CloseableHttpResponse response = httpInterface.execute(get)) {
       int statusCode = response.getStatusLine().getStatusCode();
       if (statusCode != 200) {
         throw new IOException("Invalid status code for video info response: " + statusCode);
@@ -355,7 +362,10 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
   }
 
   private JsonBrowser loadTrackBaseInfoFromEmbedPage(HttpInterface httpInterface, String videoId) throws Exception {
-    try (CloseableHttpResponse response = httpInterface.execute(new HttpGet("https://www.youtube.com/embed/" + videoId))) {
+    HttpGet get = new HttpGet("https://www.youtube.com/embed/" + videoId);
+    get.addHeader("accept-language", Locale.getDefault().getLanguage());
+    
+    try (CloseableHttpResponse response = httpInterface.execute(get)) {
       int statusCode = response.getStatusLine().getStatusCode();
       if (statusCode != 200) {
         throw new IOException("Invalid status code for embed video page response: " + statusCode);
@@ -374,9 +384,10 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
   }
 
   private Map<String, String> loadTrackArgsFromVideoInfoPage(HttpInterface httpInterface, String videoId, String sts) throws Exception {
-    String url = "https://www.youtube.com/get_video_info?hl=en_GB&video_id=" + videoId + "&sts=" + sts;
-
-    try (CloseableHttpResponse response = httpInterface.execute(new HttpGet(url))) {
+    HttpGet get = new HttpGet("https://www.youtube.com/get_video_info?video_id=" + videoId + "&sts=" + sts);
+    get.addHeader("accept-language", Locale.getDefault().getLanguage());
+    
+    try (CloseableHttpResponse response = httpInterface.execute(get)) {
       int statusCode = response.getStatusLine().getStatusCode();
       if (statusCode != 200) {
         throw new IOException("Invalid status code for video info response: " + statusCode);
@@ -388,9 +399,12 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
 
   private AudioPlaylist loadPlaylistWithId(String playlistId, String selectedVideoId) {
     log.debug("Starting to load playlist with ID {}", playlistId);
-
+    
+    HttpGet get = new HttpGet("https://www.youtube.com/playlist?list=" + playlistId);
+    get.addHeader("accept-language", Locale.getDefault().getLanguage());
+    
     try (HttpInterface httpInterface = getHttpInterface()) {
-      try (CloseableHttpResponse response = httpInterface.execute(new HttpGet("https://www.youtube.com/playlist?list=" + playlistId))) {
+      try (CloseableHttpResponse response = httpInterface.execute(get)) {
         int statusCode = response.getStatusLine().getStatusCode();
         if (statusCode != 200) {
           throw new IOException("Invalid status code for playlist response: " + statusCode);
@@ -426,7 +440,10 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
 
     // Also load the next pages, each result gives us a JSON with separate values for list html and next page loader html
     while (loadMoreUrl != null && ++loadCount < pageCount) {
-      try (CloseableHttpResponse response = httpInterface.execute(new HttpGet("https://www.youtube.com" + loadMoreUrl))) {
+      HttpGet get = new HttpGet("https://www.youtube.com" + loadMoreUrl);
+      get.addHeader("accept-language", Locale.getDefault().getLanguage());
+      
+      try (CloseableHttpResponse response = httpInterface.execute(get)) {
         int statusCode = response.getStatusLine().getStatusCode();
         if (statusCode != 200) {
           throw new IOException("Invalid status code for playlist response: " + statusCode);
