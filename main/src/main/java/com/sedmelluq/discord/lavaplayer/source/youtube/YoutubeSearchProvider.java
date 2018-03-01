@@ -26,6 +26,7 @@ import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -55,8 +56,11 @@ public class YoutubeSearchProvider implements HttpConfigurable {
 
     try (HttpInterface httpInterface = httpInterfaceManager.getInterface()) {
       URI url = new URIBuilder("https://www.youtube.com/results").addParameter("search_query", query).build();
+      
+      HttpGet get = new HttpGet(url);
+      get.addHeader("accept-language", Locale.getDefault().getLanguage());
 
-      try (CloseableHttpResponse response = httpInterface.execute(new HttpGet(url))) {
+      try (CloseableHttpResponse response = httpInterface.execute(get)) {
         int statusCode = response.getStatusLine().getStatusCode();
         if (statusCode != 200) {
           throw new IOException("Invalid status code for search response: " + statusCode);
