@@ -200,7 +200,7 @@ public class YoutubeAudioTrack extends DelegatedAudioTrack {
     HttpGet get = new HttpGet(resolvedDashUrl);
     get.addHeader("accept-language", Locale.getDefault().getLanguage());
     
-    try (CloseableHttpResponse response = httpInterface.execute(url)) {
+    try (CloseableHttpResponse response = httpInterface.execute(get)) {
       int statusCode = response.getStatusLine().getStatusCode();
       if (statusCode != 200) {
         throw new IOException("Invalid status code for track info page response: " + statusCode);
