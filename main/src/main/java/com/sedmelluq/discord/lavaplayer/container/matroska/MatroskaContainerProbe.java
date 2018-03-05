@@ -1,8 +1,8 @@
 package com.sedmelluq.discord.lavaplayer.container.matroska;
 
+import com.sedmelluq.discord.lavaplayer.container.AbstractMediaContainerProbe;
 import com.sedmelluq.discord.lavaplayer.container.MediaContainerDetectionResult;
 import com.sedmelluq.discord.lavaplayer.container.MediaContainerHints;
-import com.sedmelluq.discord.lavaplayer.container.MediaContainerProbe;
 import com.sedmelluq.discord.lavaplayer.container.matroska.format.MatroskaFileTrack;
 import com.sedmelluq.discord.lavaplayer.tools.io.SeekableInputStream;
 import com.sedmelluq.discord.lavaplayer.track.AudioReference;
@@ -15,14 +15,13 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 
-import static com.sedmelluq.discord.lavaplayer.container.MediaContainerDetection.UNKNOWN_ARTIST;
-import static com.sedmelluq.discord.lavaplayer.container.MediaContainerDetection.UNKNOWN_TITLE;
 import static com.sedmelluq.discord.lavaplayer.container.MediaContainerDetection.checkNextBytes;
+import static com.sedmelluq.discord.lavaplayer.tools.DataFormatTools.defaultOnNull;
 
 /**
  * Container detection probe for matroska format.
  */
-public class MatroskaContainerProbe implements MediaContainerProbe {
+public class MatroskaContainerProbe extends AbstractMediaContainerProbe {
   private static final Logger log = LoggerFactory.getLogger(MatroskaContainerProbe.class);
 
   static final String OPUS_CODEC = "A_OPUS";
@@ -57,8 +56,13 @@ public class MatroskaContainerProbe implements MediaContainerProbe {
       return new MediaContainerDetectionResult(this, "No supported audio tracks present in the file.");
     }
 
-    return new MediaContainerDetectionResult(this, new AudioTrackInfo(UNKNOWN_TITLE, UNKNOWN_ARTIST,
-        (long) file.getDuration(), reference.identifier, false, reference.identifier));
+    return new MediaContainerDetectionResult(this, new AudioTrackInfo(
+        getDefaultTitle(inputStream),
+        getDefaultArtist(inputStream),
+        (long) file.getDuration(),
+        reference.identifier,
+        false,
+        defaultOnNull(getDefaultUrl(inputStream), reference.identifier)));
   }
 
   private boolean hasSupportedAudioTrack(MatroskaStreamingFile file) {

@@ -1,8 +1,8 @@
 package com.sedmelluq.discord.lavaplayer.container.playlists;
 
+import com.sedmelluq.discord.lavaplayer.container.AbstractMediaContainerProbe;
 import com.sedmelluq.discord.lavaplayer.container.MediaContainerDetectionResult;
 import com.sedmelluq.discord.lavaplayer.container.MediaContainerHints;
-import com.sedmelluq.discord.lavaplayer.container.MediaContainerProbe;
 import com.sedmelluq.discord.lavaplayer.tools.DataFormatTools;
 import com.sedmelluq.discord.lavaplayer.tools.io.SeekableInputStream;
 import com.sedmelluq.discord.lavaplayer.track.AudioReference;
@@ -19,7 +19,7 @@ import static com.sedmelluq.discord.lavaplayer.container.MediaContainerDetection
 /**
  * Probe for M3U playlist.
  */
-public class M3uPlaylistContainerProbe implements MediaContainerProbe {
+public class M3uPlaylistContainerProbe extends AbstractMediaContainerProbe {
   private static final Logger log = LoggerFactory.getLogger(M3uPlaylistContainerProbe.class);
 
   private static final int[] M3U_HEADER_TAG = new int[] { '#', 'E', 'X', 'T', 'M', '3', 'U' };

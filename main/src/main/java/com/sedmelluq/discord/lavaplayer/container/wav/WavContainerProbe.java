@@ -1,8 +1,8 @@
 package com.sedmelluq.discord.lavaplayer.container.wav;
 
+import com.sedmelluq.discord.lavaplayer.container.AbstractMediaContainerProbe;
 import com.sedmelluq.discord.lavaplayer.container.MediaContainerDetectionResult;
 import com.sedmelluq.discord.lavaplayer.container.MediaContainerHints;
-import com.sedmelluq.discord.lavaplayer.container.MediaContainerProbe;
 import com.sedmelluq.discord.lavaplayer.tools.io.SeekableInputStream;
 import com.sedmelluq.discord.lavaplayer.track.AudioReference;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
@@ -12,8 +12,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 
-import static com.sedmelluq.discord.lavaplayer.container.MediaContainerDetection.UNKNOWN_ARTIST;
-import static com.sedmelluq.discord.lavaplayer.container.MediaContainerDetection.UNKNOWN_TITLE;
 import static com.sedmelluq.discord.lavaplayer.container.MediaContainerDetection.checkNextBytes;
 import static com.sedmelluq.discord.lavaplayer.container.wav.WavFileLoader.WAV_RIFF_HEADER;
 import static com.sedmelluq.discord.lavaplayer.tools.DataFormatTools.defaultOnNull;
@@ -21,7 +19,7 @@ import static com.sedmelluq.discord.lavaplayer.tools.DataFormatTools.defaultOnNu
 /**
  * Container detection probe for WAV format.
  */
-public class WavContainerProbe implements MediaContainerProbe {
+public class WavContainerProbe extends AbstractMediaContainerProbe {
   private static final Logger log = LoggerFactory.getLogger(WavContainerProbe.class);
 
   @Override
@@ -45,12 +43,12 @@ public class WavContainerProbe implements MediaContainerProbe {
     WavFileInfo fileInfo = new WavFileLoader(inputStream).parseHeaders();
 
     return new MediaContainerDetectionResult(this, new AudioTrackInfo(
-        defaultOnNull(reference.title, UNKNOWN_TITLE),
-        UNKNOWN_ARTIST,
+        defaultOnNull(reference.title, getDefaultTitle(inputStream)),
+        getDefaultArtist(inputStream),
         fileInfo.getDuration(),
         reference.identifier,
         false,
-        reference.identifier
+        defaultOnNull(getDefaultUrl(inputStream), reference.identifier)
     ));
   }
 
