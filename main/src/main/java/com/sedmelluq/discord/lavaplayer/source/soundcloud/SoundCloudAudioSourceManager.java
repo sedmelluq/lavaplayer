@@ -298,13 +298,15 @@ public class SoundCloudAudioSourceManager implements AudioSourceManager, HttpCon
   private AudioTrack buildAudioTrack(JsonBrowser trackInfoJson, String secretToken) {
     String trackId = trackInfoJson.get("id").text();
 
+    JsonBrowser artworkUrl = trackInfoJson.get("artwork_url");
     AudioTrackInfo trackInfo = new AudioTrackInfo(
         trackInfoJson.get("title").text(),
         trackInfoJson.get("user").get("username").text(),
         trackInfoJson.get("duration").as(Integer.class),
         secretToken != null ? trackId + "|" + secretToken : trackId,
         false,
-        trackInfoJson.get("permalink_url").text()
+        trackInfoJson.get("permalink_url").text(),
+        artworkUrl != null ? artworkUrl.text() : null
     );
 
     return new SoundCloudAudioTrack(trackInfo, this);

@@ -65,6 +65,7 @@ public class TwitchStreamAudioSourceManager implements AudioSourceManager, HttpC
     } else {
       final String displayName = channelInfo.get("display_name").text();
       final String status = channelInfo.get("status").text();
+      final String logo = channelInfo.get("logo").text();
 
       return new TwitchStreamAudioTrack(new AudioTrackInfo(
           status,
@@ -72,7 +73,8 @@ public class TwitchStreamAudioSourceManager implements AudioSourceManager, HttpC
           Long.MAX_VALUE,
           reference.identifier,
           true,
-          reference.identifier
+          reference.identifier,
+          logo
       ), this);
     }
   }
