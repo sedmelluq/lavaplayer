@@ -23,10 +23,11 @@ public abstract class AbstractMediaContainerProbe implements MediaContainerProbe
    */
   protected String getDefaultTitle(SeekableInputStream inputStream) {
     PersistentHttpStream httpStream = getHttpStream(inputStream);
+    String title = null;
     if (httpStream != null) {
-      return getHeaderValue(httpStream.getCurrentResponse(), "icy-description");
+      title = getHeaderValue(httpStream.getCurrentResponse(), "icy-description");
     }
-    return UNKNOWN_TITLE;
+    return defaultOnNull(title, UNKNOWN_TITLE);
   }
 
   /**
@@ -37,15 +38,15 @@ public abstract class AbstractMediaContainerProbe implements MediaContainerProbe
    * @return Track Artist
    */
   protected String getDefaultArtist(SeekableInputStream inputStream) {
-    String title = null;
+    String artist = null;
     PersistentHttpStream httpStream = getHttpStream(inputStream);
     if (httpStream != null) {
-      title = getHeaderValue(httpStream.getCurrentResponse(), "icy-name");
-      if (title == null) {
-        title = getHeaderValue(httpStream.getCurrentResponse(), "icy-url");
+      artist = getHeaderValue(httpStream.getCurrentResponse(), "icy-name");
+      if (artist == null) {
+        artist = getHeaderValue(httpStream.getCurrentResponse(), "icy-url");
       }
     }
-    return defaultOnNull(title, UNKNOWN_ARTIST);
+    return defaultOnNull(artist, UNKNOWN_ARTIST);
   }
 
   /**
