@@ -1,5 +1,13 @@
 # Change Log
 
+## [1.2.58] - 2018-03-26
+### Fixed
+- Fixed Twitch stream loading regression.
+
+## [1.2.57] - 2018-03-26
+### Fixed
+- Fixed YouTube mix loading regression.
+
 ## [1.2.56] - 2018-02-28
 ### Added
 - Added method to get Twitch track channel name.
