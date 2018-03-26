@@ -3,6 +3,7 @@ package com.sedmelluq.discord.lavaplayer.tools.io;
 import org.apache.http.Header;
 import org.apache.http.HttpHeaders;
 import org.apache.http.HttpResponse;
+import org.apache.http.HttpStatus;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.slf4j.Logger;
@@ -73,9 +74,9 @@ public class PersistentHttpStream extends SeekableInputStream implements AutoClo
 
   private static boolean validateStatusCode(HttpResponse response, boolean returnOnServerError) {
     int statusCode = response.getStatusLine().getStatusCode();
-    if (returnOnServerError && statusCode >= 500 && statusCode <= 599) {
+    if (returnOnServerError && statusCode >= HttpStatus.SC_INTERNAL_SERVER_ERROR) {
       return false;
-    } else if (statusCode != 200 && statusCode != 206) {
+    } else if (statusCode != HttpStatus.SC_OK && statusCode != HttpStatus.SC_PARTIAL_CONTENT) {
       throw new RuntimeException("Not success status code: " + statusCode);
     }
     return true;
