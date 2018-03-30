@@ -1,5 +1,9 @@
 # Change Log
 
+## [1.2.59] -- 2018-03-30
+### Added
+- Ability to add a custom audio filter factory to an instance of an audio player.
+
 ## [1.2.58] - 2018-03-26
 ### Fixed
 - Fixed Twitch stream loading regression.
