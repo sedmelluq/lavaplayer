@@ -27,6 +27,7 @@ import java.net.URI;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.StringJoiner;
 
@@ -195,8 +196,11 @@ public class YoutubeAudioTrack extends DelegatedAudioTrack {
 
   private List<YoutubeTrackFormat> loadTrackFormatsFromDash(String dashUrl, HttpInterface httpInterface, String playerScript) throws Exception {
     String resolvedDashUrl = sourceManager.getCipherManager().getValidDashUrl(httpInterface, playerScript, dashUrl);
-
-    try (CloseableHttpResponse response = httpInterface.execute(new HttpGet(resolvedDashUrl))) {
+    
+    HttpGet get = new HttpGet(resolvedDashUrl);
+    get.addHeader("accept-language", Locale.getDefault().getLanguage());
+    
+    try (CloseableHttpResponse response = httpInterface.execute(get)) {
       int statusCode = response.getStatusLine().getStatusCode();
       if (statusCode != 200) {
         throw new IOException("Invalid status code for track info page response: " + statusCode);

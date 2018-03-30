@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorCompletionService;
 import java.util.concurrent.ExecutorService;
@@ -75,9 +76,10 @@ public class YoutubeMixProvider {
     List<String> videoIds = new ArrayList<>();
 
     try (HttpInterface httpInterface = sourceManager.getHttpInterface()) {
-      String mixUrl = "https://www.youtube.com/watch?v=" + selectedVideoId + "&list=" + mixId;
-
-      try (CloseableHttpResponse response = httpInterface.execute(new HttpGet(mixUrl))) {
+      HttpGet get = new HttpGet("https://www.youtube.com/watch?v=" + selectedVideoId + "&list=" + mixId);
+      get.addHeader("accept-language", Locale.getDefault().getLanguage());
+      
+      try (CloseableHttpResponse response = httpInterface.execute(get)) {
         int statusCode = response.getStatusLine().getStatusCode();
         if (statusCode != 200) {
           throw new IOException("Invalid status code for mix response: " + statusCode);
