@@ -24,7 +24,8 @@ public class BufferingPostProcessor implements AudioPostProcessor {
 
   @Override
   public void process(long timecode, ShortBuffer buffer) throws InterruptedException {
-    context.frameConsumer.consume(new AudioFrame(timecode, encoder.encode(buffer), context.volumeLevel.get(), context.outputFormat));
+    context.frameConsumer.consume(new AudioFrame(timecode, encoder.encode(buffer),
+        context.playerOptions.volumeLevel.get(), context.outputFormat));
   }
 
   @Override

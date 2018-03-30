@@ -1,7 +1,8 @@
 package com.sedmelluq.discord.lavaplayer.container.mp3;
 
-import com.sedmelluq.discord.lavaplayer.filter.FilterChainBuilder;
-import com.sedmelluq.discord.lavaplayer.filter.ShortPcmAudioFilter;
+import com.sedmelluq.discord.lavaplayer.filter.AudioPipeline;
+import com.sedmelluq.discord.lavaplayer.filter.AudioPipelineFactory;
+import com.sedmelluq.discord.lavaplayer.filter.PcmFormat;
 import com.sedmelluq.discord.lavaplayer.natives.mp3.Mp3Decoder;
 import com.sedmelluq.discord.lavaplayer.tools.io.SeekableInputStream;
 import com.sedmelluq.discord.lavaplayer.track.playback.AudioProcessingContext;
@@ -41,7 +42,7 @@ public class Mp3TrackProvider {
 
   private int sampleRate;
   private int channelCount;
-  private ShortPcmAudioFilter downstream;
+  private AudioPipeline downstream;
   private Mp3Seeker seeker;
 
   /**
@@ -75,7 +76,7 @@ public class Mp3TrackProvider {
 
     sampleRate = Mp3Decoder.getFrameSampleRate(frameBuffer, 0);
     channelCount = Mp3Decoder.getFrameChannelCount(frameBuffer, 0);
-    downstream = context != null ? FilterChainBuilder.forShortPcm(context, channelCount, sampleRate, true) : null;
+    downstream = context != null ? AudioPipelineFactory.create(context, new PcmFormat(channelCount, sampleRate)) : null;
 
     initialiseSeeker();
   }

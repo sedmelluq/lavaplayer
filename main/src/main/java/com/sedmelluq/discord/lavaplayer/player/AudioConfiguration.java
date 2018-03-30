@@ -12,6 +12,7 @@ public class AudioConfiguration {
   private volatile ResamplingQuality resamplingQuality;
   private volatile int opusEncodingQuality;
   private volatile AudioDataFormat outputFormat;
+  private volatile boolean filterHotSwapEnabled;
 
   /**
    * Create a new configuration with default values.
@@ -20,6 +21,7 @@ public class AudioConfiguration {
     resamplingQuality = ResamplingQuality.LOW;
     opusEncodingQuality = OPUS_QUALITY_MAX;
     outputFormat = StandardAudioDataFormats.DISCORD_OPUS;
+    filterHotSwapEnabled = false;
   }
 
   public ResamplingQuality getResamplingQuality() {
@@ -44,6 +46,14 @@ public class AudioConfiguration {
 
   public void setOutputFormat(AudioDataFormat outputFormat) {
     this.outputFormat = outputFormat;
+  }
+
+  public boolean isFilterHotSwapEnabled() {
+    return filterHotSwapEnabled;
+  }
+
+  public void setFilterHotSwapEnabled(boolean filterHotSwapEnabled) {
+    this.filterHotSwapEnabled = filterHotSwapEnabled;
   }
 
   /**

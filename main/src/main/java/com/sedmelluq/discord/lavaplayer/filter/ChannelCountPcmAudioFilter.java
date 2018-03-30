@@ -16,8 +16,6 @@ public class ChannelCountPcmAudioFilter implements ShortPcmAudioFilter {
   private final ShortBuffer outputBuffer;
   private final int inputChannels;
   private final ShortBuffer inputSet;
-  private int nextChannelIndex;
-  private short lastSample;
 
   /**
    * @param inputChannels Number of input channels
@@ -30,7 +28,6 @@ public class ChannelCountPcmAudioFilter implements ShortPcmAudioFilter {
     this.outputChannels = outputChannels;
     this.outputBuffer = ShortBuffer.allocate(2048 * inputChannels);
     this.inputSet = ShortBuffer.allocate(inputChannels);
-    this.nextChannelIndex = 0;
   }
 
   @Override
@@ -106,19 +103,16 @@ public class ChannelCountPcmAudioFilter implements ShortPcmAudioFilter {
 
   @Override
   public void seekPerformed(long requestedTime, long providedTime) {
-    downstream.seekPerformed(requestedTime, providedTime);
-
     outputBuffer.clear();
-    nextChannelIndex = 0;
   }
 
   @Override
   public void flush() throws InterruptedException {
-    downstream.flush();
+    // Nothing to do.
   }
 
   @Override
   public void close() {
-    downstream.close();
+    // Nothing to do.
   }
 }
