@@ -32,6 +32,11 @@ public class UserProvidedAudioFilters extends CompositeAudioFilter {
       FilterChainBuilder builder = new FilterChainBuilder(outputFormat);
 
       List<AudioFilter> filters = new ArrayList<>(factory.buildChain(null, context.outputFormat, nextFilter));
+
+      if (filters.isEmpty()) {
+        return new AudioFilterChain(nextFilter, Collections.emptyList(), null);
+      }
+
       Collections.reverse(filters);
 
       for (AudioFilter filter : filters) {
