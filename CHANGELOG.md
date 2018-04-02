@@ -1,5 +1,13 @@
 # Change Log
 
+## [1.2.61] -- 2018-04-02
+### Fixed
+- Fixed HTTP 403 for some YouTube tracks due to adding one parameter to the playback URL twice.
+
+## [1.2.60] -- 2018-04-02
+### Added
+- Equalizer filter and its filter factory to LavaPlayer classes (still need to be applied manually).
+
 ## [1.2.59] -- 2018-03-30
 ### Added
 - Ability to add a custom audio filter factory to an instance of an audio player.
