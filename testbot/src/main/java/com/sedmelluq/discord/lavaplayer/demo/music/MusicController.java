@@ -114,7 +114,7 @@ public class MusicController implements BotController {
   @BotCommandHandler
   private void eqsetup(Message message) {
     manager.getConfiguration().setFilterHotSwapEnabled(true);
-    manager.setFrameBufferDuration(500);
+    player.setFrameBufferDuration(500);
   }
 
   @BotCommandHandler

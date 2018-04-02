@@ -41,6 +41,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -369,7 +370,8 @@ public class DefaultAudioPlayerManager implements AudioPlayerManager {
       if (customExecutor != null) {
         return customExecutor;
       } else {
-        return new LocalAudioTrackExecutor(track, configuration, playerOptions, useSeekGhosting, frameBufferDuration);
+        int bufferDuration = Optional.ofNullable(playerOptions.frameBufferDuration.get()).orElse(frameBufferDuration);
+        return new LocalAudioTrackExecutor(track, configuration, playerOptions, useSeekGhosting, bufferDuration);
       }
     }
   }

@@ -2,11 +2,11 @@ plugins {
   id 'java'
   id 'application'
   id 'org.sonarqube' version '2.1'
-  id 'com.jfrog.bintray' version '1.7.3'
+  id 'com.jfrog.bintray' version '1.8.0'
 }
 
 ext.moduleName = 'lavaplayer'
-version = '1.2.61'
+version = '1.2.62'
 
 dependencies {
   compile 'com.sedmelluq:lavaplayer-common:1.0.6'

@@ -1,5 +1,9 @@
 # Change Log
 
+## [1.2.62] -- 2018-04-02
+### Added
+- Method to set track frame buffer duration per player.
+
 ## [1.2.61] -- 2018-04-02
 ### Fixed
 - Fixed HTTP 403 for some YouTube tracks due to adding one parameter to the playback URL twice.

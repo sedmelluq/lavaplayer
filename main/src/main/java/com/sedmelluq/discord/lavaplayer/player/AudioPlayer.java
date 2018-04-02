@@ -238,6 +238,14 @@ public class AudioPlayer implements AudioFrameProvider, TrackStateListener {
     options.filterFactory.set(factory);
   }
 
+  public void setFrameBufferDuration(Integer duration) {
+    if (duration != null) {
+      duration = Math.max(200, duration);
+    }
+
+    options.frameBufferDuration.set(duration);
+  }
+
   /**
    * @return Whether the player is paused
    */

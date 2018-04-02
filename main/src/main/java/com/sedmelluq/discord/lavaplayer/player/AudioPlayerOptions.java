@@ -8,9 +8,11 @@ import java.util.concurrent.atomic.AtomicReference;
 public class AudioPlayerOptions {
   public final AtomicInteger volumeLevel;
   public final AtomicReference<PcmFilterFactory> filterFactory;
+  public final AtomicReference<Integer> frameBufferDuration;
 
   public AudioPlayerOptions() {
     this.volumeLevel = new AtomicInteger(100);
     this.filterFactory = new AtomicReference<>();
+    this.frameBufferDuration = new AtomicReference<>();
   }
 }
