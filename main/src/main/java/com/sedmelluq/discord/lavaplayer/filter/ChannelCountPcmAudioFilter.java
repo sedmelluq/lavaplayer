@@ -65,7 +65,7 @@ public class ChannelCountPcmAudioFilter implements ShortPcmAudioFilter {
 
       if (!inputSet.hasRemaining()) {
         for (int i = 0; i < commonChannels; i++) {
-          outputBuffer.put(inputSet.get());
+          outputBuffer.put(inputSet.get(i));
         }
 
         for (int i = 0; i < channelsToAdd; i++) {
