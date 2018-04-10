@@ -1,8 +1,8 @@
 package com.sedmelluq.discord.lavaplayer.container.mpeg;
 
+import com.sedmelluq.discord.lavaplayer.container.AbstractMediaContainerProbe;
 import com.sedmelluq.discord.lavaplayer.container.MediaContainerDetectionResult;
 import com.sedmelluq.discord.lavaplayer.container.MediaContainerHints;
-import com.sedmelluq.discord.lavaplayer.container.MediaContainerProbe;
 import com.sedmelluq.discord.lavaplayer.container.mpeg.reader.MpegFileTrackProvider;
 import com.sedmelluq.discord.lavaplayer.tools.DataFormatTools;
 import com.sedmelluq.discord.lavaplayer.tools.io.SeekableInputStream;
@@ -14,14 +14,13 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 
-import static com.sedmelluq.discord.lavaplayer.container.MediaContainerDetection.UNKNOWN_ARTIST;
-import static com.sedmelluq.discord.lavaplayer.container.MediaContainerDetection.UNKNOWN_TITLE;
 import static com.sedmelluq.discord.lavaplayer.container.MediaContainerDetection.checkNextBytes;
+import static com.sedmelluq.discord.lavaplayer.tools.DataFormatTools.defaultOnNull;
 
 /**
  * Container detection probe for MP4 format.
  */
-public class MpegContainerProbe implements MediaContainerProbe {
+public class MpegContainerProbe extends AbstractMediaContainerProbe {
   private static final Logger log = LoggerFactory.getLogger(MpegContainerProbe.class);
 
   private static final int[] ISO_TAG = new int[] { 0x00, 0x00, 0x00, -1, 0x66, 0x74, 0x79, 0x70 };
@@ -61,12 +60,12 @@ public class MpegContainerProbe implements MediaContainerProbe {
     }
 
     return new MediaContainerDetectionResult(this, new AudioTrackInfo(
-        DataFormatTools.defaultOnNull(file.getTextMetadata("Title"), UNKNOWN_TITLE),
-        DataFormatTools.defaultOnNull(file.getTextMetadata("Artist"), UNKNOWN_ARTIST),
+        DataFormatTools.defaultOnNull(file.getTextMetadata("Title"), getDefaultTitle(inputStream)),
+        DataFormatTools.defaultOnNull(file.getTextMetadata("Artist"), getDefaultArtist(inputStream)),
         fileReader.getDuration(),
         reference.identifier,
         false,
-        reference.identifier
+        defaultOnNull(getDefaultUrl(inputStream), reference.identifier)
     ));
   }
 

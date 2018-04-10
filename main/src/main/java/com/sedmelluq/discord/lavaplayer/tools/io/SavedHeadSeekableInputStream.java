@@ -34,6 +34,14 @@ public class SavedHeadSeekableInputStream extends SeekableInputStream {
     headPosition = 0;
   }
 
+  /**
+   * Return the delegate stream of this wrapper
+   * @return Delegate stream
+   */
+  public SeekableInputStream getDelegate() {
+    return delegate;
+  }
+
   @Override
   public long getPosition() {
     if (usingHead) {

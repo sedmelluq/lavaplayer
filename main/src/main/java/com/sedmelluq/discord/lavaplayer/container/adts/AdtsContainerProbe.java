@@ -3,7 +3,7 @@ package com.sedmelluq.discord.lavaplayer.container.adts;
 import com.sedmelluq.discord.lavaplayer.container.MediaContainerDetection;
 import com.sedmelluq.discord.lavaplayer.container.MediaContainerDetectionResult;
 import com.sedmelluq.discord.lavaplayer.container.MediaContainerHints;
-import com.sedmelluq.discord.lavaplayer.container.MediaContainerProbe;
+import com.sedmelluq.discord.lavaplayer.container.AbstractMediaContainerProbe;
 import com.sedmelluq.discord.lavaplayer.tools.io.SeekableInputStream;
 import com.sedmelluq.discord.lavaplayer.track.AudioReference;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
@@ -13,10 +13,12 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 
+import static com.sedmelluq.discord.lavaplayer.tools.DataFormatTools.defaultOnNull;
+
 /**
  * Container detection probe for ADTS stream format.
  */
-public class AdtsContainerProbe implements MediaContainerProbe {
+public class AdtsContainerProbe extends AbstractMediaContainerProbe {
   private static final Logger log = LoggerFactory.getLogger(AdtsContainerProbe.class);
 
   @Override
@@ -40,12 +42,12 @@ public class AdtsContainerProbe implements MediaContainerProbe {
     log.debug("Track {} is an ADTS stream.", reference.identifier);
 
     return new MediaContainerDetectionResult(this, new AudioTrackInfo(
-        reference.title != null ? reference.title : MediaContainerDetection.UNKNOWN_TITLE,
-        MediaContainerDetection.UNKNOWN_ARTIST,
+        reference.title != null ? reference.title : getDefaultTitle(inputStream),
+        getDefaultArtist(inputStream),
         Long.MAX_VALUE,
         reference.identifier,
         true,
-        reference.identifier
+        defaultOnNull(getDefaultUrl(inputStream), reference.identifier)
     ));
   }
 

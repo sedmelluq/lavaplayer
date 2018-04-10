@@ -1,8 +1,8 @@
 package com.sedmelluq.discord.lavaplayer.container.ogg;
 
+import com.sedmelluq.discord.lavaplayer.container.AbstractMediaContainerProbe;
 import com.sedmelluq.discord.lavaplayer.container.MediaContainerDetectionResult;
 import com.sedmelluq.discord.lavaplayer.container.MediaContainerHints;
-import com.sedmelluq.discord.lavaplayer.container.MediaContainerProbe;
 import com.sedmelluq.discord.lavaplayer.tools.io.SeekableInputStream;
 import com.sedmelluq.discord.lavaplayer.track.AudioReference;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
@@ -12,15 +12,14 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 
-import static com.sedmelluq.discord.lavaplayer.container.MediaContainerDetection.UNKNOWN_ARTIST;
-import static com.sedmelluq.discord.lavaplayer.container.MediaContainerDetection.UNKNOWN_TITLE;
 import static com.sedmelluq.discord.lavaplayer.container.MediaContainerDetection.checkNextBytes;
 import static com.sedmelluq.discord.lavaplayer.container.ogg.OggPacketInputStream.OGG_PAGE_HEADER;
+import static com.sedmelluq.discord.lavaplayer.tools.DataFormatTools.defaultOnNull;
 
 /**
  * Container detection probe for OGG stream.
  */
-public class OggContainerProbe implements MediaContainerProbe {
+public class OggContainerProbe extends AbstractMediaContainerProbe {
   private static final Logger log = LoggerFactory.getLogger(OggContainerProbe.class);
 
   @Override
@@ -42,12 +41,12 @@ public class OggContainerProbe implements MediaContainerProbe {
     log.debug("Track {} is an OGG stream.", reference.identifier);
 
     return new MediaContainerDetectionResult(this, new AudioTrackInfo(
-        reference.title != null ? reference.title : UNKNOWN_TITLE,
-        UNKNOWN_ARTIST,
+        reference.title != null ? reference.title : getDefaultTitle(stream),
+        getDefaultArtist(stream),
         Long.MAX_VALUE,
         reference.identifier,
         true,
-        reference.identifier
+        defaultOnNull(getDefaultUrl(stream), reference.identifier)
     ));
   }
 
