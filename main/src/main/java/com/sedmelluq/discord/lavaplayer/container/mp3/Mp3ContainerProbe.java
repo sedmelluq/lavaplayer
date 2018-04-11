@@ -7,6 +7,7 @@ import com.sedmelluq.discord.lavaplayer.tools.io.SeekableInputStream;
 import com.sedmelluq.discord.lavaplayer.track.AudioReference;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo;
+import com.sedmelluq.discord.lavaplayer.track.info.AudioTrackInfoBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,8 +26,6 @@ public class Mp3ContainerProbe implements MediaContainerProbe {
   private static final Logger log = LoggerFactory.getLogger(Mp3ContainerProbe.class);
 
   private static final int[] ID3_TAG = new int[] { 0x49, 0x44, 0x33 };
-  private static final String TITLE_TAG = "TIT2";
-  private static final String ARTIST_TAG = "TPE1";
 
   @Override
   public String getName() {
@@ -59,14 +58,8 @@ public class Mp3ContainerProbe implements MediaContainerProbe {
     try {
       file.parseHeaders();
 
-      return new MediaContainerDetectionResult(this, new AudioTrackInfo(
-          defaultOnNull(file.getIdv3Tag(TITLE_TAG), reference.title != null ? reference.title : UNKNOWN_TITLE),
-          defaultOnNull(file.getIdv3Tag(ARTIST_TAG), UNKNOWN_ARTIST),
-          file.getDuration(),
-          reference.identifier,
-          !file.isSeekable(),
-          reference.identifier
-      ));
+      return new MediaContainerDetectionResult(this, AudioTrackInfoBuilder.create(reference, inputStream)
+          .apply(file).setIsStream(!file.isSeekable()).build());
     } finally {
       file.close();
     }

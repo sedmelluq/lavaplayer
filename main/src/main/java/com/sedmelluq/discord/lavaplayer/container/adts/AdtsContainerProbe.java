@@ -8,6 +8,7 @@ import com.sedmelluq.discord.lavaplayer.tools.io.SeekableInputStream;
 import com.sedmelluq.discord.lavaplayer.track.AudioReference;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo;
+import com.sedmelluq.discord.lavaplayer.track.info.AudioTrackInfoBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,14 +40,10 @@ public class AdtsContainerProbe implements MediaContainerProbe {
 
     log.debug("Track {} is an ADTS stream.", reference.identifier);
 
-    return new MediaContainerDetectionResult(this, new AudioTrackInfo(
-        reference.title != null ? reference.title : MediaContainerDetection.UNKNOWN_TITLE,
-        MediaContainerDetection.UNKNOWN_ARTIST,
-        Long.MAX_VALUE,
-        reference.identifier,
-        true,
-        reference.identifier
-    ));
+    return new MediaContainerDetectionResult(
+        this,
+        AudioTrackInfoBuilder.create(reference, inputStream).build()
+    );
   }
 
   @Override

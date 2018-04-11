@@ -1,8 +1,11 @@
 package com.sedmelluq.discord.lavaplayer.tools.io;
 
+import com.sedmelluq.discord.lavaplayer.track.info.AudioTrackInfoProvider;
+
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.List;
 
 /**
  * An input stream that is seekable.
@@ -41,7 +44,7 @@ public abstract class SeekableInputStream extends InputStream {
 
   protected abstract void seekHard(long position) throws IOException;
 
-  protected abstract boolean canSeekHard();
+  public abstract boolean canSeekHard();
 
   /**
    * Skip the specified number of bytes in the stream. The result is either that the requested number of bytes were
@@ -91,4 +94,6 @@ public abstract class SeekableInputStream extends InputStream {
       }
     }
   }
+
+  public abstract List<AudioTrackInfoProvider> getTrackInfoProviders();
 }

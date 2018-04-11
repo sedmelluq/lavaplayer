@@ -1,5 +1,8 @@
 package com.sedmelluq.discord.lavaplayer.tools.io;
 
+import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo;
+import com.sedmelluq.discord.lavaplayer.track.info.AudioTrackInfoBuilder;
+import com.sedmelluq.discord.lavaplayer.track.info.AudioTrackInfoProvider;
 import org.apache.http.Header;
 import org.apache.http.HttpHeaders;
 import org.apache.http.HttpResponse;
@@ -13,6 +16,10 @@ import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
+import java.util.Collections;
+import java.util.List;
+
+import static com.sedmelluq.discord.lavaplayer.tools.io.HttpClientTools.getHeaderValue;
 
 /**
  * Use an HTTP endpoint as a stream, where the connection resetting is handled gracefully by reopening the connection
@@ -266,7 +273,28 @@ public class PersistentHttpStream extends SeekableInputStream implements AutoClo
   }
 
   @Override
-  protected boolean canSeekHard() {
+  public boolean canSeekHard() {
     return contentLength != Long.MAX_VALUE;
+  }
+
+  @Override
+  public List<AudioTrackInfoProvider> getTrackInfoProviders() {
+    if (currentResponse != null) {
+      return Collections.singletonList(createIceCastHeaderProvider());
+    } else {
+      return Collections.emptyList();
+    }
+  }
+
+  private AudioTrackInfoProvider createIceCastHeaderProvider() {
+    AudioTrackInfoBuilder builder = AudioTrackInfoBuilder.empty()
+        .setTitle(getHeaderValue(currentResponse, "icy-description"))
+        .setAuthor(getHeaderValue(currentResponse, "icy-name"));
+
+    if (builder.getTitle() == null) {
+      builder.setTitle(getHeaderValue(currentResponse, "icy-url"));
+    }
+
+    return builder;
   }
 }

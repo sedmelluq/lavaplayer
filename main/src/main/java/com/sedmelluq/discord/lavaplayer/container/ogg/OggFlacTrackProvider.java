@@ -9,6 +9,8 @@ import com.sedmelluq.discord.lavaplayer.tools.io.BitStreamReader;
 import com.sedmelluq.discord.lavaplayer.track.playback.AudioProcessingContext;
 
 import java.io.IOException;
+import java.util.Collections;
+import java.util.Map;
 
 /**
  * OGG stream handler for FLAC codec.
@@ -41,9 +43,23 @@ public class OggFlacTrackProvider implements OggTrackProvider {
   }
 
   @Override
-  public void initialise(AudioProcessingContext context) {
+  public void initialise(AudioProcessingContext context) throws IOException {
     downstream = AudioPipelineFactory.create(context,
         new PcmFormat(info.stream.channelCount, info.stream.sampleRate));
+  }
+
+  @Override
+  public OggMetadata getMetadata() {
+    return new OggMetadata(info.tags);
+  }
+
+  @Override
+  public OggStreamSizeInfo seekForSizeInfo() throws IOException {
+    if (info.stream.sampleCount > 0) {
+      return new OggStreamSizeInfo(0, info.stream.sampleCount, 0, 0, info.stream.sampleRate);
+    } else {
+      return packetInputStream.seekForSizeInfo(info.stream.sampleRate);
+    }
   }
 
   @Override

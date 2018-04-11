@@ -41,7 +41,7 @@ public class YoutubePersistentHttpStream extends PersistentHttpStream {
   }
 
   @Override
-  protected boolean canSeekHard() {
+  public boolean canSeekHard() {
     return true;
   }
 }

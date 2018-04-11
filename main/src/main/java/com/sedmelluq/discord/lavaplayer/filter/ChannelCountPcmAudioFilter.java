@@ -15,7 +15,10 @@ public class ChannelCountPcmAudioFilter implements ShortPcmAudioFilter {
   private final int outputChannels;
   private final ShortBuffer outputBuffer;
   private final int inputChannels;
-  private final ShortBuffer inputSet;
+  private final int commonChannels;
+  private final int channelsToAdd;
+  private final short[] inputSet;
+  private int inputIndex;
 
   /**
    * @param inputChannels Number of input channels
@@ -27,7 +30,10 @@ public class ChannelCountPcmAudioFilter implements ShortPcmAudioFilter {
     this.inputChannels = inputChannels;
     this.outputChannels = outputChannels;
     this.outputBuffer = ShortBuffer.allocate(2048 * inputChannels);
-    this.inputSet = ShortBuffer.allocate(inputChannels);
+    this.commonChannels = Math.min(outputChannels, inputChannels);
+    this.channelsToAdd = outputChannels - commonChannels;
+    this.inputSet = new short[inputChannels];
+    this.inputIndex = 0;
   }
 
   @Override
@@ -57,19 +63,14 @@ public class ChannelCountPcmAudioFilter implements ShortPcmAudioFilter {
   }
 
   private void processNormalizer(ShortBuffer buffer) throws InterruptedException {
-    int commonChannels = Math.min(outputChannels, inputChannels);
-    int channelsToAdd = outputChannels - commonChannels;
-
     while (buffer.hasRemaining()) {
-      inputSet.put(buffer.get());
+      inputSet[inputIndex++] = buffer.get();
 
-      if (!inputSet.hasRemaining()) {
-        for (int i = 0; i < commonChannels; i++) {
-          outputBuffer.put(inputSet.get());
-        }
+      if (inputIndex == inputChannels) {
+        outputBuffer.put(inputSet, 0, commonChannels);
 
         for (int i = 0; i < channelsToAdd; i++) {
-          outputBuffer.put(inputSet.get(0));
+          outputBuffer.put(inputSet[0]);
         }
 
         if (!outputBuffer.hasRemaining()) {
@@ -78,7 +79,7 @@ public class ChannelCountPcmAudioFilter implements ShortPcmAudioFilter {
           outputBuffer.clear();
         }
 
-        inputSet.position(0);
+        inputIndex = 0;
       }
     }
   }
@@ -98,7 +99,7 @@ public class ChannelCountPcmAudioFilter implements ShortPcmAudioFilter {
   }
 
   private boolean canPassThrough(int length) {
-    return inputSet.position() == 0 && inputChannels == outputChannels && (length % inputChannels) == 0;
+    return inputIndex == 0 && inputChannels == outputChannels && (length % inputChannels) == 0;
   }
 
   @Override

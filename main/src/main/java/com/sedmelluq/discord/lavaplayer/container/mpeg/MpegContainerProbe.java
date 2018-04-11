@@ -9,6 +9,7 @@ import com.sedmelluq.discord.lavaplayer.tools.io.SeekableInputStream;
 import com.sedmelluq.discord.lavaplayer.track.AudioReference;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo;
+import com.sedmelluq.discord.lavaplayer.track.info.AudioTrackInfoBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -60,14 +61,13 @@ public class MpegContainerProbe implements MediaContainerProbe {
       return new MediaContainerDetectionResult(this, "MP4 file uses an unsupported format.");
     }
 
-    return new MediaContainerDetectionResult(this, new AudioTrackInfo(
-        DataFormatTools.defaultOnNull(file.getTextMetadata("Title"), UNKNOWN_TITLE),
-        DataFormatTools.defaultOnNull(file.getTextMetadata("Artist"), UNKNOWN_ARTIST),
-        fileReader.getDuration(),
-        reference.identifier,
-        false,
-        reference.identifier
-    ));
+    AudioTrackInfo trackInfo = AudioTrackInfoBuilder.create(reference, inputStream)
+        .setTitle(file.getTextMetadata("Title"))
+        .setAuthor(file.getTextMetadata("Artist"))
+        .setLength(fileReader.getDuration())
+        .build();
+
+    return new MediaContainerDetectionResult(this, trackInfo);
   }
 
   @Override

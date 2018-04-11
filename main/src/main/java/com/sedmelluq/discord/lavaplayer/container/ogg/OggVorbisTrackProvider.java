@@ -9,6 +9,8 @@ import com.sedmelluq.discord.lavaplayer.track.playback.AudioProcessingContext;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.Collections;
+import java.util.Map;
 
 /**
  * OGG stream handler for Vorbis codec.
@@ -52,6 +54,16 @@ public class OggVorbisTrackProvider implements OggTrackProvider {
     broker.resetAndCompact();
 
     downstream = AudioPipelineFactory.create(context, new PcmFormat(decoder.getChannelCount(), sampleRate));
+  }
+
+  @Override
+  public OggMetadata getMetadata() {
+    return OggMetadata.EMPTY;
+  }
+
+  @Override
+  public OggStreamSizeInfo seekForSizeInfo() throws IOException {
+    return null;
   }
 
   private void passHeader(int index) throws IOException {
