@@ -12,6 +12,7 @@ import com.sedmelluq.discord.lavaplayer.tools.io.SeekableInputStream;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo;
 import com.sedmelluq.discord.lavaplayer.track.playback.AudioProcessingContext;
 import com.sedmelluq.discord.lavaplayer.track.playback.LocalAudioTrackExecutor;
+import org.apache.http.HttpStatus;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.utils.URIBuilder;
 
@@ -74,7 +75,7 @@ public class YoutubeMpegStreamAudioTrack extends MpegAudioTrack {
     URI segmentUrl = getNextSegmentUrl(state);
 
     try (YoutubePersistentHttpStream stream = new YoutubePersistentHttpStream(httpInterface, segmentUrl, Long.MAX_VALUE)) {
-      if (stream.checkStatusCode() == 204 || stream.getContentLength() == 0) {
+      if (stream.checkStatusCode() == HttpStatus.SC_NO_CONTENT || stream.getContentLength() == 0) {
         state.finished = true;
         return;
       }

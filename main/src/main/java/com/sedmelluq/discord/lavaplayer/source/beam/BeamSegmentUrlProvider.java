@@ -1,8 +1,7 @@
 package com.sedmelluq.discord.lavaplayer.source.beam;
 
-import com.sedmelluq.discord.lavaplayer.source.stream.M3uStreamSegmentUrlProvider;
 import com.sedmelluq.discord.lavaplayer.source.stream.ExtendedM3uParser;
-import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
+import com.sedmelluq.discord.lavaplayer.source.stream.M3uStreamSegmentUrlProvider;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterface;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpUriRequest;
@@ -12,7 +11,6 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.util.List;
 
-import static com.sedmelluq.discord.lavaplayer.tools.FriendlyException.Severity.SUSPICIOUS;
 import static com.sedmelluq.discord.lavaplayer.tools.io.HttpClientTools.fetchResponseLines;
 
 /**
@@ -23,7 +21,6 @@ public class BeamSegmentUrlProvider extends M3uStreamSegmentUrlProvider {
 
   private final String channelId;
   private String streamSegmentPlaylistUrl;
-  private String lastSegment;
 
   /**
    * @param channelId Channel ID number.
@@ -37,34 +34,10 @@ public class BeamSegmentUrlProvider extends M3uStreamSegmentUrlProvider {
     return directiveLine.directiveArguments.get("NAME");
   }
 
-  /**
-   * @param httpInterface Http interface to use for requests.
-   * @return The URL of the next TS segment.
-   */
   @Override
-  public String getNextSegmentUrl(HttpInterface httpInterface) {
-    try {
-      if (!obtainSegmentPlaylistUrl(httpInterface)) {
-        return null;
-      }
-
-      List<String> segments = loadStreamSegmentsList(httpInterface, streamSegmentPlaylistUrl);
-      String segment = chooseNextSegment(segments, lastSegment);
-
-      if (segment == null) {
-        return null;
-      }
-
-      lastSegment = segment;
-      return createSegmentUrl(streamSegmentPlaylistUrl, segment);
-    } catch (IOException e) {
-      throw new FriendlyException("Failed to get next part of the stream.", SUSPICIOUS, e);
-    }
-  }
-
-  private boolean obtainSegmentPlaylistUrl(HttpInterface httpInterface) throws IOException {
+  protected String fetchSegmentPlaylistUrl(HttpInterface httpInterface) throws IOException {
     if (streamSegmentPlaylistUrl != null) {
-      return true;
+      return streamSegmentPlaylistUrl;
     }
 
     HttpUriRequest request = new HttpGet("https://beam.pro/api/v1/channels/" + channelId + "/manifest.m3u8");
@@ -78,6 +51,6 @@ public class BeamSegmentUrlProvider extends M3uStreamSegmentUrlProvider {
 
     log.debug("Chose stream with quality {} from url {}", stream.quality, stream.url);
     streamSegmentPlaylistUrl = stream.url;
-    return true;
+    return streamSegmentPlaylistUrl;
   }
 }

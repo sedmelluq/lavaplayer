@@ -31,7 +31,6 @@ public class TwitchStreamSegmentUrlProvider extends M3uStreamSegmentUrlProvider 
 
   private final String channelName;
   private String streamSegmentPlaylistUrl;
-  private String lastSegment;
   private long tokenExpirationTime;
 
   /**
@@ -47,33 +46,10 @@ public class TwitchStreamSegmentUrlProvider extends M3uStreamSegmentUrlProvider 
     return directiveLine.directiveArguments.get("VIDEO");
   }
 
-  /**
-   * @param httpInterface Http interface to use for requests.
-   * @return The URL of the next TS segment.
-   */
   @Override
-  public String getNextSegmentUrl(HttpInterface httpInterface) {
-    try {
-      if (!obtainSegmentPlaylistUrl(httpInterface)) {
-        return null;
-      }
-
-      List<String> segments = loadStreamSegmentsList(httpInterface, streamSegmentPlaylistUrl);
-      lastSegment = chooseNextSegment(segments, lastSegment);
-
-      if (lastSegment == null) {
-        return null;
-      }
-
-      return createSegmentUrl(streamSegmentPlaylistUrl, lastSegment);
-    } catch (IOException e) {
-      throw new FriendlyException("Failed to get next part of the stream.", SUSPICIOUS, e);
-    }
-  }
-
-  private boolean obtainSegmentPlaylistUrl(HttpInterface httpInterface) throws IOException {
+  protected String fetchSegmentPlaylistUrl(HttpInterface httpInterface) throws IOException {
     if (System.currentTimeMillis() < tokenExpirationTime) {
-      return true;
+      return streamSegmentPlaylistUrl;
     }
 
     JsonBrowser token = loadAccessToken(httpInterface);
@@ -92,7 +68,7 @@ public class TwitchStreamSegmentUrlProvider extends M3uStreamSegmentUrlProvider 
     long tokenServerExpirationTime = JsonBrowser.parse(token.get(TOKEN_PARAMETER).text()).get("expires").as(Long.class) * 1000L;
     tokenExpirationTime = System.currentTimeMillis() + (tokenServerExpirationTime - streams.serverTime) - 5000;
 
-    return true;
+    return streamSegmentPlaylistUrl;
   }
 
   private JsonBrowser loadAccessToken(HttpInterface httpInterface) throws IOException {
