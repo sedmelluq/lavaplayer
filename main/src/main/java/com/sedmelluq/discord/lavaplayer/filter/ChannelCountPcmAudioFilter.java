@@ -10,14 +10,16 @@ import java.nio.ShortBuffer;
  * in [0, 1, 2, 0, 1, 2, 0, 1] out [0, 1, 0, 1] saved [0, 1]
  * in [2, 0, 1, 2] out [0, 1, 0, 1] saved []
  */
-public class ChannelCountPcmAudioFilter implements ShortPcmAudioFilter {
-  private final ShortPcmAudioFilter downstream;
+public class ChannelCountPcmAudioFilter implements UniversalPcmAudioFilter {
+  private final UniversalPcmAudioFilter downstream;
   private final int outputChannels;
   private final ShortBuffer outputBuffer;
   private final int inputChannels;
   private final int commonChannels;
   private final int channelsToAdd;
   private final short[] inputSet;
+  private final float[][] splitFloatOutput;
+  private final short[][] splitShortOutput;
   private int inputIndex;
 
   /**
@@ -25,7 +27,7 @@ public class ChannelCountPcmAudioFilter implements ShortPcmAudioFilter {
    * @param outputChannels Number of output channels
    * @param downstream The next filter in line
    */
-  public ChannelCountPcmAudioFilter(int inputChannels, int outputChannels, ShortPcmAudioFilter downstream) {
+  public ChannelCountPcmAudioFilter(int inputChannels, int outputChannels, UniversalPcmAudioFilter downstream) {
     this.downstream = downstream;
     this.inputChannels = inputChannels;
     this.outputChannels = outputChannels;
@@ -33,6 +35,8 @@ public class ChannelCountPcmAudioFilter implements ShortPcmAudioFilter {
     this.commonChannels = Math.min(outputChannels, inputChannels);
     this.channelsToAdd = outputChannels - commonChannels;
     this.inputSet = new short[inputChannels];
+    this.splitFloatOutput = new float[outputChannels][];
+    this.splitShortOutput = new short[outputChannels][];
     this.inputIndex = 0;
   }
 
@@ -100,6 +104,32 @@ public class ChannelCountPcmAudioFilter implements ShortPcmAudioFilter {
 
   private boolean canPassThrough(int length) {
     return inputIndex == 0 && inputChannels == outputChannels && (length % inputChannels) == 0;
+  }
+
+  @Override
+  public void process(float[][] input, int offset, int length) throws InterruptedException {
+    for (int i = 0; i < commonChannels; i++) {
+      splitFloatOutput[i] = input[i];
+    }
+
+    for (int i = commonChannels; i < outputChannels; i++) {
+      splitFloatOutput[i] = input[0];
+    }
+
+    downstream.process(splitFloatOutput, offset, length);
+  }
+
+  @Override
+  public void process(short[][] input, int offset, int length) throws InterruptedException {
+    for (int i = 0; i < commonChannels; i++) {
+      splitShortOutput[i] = input[i];
+    }
+
+    for (int i = commonChannels; i < outputChannels; i++) {
+      splitShortOutput[i] = input[0];
+    }
+
+    downstream.process(splitShortOutput, offset, length);
   }
 
   @Override

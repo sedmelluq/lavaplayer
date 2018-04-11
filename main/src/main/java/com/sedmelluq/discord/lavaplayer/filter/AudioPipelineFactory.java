@@ -37,12 +37,8 @@ public class AudioPipelineFactory {
     }
 
     if (inputFormat.channelCount != context.outputFormat.channelCount) {
-      AudioFilter filter = builder.first();
-
-      if (filter instanceof ShortPcmAudioFilter) {
-        builder.addFirst(new ChannelCountPcmAudioFilter(inputFormat.channelCount, context.outputFormat.channelCount,
-            (ShortPcmAudioFilter) filter));
-      }
+      builder.addFirst(new ChannelCountPcmAudioFilter(inputFormat.channelCount, context.outputFormat.channelCount,
+          builder.makeFirstUniversal()));
     }
 
     return new AudioPipeline(builder.build(null));
