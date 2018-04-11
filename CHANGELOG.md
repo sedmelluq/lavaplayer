@@ -1,5 +1,16 @@
 # Change Log
 
+## [1.2.63] -- 2018-04-12
+### Fixed
+- Fixed Twitch or Mixer tracks ending when next chunk of the stream is not available yet.
+- Fixed non-mono inputs being distorted or passing the wrong number of channels to custom filters.
+- Fixed loading a mix on a non-existing track throwing an exception instead of triggering no matches.
+
+### Added
+- Ogg FLAC and Ogg Opus metadata (title and artist).
+- Track length detection for Ogg Opus and Ogg FLAC on a seekable stream.
+- Metadata detection from ShoutCast stream headers.
+
 ## [1.2.62] -- 2018-04-02
 ### Added
 - Method to set track frame buffer duration per player.
