@@ -10,11 +10,11 @@ import java.util.*;
  * Builds audio filter chains based on the input format.
  */
 public class FilterChainBuilder {
-  private final PcmFormat format;
+  private final int channelCount;
   private final List<AudioFilter> filters = new ArrayList<>();
 
-  public FilterChainBuilder(PcmFormat format) {
-    this.format = format;
+  public FilterChainBuilder(int channelCount) {
+    this.channelCount = channelCount;
   }
 
   public void addFirst(AudioFilter filter) {
@@ -31,29 +31,33 @@ public class FilterChainBuilder {
     if (first instanceof FloatPcmAudioFilter) {
       return (FloatPcmAudioFilter) first;
     } else {
-      return prependUniversalFilter(first);
+      return prependUniversalFilter(first, channelCount);
     }
   }
 
-  public UniversalPcmAudioFilter makeFirstUniversal() {
+  public UniversalPcmAudioFilter makeFirstUniversal(int channelCountOverride) {
     AudioFilter first = first();
 
     if (first instanceof UniversalPcmAudioFilter) {
       return (UniversalPcmAudioFilter) first;
     } else {
-      return prependUniversalFilter(first);
+      return prependUniversalFilter(first, channelCountOverride);
     }
   }
 
-  private UniversalPcmAudioFilter prependUniversalFilter(AudioFilter first) {
+  public UniversalPcmAudioFilter makeFirstUniversal() {
+    return makeFirstUniversal(channelCount);
+  }
+
+  private UniversalPcmAudioFilter prependUniversalFilter(AudioFilter first, int channelCountOverride) {
     UniversalPcmAudioFilter universalInput;
 
     if (first instanceof SplitShortPcmAudioFilter) {
-      universalInput = new ToSplitShortAudioFilter((SplitShortPcmAudioFilter) first, format.channelCount);
+      universalInput = new ToSplitShortAudioFilter((SplitShortPcmAudioFilter) first, channelCountOverride);
     } else if (first instanceof FloatPcmAudioFilter) {
-      universalInput = new ToFloatAudioFilter((FloatPcmAudioFilter) first, format.channelCount);
+      universalInput = new ToFloatAudioFilter((FloatPcmAudioFilter) first, channelCountOverride);
     } else if (first instanceof ShortPcmAudioFilter) {
-      universalInput = new ToShortAudioFilter((ShortPcmAudioFilter) first, format.channelCount);
+      universalInput = new ToShortAudioFilter((ShortPcmAudioFilter) first, channelCountOverride);
     } else {
       throw new RuntimeException("Filter must implement at least one data type.");
     }
@@ -62,9 +66,12 @@ public class FilterChainBuilder {
     return universalInput;
   }
 
-  public AudioFilterChain build(Object context) {
-    UniversalPcmAudioFilter firstFilter = makeFirstUniversal();
+  public AudioFilterChain build(Object context, int channelCountOverride) {
+    UniversalPcmAudioFilter firstFilter = makeFirstUniversal(channelCountOverride);
     return new AudioFilterChain(firstFilter, filters, context);
   }
 
+  public AudioFilterChain build(Object context) {
+    return build(context, channelCount);
+  }
 }

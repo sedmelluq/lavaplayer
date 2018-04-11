@@ -28,8 +28,7 @@ public class UserProvidedAudioFilters extends CompositeAudioFilter {
     if (factory == null) {
       return new AudioFilterChain(nextFilter, Collections.emptyList(), null);
     } else {
-      PcmFormat outputFormat = new PcmFormat(context.outputFormat.channelCount, context.outputFormat.sampleRate);
-      FilterChainBuilder builder = new FilterChainBuilder(outputFormat);
+      FilterChainBuilder builder = new FilterChainBuilder(context.outputFormat.channelCount);
 
       List<AudioFilter> filters = new ArrayList<>(factory.buildChain(null, context.outputFormat, nextFilter));
 

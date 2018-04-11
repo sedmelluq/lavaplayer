@@ -23,7 +23,7 @@ public class AudioPipelineFactory {
 
   public static AudioPipeline create(AudioProcessingContext context, PcmFormat inputFormat) {
     UniversalPcmAudioFilter end = new FinalPcmAudioFilter(context, createPostProcessors(context));
-    FilterChainBuilder builder = new FilterChainBuilder(inputFormat);
+    FilterChainBuilder builder = new FilterChainBuilder(context.outputFormat.channelCount);
     builder.addFirst(end);
 
     if (context.filterHotSwapEnabled || context.playerOptions.filterFactory.get() != null) {
@@ -32,7 +32,7 @@ public class AudioPipelineFactory {
     }
 
     if (inputFormat.sampleRate != context.outputFormat.sampleRate) {
-      builder.addFirst(new ResamplingPcmAudioFilter(context.configuration, inputFormat.channelCount,
+      builder.addFirst(new ResamplingPcmAudioFilter(context.configuration, context.outputFormat.channelCount,
           builder.makeFirstFloat(), inputFormat.sampleRate, context.outputFormat.sampleRate));
     }
 
@@ -41,7 +41,7 @@ public class AudioPipelineFactory {
           builder.makeFirstUniversal()));
     }
 
-    return new AudioPipeline(builder.build(null));
+    return new AudioPipeline(builder.build(null, inputFormat.channelCount));
   }
 
   private static Collection<AudioPostProcessor> createPostProcessors(AudioProcessingContext context) {
