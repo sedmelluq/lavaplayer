@@ -97,7 +97,8 @@ public class AudioFrameVolumeChanger implements AudioFrameRebuilder {
    * @param context Audio processing context which contains the format information as well as the frame buffer
    */
   public static void apply(AudioProcessingContext context) {
-    AudioFrameVolumeChanger volumeChanger = new AudioFrameVolumeChanger(context.configuration, context.outputFormat, context.volumeLevel.get());
+    AudioFrameVolumeChanger volumeChanger = new AudioFrameVolumeChanger(context.configuration, context.outputFormat,
+        context.playerOptions.volumeLevel.get());
 
     try {
       volumeChanger.setupLibraries();

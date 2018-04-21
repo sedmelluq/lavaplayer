@@ -2,8 +2,9 @@ package com.sedmelluq.discord.lavaplayer.container.matroska;
 
 import com.sedmelluq.discord.lavaplayer.container.matroska.format.MatroskaFileTrack;
 import com.sedmelluq.discord.lavaplayer.container.matroska.format.MatroskaFileTrack.AudioDetails;
-import com.sedmelluq.discord.lavaplayer.filter.FilterChainBuilder;
-import com.sedmelluq.discord.lavaplayer.filter.FloatPcmAudioFilter;
+import com.sedmelluq.discord.lavaplayer.filter.AudioPipeline;
+import com.sedmelluq.discord.lavaplayer.filter.AudioPipelineFactory;
+import com.sedmelluq.discord.lavaplayer.filter.PcmFormat;
 import com.sedmelluq.discord.lavaplayer.natives.vorbis.VorbisDecoder;
 import com.sedmelluq.discord.lavaplayer.track.playback.AudioProcessingContext;
 
@@ -19,7 +20,7 @@ public class MatroskaVorbisTrackConsumer implements MatroskaTrackConsumer {
   private final MatroskaFileTrack track;
   private final VorbisDecoder decoder;
   private final byte[] copyBuffer;
-  private final FloatPcmAudioFilter downstream;
+  private final AudioPipeline downstream;
   private ByteBuffer inputBuffer;
   private float[][] channelPcmBuffers;
 
@@ -34,7 +35,8 @@ public class MatroskaVorbisTrackConsumer implements MatroskaTrackConsumer {
     this.copyBuffer = new byte[COPY_BUFFER_SIZE];
 
     AudioDetails audioTrack = fillMissingDetails(track.audio, track.codecPrivate);
-    this.downstream = FilterChainBuilder.forFloatPcm(context, audioTrack.channels, (int) audioTrack.samplingFrequency);
+    this.downstream = AudioPipelineFactory.create(context,
+        new PcmFormat(audioTrack.channels, (int) audioTrack.samplingFrequency));
   }
 
   @Override

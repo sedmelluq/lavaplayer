@@ -1,9 +1,10 @@
 package com.sedmelluq.discord.lavaplayer.container.common;
 
-import com.sedmelluq.discord.lavaplayer.filter.FilterChainBuilder;
-import com.sedmelluq.discord.lavaplayer.format.AudioDataFormat;
-import com.sedmelluq.discord.lavaplayer.filter.ShortPcmAudioFilter;
+import com.sedmelluq.discord.lavaplayer.filter.AudioPipeline;
+import com.sedmelluq.discord.lavaplayer.filter.AudioPipelineFactory;
+import com.sedmelluq.discord.lavaplayer.filter.PcmFormat;
 import com.sedmelluq.discord.lavaplayer.filter.volume.AudioFrameVolumeChanger;
+import com.sedmelluq.discord.lavaplayer.format.AudioDataFormat;
 import com.sedmelluq.discord.lavaplayer.natives.opus.OpusDecoder;
 import com.sedmelluq.discord.lavaplayer.track.playback.AudioFrame;
 import com.sedmelluq.discord.lavaplayer.track.playback.AudioProcessingContext;
@@ -29,7 +30,7 @@ public class OpusPacketRouter {
 
   private long currentTimecode;
   private OpusDecoder opusDecoder;
-  private ShortPcmAudioFilter downstream;
+  private AudioPipeline downstream;
   private ByteBuffer directInput;
   private ShortBuffer frameBuffer;
   private AudioDataFormat inputFormat;
@@ -160,7 +161,7 @@ public class OpusPacketRouter {
   }
 
   private void checkDecoderNecessity() {
-    if (FilterChainBuilder.isProcessingRequired(context, inputFormat)) {
+    if (AudioPipelineFactory.isProcessingRequired(context, inputFormat)) {
       if (opusDecoder == null) {
         log.debug("Enabling reencode mode on opus track.");
 
@@ -181,7 +182,7 @@ public class OpusPacketRouter {
 
   private void initialiseDecoder() {
     opusDecoder = new OpusDecoder(inputFrequency, inputChannels);
-    downstream = FilterChainBuilder.forShortPcm(context, inputChannels, inputFrequency, true);
+    downstream = AudioPipelineFactory.create(context, new PcmFormat(inputChannels, inputFrequency));
     downstream.seekPerformed(currentTimecode, currentTimecode);
   }
 

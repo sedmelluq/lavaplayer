@@ -13,7 +13,7 @@ import java.util.Collection;
 /**
  * Collects buffers of the required chunk size and passes them on to audio post processors.
  */
-public class FinalPcmAudioFilter implements FloatPcmAudioFilter, ShortPcmAudioFilter, SplitShortPcmAudioFilter {
+public class FinalPcmAudioFilter implements UniversalPcmAudioFilter {
   private static final Logger log = LoggerFactory.getLogger(FinalPcmAudioFilter.class);
   private static final short[] zeroPadding = new short[128];
 
@@ -98,7 +98,7 @@ public class FinalPcmAudioFilter implements FloatPcmAudioFilter, ShortPcmAudioFi
 
     for (int i = 0; i < length; i++) {
       if (ignoredFrames > 0) {
-        ignoredFrames -= 2;
+        ignoredFrames -= format.channelCount;
       } else {
         frameBuffer.put(input[0][offset + i]);
         frameBuffer.put(input[secondChannelIndex][offset + i]);
@@ -110,21 +110,23 @@ public class FinalPcmAudioFilter implements FloatPcmAudioFilter, ShortPcmAudioFi
 
   @Override
   public void process(ShortBuffer buffer) throws InterruptedException {
+    if (ignoredFrames > 0) {
+      long skipped = Math.min(buffer.remaining(), ignoredFrames);
+      buffer.position(buffer.position() + (int) skipped);
+      ignoredFrames -= skipped;
+    }
+
     ShortBuffer local = buffer.duplicate();
 
     while (buffer.remaining() > 0) {
-      if (ignoredFrames > 0) {
-        ignoredFrames--;
-      } else {
-        int chunk = Math.min(buffer.remaining(), frameBuffer.remaining());
-        local.position(buffer.position());
-        local.limit(local.position() + chunk);
+      int chunk = Math.min(buffer.remaining(), frameBuffer.remaining());
+      local.position(buffer.position());
+      local.limit(local.position() + chunk);
 
-        frameBuffer.put(local);
-        dispatch();
+      frameBuffer.put(local);
+      dispatch();
 
-        buffer.position(buffer.position() + chunk);
-      }
+      buffer.position(buffer.position() + chunk);
     }
   }
 

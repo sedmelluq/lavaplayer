@@ -32,7 +32,7 @@ public class MusicScheduler extends AudioEventAdapter implements Runnable {
     this.boxMessage = new AtomicReference<>();
     this.creatingBoxMessage = new AtomicBoolean();
 
-    executorService.scheduleAtFixedRate(this, 3000L, 3000L, TimeUnit.MILLISECONDS);
+    executorService.scheduleAtFixedRate(this, 3000L, 15000L, TimeUnit.MILLISECONDS);
   }
 
   public void addToQueue(AudioTrack audioTrack) {

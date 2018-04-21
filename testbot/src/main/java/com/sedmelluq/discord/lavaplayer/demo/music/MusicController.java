@@ -6,6 +6,7 @@ import com.sedmelluq.discord.lavaplayer.demo.MessageDispatcher;
 import com.sedmelluq.discord.lavaplayer.demo.controller.BotCommandHandler;
 import com.sedmelluq.discord.lavaplayer.demo.controller.BotController;
 import com.sedmelluq.discord.lavaplayer.demo.controller.BotControllerFactory;
+import com.sedmelluq.discord.lavaplayer.filter.equalizer.EqualizerFactory;
 import com.sedmelluq.discord.lavaplayer.player.AudioLoadResultHandler;
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
@@ -37,16 +38,21 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
 public class MusicController implements BotController {
+  private static final float[] BASS_BOOST = { 0.2f, 0.15f, 0.1f, 0.05f, 0.0f, -0.05f, -0.1f, -0.1f, -0.1f, -0.1f, -0.1f,
+      -0.1f, -0.1f, -0.1f, -0.1f };
+
   private final AudioPlayerManager manager;
   private final AudioPlayer player;
   private final AtomicReference<TextChannel> outputChannel;
   private final MusicScheduler scheduler;
   private final MessageDispatcher messageDispatcher;
   private final Guild guild;
+  private final EqualizerFactory equalizer;
 
   public MusicController(BotApplicationManager manager, BotGuildContext state, Guild guild) {
     this.manager = manager.getPlayerManager();
     this.guild = guild;
+    this.equalizer = new EqualizerFactory();
 
     player = manager.getPlayerManager().createPlayer();
     guild.getAudioManager().setSendingHandler(new AudioPlayerSendHandler(player));
@@ -102,6 +108,41 @@ public class MusicController implements BotController {
       if (holder.decodedTrack != null) {
         scheduler.addToQueue(holder.decodedTrack);
       }
+    }
+  }
+
+  @BotCommandHandler
+  private void eqsetup(Message message) {
+    manager.getConfiguration().setFilterHotSwapEnabled(true);
+    player.setFrameBufferDuration(500);
+  }
+
+  @BotCommandHandler
+  private void eqstart(Message message) {
+    player.setFilterFactory(equalizer);
+  }
+
+  @BotCommandHandler
+  private void eqstop(Message message) {
+    player.setFilterFactory(null);
+  }
+
+  @BotCommandHandler
+  private void eqband(Message message, int band, float value) {
+    equalizer.setGain(band, value);
+  }
+
+  @BotCommandHandler
+  private void eqhighbass(Message message, float diff) {
+    for (int i = 0; i < BASS_BOOST.length; i++) {
+      equalizer.setGain(i, BASS_BOOST[i] + diff);
+    }
+  }
+
+  @BotCommandHandler
+  private void eqlowbass(Message message, float diff) {
+    for (int i = 0; i < BASS_BOOST.length; i++) {
+      equalizer.setGain(i, -BASS_BOOST[i] + diff);
     }
   }
 
@@ -215,6 +256,11 @@ public class MusicController implements BotController {
         message.getChannel().sendMessage("Not played by a remote node.").queue();
       }
     });
+  }
+
+  @BotCommandHandler
+  private void leave(Message message) {
+    guild.getAudioManager().closeAudioConnection();
   }
 
   private String buildReportForNode(RemoteNode node) {
@@ -349,8 +395,15 @@ public class MusicController implements BotController {
   private static void connectToFirstVoiceChannel(AudioManager audioManager) {
     if (!audioManager.isConnected() && !audioManager.isAttemptingToConnect()) {
       for (VoiceChannel voiceChannel : audioManager.getGuild().getVoiceChannels()) {
+        if ("Testing".equals(voiceChannel.getName())) {
+          audioManager.openAudioConnection(voiceChannel);
+          return;
+        }
+      }
+
+      for (VoiceChannel voiceChannel : audioManager.getGuild().getVoiceChannels()) {
         audioManager.openAudioConnection(voiceChannel);
-        break;
+        return;
       }
     }
   }

@@ -1,6 +1,9 @@
 package com.sedmelluq.discord.lavaplayer.tools.io;
 
+import com.sedmelluq.discord.lavaplayer.track.info.AudioTrackInfoProvider;
+
 import java.io.IOException;
+import java.util.List;
 
 /**
  * A wrapper around a seekable input stream which saves the beginning of the stream into a buffer. Seeking within the
@@ -55,8 +58,13 @@ public class SavedHeadSeekableInputStream extends SeekableInputStream {
   }
 
   @Override
-  protected boolean canSeekHard() {
+  public boolean canSeekHard() {
     return delegate.canSeekHard();
+  }
+
+  @Override
+  public List<AudioTrackInfoProvider> getTrackInfoProviders() {
+    return delegate.getTrackInfoProviders();
   }
 
   @Override

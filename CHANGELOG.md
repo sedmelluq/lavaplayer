@@ -1,5 +1,40 @@
 # Change Log
 
+## [1.2.63] -- 2018-04-12
+### Fixed
+- Fixed Twitch or Mixer tracks ending when next chunk of the stream is not available yet.
+- Fixed non-mono inputs being distorted or passing the wrong number of channels to custom filters.
+- Fixed loading a mix on a non-existing track throwing an exception instead of triggering no matches.
+
+### Added
+- Ogg FLAC and Ogg Opus metadata (title and artist).
+- Track length detection for Ogg Opus and Ogg FLAC on a seekable stream.
+- Metadata detection from ShoutCast stream headers.
+
+## [1.2.62] -- 2018-04-02
+### Added
+- Method to set track frame buffer duration per player.
+
+## [1.2.61] -- 2018-04-02
+### Fixed
+- Fixed HTTP 403 for some YouTube tracks due to adding one parameter to the playback URL twice.
+
+## [1.2.60] -- 2018-04-02
+### Added
+- Equalizer filter and its filter factory to LavaPlayer classes (still need to be applied manually).
+
+## [1.2.59] -- 2018-03-30
+### Added
+- Ability to add a custom audio filter factory to an instance of an audio player.
+
+## [1.2.58] - 2018-03-26
+### Fixed
+- Fixed Twitch stream loading regression.
+
+## [1.2.57] - 2018-03-26
+### Fixed
+- Fixed YouTube mix loading regression.
+
 ## [1.2.56] - 2018-02-28
 ### Added
 - Added method to get Twitch track channel name.

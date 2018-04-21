@@ -59,7 +59,7 @@ public class BotControllerManager {
   public void dispatchMessage(Map<Class<? extends BotController>, BotController> instances, String prefix, Message message,
                               BotCommandMappingHandler handler) {
 
-    String content = message.getContent().trim();
+    String content = message.getContentDisplay().trim();
     String[] separated = content.split("\\s+", 2);
 
     if (!separated[0].startsWith(prefix)) {

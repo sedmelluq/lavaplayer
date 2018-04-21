@@ -40,9 +40,8 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -52,7 +51,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -348,27 +346,32 @@ public class DefaultAudioPlayerManager implements AudioPlayerManager {
    * @param listener A listener for track state events
    * @param track The audio track to execute
    * @param configuration The audio configuration to use for executing
-   * @param volumeLevel The mutable volume level to use
+   * @param playerOptions Options of the audio player
    */
-  public void executeTrack(final TrackStateListener listener, InternalAudioTrack track, AudioConfiguration configuration, AtomicInteger volumeLevel) {
-    final AudioTrackExecutor executor = createExecutorForTrack(track, configuration, volumeLevel);
+  public void executeTrack(TrackStateListener listener, InternalAudioTrack track, AudioConfiguration configuration,
+                           AudioPlayerOptions playerOptions) {
+
+    final AudioTrackExecutor executor = createExecutorForTrack(track, configuration, playerOptions);
     track.assignExecutor(executor, true);
 
     trackPlaybackExecutorService.execute(() -> executor.execute(listener));
   }
 
-  private AudioTrackExecutor createExecutorForTrack(InternalAudioTrack track, AudioConfiguration configuration, AtomicInteger volumeLevel) {
+  private AudioTrackExecutor createExecutorForTrack(InternalAudioTrack track, AudioConfiguration configuration,
+                                                    AudioPlayerOptions playerOptions) {
+
     AudioSourceManager sourceManager = track.getSourceManager();
 
     if (remoteNodeManager.isEnabled() && sourceManager != null && sourceManager.isTrackEncodable(track)) {
-      return new RemoteAudioTrackExecutor(track, configuration, remoteNodeManager, volumeLevel);
+      return new RemoteAudioTrackExecutor(track, configuration, remoteNodeManager, playerOptions.volumeLevel);
     } else {
       AudioTrackExecutor customExecutor = track.createLocalExecutor(this);
 
       if (customExecutor != null) {
         return customExecutor;
       } else {
-        return new LocalAudioTrackExecutor(track, configuration, volumeLevel, useSeekGhosting, frameBufferDuration);
+        int bufferDuration = Optional.ofNullable(playerOptions.frameBufferDuration.get()).orElse(frameBufferDuration);
+        return new LocalAudioTrackExecutor(track, configuration, playerOptions, useSeekGhosting, bufferDuration);
       }
     }
   }

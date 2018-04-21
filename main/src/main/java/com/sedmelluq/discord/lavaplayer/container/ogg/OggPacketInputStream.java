@@ -1,6 +1,7 @@
 package com.sedmelluq.discord.lavaplayer.container.ogg;
 
 import com.sedmelluq.discord.lavaplayer.tools.io.SeekableInputStream;
+import com.sedmelluq.discord.lavaplayer.tools.io.StreamTools;
 
 import java.io.DataInput;
 import java.io.DataInputStream;
@@ -17,6 +18,9 @@ import static com.sedmelluq.discord.lavaplayer.container.MediaContainerDetection
  */
 public class OggPacketInputStream extends InputStream {
   static final int[] OGG_PAGE_HEADER = new int[] { 0x4F, 0x67, 0x67, 0x53 };
+
+  private static final int SHORT_SCAN = 10240;
+  private static final int LONG_SCAN = 65307;
 
   private final SeekableInputStream inputStream;
   private final DataInput dataInput;
@@ -93,8 +97,10 @@ public class OggPacketInputStream extends InputStream {
     int pageSequence = Integer.reverseBytes(dataInput.readInt());
     int checksum = Integer.reverseBytes(dataInput.readInt());
     int segmentCount = dataInput.readByte() & 0xFF;
+    long byteStreamPosition = inputStream.getPosition() - 27;
 
-    pageHeader = new OggPageHeader(flags, position, streamIdentifier, pageSequence, checksum, segmentCount);
+    pageHeader = new OggPageHeader(flags, position, streamIdentifier, pageSequence, checksum, segmentCount,
+        byteStreamPosition);
 
     for (int i = 0; i < segmentCount; i++) {
       segmentSizes[i] = dataInput.readByte() & 0xFF;
@@ -252,6 +258,38 @@ public class OggPacketInputStream extends InputStream {
     }
 
     return Math.min(inputStream.available(), bytesLeftInPacket);
+  }
+
+  public OggStreamSizeInfo seekForSizeInfo(int sampleRate) throws IOException {
+    if (!inputStream.canSeekHard()) {
+      return null;
+    }
+
+    long savedPosition = inputStream.getPosition();
+
+    OggStreamSizeInfo sizeInfo = scanForSizeInfo(SHORT_SCAN, sampleRate);
+
+    if (sizeInfo == null) {
+      sizeInfo = scanForSizeInfo(LONG_SCAN, sampleRate);
+    }
+
+    inputStream.seek(savedPosition);
+    return sizeInfo;
+  }
+
+  private OggStreamSizeInfo scanForSizeInfo(int tailLength, int sampleRate) throws IOException {
+    if (pageHeader == null) {
+      return null;
+    }
+
+    long absoluteOffset = Math.max(pageHeader.byteStreamPosition, inputStream.getContentLength() - tailLength);
+    inputStream.seek(absoluteOffset);
+
+    byte[] data = new byte[tailLength];
+    int dataLength = StreamTools.readUntilEnd(inputStream, data, 0, data.length);
+
+    return new OggPageScanner(absoluteOffset, data, dataLength).scanForSizeInfo(pageHeader.byteStreamPosition,
+        sampleRate);
   }
 
   /**

@@ -10,27 +10,34 @@ import java.nio.ShortBuffer;
  * in [0, 1, 2, 0, 1, 2, 0, 1] out [0, 1, 0, 1] saved [0, 1]
  * in [2, 0, 1, 2] out [0, 1, 0, 1] saved []
  */
-public class ChannelCountPcmAudioFilter implements ShortPcmAudioFilter {
-  private final ShortPcmAudioFilter downstream;
+public class ChannelCountPcmAudioFilter implements UniversalPcmAudioFilter {
+  private final UniversalPcmAudioFilter downstream;
   private final int outputChannels;
   private final ShortBuffer outputBuffer;
   private final int inputChannels;
-  private final ShortBuffer inputSet;
-  private int nextChannelIndex;
-  private short lastSample;
+  private final int commonChannels;
+  private final int channelsToAdd;
+  private final short[] inputSet;
+  private final float[][] splitFloatOutput;
+  private final short[][] splitShortOutput;
+  private int inputIndex;
 
   /**
    * @param inputChannels Number of input channels
    * @param outputChannels Number of output channels
    * @param downstream The next filter in line
    */
-  public ChannelCountPcmAudioFilter(int inputChannels, int outputChannels, ShortPcmAudioFilter downstream) {
+  public ChannelCountPcmAudioFilter(int inputChannels, int outputChannels, UniversalPcmAudioFilter downstream) {
     this.downstream = downstream;
     this.inputChannels = inputChannels;
     this.outputChannels = outputChannels;
     this.outputBuffer = ShortBuffer.allocate(2048 * inputChannels);
-    this.inputSet = ShortBuffer.allocate(inputChannels);
-    this.nextChannelIndex = 0;
+    this.commonChannels = Math.min(outputChannels, inputChannels);
+    this.channelsToAdd = outputChannels - commonChannels;
+    this.inputSet = new short[inputChannels];
+    this.splitFloatOutput = new float[outputChannels][];
+    this.splitShortOutput = new short[outputChannels][];
+    this.inputIndex = 0;
   }
 
   @Override
@@ -60,19 +67,14 @@ public class ChannelCountPcmAudioFilter implements ShortPcmAudioFilter {
   }
 
   private void processNormalizer(ShortBuffer buffer) throws InterruptedException {
-    int commonChannels = Math.min(outputChannels, inputChannels);
-    int channelsToAdd = outputChannels - commonChannels;
-
     while (buffer.hasRemaining()) {
-      inputSet.put(buffer.get());
+      inputSet[inputIndex++] = buffer.get();
 
-      if (!inputSet.hasRemaining()) {
-        for (int i = 0; i < commonChannels; i++) {
-          outputBuffer.put(inputSet.get());
-        }
+      if (inputIndex == inputChannels) {
+        outputBuffer.put(inputSet, 0, commonChannels);
 
         for (int i = 0; i < channelsToAdd; i++) {
-          outputBuffer.put(inputSet.get(0));
+          outputBuffer.put(inputSet[0]);
         }
 
         if (!outputBuffer.hasRemaining()) {
@@ -81,7 +83,7 @@ public class ChannelCountPcmAudioFilter implements ShortPcmAudioFilter {
           outputBuffer.clear();
         }
 
-        inputSet.position(0);
+        inputIndex = 0;
       }
     }
   }
@@ -101,24 +103,47 @@ public class ChannelCountPcmAudioFilter implements ShortPcmAudioFilter {
   }
 
   private boolean canPassThrough(int length) {
-    return inputSet.position() == 0 && inputChannels == outputChannels && (length % inputChannels) == 0;
+    return inputIndex == 0 && inputChannels == outputChannels && (length % inputChannels) == 0;
+  }
+
+  @Override
+  public void process(float[][] input, int offset, int length) throws InterruptedException {
+    for (int i = 0; i < commonChannels; i++) {
+      splitFloatOutput[i] = input[i];
+    }
+
+    for (int i = commonChannels; i < outputChannels; i++) {
+      splitFloatOutput[i] = input[0];
+    }
+
+    downstream.process(splitFloatOutput, offset, length);
+  }
+
+  @Override
+  public void process(short[][] input, int offset, int length) throws InterruptedException {
+    for (int i = 0; i < commonChannels; i++) {
+      splitShortOutput[i] = input[i];
+    }
+
+    for (int i = commonChannels; i < outputChannels; i++) {
+      splitShortOutput[i] = input[0];
+    }
+
+    downstream.process(splitShortOutput, offset, length);
   }
 
   @Override
   public void seekPerformed(long requestedTime, long providedTime) {
-    downstream.seekPerformed(requestedTime, providedTime);
-
     outputBuffer.clear();
-    nextChannelIndex = 0;
   }
 
   @Override
   public void flush() throws InterruptedException {
-    downstream.flush();
+    // Nothing to do.
   }
 
   @Override
   public void close() {
-    downstream.close();
+    // Nothing to do.
   }
 }

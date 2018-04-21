@@ -265,9 +265,13 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
     if (!directVideoIdPattern.matcher(videoId).matches()) {
       return AudioReference.NO_TRACK;
     } else if (urlInfo.parameters.containsKey("list")) {
-      return loadLinkedPlaylistWithId(urlInfo.parameters.get("list"), videoId);
-    } else if (urlInfo.parameters.containsKey("mix")) {
-      return mixProvider.loadMixWithId(urlInfo.parameters.get("mix"), videoId);
+      String playlistId = urlInfo.parameters.get("list");
+
+      if (playlistId.startsWith("RD")) {
+        return mixProvider.loadMixWithId(playlistId, videoId);
+      } else {
+        return loadLinkedPlaylistWithId(urlInfo.parameters.get("list"), videoId);
+      }
     } else {
       return loadTrackWithVideoId(videoId, false);
     }

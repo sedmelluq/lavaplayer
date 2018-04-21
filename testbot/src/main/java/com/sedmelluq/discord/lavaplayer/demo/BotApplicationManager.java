@@ -19,6 +19,7 @@ import com.sedmelluq.discord.lavaplayer.tools.DaemonThreadFactory;
 import net.dv8tion.jda.core.JDA;
 import net.dv8tion.jda.core.entities.ChannelType;
 import net.dv8tion.jda.core.entities.Guild;
+import net.dv8tion.jda.core.entities.Member;
 import net.dv8tion.jda.core.entities.Message;
 import net.dv8tion.jda.core.events.guild.GuildLeaveEvent;
 import net.dv8tion.jda.core.events.message.MessageReceivedEvent;
@@ -92,13 +93,15 @@ public class BotApplicationManager extends ListenerAdapter {
 
   @Override
   public void onMessageReceived(final MessageReceivedEvent event) {
-    if (!event.isFromType(ChannelType.TEXT)) {
+    Member member = event.getMember();
+
+    if (!event.isFromType(ChannelType.TEXT) || member == null || member.getUser().isBot()) {
       return;
     }
 
     BotGuildContext guildContext = getContext(event.getGuild());
 
-    controllerManager.dispatchMessage(guildContext.controllers, "~", event.getMessage(), new BotCommandMappingHandler() {
+    controllerManager.dispatchMessage(guildContext.controllers, "!/", event.getMessage(), new BotCommandMappingHandler() {
       @Override
       public void commandNotFound(Message message, String name) {
 
@@ -123,7 +126,7 @@ public class BotApplicationManager extends ListenerAdapter {
       public void commandException(Message message, String name, Throwable throwable) {
         event.getTextChannel().sendMessage("Command threw an exception").queue();;
 
-        log.error("Command with content {} threw an exception.", message.getContent(), throwable);
+        log.error("Command with content {} threw an exception.", message.getContentDisplay(), throwable);
       }
     });
   }

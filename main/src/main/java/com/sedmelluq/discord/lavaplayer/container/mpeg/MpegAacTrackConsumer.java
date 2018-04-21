@@ -1,8 +1,9 @@
 package com.sedmelluq.discord.lavaplayer.container.mpeg;
 
-import com.sedmelluq.discord.lavaplayer.filter.FilterChainBuilder;
+import com.sedmelluq.discord.lavaplayer.filter.AudioPipeline;
+import com.sedmelluq.discord.lavaplayer.filter.AudioPipelineFactory;
+import com.sedmelluq.discord.lavaplayer.filter.PcmFormat;
 import com.sedmelluq.discord.lavaplayer.natives.aac.AacDecoder;
-import com.sedmelluq.discord.lavaplayer.filter.ShortPcmAudioFilter;
 import com.sedmelluq.discord.lavaplayer.track.playback.AudioProcessingContext;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
@@ -25,7 +26,7 @@ public class MpegAacTrackConsumer implements MpegTrackConsumer {
   private final MpegTrackInfo track;
   private final ByteBuffer inputBuffer;
   private final ShortBuffer outputBuffer;
-  private final ShortPcmAudioFilter downstream;
+  private final AudioPipeline downstream;
 
   private AacDecoder decoder;
 
@@ -38,7 +39,7 @@ public class MpegAacTrackConsumer implements MpegTrackConsumer {
     this.decoder = new AacDecoder();
     this.inputBuffer = ByteBuffer.allocateDirect(4096);
     this.outputBuffer = ByteBuffer.allocateDirect(2048 * track.channelCount).order(ByteOrder.nativeOrder()).asShortBuffer();
-    this.downstream = FilterChainBuilder.forShortPcm(context, track.channelCount, track.sampleRate, true);
+    this.downstream = AudioPipelineFactory.create(context, new PcmFormat(track.channelCount, track.sampleRate));
   }
 
   @Override

@@ -14,8 +14,7 @@ public interface AudioFilter {
   void seekPerformed(long requestedTime, long providedTime);
 
   /**
-   * Flush everything to output. This indicates the end of the track so it is okay to pad the output with silence if
-   * necessary to achieve a fixed packet size.
+   * Flush everything to output.
    *
    * @throws InterruptedException When interrupted
    */

@@ -19,7 +19,6 @@ public class TwitchStreamAudioTrack extends M3uStreamAudioTrack {
   private static final Logger log = LoggerFactory.getLogger(TwitchStreamAudioTrack.class);
 
   private final TwitchStreamAudioSourceManager sourceManager;
-  private final String channelName;
 
   /**
    * @param trackInfo Track info
@@ -29,19 +28,18 @@ public class TwitchStreamAudioTrack extends M3uStreamAudioTrack {
     super(trackInfo);
 
     this.sourceManager = sourceManager;
-    this.channelName = getChannelIdentifierFromUrl(trackInfo.identifier);
   }
 
   /**
    * @return Name of the channel of the stream.
    */
   public String getChannelName() {
-    return channelName;
+    return getChannelIdentifierFromUrl(trackInfo.identifier);
   }
 
   @Override
   protected M3uStreamSegmentUrlProvider createSegmentProvider() {
-    return new TwitchStreamSegmentUrlProvider(channelName);
+    return new TwitchStreamSegmentUrlProvider(getChannelName());
   }
 
   @Override
@@ -51,7 +49,7 @@ public class TwitchStreamAudioTrack extends M3uStreamAudioTrack {
 
   @Override
   public void process(LocalAudioTrackExecutor localExecutor) throws Exception {
-    log.debug("Starting to play Twitch channel {}.", channelName);
+    log.debug("Starting to play Twitch channel {}.", getChannelName());
 
     super.process(localExecutor);
   }

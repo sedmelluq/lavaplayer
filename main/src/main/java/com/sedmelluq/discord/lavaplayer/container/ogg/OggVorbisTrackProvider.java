@@ -1,13 +1,16 @@
 package com.sedmelluq.discord.lavaplayer.container.ogg;
 
-import com.sedmelluq.discord.lavaplayer.filter.FilterChainBuilder;
-import com.sedmelluq.discord.lavaplayer.filter.FloatPcmAudioFilter;
+import com.sedmelluq.discord.lavaplayer.filter.AudioPipeline;
+import com.sedmelluq.discord.lavaplayer.filter.AudioPipelineFactory;
+import com.sedmelluq.discord.lavaplayer.filter.PcmFormat;
 import com.sedmelluq.discord.lavaplayer.natives.vorbis.VorbisDecoder;
 import com.sedmelluq.discord.lavaplayer.tools.io.DirectBufferStreamBroker;
 import com.sedmelluq.discord.lavaplayer.track.playback.AudioProcessingContext;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.Collections;
+import java.util.Map;
 
 /**
  * OGG stream handler for Vorbis codec.
@@ -20,7 +23,7 @@ public class OggVorbisTrackProvider implements OggTrackProvider {
   private final VorbisDecoder decoder;
   private final int sampleRate;
   private float[][] channelPcmBuffers;
-  private FloatPcmAudioFilter downstream;
+  private AudioPipeline downstream;
 
   /**
    * @param packetInputStream OGG packet input stream
@@ -50,7 +53,17 @@ public class OggVorbisTrackProvider implements OggTrackProvider {
     decoder.initialise();
     broker.resetAndCompact();
 
-    downstream = FilterChainBuilder.forFloatPcm(context, decoder.getChannelCount(), sampleRate);
+    downstream = AudioPipelineFactory.create(context, new PcmFormat(decoder.getChannelCount(), sampleRate));
+  }
+
+  @Override
+  public OggMetadata getMetadata() {
+    return OggMetadata.EMPTY;
+  }
+
+  @Override
+  public OggStreamSizeInfo seekForSizeInfo() throws IOException {
+    return null;
   }
 
   private void passHeader(int index) throws IOException {

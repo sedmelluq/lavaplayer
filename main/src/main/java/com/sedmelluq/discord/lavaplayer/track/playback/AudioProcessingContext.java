@@ -2,8 +2,7 @@ package com.sedmelluq.discord.lavaplayer.track.playback;
 
 import com.sedmelluq.discord.lavaplayer.format.AudioDataFormat;
 import com.sedmelluq.discord.lavaplayer.player.AudioConfiguration;
-
-import java.util.concurrent.atomic.AtomicInteger;
+import com.sedmelluq.discord.lavaplayer.player.AudioPlayerOptions;
 
 /**
  * Context for processing audio. Contains configuration for encoding and the output where the frames go to.
@@ -20,24 +19,29 @@ public class AudioProcessingContext {
   /**
    * Mutable volume level for the audio
    */
-  public final AtomicInteger volumeLevel;
+  public final AudioPlayerOptions playerOptions;
   /**
    * Output format to use throughout this processing cycle
    */
   public final AudioDataFormat outputFormat;
+  /**
+   * Whether filter factory change is applied to already playing tracks.
+   */
+  public final boolean filterHotSwapEnabled;
 
   /**
    * @param configuration Audio encoding or filtering related configuration
    * @param frameConsumer Consumer for the produced audio frames
-   * @param volumeLevel Mutable volume level for the audio
+   * @param playerOptions State of the audio player.
    * @param outputFormat Output format to use throughout this processing cycle
    */
   public AudioProcessingContext(AudioConfiguration configuration, AudioFrameConsumer frameConsumer,
-                                AtomicInteger volumeLevel, AudioDataFormat outputFormat) {
+                                AudioPlayerOptions playerOptions, AudioDataFormat outputFormat) {
 
     this.configuration = configuration;
     this.frameConsumer = frameConsumer;
-    this.volumeLevel = volumeLevel;
+    this.playerOptions = playerOptions;
     this.outputFormat = outputFormat;
+    this.filterHotSwapEnabled = configuration.isFilterHotSwapEnabled();
   }
 }

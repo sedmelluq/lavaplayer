@@ -1,8 +1,12 @@
 package com.sedmelluq.discord.lavaplayer.tools.io;
 
+import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo;
+import com.sedmelluq.discord.lavaplayer.track.info.AudioTrackInfoBuilder;
+import com.sedmelluq.discord.lavaplayer.track.info.AudioTrackInfoProvider;
 import org.apache.http.Header;
 import org.apache.http.HttpHeaders;
 import org.apache.http.HttpResponse;
+import org.apache.http.HttpStatus;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.slf4j.Logger;
@@ -12,6 +16,10 @@ import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
+import java.util.Collections;
+import java.util.List;
+
+import static com.sedmelluq.discord.lavaplayer.tools.io.HttpClientTools.getHeaderValue;
 
 /**
  * Use an HTTP endpoint as a stream, where the connection resetting is handled gracefully by reopening the connection
@@ -73,9 +81,9 @@ public class PersistentHttpStream extends SeekableInputStream implements AutoClo
 
   private static boolean validateStatusCode(HttpResponse response, boolean returnOnServerError) {
     int statusCode = response.getStatusLine().getStatusCode();
-    if (returnOnServerError && statusCode >= 500 && statusCode <= 599) {
+    if (returnOnServerError && statusCode >= HttpStatus.SC_INTERNAL_SERVER_ERROR) {
       return false;
-    } else if (statusCode != 200 && statusCode != 206) {
+    } else if (statusCode != HttpStatus.SC_OK && statusCode != HttpStatus.SC_PARTIAL_CONTENT) {
       throw new RuntimeException("Not success status code: " + statusCode);
     }
     return true;
@@ -265,7 +273,28 @@ public class PersistentHttpStream extends SeekableInputStream implements AutoClo
   }
 
   @Override
-  protected boolean canSeekHard() {
+  public boolean canSeekHard() {
     return contentLength != Long.MAX_VALUE;
+  }
+
+  @Override
+  public List<AudioTrackInfoProvider> getTrackInfoProviders() {
+    if (currentResponse != null) {
+      return Collections.singletonList(createIceCastHeaderProvider());
+    } else {
+      return Collections.emptyList();
+    }
+  }
+
+  private AudioTrackInfoProvider createIceCastHeaderProvider() {
+    AudioTrackInfoBuilder builder = AudioTrackInfoBuilder.empty()
+        .setTitle(getHeaderValue(currentResponse, "icy-description"))
+        .setAuthor(getHeaderValue(currentResponse, "icy-name"));
+
+    if (builder.getTitle() == null) {
+      builder.setTitle(getHeaderValue(currentResponse, "icy-url"));
+    }
+
+    return builder;
   }
 }

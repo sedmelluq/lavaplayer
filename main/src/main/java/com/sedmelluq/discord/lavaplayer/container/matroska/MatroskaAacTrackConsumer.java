@@ -2,8 +2,9 @@ package com.sedmelluq.discord.lavaplayer.container.matroska;
 
 import com.sedmelluq.discord.lavaplayer.container.matroska.format.MatroskaFileTrack;
 import com.sedmelluq.discord.lavaplayer.container.mpeg.MpegAacTrackConsumer;
-import com.sedmelluq.discord.lavaplayer.filter.FilterChainBuilder;
-import com.sedmelluq.discord.lavaplayer.filter.ShortPcmAudioFilter;
+import com.sedmelluq.discord.lavaplayer.filter.AudioPipeline;
+import com.sedmelluq.discord.lavaplayer.filter.AudioPipelineFactory;
+import com.sedmelluq.discord.lavaplayer.filter.PcmFormat;
 import com.sedmelluq.discord.lavaplayer.natives.aac.AacDecoder;
 import com.sedmelluq.discord.lavaplayer.track.playback.AudioProcessingContext;
 import org.slf4j.Logger;
@@ -22,7 +23,7 @@ public class MatroskaAacTrackConsumer implements MatroskaTrackConsumer {
   private final MatroskaFileTrack track;
   private final ByteBuffer inputBuffer;
   private final ShortBuffer outputBuffer;
-  private final ShortPcmAudioFilter downstream;
+  private final AudioPipeline downstream;
 
   private AacDecoder decoder;
 
@@ -35,8 +36,8 @@ public class MatroskaAacTrackConsumer implements MatroskaTrackConsumer {
     this.decoder = new AacDecoder();
     this.inputBuffer = ByteBuffer.allocateDirect(4096);
     this.outputBuffer = ByteBuffer.allocateDirect(2048 * track.audio.channels).order(ByteOrder.nativeOrder()).asShortBuffer();
-    this.downstream = FilterChainBuilder.forShortPcm(context, track.audio.channels,
-        (int) track.audio.samplingFrequency, true);
+    this.downstream = AudioPipelineFactory.create(context, new PcmFormat(track.audio.channels,
+        (int) track.audio.samplingFrequency));
   }
 
   @Override

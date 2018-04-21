@@ -2,6 +2,7 @@ package com.sedmelluq.discord.lavaplayer.track.playback;
 
 import com.sedmelluq.discord.lavaplayer.format.AudioDataFormat;
 import com.sedmelluq.discord.lavaplayer.player.AudioConfiguration;
+import com.sedmelluq.discord.lavaplayer.player.AudioPlayerOptions;
 import com.sedmelluq.discord.lavaplayer.tools.ExceptionTools;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackState;
@@ -16,7 +17,6 @@ import java.io.InterruptedIOException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -49,18 +49,18 @@ public class LocalAudioTrackExecutor implements AudioTrackExecutor {
   /**
    * @param audioTrack The audio track that this executor executes
    * @param configuration Configuration to use for audio processing
-   * @param volumeLevel Mutable volume level to use when executing the track
+   * @param playerOptions Mutable player options (for example volume).
    * @param useSeekGhosting Whether to keep providing old frames continuing from the previous position during a seek
    *                        until frames from the new position arrive.
    * @param bufferDuration The size of the frame buffer in milliseconds
    */
-  public LocalAudioTrackExecutor(InternalAudioTrack audioTrack, AudioConfiguration configuration, AtomicInteger volumeLevel,
-                                 boolean useSeekGhosting, int bufferDuration) {
+  public LocalAudioTrackExecutor(InternalAudioTrack audioTrack, AudioConfiguration configuration,
+                                 AudioPlayerOptions playerOptions, boolean useSeekGhosting, int bufferDuration) {
 
     this.audioTrack = audioTrack;
     AudioDataFormat currentFormat = configuration.getOutputFormat();
     this.frameBuffer = new AudioFrameBuffer(bufferDuration, currentFormat, isStopping);
-    this.processingContext = new AudioProcessingContext(configuration, frameBuffer, volumeLevel, currentFormat);
+    this.processingContext = new AudioProcessingContext(configuration, frameBuffer, playerOptions, currentFormat);
     this.useSeekGhosting = useSeekGhosting;
   }
 

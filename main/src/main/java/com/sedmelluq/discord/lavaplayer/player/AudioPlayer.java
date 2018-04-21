@@ -1,5 +1,6 @@
 package com.sedmelluq.discord.lavaplayer.player;
 
+import com.sedmelluq.discord.lavaplayer.filter.PcmFilterFactory;
 import com.sedmelluq.discord.lavaplayer.player.event.AudioEvent;
 import com.sedmelluq.discord.lavaplayer.player.event.AudioEventListener;
 import com.sedmelluq.discord.lavaplayer.player.event.PlayerPauseEvent;
@@ -26,7 +27,6 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.sedmelluq.discord.lavaplayer.track.AudioTrackEndReason.CLEANUP;
 import static com.sedmelluq.discord.lavaplayer.track.AudioTrackEndReason.FINISHED;
@@ -48,9 +48,9 @@ public class AudioPlayer implements AudioFrameProvider, TrackStateListener {
   private final AtomicBoolean paused;
   private final DefaultAudioPlayerManager manager;
   private final List<AudioEventListener> listeners;
-  private final AtomicInteger volumeLevel;
   private final AudioOutputHook outputHook;
   private final Object trackSwitchLock;
+  private final AudioPlayerOptions options;
 
   /**
    * @param manager Audio player manager which this player is attached to
@@ -62,8 +62,8 @@ public class AudioPlayer implements AudioFrameProvider, TrackStateListener {
     activeTrack = null;
     paused = new AtomicBoolean();
     listeners = new ArrayList<>();
-    volumeLevel = new AtomicInteger(100);
     trackSwitchLock = new Object();
+    options = new AudioPlayerOptions();
   }
 
   /**
@@ -116,7 +116,7 @@ public class AudioPlayer implements AudioFrameProvider, TrackStateListener {
 
     dispatchEvent(new TrackStartEvent(this, newTrack));
 
-    manager.executeTrack(this, newTrack, manager.getConfiguration(), volumeLevel);
+    manager.executeTrack(this, newTrack, manager.getConfiguration(), options);
     return true;
   }
 
@@ -227,11 +227,23 @@ public class AudioPlayer implements AudioFrameProvider, TrackStateListener {
   }
 
   public int getVolume() {
-    return volumeLevel.get();
+    return options.volumeLevel.get();
   }
 
   public void setVolume(int volume) {
-    volumeLevel.set(Math.min(150, Math.max(0, volume)));
+    options.volumeLevel.set(Math.min(150, Math.max(0, volume)));
+  }
+
+  public void setFilterFactory(PcmFilterFactory factory) {
+    options.filterFactory.set(factory);
+  }
+
+  public void setFrameBufferDuration(Integer duration) {
+    if (duration != null) {
+      duration = Math.max(200, duration);
+    }
+
+    options.frameBufferDuration.set(duration);
   }
 
   /**
