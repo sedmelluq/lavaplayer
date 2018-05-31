@@ -44,6 +44,10 @@ public class WavFileLoader {
 
       if ("fmt ".equals(chunkName)) {
         readFormatChunk(builder, dataInput);
+
+        if (chunkSize > 16) {
+          inputStream.skipFully(chunkSize - 16);
+        }
       } else if ("data".equals(chunkName)) {
         builder.sampleAreaSize = chunkSize;
         builder.startOffset = inputStream.getPosition();

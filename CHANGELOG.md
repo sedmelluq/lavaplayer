@@ -1,5 +1,9 @@
 # Change Log
 
+## [1.2.64] -- 2018-06-01
+### Fixed
+- Fixed WAV files with format header longer than 16 bytes not working.
+
 ## [1.2.63] -- 2018-04-12
 ### Fixed
 - Fixed Twitch or Mixer tracks ending when next chunk of the stream is not available yet.
