@@ -1,7 +1,6 @@
 # Change Log
 
 ## [1.3.1] -- 2018-06-03
-
 ### Fixed
 - Fixed PCM output format regression.
 
