@@ -2,6 +2,7 @@ package com.sedmelluq.discord.lavaplayer.source.twitch;
 
 import com.sedmelluq.discord.lavaplayer.player.DefaultAudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.source.AudioSourceManager;
+import com.sedmelluq.discord.lavaplayer.tools.ExceptionTools;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.tools.JsonBrowser;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpConfigurable;
@@ -156,6 +157,6 @@ public class TwitchStreamAudioSourceManager implements AudioSourceManager, HttpC
 
   @Override
   public void shutdown() {
-    // Nothing to shut down
+    ExceptionTools.closeWithWarnings(httpInterfaceManager);
   }
 }

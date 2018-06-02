@@ -31,6 +31,7 @@ public interface MediaContainerProbe {
    * @return Returns result with audio track on supported format, result with unsupported reason set if this is the
    *         container that the file uses, but this specific file uses a format or codec that is not supported. Returns
    *         null in case this file does not appear to be using this container format.
+   * @throws IOException On read error.
    */
   MediaContainerDetectionResult probe(AudioReference reference, SeekableInputStream inputStream) throws IOException;
 

@@ -104,8 +104,9 @@ public class ChainedInputStream extends InputStream {
    */
   public interface Provider {
     /**
-     * @return Next input stram, null to cause EOF on the chained stream.
+     * @return Next input stream, null to cause EOF on the chained stream.
+     * @throws IOException On read error.
      */
-    InputStream next();
+    InputStream next() throws IOException;
   }
 }

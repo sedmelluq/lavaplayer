@@ -11,8 +11,8 @@ import com.sedmelluq.discord.lavaplayer.track.TrackMarkerTracker;
 import com.sedmelluq.discord.lavaplayer.track.TrackStateListener;
 import com.sedmelluq.discord.lavaplayer.track.playback.AudioFrame;
 import com.sedmelluq.discord.lavaplayer.track.playback.AudioFrameBuffer;
-import com.sedmelluq.discord.lavaplayer.track.playback.AudioFrameProviderTools;
 import com.sedmelluq.discord.lavaplayer.track.playback.AudioTrackExecutor;
+import com.sedmelluq.discord.lavaplayer.track.playback.MutableAudioFrame;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -61,7 +61,7 @@ public class RemoteAudioTrackExecutor implements AudioTrackExecutor {
     this.remoteNodeManager = remoteNodeManager;
     this.volumeLevel = volumeLevel;
     this.executorId = System.nanoTime();
-    this.frameBuffer = new AudioFrameBuffer(BUFFER_DURATION_MS, configuration.getOutputFormat(), null);
+    this.frameBuffer = configuration.getFrameBufferFactory().create(BUFFER_DURATION_MS, configuration.getOutputFormat(), null);
   }
 
   /**
@@ -215,12 +215,34 @@ public class RemoteAudioTrackExecutor implements AudioTrackExecutor {
     return frame;
   }
 
+  @Override
+  public boolean provide(MutableAudioFrame targetFrame) {
+    if (frameBuffer.provide(targetFrame)) {
+      processProvidedFrame(targetFrame);
+      return true;
+    }
+
+    return true;
+  }
+
+  @Override
+  public boolean provide(MutableAudioFrame targetFrame, long timeout, TimeUnit unit)
+      throws TimeoutException, InterruptedException {
+
+    if (frameBuffer.provide(targetFrame, timeout, unit)) {
+      processProvidedFrame(targetFrame);
+      return true;
+    }
+
+    return true;
+  }
+
   private void processProvidedFrame(AudioFrame frame) {
     if (frame != null && !frame.isTerminator()) {
-      lastFrameTimecode.set(frame.timecode);
+      lastFrameTimecode.set(frame.getTimecode());
 
       if (pendingSeek.get() == NO_SEEK && !frameBuffer.hasClearOnInsert()) {
-        markerTracker.checkPlaybackTimecode(frame.timecode);
+        markerTracker.checkPlaybackTimecode(frame.getTimecode());
       }
     }
   }

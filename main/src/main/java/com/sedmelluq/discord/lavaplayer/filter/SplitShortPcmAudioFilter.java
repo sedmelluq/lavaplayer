@@ -8,7 +8,7 @@ public interface SplitShortPcmAudioFilter extends AudioFilter {
    * @param input An array of samples for each channel
    * @param offset Offset in the array
    * @param length Length of the sequence in the array
-   * @throws InterruptedException
+   * @throws InterruptedException When interrupted externally (or for seek/stop).
    */
   void process(short[][] input, int offset, int length) throws InterruptedException;
 }

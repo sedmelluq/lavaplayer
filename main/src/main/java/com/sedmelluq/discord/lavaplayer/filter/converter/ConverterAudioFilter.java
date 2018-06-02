@@ -2,6 +2,9 @@ package com.sedmelluq.discord.lavaplayer.filter.converter;
 
 import com.sedmelluq.discord.lavaplayer.filter.UniversalPcmAudioFilter;
 
+/**
+ * Base class for converter filters which have no internal state.
+ */
 public abstract class ConverterAudioFilter implements UniversalPcmAudioFilter {
   protected static final int BUFFER_SIZE = 4096;
 

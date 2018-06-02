@@ -2,7 +2,6 @@ package com.sedmelluq.discord.lavaplayer.source.twitch;
 
 import com.sedmelluq.discord.lavaplayer.source.stream.ExtendedM3uParser;
 import com.sedmelluq.discord.lavaplayer.source.stream.M3uStreamSegmentUrlProvider;
-import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.tools.JsonBrowser;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpClientTools;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterface;
@@ -19,7 +18,6 @@ import java.net.URISyntaxException;
 import java.util.List;
 
 import static com.sedmelluq.discord.lavaplayer.source.twitch.TwitchStreamAudioSourceManager.createGetRequest;
-import static com.sedmelluq.discord.lavaplayer.tools.FriendlyException.Severity.SUSPICIOUS;
 
 /**
  * Provider for Twitch segment URLs from a channel.
@@ -85,7 +83,7 @@ public class TwitchStreamSegmentUrlProvider extends M3uStreamSegmentUrlProvider 
     }
   }
 
-  private ChannelStreams loadChannelStreamsInfo(String[] lines) throws IOException {
+  private ChannelStreams loadChannelStreamsInfo(String[] lines) {
     List<ChannelStreamInfo> streams = loadChannelStreamsList(lines);
     ExtendedM3uParser.Line twitchInfoLine = null;
 
@@ -116,7 +114,7 @@ public class TwitchStreamSegmentUrlProvider extends M3uStreamSegmentUrlProvider 
   private URI getChannelStreamsUrl(JsonBrowser token) {
     try {
       return new URIBuilder("https://usher.ttvnw.net/api/channel/hls/" + channelName + ".m3u8")
-          .addParameter("token", token.get(TOKEN_PARAMETER).text())
+          .addParameter(TOKEN_PARAMETER, token.get(TOKEN_PARAMETER).text())
           .addParameter("sig", token.get("sig").text())
           .addParameter("allow_source", "true")
           .addParameter("allow_spectre", "true")

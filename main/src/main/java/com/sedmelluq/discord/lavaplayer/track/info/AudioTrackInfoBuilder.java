@@ -5,6 +5,9 @@ import com.sedmelluq.discord.lavaplayer.tools.io.SeekableInputStream;
 import com.sedmelluq.discord.lavaplayer.track.AudioReference;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo;
 
+/**
+ * Builder for {@link AudioTrackInfo}.
+ */
 public class AudioTrackInfoBuilder implements AudioTrackInfoProvider {
   private static final String UNKNOWN_TITLE = "Unknown title";
   private static final String UNKNOWN_ARTIST = "Unknown artist";
@@ -75,6 +78,10 @@ public class AudioTrackInfoBuilder implements AudioTrackInfoProvider {
     return this;
   }
 
+  /**
+   * @param provider The track info provider to apply to the builder.
+   * @return this
+   */
   public AudioTrackInfoBuilder apply(AudioTrackInfoProvider provider) {
     if (provider == null) {
       return this;
@@ -87,6 +94,9 @@ public class AudioTrackInfoBuilder implements AudioTrackInfoProvider {
         .setUri(provider.getIdentifier());
   }
 
+  /**
+   * @return Audio track info instance.
+   */
   public AudioTrackInfo build() {
     long finalLength = DataFormatTools.defaultOnNull(length, Long.MAX_VALUE);
 
@@ -100,6 +110,13 @@ public class AudioTrackInfoBuilder implements AudioTrackInfoProvider {
     );
   }
 
+  /**
+   * Creates an instance of an audio track builder based on an audio reference and a stream.
+   *
+   * @param reference Audio reference to use as the starting point for the builder.
+   * @param stream Stream to get additional data from.
+   * @return An instance of the builder with the reference and track info providers from the stream preapplied.
+   */
   public static AudioTrackInfoBuilder create(AudioReference reference, SeekableInputStream stream) {
     AudioTrackInfoBuilder builder = new AudioTrackInfoBuilder()
         .setAuthor(UNKNOWN_ARTIST)
@@ -115,6 +132,9 @@ public class AudioTrackInfoBuilder implements AudioTrackInfoProvider {
     return builder;
   }
 
+  /**
+   * @return Empty instance of audio track builder.
+   */
   public static AudioTrackInfoBuilder empty() {
     return new AudioTrackInfoBuilder();
   }

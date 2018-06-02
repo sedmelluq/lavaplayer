@@ -70,10 +70,15 @@ public class AbandonedTrackManager {
     while (assigned < maximum && (executor = abandonedExecutors.poll()) != null) {
       if (checkValidity(executor, currentTime)) {
         Adopter adopter = selectNextAdopter(adopters);
-        log.debug("Node {} is adopting {}.", adopter.node.getAddress(), executor.executor);
 
-        adopter.node.startPlaying(executor.executor);
-        assigned++;
+        if (adopter != null) {
+          log.debug("Node {} is adopting {}.", adopter.node.getAddress(), executor.executor);
+
+          adopter.node.startPlaying(executor.executor);
+          assigned++;
+        } else {
+          log.debug("No node available for adopting {}", executor.executor);
+        }
       }
     }
   }

@@ -28,7 +28,8 @@ public interface MatroskaTrackConsumer {
 
   /**
    * Indicates that no more input will come, all remaining buffers should be flushed
-   * @throws InterruptedException
+   *
+   * @throws InterruptedException When interrupted externally (or for seek/stop).
    */
   void flush() throws InterruptedException;
 
@@ -36,7 +37,7 @@ public interface MatroskaTrackConsumer {
    * Consume one frame from the track
    *
    * @param data The data of the frame
-   * @throws InterruptedException
+   * @throws InterruptedException When interrupted externally (or for seek/stop).
    */
   void consume(ByteBuffer data) throws InterruptedException;
 

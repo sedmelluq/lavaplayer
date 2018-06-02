@@ -1,5 +1,21 @@
 # Change Log
 
+## [1.3.0] -- 2018-06-02
+### Added
+- Option for allocation-free frame provision pipeline by allowing to set NonAllocatingAudioFrameBuffer as the default frame buffer implementation and then using the new provide methods that take mutable audio frame instances.
+- Ability to set SSL context for internally used HTTP clients. This allows for custom SSL providers such as Conscrypt.
+- Support for custom output formats using custom implementations of AudioDataFormat.
+
+### Changed
+- Audio frame is now an interface, which is a breaking change for all use cases.
+- Removed the concept of audio hooks.
+
+### Fixed
+- Some audio sources not freeing their HTTP clients when they were discarded.
+- Potential NPE when the only node went down when a track was playing on it.
+- Not closing OGG decoders created during track probing (still got closed on finalize).
+- Missing Javadocs.
+
 ## [1.2.64] -- 2018-06-01
 ### Fixed
 - Fixed WAV files with format header longer than 16 bytes not working.

@@ -44,6 +44,10 @@ public abstract class SeekableInputStream extends InputStream {
 
   protected abstract void seekHard(long position) throws IOException;
 
+  /**
+   * @return <code>true</code> if it is possible to seek to an arbitrary position in this stream, even when it is behind
+   *         the current position.
+   */
   public abstract boolean canSeekHard();
 
   /**

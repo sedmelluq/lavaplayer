@@ -66,7 +66,7 @@ import static com.sedmelluq.discord.lavaplayer.tools.FriendlyException.Severity.
 public class HttpClientTools {
   private static final Logger log = LoggerFactory.getLogger(HttpClientTools.class);
 
-  private static final SSLContext sslContext = setupSslContext();
+  private static final SSLContext defaultSslContext = setupSslContext();
 
   public static final RequestConfig DEFAULT_REQUEST_CONFIG = RequestConfig.custom()
       .setConnectTimeout(3000)
@@ -120,7 +120,7 @@ public class HttpClientTools {
       return context;
     } catch (Exception e) {
       log.error("Failed to build custom SSL context, using default one.", e);
-      return null;
+      return SSLContexts.createDefault();
     }
   }
 
@@ -171,7 +171,12 @@ public class HttpClientTools {
     }
   }
 
-  private static class CustomHttpClientBuilder extends HttpClientBuilder {
+  /**
+   * Custom HTTP client builder which applies our custom modifications.
+   */
+  public static class CustomHttpClientBuilder extends HttpClientBuilder {
+    private SSLContext sslContextOverride;
+
     @Override
     public synchronized CloseableHttpClient build() {
       setConnectionManager(createConnectionManager());
@@ -180,7 +185,16 @@ public class HttpClientTools {
       return httpClient;
     }
 
-    private static HttpClientConnectionManager createConnectionManager() {
+    /**
+     * @param sslContextOverride SSL context to make the built clients use. Note that calling
+     *                           {@link #setSSLContext(SSLContext)} has no effect because this class cannot access the
+     *                           instance set with that nor override the method.
+     */
+    public void setSslContextOverride(SSLContext sslContextOverride) {
+      this.sslContextOverride = sslContextOverride;
+    }
+
+    private HttpClientConnectionManager createConnectionManager() {
       PoolingHttpClientConnectionManager manager = new PoolingHttpClientConnectionManager(createConnectionSocketFactory(),
           createConnectionFactory());
 
@@ -190,10 +204,10 @@ public class HttpClientTools {
       return manager;
     }
 
-    private static Registry<ConnectionSocketFactory> createConnectionSocketFactory() {
+    private Registry<ConnectionSocketFactory> createConnectionSocketFactory() {
       HostnameVerifier hostnameVerifier = new DefaultHostnameVerifier(PublicSuffixMatcherLoader.getDefault());
-      ConnectionSocketFactory sslSocketFactory = new SSLConnectionSocketFactory(sslContext != null ? sslContext :
-          SSLContexts.createDefault(), hostnameVerifier);
+      ConnectionSocketFactory sslSocketFactory = new SSLConnectionSocketFactory(sslContextOverride != null ?
+          sslContextOverride : defaultSslContext, hostnameVerifier);
 
       return RegistryBuilder.<ConnectionSocketFactory>create()
           .register("http", PlainConnectionSocketFactory.getSocketFactory())

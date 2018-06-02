@@ -15,11 +15,12 @@ public class PcmChunkDecoder implements AudioChunkDecoder {
 
   /**
    * @param format Source audio format.
+   * @param bigEndian Whether the samples are in big-endian format (as opposed to little-endian).
    */
-  public PcmChunkDecoder(AudioDataFormat format) {
-    this.encodedAsByte = ByteBuffer.allocate(format.bufferSize(2));
+  public PcmChunkDecoder(AudioDataFormat format, boolean bigEndian) {
+    this.encodedAsByte = ByteBuffer.allocate(format.maximumChunkSize());
 
-    if (format.codec == AudioDataFormat.Codec.PCM_S16_LE) {
+    if (!bigEndian) {
       encodedAsByte.order(ByteOrder.LITTLE_ENDIAN);
     }
 

@@ -3,13 +3,14 @@ package com.sedmelluq.discord.lavaplayer.filter;
 import com.sedmelluq.discord.lavaplayer.filter.volume.VolumePostProcessor;
 import com.sedmelluq.discord.lavaplayer.format.AudioDataFormat;
 import com.sedmelluq.discord.lavaplayer.format.transcoder.AudioChunkEncoder;
-import com.sedmelluq.discord.lavaplayer.format.transcoder.OpusChunkEncoder;
-import com.sedmelluq.discord.lavaplayer.format.transcoder.PcmChunkEncoder;
 import com.sedmelluq.discord.lavaplayer.track.playback.AudioProcessingContext;
 
 import java.util.Arrays;
 import java.util.Collection;
 
+/**
+ * Factory for audio pipelines. Contains helper methods to determine whether an audio pipeline is even required.
+ */
 public class AudioPipelineFactory {
   /**
    * @param context Audio processing context to check output format from
@@ -21,9 +22,19 @@ public class AudioPipelineFactory {
         context.playerOptions.filterFactory.get() != null;
   }
 
+  /**
+   * Creates an audio pipeline instance based on provided settings.
+   *
+   * @param context Configuration and output information for processing
+   * @param inputFormat The parameters of the PCM input.
+   * @return A pipeline which delivers the input to the final frame destination.
+   */
   public static AudioPipeline create(AudioProcessingContext context, PcmFormat inputFormat) {
+    int inputChannels = inputFormat.channelCount;
+    int outputChannels = context.outputFormat.channelCount;
+
     UniversalPcmAudioFilter end = new FinalPcmAudioFilter(context, createPostProcessors(context));
-    FilterChainBuilder builder = new FilterChainBuilder(context.outputFormat.channelCount);
+    FilterChainBuilder builder = new FilterChainBuilder();
     builder.addFirst(end);
 
     if (context.filterHotSwapEnabled || context.playerOptions.filterFactory.get() != null) {
@@ -32,26 +43,20 @@ public class AudioPipelineFactory {
     }
 
     if (inputFormat.sampleRate != context.outputFormat.sampleRate) {
-      builder.addFirst(new ResamplingPcmAudioFilter(context.configuration, context.outputFormat.channelCount,
-          builder.makeFirstFloat(), inputFormat.sampleRate, context.outputFormat.sampleRate));
+      builder.addFirst(new ResamplingPcmAudioFilter(context.configuration, outputChannels,
+          builder.makeFirstFloat(outputChannels), inputFormat.sampleRate, context.outputFormat.sampleRate));
     }
 
-    if (inputFormat.channelCount != context.outputFormat.channelCount) {
-      builder.addFirst(new ChannelCountPcmAudioFilter(inputFormat.channelCount, context.outputFormat.channelCount,
-          builder.makeFirstUniversal()));
+    if (inputChannels != outputChannels) {
+      builder.addFirst(new ChannelCountPcmAudioFilter(inputChannels, outputChannels,
+          builder.makeFirstUniversal(outputChannels)));
     }
 
-    return new AudioPipeline(builder.build(null, inputFormat.channelCount));
+    return new AudioPipeline(builder.build(null, inputChannels));
   }
 
   private static Collection<AudioPostProcessor> createPostProcessors(AudioProcessingContext context) {
-    AudioChunkEncoder chunkEncoder;
-
-    if (context.outputFormat.codec == AudioDataFormat.Codec.OPUS) {
-      chunkEncoder = new OpusChunkEncoder(context.configuration, context.outputFormat);
-    } else {
-      chunkEncoder = new PcmChunkEncoder(context.outputFormat);
-    }
+    AudioChunkEncoder chunkEncoder = context.outputFormat.createEncoder(context.configuration);
 
     return Arrays.asList(
         new VolumePostProcessor(context),

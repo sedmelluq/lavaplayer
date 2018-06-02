@@ -27,8 +27,10 @@ public class OggOpusTrackProvider implements OggTrackProvider {
 
   /**
    * @param packetInputStream OGG packet input stream
-   * @param broker Broker for loading stream data into direct byte buffer, it has already loaded the first packet of the
-   * @param tagBuffer
+   * @param broker Broker for loading stream data into direct byte buffer.
+   * @param channelCount Number of channels in the track.
+   * @param sampleRate Sample rate of the track.
+   * @param tagBuffer Buffer containing the metadata tags section of the track.
    */
   public OggOpusTrackProvider(OggPacketInputStream packetInputStream, DirectBufferStreamBroker broker, int channelCount,
                               int sampleRate, ByteBuffer tagBuffer) {

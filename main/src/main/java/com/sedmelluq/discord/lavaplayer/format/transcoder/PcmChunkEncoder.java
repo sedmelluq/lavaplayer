@@ -15,11 +15,12 @@ public class PcmChunkEncoder implements AudioChunkEncoder {
 
   /**
    * @param format Target audio format.
+   * @param bigEndian Whether the samples are in big-endian format (as opposed to little-endian).
    */
-  public PcmChunkEncoder(AudioDataFormat format) {
-    this.encoded = ByteBuffer.allocate(format.bufferSize(2));
+  public PcmChunkEncoder(AudioDataFormat format, boolean bigEndian) {
+    this.encoded = ByteBuffer.allocate(format.maximumChunkSize());
 
-    if (format.codec == AudioDataFormat.Codec.PCM_S16_LE) {
+    if (!bigEndian) {
       encoded.order(ByteOrder.LITTLE_ENDIAN);
     }
 
@@ -41,6 +42,18 @@ public class PcmChunkEncoder implements AudioChunkEncoder {
 
     buffer.reset();
     return encodedBytes;
+  }
+
+  @Override
+  public void encode(ShortBuffer buffer, ByteBuffer out) {
+    buffer.mark();
+
+    encodedAsShort.clear();
+    encodedAsShort.put(buffer);
+
+    out.put(encoded.array(), 0, encodedAsShort.position() * 2);
+
+    buffer.reset();
   }
 
   @Override

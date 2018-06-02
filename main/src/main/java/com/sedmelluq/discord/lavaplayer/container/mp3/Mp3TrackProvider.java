@@ -102,7 +102,7 @@ public class Mp3TrackProvider implements AudioTrackInfoProvider {
 
   /**
    * Decodes audio frames and sends them to frame consumer
-   * @throws InterruptedException
+   * @throws InterruptedException When interrupted externally (or for seek/stop).
    */
   public void provideFrames() throws InterruptedException {
     try {
@@ -348,13 +348,16 @@ public class Mp3TrackProvider implements AudioTrackInfoProvider {
     return null;
   }
 
-  @SuppressWarnings("unused")
   private static class FrameHeader {
     private final String id;
     private final int size;
+    @SuppressWarnings("unused")
     private final boolean tagAlterPreservation;
+    @SuppressWarnings("unused")
     private final boolean fileAlterPreservation;
+    @SuppressWarnings("unused")
     private final boolean readOnly;
+    @SuppressWarnings("unused")
     private final boolean groupingIdentity;
     private final boolean compression;
     private final boolean encryption;

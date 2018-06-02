@@ -7,12 +7,20 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+/**
+ * An composite audio filter for filters provided by a {@link PcmFilterFactory}. Automatically rebuilds the chain
+ * whenever the filter factory is changed.
+ */
 public class UserProvidedAudioFilters extends CompositeAudioFilter {
   private final AudioProcessingContext context;
   private final UniversalPcmAudioFilter nextFilter;
   private final boolean hotSwapEnabled;
   private AudioFilterChain chain;
 
+  /**
+   * @param context Configuration and output information for processing
+   * @param nextFilter The next filter that should be processed after this one.
+   */
   public UserProvidedAudioFilters(AudioProcessingContext context, UniversalPcmAudioFilter nextFilter) {
     this.context = context;
     this.nextFilter = nextFilter;
@@ -28,7 +36,7 @@ public class UserProvidedAudioFilters extends CompositeAudioFilter {
     if (factory == null) {
       return new AudioFilterChain(nextFilter, Collections.emptyList(), null);
     } else {
-      FilterChainBuilder builder = new FilterChainBuilder(context.outputFormat.channelCount);
+      FilterChainBuilder builder = new FilterChainBuilder();
 
       List<AudioFilter> filters = new ArrayList<>(factory.buildChain(null, context.outputFormat, nextFilter));
 
@@ -42,7 +50,7 @@ public class UserProvidedAudioFilters extends CompositeAudioFilter {
         builder.addFirst(filter);
       }
 
-      return builder.build(factory);
+      return builder.build(factory, context.outputFormat.channelCount);
     }
   }
 
@@ -76,12 +84,10 @@ public class UserProvidedAudioFilters extends CompositeAudioFilter {
   }
 
   private void checkRebuild() throws InterruptedException {
-    if (hotSwapEnabled) {
-      if (context.playerOptions.filterFactory.get() != chain.context) {
-        flush();
-        close();
-        chain = buildFragment(context, nextFilter);
-      }
+    if (hotSwapEnabled && context.playerOptions.filterFactory.get() != chain.context) {
+      flush();
+      close();
+      chain = buildFragment(context, nextFilter);
     }
   }
 }

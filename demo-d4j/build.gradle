@@ -11,8 +11,8 @@ repositories {
 }
 
 dependencies {
-  compile 'com.github.austinv11:Discord4j:2.9.3'
-  compile 'com.sedmelluq:lavaplayer:1.2.53'
+  compile 'com.github.austinv11:Discord4j:2.10.1'
+  compile 'com.sedmelluq:lavaplayer:1.3.0'
   runtime 'ch.qos.logback:logback-classic:1.2.3'
 }
 

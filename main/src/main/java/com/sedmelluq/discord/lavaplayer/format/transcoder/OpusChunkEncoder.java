@@ -20,7 +20,7 @@ public class OpusChunkEncoder implements AudioChunkEncoder {
    * @param format Target audio format.
    */
   public OpusChunkEncoder(AudioConfiguration configuration, AudioDataFormat format) {
-    encodedBuffer = ByteBuffer.allocateDirect(4096);
+    encodedBuffer = ByteBuffer.allocateDirect(format.maximumChunkSize());
     encoder = new OpusEncoder(format.sampleRate, format.channelCount, configuration.getOpusEncodingQuality());
     this.format = format;
   }
@@ -32,6 +32,21 @@ public class OpusChunkEncoder implements AudioChunkEncoder {
     byte[] bytes = new byte[encodedBuffer.remaining()];
     encodedBuffer.get(bytes);
     return bytes;
+  }
+
+  @Override
+  public void encode(ShortBuffer buffer, ByteBuffer outBuffer) {
+    if (outBuffer.isDirect()) {
+      encoder.encode(buffer, format.chunkSampleCount, outBuffer);
+    } else {
+      encoder.encode(buffer, format.chunkSampleCount, encodedBuffer);
+
+      int length = encodedBuffer.remaining();
+      encodedBuffer.get(outBuffer.array(), 0, length);
+
+      outBuffer.position(0);
+      outBuffer.limit(length);
+    }
   }
 
   @Override

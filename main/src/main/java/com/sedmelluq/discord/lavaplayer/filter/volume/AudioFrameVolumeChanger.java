@@ -3,14 +3,11 @@ package com.sedmelluq.discord.lavaplayer.filter.volume;
 import com.sedmelluq.discord.lavaplayer.format.AudioDataFormat;
 import com.sedmelluq.discord.lavaplayer.format.transcoder.AudioChunkDecoder;
 import com.sedmelluq.discord.lavaplayer.format.transcoder.AudioChunkEncoder;
-import com.sedmelluq.discord.lavaplayer.format.transcoder.OpusChunkDecoder;
-import com.sedmelluq.discord.lavaplayer.format.transcoder.OpusChunkEncoder;
-import com.sedmelluq.discord.lavaplayer.format.transcoder.PcmChunkDecoder;
-import com.sedmelluq.discord.lavaplayer.format.transcoder.PcmChunkEncoder;
 import com.sedmelluq.discord.lavaplayer.player.AudioConfiguration;
 import com.sedmelluq.discord.lavaplayer.track.playback.AudioFrame;
 import com.sedmelluq.discord.lavaplayer.track.playback.AudioFrameRebuilder;
 import com.sedmelluq.discord.lavaplayer.track.playback.AudioProcessingContext;
+import com.sedmelluq.discord.lavaplayer.track.playback.ImmutableAudioFrame;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -35,27 +32,30 @@ public class AudioFrameVolumeChanger implements AudioFrameRebuilder {
     this.format = format;
     this.newVolume = newVolume;
 
-    this.sampleBuffer = ByteBuffer.allocateDirect(format.bufferSize(2)).order(ByteOrder.nativeOrder()).asShortBuffer();
+    this.sampleBuffer = ByteBuffer
+        .allocateDirect(format.totalSampleCount() * 2)
+        .order(ByteOrder.nativeOrder())
+        .asShortBuffer();
     this.volumeProcessor = new PcmVolumeProcessor(100);
   }
 
   @Override
   public AudioFrame rebuild(AudioFrame frame) {
-    if (frame.volume == newVolume) {
+    if (frame.getVolume() == newVolume) {
       return frame;
     }
 
-    decoder.decode(frame.data, sampleBuffer);
+    decoder.decode(frame.getData(), sampleBuffer);
 
     int targetVolume = newVolume;
 
     if (++frameIndex < 50) {
-      targetVolume = (int) ((newVolume - frame.volume) * (frameIndex / 50.0) + frame.volume);
+      targetVolume = (int) ((newVolume - frame.getVolume()) * (frameIndex / 50.0) + frame.getVolume());
     }
 
     // Volume 0 is stored in the frame with volume 100 buffer
     if (targetVolume != 0) {
-      volumeProcessor.applyVolume(frame.volume, targetVolume, sampleBuffer);
+      volumeProcessor.applyVolume(frame.getVolume(), targetVolume, sampleBuffer);
     }
 
     byte[] bytes = encoder.encode(sampleBuffer);
@@ -69,17 +69,12 @@ public class AudioFrameVolumeChanger implements AudioFrameRebuilder {
       Thread.currentThread().interrupt();
     }
 
-    return new AudioFrame(frame.timecode, bytes, targetVolume, format);
+    return new ImmutableAudioFrame(frame.getTimecode(), bytes, targetVolume, format);
   }
 
   private void setupLibraries() {
-    if (format.codec == AudioDataFormat.Codec.OPUS) {
-      encoder = new OpusChunkEncoder(configuration, format);
-      decoder = new OpusChunkDecoder(format);
-    } else {
-      encoder = new PcmChunkEncoder(format);
-      decoder = new PcmChunkDecoder(format);
-    }
+    encoder = format.createEncoder(configuration);
+    decoder = format.createDecoder();
   }
 
   private void clearLibraries() {
@@ -94,7 +89,7 @@ public class AudioFrameVolumeChanger implements AudioFrameRebuilder {
 
   /**
    * Applies a volume level to the buffered frames of a frame consumer
-   * @param context Audio processing context which contains the format information as well as the frame buffer
+   * @param context Configuration and output information for processing
    */
   public static void apply(AudioProcessingContext context) {
     AudioFrameVolumeChanger volumeChanger = new AudioFrameVolumeChanger(context.configuration, context.outputFormat,
@@ -102,7 +97,7 @@ public class AudioFrameVolumeChanger implements AudioFrameRebuilder {
 
     try {
       volumeChanger.setupLibraries();
-      context.frameConsumer.rebuild(volumeChanger);
+      context.frameBuffer.rebuild(volumeChanger);
     } finally {
       volumeChanger.clearLibraries();
     }

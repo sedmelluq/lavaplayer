@@ -98,7 +98,7 @@ public class AudioPlayerInputStream extends InputStream {
       }
 
       if (available() == 0 && provideSilence) {
-        addFrame(format.silence);
+        addFrame(format.silenceBytes());
         break;
       }
     }
@@ -108,11 +108,11 @@ public class AudioPlayerInputStream extends InputStream {
     AudioFrame frame = player.provide(timeout, TimeUnit.MILLISECONDS);
 
     if (frame != null) {
-      if (!format.equals(frame.format)) {
+      if (!format.equals(frame.getFormat())) {
         throw new IllegalStateException("Frame read from the player uses a different format than expected.");
       }
 
-      addFrame(frame.data);
+      addFrame(frame.getData());
     } else if (!provideSilence) {
       Thread.sleep(10);
     }

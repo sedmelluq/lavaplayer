@@ -1,6 +1,5 @@
 package com.sedmelluq.discord.lavaplayer.player;
 
-import com.sedmelluq.discord.lavaplayer.player.hook.AudioOutputHookFactory;
 import com.sedmelluq.discord.lavaplayer.remote.RemoteNodeRegistry;
 import com.sedmelluq.discord.lavaplayer.source.AudioSourceManager;
 import com.sedmelluq.discord.lavaplayer.tools.io.MessageInput;
@@ -29,15 +28,6 @@ public interface AudioPlayerManager {
    * manager any longer.
    */
   void shutdown();
-
-  /**
-   * Set the factory for audio output hooks for the players created by this manager. An audio output hook gets called
-   * for every audio frame leaving the audio player and may also change the return value to swap out or discard an audio
-   * frame.
-   *
-   * @param outputHookFactory Audio output hook factory
-   */
-  void setOutputHookFactory(AudioOutputHookFactory outputHookFactory);
 
   /**
    * Configure to use remote nodes for playback. On consecutive calls, the connections with previously used nodes will

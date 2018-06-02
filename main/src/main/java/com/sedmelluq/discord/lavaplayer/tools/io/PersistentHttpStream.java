@@ -1,6 +1,5 @@
 package com.sedmelluq.discord.lavaplayer.tools.io;
 
-import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo;
 import com.sedmelluq.discord.lavaplayer.track.info.AudioTrackInfoBuilder;
 import com.sedmelluq.discord.lavaplayer.track.info.AudioTrackInfoProvider;
 import org.apache.http.Header;

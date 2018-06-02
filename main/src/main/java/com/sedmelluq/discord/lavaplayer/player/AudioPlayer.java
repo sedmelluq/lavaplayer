@@ -9,15 +9,16 @@ import com.sedmelluq.discord.lavaplayer.player.event.TrackEndEvent;
 import com.sedmelluq.discord.lavaplayer.player.event.TrackExceptionEvent;
 import com.sedmelluq.discord.lavaplayer.player.event.TrackStartEvent;
 import com.sedmelluq.discord.lavaplayer.player.event.TrackStuckEvent;
-import com.sedmelluq.discord.lavaplayer.player.hook.AudioOutputHook;
+import com.sedmelluq.discord.lavaplayer.tools.ExceptionTools;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
+import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackEndReason;
 import com.sedmelluq.discord.lavaplayer.track.InternalAudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.TrackStateListener;
 import com.sedmelluq.discord.lavaplayer.track.playback.AudioFrame;
 import com.sedmelluq.discord.lavaplayer.track.playback.AudioFrameProvider;
-import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.playback.AudioFrameProviderTools;
+import com.sedmelluq.discord.lavaplayer.track.playback.MutableAudioFrame;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -48,17 +49,14 @@ public class AudioPlayer implements AudioFrameProvider, TrackStateListener {
   private final AtomicBoolean paused;
   private final DefaultAudioPlayerManager manager;
   private final List<AudioEventListener> listeners;
-  private final AudioOutputHook outputHook;
   private final Object trackSwitchLock;
   private final AudioPlayerOptions options;
 
   /**
    * @param manager Audio player manager which this player is attached to
-   * @param outputHook Hook which can intercept outgoing audio frames
    */
-  public AudioPlayer(DefaultAudioPlayerManager manager, AudioOutputHook outputHook) {
+  public AudioPlayer(DefaultAudioPlayerManager manager) {
     this.manager = manager;
-    this.outputHook = outputHook;
     activeTrack = null;
     paused = new AtomicBoolean();
     listeners = new ArrayList<>();
@@ -157,6 +155,21 @@ public class AudioPlayer implements AudioFrameProvider, TrackStateListener {
     return frame;
   }
 
+  private boolean provideShadowFrame(MutableAudioFrame targetFrame) {
+    InternalAudioTrack shadow = shadowTrack;
+
+    if (shadow != null && shadow.provide(targetFrame)) {
+      if (targetFrame.isTerminator()) {
+        shadowTrack = null;
+        return false;
+      }
+
+      return true;
+    }
+
+    return false;
+  }
+
   @Override
   public AudioFrame provide() {
     return AudioFrameProviderTools.delegateToTimedProvide(this);
@@ -164,20 +177,6 @@ public class AudioPlayer implements AudioFrameProvider, TrackStateListener {
 
   @Override
   public AudioFrame provide(long timeout, TimeUnit unit) throws TimeoutException, InterruptedException {
-    AudioFrame frame = provideDirectly(timeout, unit);
-    if (outputHook != null) {
-      frame = outputHook.outgoingFrame(this, frame);
-    }
-    return frame;
-  }
-
-  /**
-   * Provide an audio frame bypassing hooks.
-   * @param timeout Specifies the maximum time to wait for data. Pass 0 for non-blocking mode.
-   * @param unit Specifies the time unit of the maximum wait time.
-   * @return An audio frame if available, otherwise null
-   */
-  public AudioFrame provideDirectly(long timeout, TimeUnit unit) throws TimeoutException, InterruptedException {
     InternalAudioTrack track;
 
     lastRequestTime = System.currentTimeMillis();
@@ -207,6 +206,50 @@ public class AudioPlayer implements AudioFrameProvider, TrackStateListener {
     }
 
     return null;
+  }
+
+  @Override
+  public boolean provide(MutableAudioFrame targetFrame) {
+    try {
+      return provide(targetFrame, 0, TimeUnit.MILLISECONDS);
+    } catch (TimeoutException | InterruptedException e) {
+      ExceptionTools.keepInterrupted(e);
+      throw new RuntimeException(e);
+    }
+  }
+
+  @Override
+  public boolean provide(MutableAudioFrame targetFrame, long timeout, TimeUnit unit)
+      throws TimeoutException, InterruptedException {
+
+    InternalAudioTrack track;
+
+    lastRequestTime = System.currentTimeMillis();
+
+    if (timeout == 0 && paused.get()) {
+      return false;
+    }
+
+    while ((track = activeTrack) != null) {
+      if (timeout > 0 ? track.provide(targetFrame, timeout, unit) : track.provide(targetFrame)) {
+        lastReceiveTime = System.nanoTime();
+        shadowTrack = null;
+
+        if (targetFrame.isTerminator()) {
+          handleTerminator(track);
+          continue;
+        }
+
+        return true;
+      } else if (timeout == 0) {
+        checkStuck(track);
+        return provideShadowFrame(targetFrame);
+      } else {
+        return false;
+      }
+    }
+
+    return false;
   }
 
   private void handleTerminator(InternalAudioTrack track) {

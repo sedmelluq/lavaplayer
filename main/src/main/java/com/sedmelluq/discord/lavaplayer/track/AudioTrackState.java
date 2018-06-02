@@ -8,5 +8,6 @@ public enum AudioTrackState {
   LOADING,
   PLAYING,
   SEEKING,
+  STOPPING,
   FINISHED
 }

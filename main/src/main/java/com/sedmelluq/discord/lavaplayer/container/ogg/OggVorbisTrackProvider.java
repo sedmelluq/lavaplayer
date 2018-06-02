@@ -9,8 +9,6 @@ import com.sedmelluq.discord.lavaplayer.track.playback.AudioProcessingContext;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.Collections;
-import java.util.Map;
 
 /**
  * OGG stream handler for Vorbis codec.

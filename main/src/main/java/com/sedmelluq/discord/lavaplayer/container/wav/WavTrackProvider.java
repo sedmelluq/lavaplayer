@@ -61,7 +61,7 @@ public class WavTrackProvider {
 
   /**
    * Reads audio frames and sends them to frame consumer
-   * @throws InterruptedException When interrupted
+   * @throws InterruptedException When interrupted externally (or for seek/stop).
    */
   public void provideFrames() throws InterruptedException {
     try {
