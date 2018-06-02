@@ -32,6 +32,7 @@ public class BufferingPostProcessor implements AudioPostProcessor {
 
   @Override
   public void process(long timecode, ShortBuffer buffer) throws InterruptedException {
+    outputBuffer.clear();
     encoder.encode(buffer, outputBuffer);
 
     offeredFrame.setTimecode(timecode);

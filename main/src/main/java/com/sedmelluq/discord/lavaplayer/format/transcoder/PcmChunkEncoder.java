@@ -52,6 +52,7 @@ public class PcmChunkEncoder implements AudioChunkEncoder {
     encodedAsShort.put(buffer);
 
     out.put(encoded.array(), 0, encodedAsShort.position() * 2);
+    out.flip();
 
     buffer.reset();
   }
