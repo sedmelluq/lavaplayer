@@ -10,6 +10,7 @@ import com.sedmelluq.discord.lavaplayer.container.playlists.M3uPlaylistContainer
 import com.sedmelluq.discord.lavaplayer.container.playlists.PlainPlaylistContainerProbe;
 import com.sedmelluq.discord.lavaplayer.container.playlists.PlsPlaylistContainerProbe;
 import com.sedmelluq.discord.lavaplayer.container.wav.WavContainerProbe;
+import com.sedmelluq.discord.lavaplayer.container.xm.XmContainerProbe;
 
 /**
  * Lists currently supported containers and their probes.
@@ -24,7 +25,8 @@ public enum MediaContainer {
   PLS(new PlsPlaylistContainerProbe()),
   PLAIN(new PlainPlaylistContainerProbe()),
   MP3(new Mp3ContainerProbe()),
-  ADTS(new AdtsContainerProbe());
+  ADTS(new AdtsContainerProbe()),
+  XM(new XmContainerProbe());
 
   /**
    * The probe used to detect files using this container and create the audio tracks for them.
