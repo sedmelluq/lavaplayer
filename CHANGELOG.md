@@ -1,5 +1,14 @@
 # Change Log
 
+## [1.3.3] -- 2018-06-05
+### Added
+- Ability to write more custom audio players as the player is now an interface.
+- HTTP stream reconnect when using Conscrypt as SSL provider.
+
+## [1.3.2] -- 2018-06-03
+### Fixed
+- Fixed mutable audio frames and non-allocating buffer exploding in some use cases.
+
 ## [1.3.1] -- 2018-06-03
 ### Fixed
 - Fixed PCM output format regression.

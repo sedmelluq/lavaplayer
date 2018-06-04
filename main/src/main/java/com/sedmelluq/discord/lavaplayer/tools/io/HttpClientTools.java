@@ -290,7 +290,8 @@ public class HttpClientTools {
     return isConnectionResetException(exception) ||
         isSocketTimeoutException(exception) ||
         isIncorrectSslShutdownException(exception) ||
-        isPrematureEndException(exception);
+        isPrematureEndException(exception) ||
+        isRetriableConscryptException(exception);
   }
 
   private static boolean isConnectionResetException(Throwable exception) {
@@ -310,6 +311,20 @@ public class HttpClientTools {
         exception.getMessage().startsWith("Premature end of Content-Length");
   }
 
+  private static boolean isRetriableConscryptException(Throwable exception) {
+    if (exception instanceof SSLException) {
+      String message = exception.getMessage();
+
+      if (message != null && message.contains("I/O error during system call")) {
+        return message.contains("No error") ||
+            message.contains("Connection reset by peer") ||
+            message.contains("Connection timed out");
+      }
+    }
+
+    return false;
+  }
+
   /**
    * Executes an HTTP request and returns the response as a JsonBrowser instance.
    *
@@ -322,9 +337,9 @@ public class HttpClientTools {
     try (CloseableHttpResponse response = httpInterface.execute(request)) {
       int statusCode = response.getStatusLine().getStatusCode();
 
-      if (statusCode == 404) {
+      if (statusCode == HttpStatus.SC_NOT_FOUND) {
         return null;
-      } else if (statusCode != 200) {
+      } else if (statusCode != HttpStatus.SC_OK) {
         throw new FriendlyException("Server responded with an error.", SUSPICIOUS,
             new IllegalStateException("Response code from channel info is " + statusCode));
       }
@@ -345,7 +360,7 @@ public class HttpClientTools {
   public static String[] fetchResponseLines(HttpInterface httpInterface, HttpUriRequest request, String name) throws IOException {
     try (CloseableHttpResponse response = httpInterface.execute(request)) {
       int statusCode = response.getStatusLine().getStatusCode();
-      if (statusCode != 200) {
+      if (statusCode != HttpStatus.SC_OK) {
         throw new IOException("Unexpected response code " + statusCode + " from " + name);
       }
 

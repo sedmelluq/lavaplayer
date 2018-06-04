@@ -7,7 +7,8 @@ import java.nio.ByteBuffer;
  */
 public class MutableAudioFrame extends AbstractMutableAudioFrame {
   private ByteBuffer frameBuffer;
-  private int overrideBufferPosition;
+  private int framePosition;
+  private int frameLength;
 
   /**
    * This should be called only by the requester of a frame.
@@ -16,7 +17,8 @@ public class MutableAudioFrame extends AbstractMutableAudioFrame {
    */
   public void setBuffer(ByteBuffer frameBuffer) {
     this.frameBuffer = frameBuffer;
-    this.overrideBufferPosition = frameBuffer.position();
+    this.framePosition = frameBuffer.position();
+    this.frameLength = frameBuffer.remaining();
   }
 
   /**
@@ -27,13 +29,15 @@ public class MutableAudioFrame extends AbstractMutableAudioFrame {
    * @param length Length of the data to copy.
    */
   public void store(byte[] buffer, int offset, int length) {
-    frameBuffer.position(overrideBufferPosition);
+    frameBuffer.position(framePosition);
+    frameBuffer.limit(frameBuffer.capacity());
     frameBuffer.put(buffer, offset, length);
+    frameLength = length;
   }
 
   @Override
   public int getDataLength() {
-    return frameBuffer.remaining();
+    return frameLength;
   }
 
   @Override
@@ -45,8 +49,9 @@ public class MutableAudioFrame extends AbstractMutableAudioFrame {
 
   @Override
   public void getData(byte[] buffer, int offset) {
-    frameBuffer.mark();
-    frameBuffer.get(buffer, offset, frameBuffer.remaining());
-    frameBuffer.reset();
+    int previous = frameBuffer.position();
+    frameBuffer.position(framePosition);
+    frameBuffer.get(buffer, offset, frameLength);
+    frameBuffer.position(previous);
   }
 }
