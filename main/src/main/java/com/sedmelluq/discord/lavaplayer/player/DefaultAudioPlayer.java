@@ -274,7 +274,7 @@ public class DefaultAudioPlayer implements AudioPlayer, TrackStateListener {
   }
 
   public void setVolume(int volume) {
-    options.volumeLevel.set(Math.max(0, volume));
+    options.volumeLevel.set(Math.min(1000, Math.max(0, volume)));
   }
 
   public void setFilterFactory(PcmFilterFactory factory) {
