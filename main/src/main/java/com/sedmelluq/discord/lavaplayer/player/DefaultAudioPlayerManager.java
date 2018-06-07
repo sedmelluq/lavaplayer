@@ -454,7 +454,7 @@ public class DefaultAudioPlayerManager implements AudioPlayerManager {
 
   @Override
   public AudioPlayer createPlayer() {
-    AudioPlayer player = new AudioPlayer(this);
+    AudioPlayer player = new DefaultAudioPlayer(this);
     player.addListener(lifecycleManager);
 
     if (remoteNodeManager.isEnabled()) {
