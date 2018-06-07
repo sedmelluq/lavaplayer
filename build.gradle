@@ -1,5 +1,6 @@
 allprojects {
   repositories {
+    maven { url "https://dl.bintray.com/gabixdev/kyoko" }
     mavenCentral()
     jcenter()
     mavenLocal()

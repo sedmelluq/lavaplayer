@@ -23,6 +23,7 @@ dependencies {
   compile 'org.jsoup:jsoup:1.11.2'
 
   compile 'net.iharder:base64:2.3.9'
+  compile 'com.github.micromod:ibxm:a73'
 }
 
 task updateVersion {
