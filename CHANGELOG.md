@@ -1,5 +1,16 @@
 # Change Log
 
+## [1.3.5] -- 2018-06-13
+### Fixed
+- Fixed volume formula not scaling well beyond 150 - now switches to linear mode after 150.
+
+## [1.3.4] -- 2018-06-12
+### Changed
+- Maximum volume setting set to 1000.
+
+### Fixed
+- Fixed AAC+SBR+PS not working properly for MP4/MKV containers.
+
 ## [1.3.3] -- 2018-06-05
 ### Added
 - Ability to write more custom audio players as the player is now an interface.

@@ -48,8 +48,13 @@ public class PcmVolumeProcessor {
   private void setupMultipliers(int activeVolume) {
     if (currentVolume != activeVolume) {
       currentVolume = activeVolume;
-      float floatMultiplier = (float) Math.tan(activeVolume * 0.0079f);
-      integerMultiplier = (int) (floatMultiplier * 10000);
+
+      if (activeVolume <= 150) {
+        float floatMultiplier = (float) Math.tan(activeVolume * 0.0079f);
+        integerMultiplier = (int) (floatMultiplier * 10000);
+      } else {
+        integerMultiplier = 24621 * activeVolume / 150;
+      }
     }
   }
 
