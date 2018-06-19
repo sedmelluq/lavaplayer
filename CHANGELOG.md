@@ -1,5 +1,9 @@
 # Change Log
 
+## [1.3.6] -- 2018-06-19
+### Changed
+- Made it easier to use custom AudioPlayer implementations.
+
 ## [1.3.5] -- 2018-06-13
 ### Fixed
 - Fixed volume formula not scaling well beyond 150 - now switches to linear mode after 150.
