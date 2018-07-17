@@ -62,6 +62,15 @@ public class MatroskaFileReader {
     return element;
   }
 
+  /**
+   * Reads one Matroska block header. The data is of the block is not read, but can be read frame by frame using
+   * {@link MatroskaBlock#getNextFrameBuffer(MatroskaFileReader, int)}.
+   *
+   * @param parent The block parent element.
+   * @param trackFilter The ID of the track to read data for from the block.
+   * @return An instance of a block if it contains data for the requested track, <code>null</code> otherwise.
+   * @throws IOException On read error.
+   */
   public MatroskaBlock readBlockHeader(MatroskaElement parent, int trackFilter) throws IOException {
     if (!mutableBlock.parseHeader(this, parent, trackFilter)) {
       return null;

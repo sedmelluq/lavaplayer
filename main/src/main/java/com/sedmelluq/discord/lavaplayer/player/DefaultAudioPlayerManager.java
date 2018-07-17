@@ -1,7 +1,5 @@
 package com.sedmelluq.discord.lavaplayer.player;
 
-import com.sedmelluq.discord.lavaplayer.player.hook.AudioOutputHook;
-import com.sedmelluq.discord.lavaplayer.player.hook.AudioOutputHookFactory;
 import com.sedmelluq.discord.lavaplayer.remote.RemoteAudioTrackExecutor;
 import com.sedmelluq.discord.lavaplayer.remote.RemoteNodeManager;
 import com.sedmelluq.discord.lavaplayer.remote.RemoteNodeRegistry;
@@ -11,8 +9,8 @@ import com.sedmelluq.discord.lavaplayer.tools.DataFormatTools;
 import com.sedmelluq.discord.lavaplayer.tools.ExceptionTools;
 import com.sedmelluq.discord.lavaplayer.tools.ExecutorTools;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
-import com.sedmelluq.discord.lavaplayer.tools.OrderedExecutor;
 import com.sedmelluq.discord.lavaplayer.tools.GarbageCollectionMonitor;
+import com.sedmelluq.discord.lavaplayer.tools.OrderedExecutor;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpConfigurable;
 import com.sedmelluq.discord.lavaplayer.tools.io.MessageInput;
 import com.sedmelluq.discord.lavaplayer.tools.io.MessageOutput;
@@ -90,7 +88,6 @@ public class DefaultAudioPlayerManager implements AudioPlayerManager {
   private final AtomicLong cleanupThreshold;
   private volatile int frameBufferDuration;
   private volatile boolean useSeekGhosting;
-  private volatile AudioOutputHookFactory outputHookFactory;
 
   // Additional services
   private final RemoteNodeManager remoteNodeManager;
@@ -118,7 +115,6 @@ public class DefaultAudioPlayerManager implements AudioPlayerManager {
     cleanupThreshold = new AtomicLong(DEFAULT_CLEANUP_THRESHOLD);
     frameBufferDuration = DEFAULT_FRAME_BUFFER_DURATION;
     useSeekGhosting = true;
-    outputHookFactory = null;
 
     // Additional services
     remoteNodeManager = new RemoteNodeManager(this);
@@ -140,11 +136,6 @@ public class DefaultAudioPlayerManager implements AudioPlayerManager {
     ExecutorTools.shutdownExecutor(trackPlaybackExecutorService, "track playback");
     ExecutorTools.shutdownExecutor(trackInfoExecutorService, "track info");
     ExecutorTools.shutdownExecutor(scheduledExecutorService, "scheduled operations");
-  }
-
-  @Override
-  public void setOutputHookFactory(AudioOutputHookFactory outputHookFactory) {
-    this.outputHookFactory = outputHookFactory;
   }
 
   @Override
@@ -463,8 +454,7 @@ public class DefaultAudioPlayerManager implements AudioPlayerManager {
 
   @Override
   public AudioPlayer createPlayer() {
-    AudioOutputHook outputHook = outputHookFactory != null ? outputHookFactory.createOutputHook() : null;
-    AudioPlayer player = new AudioPlayer(this, outputHook);
+    AudioPlayer player = constructPlayer();
     player.addListener(lifecycleManager);
 
     if (remoteNodeManager.isEnabled()) {
@@ -472,6 +462,10 @@ public class DefaultAudioPlayerManager implements AudioPlayerManager {
     }
 
     return player;
+  }
+
+  protected AudioPlayer constructPlayer() {
+    return new DefaultAudioPlayer(this);
   }
 
   @Override

@@ -45,9 +45,8 @@ public class OggPacketInputStream extends InputStream {
   /**
    * Load the next track from the stream. This is only valid when the stream is in a track boundary state.
    * @return True if next track is present in the stream, false if the stream has terminated.
-   * @throws IOException On read error.
    */
-  public boolean startNewTrack() throws IOException {
+  public boolean startNewTrack() {
     if (state == State.TERMINATED) {
       return false;
     } else if (state != State.TRACK_BOUNDARY) {
@@ -165,9 +164,8 @@ public class OggPacketInputStream extends InputStream {
    *
    * @return Returns false if the remaining size of the packet was zero, state is PACKET_BOUNDARY.
    *         Returns true if the initialised packet has any bytes in it, state is PACKET_READ.
-   * @throws IOException On read error.
    */
-  private boolean initialisePacket() throws IOException {
+  private boolean initialisePacket() {
     while (nextPacketSegmentIndex < pageHeader.segmentCount) {
       int size = segmentSizes[nextPacketSegmentIndex++];
       bytesLeftInPacket += size;
@@ -260,6 +258,14 @@ public class OggPacketInputStream extends InputStream {
     return Math.min(inputStream.available(), bytesLeftInPacket);
   }
 
+  /**
+   * If it is possible to seek backwards on this stream, and the length of the stream is known, seeks to the end of the
+   * track to determine the stream length both in bytes and samples.
+   *
+   * @param sampleRate Sample rate of the track in this stream.
+   * @return OGG stream size information.
+   * @throws IOException On read error.
+   */
   public OggStreamSizeInfo seekForSizeInfo(int sampleRate) throws IOException {
     if (!inputStream.canSeekHard()) {
       return null;

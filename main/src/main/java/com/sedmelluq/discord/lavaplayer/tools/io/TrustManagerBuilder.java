@@ -1,5 +1,6 @@
 package com.sedmelluq.discord.lavaplayer.tools.io;
 
+import com.sedmelluq.discord.lavaplayer.tools.ExceptionTools;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,12 +27,16 @@ public class TrustManagerBuilder {
   /**
    * Add certificates from the default trust store
    * @return this
-   * @throws Exception
+   * @throws Exception In case anything explodes.
    */
   public TrustManagerBuilder addBuiltinCertificates() throws Exception {
     TrustManagerFactory factory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
     factory.init((KeyStore) null);
-    addFromTrustManager(findFirstX509TrustManager(factory));
+
+    X509TrustManager builtInTrustManager = findFirstX509TrustManager(factory);
+    if (builtInTrustManager != null) {
+      addFromTrustManager(builtInTrustManager);
+    }
     return this;
   }
 
@@ -40,7 +45,7 @@ public class TrustManagerBuilder {
    * list of JKS file names to laoad from that directory.
    * @param path Path to the resource directory.
    * @return this
-   * @throws Exception
+   * @throws Exception In case anything explodes.
    */
   public TrustManagerBuilder addFromResourceDirectory(String path) throws Exception {
     addFromResourceList(path, path + "/bundled.txt");
@@ -50,7 +55,7 @@ public class TrustManagerBuilder {
 
   /**
    * @return A trust manager with the loaded certificates.
-   * @throws Exception
+   * @throws Exception In case anything explodes.
    */
   public X509TrustManager build() throws Exception {
     KeyStore keyStore = KeyStore.getInstance("JKS");
@@ -99,7 +104,7 @@ public class TrustManagerBuilder {
         }
       }
     } finally {
-      IOUtils.closeQuietly(listFileStream);
+      ExceptionTools.closeWithWarnings(listFileStream);
     }
   }
 
@@ -116,7 +121,7 @@ public class TrustManagerBuilder {
       keyStore.load(fileStream, null);
       addFromKeyStore(keyStore);
     } finally {
-      IOUtils.closeQuietly(fileStream);
+      ExceptionTools.closeWithWarnings(fileStream);
     }
   }
 

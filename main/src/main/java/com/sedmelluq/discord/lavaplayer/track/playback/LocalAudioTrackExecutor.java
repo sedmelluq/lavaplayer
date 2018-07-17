@@ -37,8 +37,8 @@ public class LocalAudioTrackExecutor implements AudioTrackExecutor {
   private final boolean useSeekGhosting;
   private final AudioFrameBuffer frameBuffer;
   private final AtomicReference<Thread> playingThread = new AtomicReference<>();
-  private final AtomicBoolean isStopping = new AtomicBoolean(false);
-  private final AtomicLong pendingSeek = new AtomicLong(-1);
+  private final AtomicBoolean queuedStop = new AtomicBoolean(false);
+  private final AtomicLong queuedSeek = new AtomicLong(-1);
   private final AtomicLong lastFrameTimecode = new AtomicLong(0);
   private final AtomicReference<AudioTrackState> state = new AtomicReference<>(AudioTrackState.INACTIVE);
   private final Object actionSynchronizer = new Object();
@@ -59,7 +59,7 @@ public class LocalAudioTrackExecutor implements AudioTrackExecutor {
 
     this.audioTrack = audioTrack;
     AudioDataFormat currentFormat = configuration.getOutputFormat();
-    this.frameBuffer = new AudioFrameBuffer(bufferDuration, currentFormat, isStopping);
+    this.frameBuffer = configuration.getFrameBufferFactory().create(bufferDuration, currentFormat, queuedStop);
     this.processingContext = new AudioProcessingContext(configuration, frameBuffer, playerOptions, currentFormat);
     this.useSeekGhosting = useSeekGhosting;
   }
@@ -134,7 +134,7 @@ public class LocalAudioTrackExecutor implements AudioTrackExecutor {
       if (thread != null) {
         log.debug("Requesting stop for track {}", audioTrack.getIdentifier());
 
-        isStopping.compareAndSet(false, true);
+        queuedStop.compareAndSet(false, true);
         thread.interrupt();
       } else {
         log.debug("Tried to stop track {} which is not playing.", audioTrack.getIdentifier());
@@ -146,12 +146,19 @@ public class LocalAudioTrackExecutor implements AudioTrackExecutor {
    * @return True if the track has been scheduled to stop and then clears the scheduled stop bit.
    */
   public boolean checkStopped() {
-    return isStopping.compareAndSet(true, false);
+    if (queuedStop.compareAndSet(true, false)) {
+      state.set(AudioTrackState.STOPPING);
+      return true;
+    }
+
+    return false;
   }
 
   /**
    * Wait until all the frames from the frame buffer have been consumed. Keeps the buffering thread alive to keep it
    * interruptible for seeking until buffer is empty.
+   *
+   * @throws InterruptedException When interrupted externally (or for seek/stop).
    */
   public void waitOnEnd() throws InterruptedException {
     frameBuffer.setTerminateOnEmpty();
@@ -177,7 +184,7 @@ public class LocalAudioTrackExecutor implements AudioTrackExecutor {
 
   @Override
   public long getPosition() {
-    long seek = pendingSeek.get();
+    long seek = queuedSeek.get();
     return seek != -1 ? seek : lastFrameTimecode.get();
   }
 
@@ -192,7 +199,7 @@ public class LocalAudioTrackExecutor implements AudioTrackExecutor {
         timecode = 0;
       }
 
-      pendingSeek.set(timecode);
+      queuedSeek.set(timecode);
 
       if (!useSeekGhosting) {
         frameBuffer.clear();
@@ -211,7 +218,7 @@ public class LocalAudioTrackExecutor implements AudioTrackExecutor {
    * @return True if this track is currently in the middle of a seek.
    */
   private boolean isPerformingSeek() {
-    return pendingSeek.get() != -1 || (useSeekGhosting && frameBuffer.hasClearOnInsert());
+    return queuedSeek.get() != -1 || (useSeekGhosting && frameBuffer.hasClearOnInsert());
   }
 
   @Override
@@ -232,7 +239,9 @@ public class LocalAudioTrackExecutor implements AudioTrackExecutor {
   public void executeProcessingLoop(ReadExecutor readExecutor, SeekExecutor seekExecutor) {
     boolean proceed = true;
 
-    checkPendingSeek(seekExecutor);
+    if (checkPendingSeek(seekExecutor) == SeekResult.EXTERNAL_SEEK) {
+      return;
+    }
 
     while (proceed) {
       state.set(AudioTrackState.PLAYING);
@@ -297,13 +306,17 @@ public class LocalAudioTrackExecutor implements AudioTrackExecutor {
     if (checkStopped()) {
       markerTracker.trigger(STOPPED);
       return false;
-    } else if (checkPendingSeek(seekExecutor)) {
+    }
+
+    SeekResult seekResult = checkPendingSeek(seekExecutor);
+
+    if (seekResult != SeekResult.NO_SEEK) {
       // Double-check, might have received a stop request while seeking
       if (checkStopped()) {
         markerTracker.trigger(STOPPED);
         return false;
       } else {
-        return true;
+        return seekResult == SeekResult.INTERNAL_SEEK;
       }
     } else if (interruption != null) {
       Thread.currentThread().interrupt();
@@ -336,31 +349,35 @@ public class LocalAudioTrackExecutor implements AudioTrackExecutor {
    * @param seekExecutor Callback for performing a seek on the track
    * @return True if a seek was performed
    */
-  private boolean checkPendingSeek(SeekExecutor seekExecutor) {
+  private SeekResult checkPendingSeek(SeekExecutor seekExecutor) {
     if (!audioTrack.isSeekable()) {
-      return false;
+      return SeekResult.NO_SEEK;
     }
 
     long seekPosition;
 
     synchronized (actionSynchronizer) {
-      seekPosition = pendingSeek.get();
+      seekPosition = queuedSeek.get();
 
       if (seekPosition == -1) {
-        return false;
+        return SeekResult.NO_SEEK;
       }
 
       log.debug("Track {} interrupted for seeking to {}.", audioTrack.getIdentifier(), seekPosition);
       applySeekState(seekPosition);
     }
 
-    try {
-      seekExecutor.performSeek(seekPosition);
-    } catch (Exception e) {
-      throw ExceptionTools.wrapUnfriendlyExceptions("Something went wrong when seeking to a position.", FAULT, e);
-    }
+    if (seekExecutor != null) {
+      try {
+        seekExecutor.performSeek(seekPosition);
+      } catch (Exception e) {
+        throw ExceptionTools.wrapUnfriendlyExceptions("Something went wrong when seeking to a position.", FAULT, e);
+      }
 
-    return true;
+      return SeekResult.INTERNAL_SEEK;
+    } else {
+      return SeekResult.EXTERNAL_SEEK;
+    }
   }
 
   private void applySeekState(long seekPosition) {
@@ -372,7 +389,7 @@ public class LocalAudioTrackExecutor implements AudioTrackExecutor {
       frameBuffer.clear();
     }
 
-    pendingSeek.set(-1);
+    queuedSeek.set(-1);
     markerTracker.checkSeekTimecode(seekPosition);
   }
 
@@ -390,13 +407,35 @@ public class LocalAudioTrackExecutor implements AudioTrackExecutor {
     return frame;
   }
 
+  @Override
+  public boolean provide(MutableAudioFrame targetFrame) {
+    if (frameBuffer.provide(targetFrame)) {
+      processProvidedFrame(targetFrame);
+      return true;
+    }
+
+    return false;
+  }
+
+  @Override
+  public boolean provide(MutableAudioFrame targetFrame, long timeout, TimeUnit unit)
+      throws TimeoutException, InterruptedException {
+
+    if (frameBuffer.provide(targetFrame, timeout, unit)) {
+      processProvidedFrame(targetFrame);
+      return true;
+    }
+
+    return true;
+  }
+
   private void processProvidedFrame(AudioFrame frame) {
     if (frame != null && !frame.isTerminator()) {
       if (!isPerformingSeek()) {
-        markerTracker.checkPlaybackTimecode(frame.timecode);
+        markerTracker.checkPlaybackTimecode(frame.getTimecode());
       }
 
-      lastFrameTimecode.set(frame.timecode);
+      lastFrameTimecode.set(frame.getTimecode());
     }
   }
 
@@ -405,8 +444,9 @@ public class LocalAudioTrackExecutor implements AudioTrackExecutor {
    */
   public interface ReadExecutor {
     /**
-     * Reads until interrupted or EOF
-     * @throws InterruptedException
+     * Reads until interrupted or EOF.
+     *
+     * @throws InterruptedException When interrupted externally (or for seek/stop).
      */
     void performRead() throws InterruptedException;
   }
@@ -417,8 +457,15 @@ public class LocalAudioTrackExecutor implements AudioTrackExecutor {
   public interface SeekExecutor {
     /**
      * Perform a seek to the specified position
+     *
      * @param position Position in milliseconds
      */
     void performSeek(long position);
+  }
+
+  private enum SeekResult {
+    NO_SEEK,
+    INTERNAL_SEEK,
+    EXTERNAL_SEEK
   }
 }

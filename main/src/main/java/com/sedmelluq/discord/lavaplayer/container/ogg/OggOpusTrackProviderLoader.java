@@ -5,9 +5,18 @@ import com.sedmelluq.discord.lavaplayer.tools.io.DirectBufferStreamBroker;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
+/**
+ * Loader for Opus track providers from an OGG stream.
+ */
 public class OggOpusTrackProviderLoader {
   private static final int HEAD_TAG_HALF = ByteBuffer.wrap(new byte[] { 'H', 'e', 'a', 'd' }).getInt();
 
+  /**
+   * @param packetInputStream OGG packet input stream.
+   * @param broker Broker for loading stream data into direct byte buffer.
+   * @return An OGG Opus track frame provider.
+   * @throws IOException On read error.
+   */
   public static OggOpusTrackProvider load(OggPacketInputStream packetInputStream, DirectBufferStreamBroker broker)
       throws IOException {
 

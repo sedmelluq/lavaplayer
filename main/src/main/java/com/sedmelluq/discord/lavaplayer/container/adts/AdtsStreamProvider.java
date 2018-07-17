@@ -26,10 +26,12 @@ public class AdtsStreamProvider {
   private ShortBuffer outputBuffer;
   private AdtsPacketHeader previousHeader;
   private AudioPipeline downstream;
+  private Long requestedTimecode;
+  private Long providedTimecode;
 
   /**
    * @param inputStream Input stream to read from.
-   * @param context Audio processing context.
+   * @param context Configuration and output information for processing
    */
   public AdtsStreamProvider(InputStream inputStream, AudioProcessingContext context) {
     this.context = context;
@@ -40,8 +42,20 @@ public class AdtsStreamProvider {
   }
 
   /**
+   * Used to pass the initial position of the stream in case it is part of a chain, to keep timecodes of audio frames
+   * continuous.
+   *
+   * @param requestedTimecode The timecode at which the samples from this stream should be outputted.
+   * @param providedTimecode The timecode at which this stream starts.
+   */
+  public void setInitialSeek(long requestedTimecode, long providedTimecode) {
+    this.requestedTimecode = requestedTimecode;
+    this.providedTimecode = providedTimecode;
+  }
+
+  /**
    * Provides frames to the frame consumer.
-   * @throws InterruptedException
+   * @throws InterruptedException When interrupted externally (or for seek/stop).
    */
   public void provideFrames() throws InterruptedException {
     try {
@@ -84,6 +98,11 @@ public class AdtsStreamProvider {
       downstream = AudioPipelineFactory.create(context, new PcmFormat(streamInfo.channels, streamInfo.sampleRate));
       outputBuffer = ByteBuffer.allocateDirect(2 * streamInfo.frameSize * streamInfo.channels)
           .order(ByteOrder.nativeOrder()).asShortBuffer();
+
+      if (requestedTimecode != null) {
+        downstream.seekPerformed(requestedTimecode, providedTimecode);
+        requestedTimecode = null;
+      }
     }
 
     outputBuffer.clear();

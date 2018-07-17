@@ -3,54 +3,49 @@ package com.sedmelluq.discord.lavaplayer.track.playback;
 import com.sedmelluq.discord.lavaplayer.format.AudioDataFormat;
 
 /**
- * A single audio frame.
+ * Represents an audio frame.
  */
-public class AudioFrame {
+public interface AudioFrame {
   /**
-   * An AudioFrame instance which marks the end of an audio track, the time code or buffer from it should not be tried
-   * to access.
+   * @return Absolute timecode of the frame in milliseconds.
    */
-  public static final AudioFrame TERMINATOR = new AudioFrame(0, null, 0, null);
+  long getTimecode();
 
   /**
-   * Timecode of this frame in milliseconds.
+   * @return Volume of the current frame.
    */
-  public final long timecode;
+  int getVolume();
 
   /**
-   * Buffer for this frame, in the format specified in the format field.
+   * @return Length of the data of this frame.
    */
-  public final byte[] data;
+  int getDataLength();
 
   /**
-   * Volume level of the audio in this frame. Internally when this value is 0, the data may actually contain a
-   * non-silent frame. This is to allow frames with 0 volume to be modified later. These frames should still be
-   * handled as silent frames.
+   * @return Byte array with the frame data.
    */
-  public final int volume;
+  byte[] getData();
 
   /**
-   * Specifies the format of audio in the data buffer.
+   * Before calling this method, the caller should verify that the data fits in the buffer using
+   * {@link #getDataLength()}.
+   *
+   * @param buffer Buffer to write the frame data to.
+   * @param offset Offset in the buffer to start writing at.
    */
-  public final AudioDataFormat format;
+  void getData(byte[] buffer, int offset);
 
   /**
-   * @param timecode Timecode of this frame in milliseconds.
-   * @param data Buffer for this frame, in the format specified in the format field.
-   * @param volume Volume level of the audio in this frame.
-   * @param format Specifies the format of audio in the data buffer.
+   * @return The data format of this buffer.
    */
-  public AudioFrame(long timecode, byte[] data, int volume, AudioDataFormat format) {
-    this.timecode = timecode;
-    this.data = data;
-    this.volume = volume;
-    this.format = format;
-  }
+  AudioDataFormat getFormat();
 
   /**
-   * @return True if this is a terminator instance.
+   * @return Whether this frame is a terminator. This is an internal concept of the player and should never be
+   *         <code>true</code> in any frames received by the user.
    */
-  public boolean isTerminator() {
-    return this == TERMINATOR;
-  }
+  boolean isTerminator();
 }
+
+
+

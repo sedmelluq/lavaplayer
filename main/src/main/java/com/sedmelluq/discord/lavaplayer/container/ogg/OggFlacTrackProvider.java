@@ -9,8 +9,6 @@ import com.sedmelluq.discord.lavaplayer.tools.io.BitStreamReader;
 import com.sedmelluq.discord.lavaplayer.track.playback.AudioProcessingContext;
 
 import java.io.IOException;
-import java.util.Collections;
-import java.util.Map;
 
 /**
  * OGG stream handler for FLAC codec.

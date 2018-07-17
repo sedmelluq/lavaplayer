@@ -23,7 +23,7 @@ import com.sedmelluq.discord.lavaplayer.track.InternalAudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.playback.AudioFrame;
 import com.sedmelluq.discord.lavaplayer.track.playback.AudioFrameBuffer;
 import com.sedmelluq.discord.lavaplayer.track.playback.AudioTrackExecutor;
-import org.apache.commons.io.IOUtils;
+import com.sedmelluq.discord.lavaplayer.track.playback.ImmutableAudioFrame;
 import org.apache.commons.io.input.CountingInputStream;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -107,13 +107,6 @@ public class RemoteNodeProcessor implements RemoteNode, Runnable {
     connectionState = new AtomicInteger(ConnectionState.OFFLINE.id());
     tickHistory = new ArrayDeque<>(NODE_REQUEST_HISTORY);
     closed = false;
-  }
-
-  /**
-   * @return The address of this node.
-   */
-  public String getNodeAddress() {
-    return nodeAddress;
   }
 
   /**
@@ -275,9 +268,9 @@ public class RemoteNodeProcessor implements RemoteNode, Runnable {
       success = true;
     } finally {
       if (!success) {
-        IOUtils.closeQuietly(response);
+        ExceptionTools.closeWithWarnings(response);
       } else {
-        IOUtils.closeQuietly(response.getEntity().getContent());
+        ExceptionTools.closeWithWarnings(response.getEntity().getContent());
       }
     }
 
@@ -372,7 +365,7 @@ public class RemoteNodeProcessor implements RemoteNode, Runnable {
       AudioDataFormat format = executor.getConfiguration().getOutputFormat();
 
       for (AudioFrame frame : message.frames) {
-        buffer.consume(new AudioFrame(frame.timecode, frame.data, frame.volume, format));
+        buffer.consume(new ImmutableAudioFrame(frame.getTimecode(), frame.getData(), frame.getVolume(), format));
       }
 
       if (message.finished) {

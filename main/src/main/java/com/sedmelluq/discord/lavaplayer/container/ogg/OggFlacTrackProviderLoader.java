@@ -21,8 +21,8 @@ public class OggFlacTrackProviderLoader {
    * @param packetInputStream OGG packet input stream
    * @param broker Broker for loading stream data into direct byte buffer, it has already loaded the first packet of the
    *               stream at this point.
-   * @return An OGG FLAC track handler
-   * @throws IOException On read error
+   * @return An OGG FLAC track frame provider.
+   * @throws IOException On read error.
    */
   public static OggFlacTrackProvider load(OggPacketInputStream packetInputStream, DirectBufferStreamBroker broker) throws IOException {
     ByteBuffer buffer = broker.getBuffer();

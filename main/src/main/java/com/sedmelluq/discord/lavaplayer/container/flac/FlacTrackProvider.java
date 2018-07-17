@@ -45,7 +45,7 @@ public class FlacTrackProvider {
 
   /**
    * Decodes audio frames and sends them to frame consumer
-   * @throws InterruptedException
+   * @throws InterruptedException When interrupted externally (or for seek/stop).
    */
   public void provideFrames() throws InterruptedException {
     try {

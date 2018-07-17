@@ -88,13 +88,21 @@ public class DataFormatTools {
   public static long durationTextToMillis(String durationText) {
     int length = 0;
 
-    for (String part : durationText.split(":")) {
+    for (String part : durationText.split("[:.]")) {
       length = length * 60 + Integer.valueOf(part);
     }
 
     return length * 1000L;
   }
 
+  /**
+   * Writes a string to output with the additional information whether it is <code>null</code> or not. Compatible with
+   * {@link #readNullableText(DataInput)}.
+   *
+   * @param output Output to write to.
+   * @param text Text to write.
+   * @throws IOException On write error.
+   */
   public static void writeNullableText(DataOutput output, String text) throws IOException {
     output.writeBoolean(text != null);
 
@@ -103,6 +111,14 @@ public class DataFormatTools {
     }
   }
 
+  /**
+   * Reads a string from input which may be <code>null</code>. Compatible with
+   * {@link #writeNullableText(DataOutput, String)}.
+   *
+   * @param input Input to read from.
+   * @return The string that was read, or <code>null</code>.
+   * @throws IOException On read error.
+   */
   public static String readNullableText(DataInput input) throws IOException {
     boolean exists = input.readBoolean();
     return exists ? input.readUTF() : null;

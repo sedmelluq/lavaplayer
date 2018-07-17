@@ -40,13 +40,4 @@ public class BitBufferReader extends BitStreamReader {
   protected int readByte() throws IOException {
     return buffer.get() & 0xFF;
   }
-
-  @Override
-  public int readRemainingBits() {
-    try {
-      return super.readRemainingBits();
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
-  }
 }

@@ -1,5 +1,57 @@
 # Change Log
 
+## [1.3.7] -- 2018-07-02
+### Fixed
+- Fixed YouTube search not working in some regions due to different time format.
+
+## [1.3.6] -- 2018-06-19
+### Changed
+- Made it easier to use custom AudioPlayer implementations.
+
+## [1.3.5] -- 2018-06-13
+### Fixed
+- Fixed volume formula not scaling well beyond 150 - now switches to linear mode after 150.
+
+## [1.3.4] -- 2018-06-12
+### Changed
+- Maximum volume setting set to 1000.
+
+### Fixed
+- Fixed AAC+SBR+PS not working properly for MP4/MKV containers.
+
+## [1.3.3] -- 2018-06-05
+### Added
+- Ability to write more custom audio players as the player is now an interface.
+- HTTP stream reconnect when using Conscrypt as SSL provider.
+
+## [1.3.2] -- 2018-06-03
+### Fixed
+- Fixed mutable audio frames and non-allocating buffer exploding in some use cases.
+
+## [1.3.1] -- 2018-06-03
+### Fixed
+- Fixed PCM output format regression.
+
+## [1.3.0] -- 2018-06-02
+### Added
+- Option for allocation-free frame provision pipeline by allowing to set NonAllocatingAudioFrameBuffer as the default frame buffer implementation and then using the new provide methods that take mutable audio frame instances.
+- Ability to set SSL context for internally used HTTP clients. This allows for custom SSL providers such as Conscrypt.
+- Support for custom output formats using custom implementations of AudioDataFormat.
+
+### Changed
+- Audio frame is now an interface, which is a breaking change for all use cases.
+- Removed the concept of audio hooks.
+
+### Fixed
+- Some audio sources not freeing their HTTP clients when they were discarded.
+- Potential NPE when the only node went down when a track was playing on it.
+- Not closing OGG decoders created during track probing (still got closed on finalize).
+- Missing Javadocs.
+
+## [1.2.64] -- 2018-06-01
+### Fixed
+- Fixed WAV files with format header longer than 16 bytes not working.
+
 ## [1.2.63] -- 2018-04-12
 ### Fixed
 - Fixed Twitch or Mixer tracks ending when next chunk of the stream is not available yet.

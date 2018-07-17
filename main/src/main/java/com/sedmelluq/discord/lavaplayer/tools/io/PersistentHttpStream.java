@@ -1,6 +1,5 @@
 package com.sedmelluq.discord.lavaplayer.tools.io;
 
-import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo;
 import com.sedmelluq.discord.lavaplayer.track.info.AudioTrackInfoBuilder;
 import com.sedmelluq.discord.lavaplayer.track.info.AudioTrackInfoProvider;
 import org.apache.http.Header;
@@ -142,6 +141,8 @@ public class PersistentHttpStream extends SeekableInputStream implements AutoClo
     }
 
     close();
+
+    log.debug("Encountered retriable exception on url {}.", contentUrl, exception);
   }
 
   private int internalRead(boolean attemptReconnect) throws IOException {

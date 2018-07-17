@@ -1,6 +1,8 @@
 package com.sedmelluq.discord.lavaplayer.remote.message;
 
 import com.sedmelluq.discord.lavaplayer.format.AudioDataFormat;
+import com.sedmelluq.discord.lavaplayer.format.OpusAudioDataFormat;
+import com.sedmelluq.discord.lavaplayer.format.Pcm16AudioDataFormat;
 import com.sedmelluq.discord.lavaplayer.format.StandardAudioDataFormats;
 import com.sedmelluq.discord.lavaplayer.player.AudioConfiguration;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo;
@@ -63,7 +65,7 @@ public class TrackStartRequestCodec implements RemoteMessageCodec<TrackStartRequ
       out.writeInt(format.channelCount);
       out.writeInt(format.sampleRate);
       out.writeInt(format.chunkSampleCount);
-      out.writeUTF(format.codec.name());
+      out.writeUTF(format.codecName());
     }
 
     if (version >= VERSION_WITH_POSITION) {
@@ -85,9 +87,7 @@ public class TrackStartRequestCodec implements RemoteMessageCodec<TrackStartRequ
     configuration.setOpusEncodingQuality(in.readInt());
 
     if (version >= VERSION_WITH_FORMAT) {
-      AudioDataFormat format = new AudioDataFormat(in.readInt(), in.readInt(), in.readInt(),
-          AudioDataFormat.Codec.valueOf(in.readUTF()));
-
+      AudioDataFormat format = createFormat(in.readInt(), in.readInt(), in.readInt(), in.readUTF());
       configuration.setOutputFormat(format);
     }
 
@@ -98,5 +98,20 @@ public class TrackStartRequestCodec implements RemoteMessageCodec<TrackStartRequ
     }
 
     return new TrackStartRequestMessage(executorId, trackInfo, encodedTrack, volume, configuration, position);
+  }
+
+  private AudioDataFormat createFormat(int channelCount, int sampleRate, int chunkSampleCount, String codecName)
+      throws IOException {
+
+    switch (codecName) {
+      case OpusAudioDataFormat.CODEC_NAME:
+        return new OpusAudioDataFormat(channelCount, sampleRate, chunkSampleCount);
+      case Pcm16AudioDataFormat.CODEC_NAME_LE:
+        return new Pcm16AudioDataFormat(channelCount, sampleRate, chunkSampleCount, false);
+      case Pcm16AudioDataFormat.CODEC_NAME_BE:
+        return new Pcm16AudioDataFormat(channelCount, sampleRate, chunkSampleCount, true);
+      default:
+        throw new IOException("Unsupported codec requested.");
+    }
   }
 }

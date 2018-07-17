@@ -16,7 +16,7 @@ public interface AudioFilter {
   /**
    * Flush everything to output.
    *
-   * @throws InterruptedException When interrupted
+   * @throws InterruptedException When interrupted externally (or for seek/stop).
    */
   void flush() throws InterruptedException;
 

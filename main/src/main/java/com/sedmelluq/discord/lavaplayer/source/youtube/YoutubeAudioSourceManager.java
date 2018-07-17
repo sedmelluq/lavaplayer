@@ -1,21 +1,21 @@
 package com.sedmelluq.discord.lavaplayer.source.youtube;
 
 import com.sedmelluq.discord.lavaplayer.player.DefaultAudioPlayerManager;
+import com.sedmelluq.discord.lavaplayer.source.AudioSourceManager;
+import com.sedmelluq.discord.lavaplayer.tools.DataFormatTools;
 import com.sedmelluq.discord.lavaplayer.tools.ExceptionTools;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
+import com.sedmelluq.discord.lavaplayer.tools.JsonBrowser;
+import com.sedmelluq.discord.lavaplayer.tools.io.HttpClientTools;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpConfigurable;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterface;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterfaceManager;
-import com.sedmelluq.discord.lavaplayer.tools.io.HttpClientTools;
 import com.sedmelluq.discord.lavaplayer.track.AudioItem;
-import com.sedmelluq.discord.lavaplayer.source.AudioSourceManager;
 import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
 import com.sedmelluq.discord.lavaplayer.track.AudioReference;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
-import com.sedmelluq.discord.lavaplayer.track.BasicAudioPlaylist;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo;
-import com.sedmelluq.discord.lavaplayer.tools.JsonBrowser;
-import com.sedmelluq.discord.lavaplayer.tools.DataFormatTools;
+import com.sedmelluq.discord.lavaplayer.track.BasicAudioPlaylist;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.config.RequestConfig;
@@ -67,8 +67,8 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
   private static final Pattern directVideoIdPattern = Pattern.compile("^" + VIDEO_ID_REGEX + "$");
 
   private final Extractor[] extractors = new Extractor[] {
-      new Extractor(directVideoIdPattern, (id) -> loadTrackWithVideoId(id, false)),
-      new Extractor(Pattern.compile("^" + PLAYLIST_ID_REGEX + "$"), (id) -> loadPlaylistWithId(id, null)),
+      new Extractor(directVideoIdPattern, id -> loadTrackWithVideoId(id, false)),
+      new Extractor(Pattern.compile("^" + PLAYLIST_ID_REGEX + "$"), id -> loadPlaylistWithId(id, null)),
       new Extractor(Pattern.compile("^" + PROTOCOL_REGEX + DOMAIN_REGEX + "/.*"), this::loadFromMainDomain),
       new Extractor(Pattern.compile("^" + PROTOCOL_REGEX + SHORT_DOMAIN_REGEX + "/.*"), this::loadFromShortDomain)
   };
@@ -150,7 +150,7 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
 
   @Override
   public void shutdown() {
-    IOUtils.closeQuietly(httpInterfaceManager);
+    ExceptionTools.closeWithWarnings(httpInterfaceManager);
 
     mixProvider.shutdown();
   }
@@ -301,7 +301,16 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
     }
   }
 
-  public JsonBrowser getTrackInfoFromMainPage(HttpInterface httpInterface, String videoId, boolean mustExist) throws Exception {
+  /**
+   * @param httpInterface HTTP interface to use for performing any necessary request.
+   * @param videoId ID of the video.
+   * @param mustExist If <code>true</code>, throws an exception instead of returning <code>null</code> if the track does
+   *                  not exist.
+   * @return JSON information about the track if it exists. <code>null</code> if it does not and mustExist is
+   *         <code>false</code>.
+   * @throws IOException On network error.
+   */
+  public JsonBrowser getTrackInfoFromMainPage(HttpInterface httpInterface, String videoId, boolean mustExist) throws IOException {
     try (CloseableHttpResponse response = httpInterface.execute(new HttpGet(getWatchUrl(videoId)))) {
       int statusCode = response.getStatusLine().getStatusCode();
       if (statusCode != 200) {
@@ -325,7 +334,7 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
     return getTrackInfoFromEmbedPage(httpInterface, videoId);
   }
 
-  private boolean determineFailureReason(HttpInterface httpInterface, String videoId, boolean mustExist) throws Exception {
+  private boolean determineFailureReason(HttpInterface httpInterface, String videoId, boolean mustExist) throws IOException {
     try (CloseableHttpResponse response = httpInterface.execute(new HttpGet("https://www.youtube.com/get_video_info?hl=en_GB&video_id=" + videoId))) {
       int statusCode = response.getStatusLine().getStatusCode();
       if (statusCode != 200) {
@@ -352,13 +361,13 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
         new IllegalStateException("Main page had no video, but video info has no error."));
   }
 
-  private JsonBrowser getTrackInfoFromEmbedPage(HttpInterface httpInterface, String videoId) throws Exception {
+  private JsonBrowser getTrackInfoFromEmbedPage(HttpInterface httpInterface, String videoId) throws IOException {
     JsonBrowser basicInfo = loadTrackBaseInfoFromEmbedPage(httpInterface, videoId);
     basicInfo.put("args", loadTrackArgsFromVideoInfoPage(httpInterface, videoId, basicInfo.get("sts").text()));
     return basicInfo;
   }
 
-  private JsonBrowser loadTrackBaseInfoFromEmbedPage(HttpInterface httpInterface, String videoId) throws Exception {
+  private JsonBrowser loadTrackBaseInfoFromEmbedPage(HttpInterface httpInterface, String videoId) throws IOException {
     try (CloseableHttpResponse response = httpInterface.execute(new HttpGet("https://www.youtube.com/embed/" + videoId))) {
       int statusCode = response.getStatusLine().getStatusCode();
       if (statusCode != 200) {
@@ -377,7 +386,7 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
         new IllegalStateException("Expected player config is not present in embed page."));
   }
 
-  private Map<String, String> loadTrackArgsFromVideoInfoPage(HttpInterface httpInterface, String videoId, String sts) throws Exception {
+  private Map<String, String> loadTrackArgsFromVideoInfoPage(HttpInterface httpInterface, String videoId, String sts) throws IOException {
     String url = "https://www.youtube.com/get_video_info?hl=en_GB&video_id=" + videoId + "&sts=" + sts;
 
     try (CloseableHttpResponse response = httpInterface.execute(new HttpGet(url))) {
@@ -476,6 +485,14 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
     return null;
   }
 
+  /**
+   * @param videoId Video ID. Used as {@link AudioTrackInfo#identifier}.
+   * @param title See {@link AudioTrackInfo#title}.
+   * @param uploader Name of the uploader. Used as {@link AudioTrackInfo#author}.
+   * @param isStream See {@link AudioTrackInfo#isStream}.
+   * @param duration See {@link AudioTrackInfo#length}.
+   * @return An audio track instance.
+   */
   public YoutubeAudioTrack buildTrackObject(String videoId, String title, String uploader, boolean isStream, long duration) {
     return new YoutubeAudioTrack(new AudioTrackInfo(title, uploader, duration, videoId, isStream, getWatchUrl(videoId)), this);
   }
@@ -504,8 +521,8 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
   }
 
   private static class UrlInfo {
-    public final String path;
-    public final Map<String, String> parameters;
+    private final String path;
+    private final Map<String, String> parameters;
 
     private UrlInfo(String path, Map<String, String> parameters) {
       this.path = path;

@@ -2,6 +2,7 @@ package com.sedmelluq.discord.lavaplayer.node;
 
 import com.sedmelluq.discord.lavaplayer.node.message.MessageHandler;
 import com.sedmelluq.discord.lavaplayer.node.message.MessageOutput;
+import com.sedmelluq.discord.lavaplayer.player.AudioPlayerOptions;
 import com.sedmelluq.discord.lavaplayer.player.DefaultAudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.remote.message.TrackExceptionMessage;
 import com.sedmelluq.discord.lavaplayer.remote.message.TrackStartRequestMessage;
@@ -73,7 +74,7 @@ public class PlayingTrackManager {
       if (existingTrack == null) {
         log.info("Track start request for {} (context {}, position {})", message.trackInfo.identifier, message.executorId, message.position);
 
-        manager.executeTrack(playingTrack, audioTrack, message.configuration, playingTrack.volume);
+        manager.executeTrack(playingTrack, audioTrack, message.configuration, playingTrack.playerOptions);
         statisticsManager.increaseTrackCount();
       } else {
         log.info("Start request for an already playing track {} (context {}), applying seek to {} from it.",
@@ -99,7 +100,7 @@ public class PlayingTrackManager {
       submitPendingMessages(track, output);
 
       track.lastFrameRequestTime = System.currentTimeMillis();
-      track.volume.set(message.volume);
+      track.playerOptions.volumeLevel.set(message.volume);
 
       if (message.seekPosition >= 0) {
         track.audioTrack.setPosition(message.seekPosition);
@@ -184,7 +185,7 @@ public class PlayingTrackManager {
 
   private static class PlayingTrack implements TrackStateListener {
     private final long executorId;
-    private final AtomicInteger volume;
+    private final AudioPlayerOptions playerOptions;
     private final InternalAudioTrack audioTrack;
     private volatile long lastFrameRequestTime;
     private volatile long lastNonZeroFrameRequestTime;
@@ -192,11 +193,12 @@ public class PlayingTrackManager {
 
     private PlayingTrack(long executorId, int volume, InternalAudioTrack audioTrack) {
       this.executorId = executorId;
-      this.volume = new AtomicInteger(volume);
+      this.playerOptions = new AudioPlayerOptions();
       this.audioTrack = audioTrack;
       this.lastFrameRequestTime = System.currentTimeMillis();
       this.lastNonZeroFrameRequestTime = lastFrameRequestTime;
       this.exceptionMessage = new AtomicReference<>();
+      playerOptions.volumeLevel.set(volume);
     }
 
     @Override

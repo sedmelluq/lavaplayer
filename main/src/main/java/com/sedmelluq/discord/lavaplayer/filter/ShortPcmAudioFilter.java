@@ -10,13 +10,13 @@ public interface ShortPcmAudioFilter extends AudioFilter {
    * @param input Array of samples
    * @param offset Offset in the array
    * @param length Length of the sequence in the array
-   * @throws InterruptedException
+   * @throws InterruptedException When interrupted externally (or for seek/stop).
    */
   void process(short[] input, int offset, int length) throws InterruptedException;
 
   /**
    * @param buffer The buffer of samples
-   * @throws InterruptedException
+   * @throws InterruptedException When interrupted externally (or for seek/stop).
    */
   void process(ShortBuffer buffer) throws InterruptedException;
 }

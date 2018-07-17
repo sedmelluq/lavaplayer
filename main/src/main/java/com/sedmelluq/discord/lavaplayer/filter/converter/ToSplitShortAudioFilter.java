@@ -4,11 +4,18 @@ import com.sedmelluq.discord.lavaplayer.filter.SplitShortPcmAudioFilter;
 
 import java.nio.ShortBuffer;
 
+/**
+ * Filter which takes in PCM data in any representation and outputs it as split short PCM.
+ */
 public class ToSplitShortAudioFilter extends ConverterAudioFilter {
   private final SplitShortPcmAudioFilter downstream;
   private final int channelCount;
   private final short[][] buffers;
 
+  /**
+   * @param downstream The split short PCM filter to pass the output to.
+   * @param channelCount Number of channels in the PCM data.
+   */
   public ToSplitShortAudioFilter(SplitShortPcmAudioFilter downstream, int channelCount) {
     this.downstream = downstream;
     this.channelCount = channelCount;

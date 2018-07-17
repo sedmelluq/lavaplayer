@@ -1,5 +1,8 @@
 package com.sedmelluq.discord.lavaplayer.track.info;
 
+/**
+ * Provider for audio track info.
+ */
 public interface AudioTrackInfoProvider {
   /**
    * @return Track title, or <code>null</code> if this provider does not know it.

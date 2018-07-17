@@ -1,8 +1,8 @@
 package com.sedmelluq.discord.lavaplayer.source.stream;
 
+import com.sedmelluq.discord.lavaplayer.tools.ExceptionTools;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterface;
-import org.apache.commons.io.IOUtils;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 
@@ -110,12 +110,12 @@ public abstract class M3uStreamSegmentUrlProvider {
       throw new RuntimeException(e);
     } finally {
       if (response != null && !success) {
-        IOUtils.closeQuietly(response);
+        ExceptionTools.closeWithWarnings(response);
       }
     }
   }
 
-  protected List<ChannelStreamInfo> loadChannelStreamsList(String[] lines) throws IOException {
+  protected List<ChannelStreamInfo> loadChannelStreamsList(String[] lines) {
     ExtendedM3uParser.Line streamInfoLine = null;
 
     List<ChannelStreamInfo> streams = new ArrayList<>();
@@ -130,10 +130,8 @@ public abstract class M3uStreamSegmentUrlProvider {
         }
 
         streamInfoLine = null;
-      } else if (line.isDirective()) {
-        if ("EXT-X-STREAM-INF".equals(line.directiveName)) {
-          streamInfoLine = line;
-        }
+      } else if (line.isDirective() && "EXT-X-STREAM-INF".equals(line.directiveName)) {
+        streamInfoLine = line;
       }
     }
 

@@ -50,6 +50,7 @@ public interface AudioSourceManager {
    *
    * @param track The track to encode
    * @param output Output where to write the decoded format to
+   * @throws IOException On write error.
    */
   void encodeTrack(AudioTrack track, DataOutput output) throws IOException;
 
@@ -59,6 +60,7 @@ public interface AudioSourceManager {
    * @param trackInfo The track info
    * @param input The input where to read the bytes of the encoded format
    * @return The decoded track
+   * @throws IOException On read error.
    */
   AudioTrack decodeTrack(AudioTrackInfo trackInfo, DataInput input) throws IOException;
 

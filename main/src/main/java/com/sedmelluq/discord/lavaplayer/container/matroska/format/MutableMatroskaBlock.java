@@ -4,12 +4,15 @@ import java.io.DataInput;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
+/**
+ * An implementation of {@link MatroskaBlock} which can be reused by loading the next block into it by calling
+ * {@link #parseHeader(MatroskaFileReader, MatroskaElement, int)}. Does not reallocate any objects unless it encounters
+ * a block with more than twice as many frames as seen before, or a frame more than twice as long as before.
+ */
 public class MutableMatroskaBlock implements MatroskaBlock {
-  private long startPosition;
   private int timecode;
   private int trackNumber;
   private boolean keyFrame;
-  private int[] frameOffsets;
   private int[] frameSizes;
   private int frameCount;
   private ByteBuffer buffer;
@@ -55,6 +58,16 @@ public class MutableMatroskaBlock implements MatroskaBlock {
     return buffer;
   }
 
+  /**
+   * Parses the Matroska block header data into the fields of this instance. On success of this method, this instance
+   * effectively represents that block.
+   *
+   * @param reader The reader to use.
+   * @param element The block EBML element.
+   * @param trackFilter The ID of the track to read data for from the block.
+   * @return <code>true</code> of a block if it contains data for the requested track, <code>false</code> otherwise.
+   * @throws IOException On read error.
+   */
   public boolean parseHeader(MatroskaFileReader reader, MatroskaElement element, int trackFilter) throws IOException {
     DataInput input = reader.getDataInput();
     trackNumber = (int) MatroskaEbmlReader.readEbmlInteger(input, null);
@@ -76,10 +89,8 @@ public class MutableMatroskaBlock implements MatroskaBlock {
     } else {
       setFrameCount(1);
       frameSizes[0] = (int) element.getRemaining(reader.getPosition());
-      frameOffsets[0] = 0;
     }
 
-    startPosition = reader.getPosition();
     return true;
   }
 
@@ -97,18 +108,11 @@ public class MutableMatroskaBlock implements MatroskaBlock {
       default:
         parseEbmlLaceSizes(reader, element);
     }
-
-    frameOffsets[0] = 0;
-
-    for (int i = 1; i < frameSizes.length; i++) {
-      frameOffsets[i] = frameOffsets[i - 1] + frameSizes[i - 1];
-    }
   }
 
   private void setFrameCount(int frameCount) {
     if (frameSizes == null || frameSizes.length < frameCount) {
       frameSizes = new int[frameCount * 2];
-      frameOffsets = new int[frameCount * 2];
     }
 
     this.frameCount = frameCount;

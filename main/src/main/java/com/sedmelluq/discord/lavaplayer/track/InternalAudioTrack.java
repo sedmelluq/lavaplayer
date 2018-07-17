@@ -23,6 +23,7 @@ public interface InternalAudioTrack extends AudioTrack, AudioFrameProvider {
   /**
    * Perform any necessary loading and then enter the read/seek loop
    * @param executor The local executor which processes this track
+   * @throws Exception In case anything explodes.
    */
   void process(LocalAudioTrackExecutor executor) throws Exception;
 

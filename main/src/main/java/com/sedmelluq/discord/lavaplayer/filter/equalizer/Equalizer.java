@@ -5,15 +5,22 @@ import com.sedmelluq.discord.lavaplayer.format.AudioDataFormat;
 
 import java.util.Arrays;
 
+/**
+ * An equalizer PCM filter. Applies the equalizer with configuration specified by band multipliers (either set
+ * externally or using {@link #setGain(int, float)}).
+ */
 public class Equalizer extends EqualizerConfiguration implements FloatPcmAudioFilter {
+  /**
+   * Number of bands in the equalizer.
+   */
   public static final int BAND_COUNT = 15;
 
   private static final int SAMPLE_RATE = 48000;
 
-  private final ChannelProcessor channels[];
+  private final ChannelProcessor[] channels;
   private final FloatPcmAudioFilter next;
 
-  private static final Coefficients coefficients48000[] = {
+  private static final Coefficients[] coefficients48000 = {
       new Coefficients(9.9847546664e-01f, 7.6226668143e-04f, 1.9984647656e+00f),
       new Coefficients(9.9756184654e-01f, 1.2190767289e-03f, 1.9975344645e+00f),
       new Coefficients(9.9616261379e-01f, 1.9186931041e-03f, 1.9960947369e+00f),
@@ -31,16 +38,30 @@ public class Equalizer extends EqualizerConfiguration implements FloatPcmAudioFi
       new Coefficients(4.1811888447e-01f, 2.9094055777e-01f, -7.0905944223e-01f)
   };
 
+  /**
+   * @param channelCount Number of channels in the input.
+   * @param next The next filter in the chain.
+   * @param bandMultipliers The band multiplier values. Keeps using this array internally, so the values can be changed
+   *                        externally.
+   */
   public Equalizer(int channelCount, FloatPcmAudioFilter next, float[] bandMultipliers) {
     super(bandMultipliers);
     this.channels = createProcessors(channelCount, bandMultipliers);
     this.next = next;
   }
 
+  /**
+   * @param channelCount Number of channels in the input.
+   * @param next The next filter in the chain.
+   */
   public Equalizer(int channelCount, FloatPcmAudioFilter next) {
     this(channelCount, next, new float[BAND_COUNT]);
   }
 
+  /**
+   * @param format Audio output format.
+   * @return <code>true</code> if the output format is compatible for the equalizer (based on sample rate).
+   */
   public static boolean isCompatible(AudioDataFormat format) {
     return format.sampleRate == SAMPLE_RATE;
   }
@@ -63,16 +84,16 @@ public class Equalizer extends EqualizerConfiguration implements FloatPcmAudioFi
 
   @Override
   public void flush() throws InterruptedException {
-
+    // Nothing to do here.
   }
 
   @Override
   public void close() {
-
+    // Nothing to do here.
   }
 
   private static ChannelProcessor[] createProcessors(int channelCount, float[] bandMultipliers) {
-    ChannelProcessor processors[] = new ChannelProcessor[channelCount];
+    ChannelProcessor[] processors = new ChannelProcessor[channelCount];
 
     for (int i = 0; i < channelCount; i++) {
       processors[i] = new ChannelProcessor(bandMultipliers);
@@ -82,8 +103,8 @@ public class Equalizer extends EqualizerConfiguration implements FloatPcmAudioFi
   }
 
   private static class ChannelProcessor {
-    private final float history[];
-    private final float bandMultipliers[];
+    private final float[] history;
+    private final float[] bandMultipliers;
 
     private int current;
     private int minusOne;

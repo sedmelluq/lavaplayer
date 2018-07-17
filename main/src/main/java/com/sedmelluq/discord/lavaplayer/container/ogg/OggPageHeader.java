@@ -52,7 +52,7 @@ public class OggPageHeader {
    * @param pageSequence The index of the page within a track.
    * @param checksum The checksum of the page.
    * @param segmentCount Number of segments in the page.
-   * @param byteStreamPosition
+   * @param byteStreamPosition The absolute position in bytes of this page in the stream.
    */
   public OggPageHeader(int flags, long absolutePosition, int streamIdentifier, int pageSequence, int checksum,
                        int segmentCount, long byteStreamPosition) {

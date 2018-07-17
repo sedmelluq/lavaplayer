@@ -67,7 +67,7 @@ public class HttpInterface implements Closeable {
   public URI getFinalLocation() {
     List<URI> redirectLocations = context.getRedirectLocations();
 
-    if (redirectLocations != null && redirectLocations.size() > 0) {
+    if (redirectLocations != null && !redirectLocations.isEmpty()) {
       return redirectLocations.get(redirectLocations.size() - 1);
     } else {
       return lastRequest != null ? lastRequest.getURI() : null;

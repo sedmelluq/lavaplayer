@@ -5,6 +5,9 @@ import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
+/**
+ * An audio filter which may consist of a number of other filters.
+ */
 public abstract class CompositeAudioFilter implements UniversalPcmAudioFilter {
   private static final Logger log = LoggerFactory.getLogger(CompositeAudioFilter.class);
 
@@ -30,6 +33,7 @@ public abstract class CompositeAudioFilter implements UniversalPcmAudioFilter {
     }
   }
 
+  @Override
   public void close() {
     for (AudioFilter filter : getFilters()) {
       try {

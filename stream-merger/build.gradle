@@ -1,0 +1,32 @@
+plugins {
+  id 'java'
+  id 'com.jfrog.bintray' version '1.8.0'
+}
+
+ext.moduleName = 'lavaplayer-stream-merger'
+version = '0.1.0'
+
+dependencies {
+  compile project(':main')
+}
+
+task sourceJar(type: Jar) {
+  from sourceSets.main.allJava
+}
+
+publishing {
+  publications {
+    mavenJava(MavenPublication) {
+      groupId rootProject.group
+      artifactId moduleName
+
+      from components.java
+
+      artifact sourceJar {
+        classifier 'sources'
+      }
+    }
+  }
+}
+
+apply from: "${rootDir}/gradle/bintray.gradle"

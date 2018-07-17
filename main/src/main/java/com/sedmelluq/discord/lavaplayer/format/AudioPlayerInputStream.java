@@ -1,8 +1,10 @@
 package com.sedmelluq.discord.lavaplayer.format;
 
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
+import com.sedmelluq.discord.lavaplayer.player.DefaultAudioPlayer;
 import com.sedmelluq.discord.lavaplayer.tools.ExceptionTools;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
+import com.sedmelluq.discord.lavaplayer.track.TrackStateListener;
 import com.sedmelluq.discord.lavaplayer.track.playback.AudioFrame;
 
 import javax.sound.sampled.AudioFormat;
@@ -98,7 +100,7 @@ public class AudioPlayerInputStream extends InputStream {
       }
 
       if (available() == 0 && provideSilence) {
-        addFrame(format.silence);
+        addFrame(format.silenceBytes());
         break;
       }
     }
@@ -108,11 +110,11 @@ public class AudioPlayerInputStream extends InputStream {
     AudioFrame frame = player.provide(timeout, TimeUnit.MILLISECONDS);
 
     if (frame != null) {
-      if (!format.equals(frame.format)) {
+      if (!format.equals(frame.getFormat())) {
         throw new IllegalStateException("Frame read from the player uses a different format than expected.");
       }
 
-      addFrame(frame.data);
+      addFrame(frame.getData());
     } else if (!provideSilence) {
       Thread.sleep(10);
     }
@@ -123,10 +125,8 @@ public class AudioPlayerInputStream extends InputStream {
   }
 
   private void notifyTrackStuck() {
-    AudioTrack track = player.getPlayingTrack();
-
-    if (track != null) {
-      player.onTrackStuck(player.getPlayingTrack(), timeout);
+    if (player instanceof TrackStateListener) {
+      ((TrackStateListener) player).onTrackStuck(player.getPlayingTrack(), timeout);
     }
   }
 }

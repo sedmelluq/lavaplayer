@@ -4,11 +4,18 @@ import com.sedmelluq.discord.lavaplayer.filter.FloatPcmAudioFilter;
 
 import java.nio.ShortBuffer;
 
+/**
+ * Filter which takes in PCM data in any representation and outputs it as float PCM.
+ */
 public class ToFloatAudioFilter extends ConverterAudioFilter {
   private final FloatPcmAudioFilter downstream;
   private final int channelCount;
   private final float[][] buffers;
 
+  /**
+   * @param downstream The float PCM filter to pass the output to.
+   * @param channelCount Number of channels in the PCM data.
+   */
   public ToFloatAudioFilter(FloatPcmAudioFilter downstream, int channelCount) {
     this.downstream = downstream;
     this.channelCount = channelCount;

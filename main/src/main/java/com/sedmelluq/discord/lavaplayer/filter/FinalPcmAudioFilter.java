@@ -31,7 +31,10 @@ public class FinalPcmAudioFilter implements UniversalPcmAudioFilter {
    */
   public FinalPcmAudioFilter(AudioProcessingContext context, Collection<AudioPostProcessor> postProcessors) {
     this.format = context.outputFormat;
-    this.frameBuffer = ByteBuffer.allocateDirect(format.bufferSize(2)).order(ByteOrder.nativeOrder()).asShortBuffer();
+    this.frameBuffer = ByteBuffer
+        .allocateDirect(format.totalSampleCount() * 2)
+        .order(ByteOrder.nativeOrder())
+        .asShortBuffer();
     this.postProcessors = postProcessors;
 
     timecodeBase = 0;
