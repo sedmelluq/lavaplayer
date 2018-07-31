@@ -147,7 +147,7 @@ public class TwitchStreamAudioSourceManager implements AudioSourceManager, HttpC
 
   private JsonBrowser fetchStreamChannelInfo(String name) {
     try (HttpInterface httpInterface = getHttpInterface()) {
-      HttpUriRequest request = createGetRequest("https://api.twitch.tv/api/channels/" + name + "/ember?on_site=1");
+      HttpUriRequest request = createGetRequest("https://api.twitch.tv/kraken/channels/" + name);
 
       return HttpClientTools.fetchResponseAsJson(httpInterface, request);
     } catch (IOException e) {
