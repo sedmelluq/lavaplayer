@@ -63,6 +63,7 @@ public class OggOpusTrackProvider implements OggTrackProvider {
     for (int itemIndex = 0; itemIndex < itemCount; itemIndex++) {
       int itemLength = Integer.reverseBytes(tagBuffer.getInt());
       byte[] data = new byte[itemLength];
+      tagBuffer.get(data);
 
       for (int i = 0; i < data.length; i++) {
         if (data[i] == '=') {
