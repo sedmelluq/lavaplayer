@@ -18,6 +18,10 @@ public class OggOpusTrackProvider implements OggTrackProvider {
   private static final int OPUS_TAG_HALF = ByteBuffer.wrap(new byte[] { 'O', 'p', 'u', 's' }).getInt();
   private static final int TAGS_TAG_HALF = ByteBuffer.wrap(new byte[] { 'T', 'a', 'g', 's' }).getInt();
 
+  //see https://tools.ietf.org/html/rfc7845.html#section-5.2
+  private static final int MAX_READ_COMMENT_HEADER_LENGTH  = 1024 * 60;         //  60 KB
+  private static final int MAX_VALID_COMMENT_HEADER_LENGTH = 1024 * 1024 * 120; // 120 MB
+
   private final OggPacketInputStream packetInputStream;
   private final DirectBufferStreamBroker broker;
   private final int channelCount;
@@ -49,6 +53,7 @@ public class OggOpusTrackProvider implements OggTrackProvider {
 
   @Override
   public OggMetadata getMetadata() {
+    int initialPosition = tagBuffer.position();
     if (tagBuffer.getInt() != OPUS_TAG_HALF || tagBuffer.getInt() != TAGS_TAG_HALF) {
       return OggMetadata.EMPTY;
     }
@@ -56,12 +61,29 @@ public class OggOpusTrackProvider implements OggTrackProvider {
     Map<String, String> tags = new HashMap<>();
 
     int vendorLength = Integer.reverseBytes(tagBuffer.getInt());
+    if (vendorLength < 0) {
+      throw new IllegalStateException("Ogg opus vendor length is negative.");
+    }
     tagBuffer.position(tagBuffer.position() + vendorLength);
 
     int itemCount = Integer.reverseBytes(tagBuffer.getInt());
 
     for (int itemIndex = 0; itemIndex < itemCount; itemIndex++) {
       int itemLength = Integer.reverseBytes(tagBuffer.getInt());
+      if (itemLength < 0) {
+        throw new IllegalStateException("Ogg opus tag item length is negative.");
+      }
+
+      //long to avoid integer overflow due to too high itemLength values
+      long totalCommentHeaderLength = (tagBuffer.position() - initialPosition) + itemLength;
+      if (totalCommentHeaderLength > MAX_VALID_COMMENT_HEADER_LENGTH) {
+        throw new IllegalStateException("Ogg opus comment header too large, stream invalid.");
+      }
+      if (totalCommentHeaderLength > MAX_READ_COMMENT_HEADER_LENGTH) {
+        tagBuffer.position(tagBuffer.position() + itemLength);
+        continue;
+      }
+
       byte[] data = new byte[itemLength];
       tagBuffer.get(data);
 
