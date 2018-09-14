@@ -64,8 +64,20 @@ public class TwitchStreamAudioSourceManager implements AudioSourceManager, HttpC
     if (channelInfo == null) {
       return AudioReference.NO_TRACK;
     } else {
-      final String displayName = channelInfo.get("display_name").text();
-      final String status = channelInfo.get("status").text();
+      //Use the stream name as the display name (we would require an additional call to the user to get the true display name)
+      String displayName = streamName;
+      
+      //Retrieve the data value list; this will have only one element since we're getting only one stream's information
+      List<JsonBrowser> dataList = channelInfo.get("data").values();
+    
+      //The value list is empty if the stream is offline, even when hosting another channel
+      if (dataList.size() == 0){
+          return null;
+      }
+    
+      //The first one has the title of the broadcast
+      JsonBrowser channelData = dataList.get(0);
+      String status = channelData.get("title").text();
 
       return new TwitchStreamAudioTrack(new AudioTrackInfo(
           status,
@@ -147,7 +159,7 @@ public class TwitchStreamAudioSourceManager implements AudioSourceManager, HttpC
 
   private JsonBrowser fetchStreamChannelInfo(String name) {
     try (HttpInterface httpInterface = getHttpInterface()) {
-      HttpUriRequest request = createGetRequest("https://api.twitch.tv/api/channels/" + name + "/ember?on_site=1");
+      HttpUriRequest request = createGetRequest("https://api.twitch.tv/helix/streams?user_login=" + name);
 
       return HttpClientTools.fetchResponseAsJson(httpInterface, request);
     } catch (IOException e) {
