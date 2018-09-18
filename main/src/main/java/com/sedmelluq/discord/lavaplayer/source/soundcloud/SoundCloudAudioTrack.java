@@ -44,7 +44,7 @@ public class SoundCloudAudioTrack extends DelegatedAudioTrack {
   }
 
   private boolean attemptLoadStream(LocalAudioTrackExecutor localExecutor, HttpInterface httpInterface, boolean checkUnauthorized) throws Exception {
-    String trackUrl = sourceManager.getTrackUrlFromId(trackInfo.identifier);
+    String trackUrl = sourceManager.getTrackUrlFromId(trackInfo.getIdentifier());
     log.debug("Starting SoundCloud track from URL: {}", trackUrl);
 
     try (PersistentHttpStream stream = new PersistentHttpStream(httpInterface, new URI(trackUrl), null)) {

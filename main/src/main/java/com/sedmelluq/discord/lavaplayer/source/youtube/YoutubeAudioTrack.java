@@ -61,7 +61,7 @@ public class YoutubeAudioTrack extends DelegatedAudioTrack {
 
       log.debug("Starting track from URL: {}", format.signedUrl);
 
-      if (trackInfo.isStream) {
+      if (trackInfo.isStream()) {
         processStream(localExecutor, format);
       } else {
         processStatic(localExecutor, httpInterface, format);

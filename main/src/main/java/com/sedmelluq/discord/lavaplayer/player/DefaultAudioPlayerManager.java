@@ -245,12 +245,12 @@ public class DefaultAudioPlayerManager implements AudioPlayerManager {
     output.write(TRACK_INFO_VERSION);
 
     AudioTrackInfo trackInfo = track.getInfo();
-    output.writeUTF(trackInfo.title);
-    output.writeUTF(trackInfo.author);
-    output.writeLong(trackInfo.length);
-    output.writeUTF(trackInfo.identifier);
-    output.writeBoolean(trackInfo.isStream);
-    DataFormatTools.writeNullableText(output, trackInfo.uri);
+    output.writeUTF(trackInfo.getTitle());
+    output.writeUTF(trackInfo.getAuthor());
+    output.writeLong(trackInfo.getLength());
+    output.writeUTF(trackInfo.getIdentifier());
+    output.writeBoolean(trackInfo.isStream());
+    DataFormatTools.writeNullableText(output, trackInfo.getUri());
 
     encodeTrackDetails(track, output);
     output.writeLong(track.getPosition());

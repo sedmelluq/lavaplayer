@@ -40,7 +40,7 @@ public class BandcampAudioTrack extends DelegatedAudioTrack {
   @Override
   public void process(LocalAudioTrackExecutor localExecutor) throws Exception {
     try (HttpInterface httpInterface = sourceManager.getHttpInterface()) {
-      log.debug("Loading Bandcamp track page from URL: {}", trackInfo.identifier);
+      log.debug("Loading Bandcamp track page from URL: {}", trackInfo.getIdentifier());
 
       String trackMediaUrl = getTrackMediaUrl(httpInterface);
       log.debug("Starting Bandcamp track from URL: {}", trackMediaUrl);
@@ -52,7 +52,7 @@ public class BandcampAudioTrack extends DelegatedAudioTrack {
   }
 
   private String getTrackMediaUrl(HttpInterface httpInterface) throws IOException {
-    try (CloseableHttpResponse response = httpInterface.execute(new HttpGet(trackInfo.identifier))) {
+    try (CloseableHttpResponse response = httpInterface.execute(new HttpGet(trackInfo.getIdentifier()))) {
       int statusCode = response.getStatusLine().getStatusCode();
       if (statusCode != 200) {
         throw new IOException("Invalid status code for track page: " + statusCode);

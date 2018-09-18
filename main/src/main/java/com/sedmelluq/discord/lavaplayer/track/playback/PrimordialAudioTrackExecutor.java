@@ -43,7 +43,7 @@ public class PrimordialAudioTrackExecutor implements AudioTrackExecutor {
 
   @Override
   public void stop() {
-    log.info("Tried to stop track {} which is not playing.", trackInfo.identifier);
+    log.info("Tried to stop track {} which is not playing.", trackInfo.getIdentifier());
   }
 
   @Override

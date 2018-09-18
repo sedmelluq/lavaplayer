@@ -64,12 +64,12 @@ public abstract class BaseAudioTrack implements InternalAudioTrack {
 
   @Override
   public String getIdentifier() {
-    return trackInfo.identifier;
+    return trackInfo.getIdentifier();
   }
 
   @Override
   public boolean isSeekable() {
-    return !trackInfo.isStream;
+    return !trackInfo.isStream();
   }
 
   @Override
@@ -119,7 +119,7 @@ public abstract class BaseAudioTrack implements InternalAudioTrack {
     long accurate = accurateDuration.get();
 
     if (accurate == 0) {
-      return trackInfo.length;
+      return trackInfo.getLength();
     } else {
       return accurate;
     }

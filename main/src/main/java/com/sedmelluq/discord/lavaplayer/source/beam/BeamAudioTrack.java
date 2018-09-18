@@ -56,10 +56,10 @@ public class BeamAudioTrack extends M3uStreamAudioTrack {
   }
 
   private String getChannelId() {
-    return trackInfo.identifier.substring(0, trackInfo.identifier.indexOf('|'));
+    return trackInfo.getIdentifier().substring(0, trackInfo.getIdentifier().indexOf('|'));
   }
 
   private String getChannelUrl() {
-    return trackInfo.identifier.substring(trackInfo.identifier.lastIndexOf('|') + 1);
+    return trackInfo.getIdentifier().substring(trackInfo.getIdentifier().lastIndexOf('|') + 1);
   }
 }

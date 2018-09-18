@@ -7,27 +7,27 @@ public class AudioTrackInfo {
   /**
    * Track title
    */
-  public final String title;
+  private final String title;
   /**
    * Track author, if known
    */
-  public final String author;
+  private final String author;
   /**
    * Length of the track in milliseconds, Long.MAX_VALUE for streams
    */
-  public final long length;
+  private final long length;
   /**
    * Audio source specific track identifier
    */
-  public final String identifier;
+  private final String identifier;
   /**
    * True if this track is a stream
    */
-  public final boolean isStream;
+  private final boolean isStream;
   /**
    * URL of the track, or local path to the file.
    */
-  public final String uri;
+  private final String uri;
 
   /**
    * @param title Track title
@@ -44,5 +44,48 @@ public class AudioTrackInfo {
     this.identifier = identifier;
     this.isStream = isStream;
     this.uri = uri;
+  }
+
+
+  /**
+   * @return Track title
+   */
+  public String getTitle() {
+    return title;
+  }
+
+  /**
+   * @return Track author, if known
+   */
+  public String getAuthor() {
+    return author;
+  }
+
+  /**
+   * @return Length of the track in milliseconds
+   */
+  public long getLength() {
+    return length;
+  }
+
+  /**
+   * @return Audio source specific track identifier
+   */
+  public String getIdentifier() {
+    return identifier;
+  }
+
+  /**
+   * @return True if this track is a stream
+   */
+  public boolean isStream() {
+    return isStream;
+  }
+
+  /**
+   * @return URL of the track or path to its file
+   */
+  public String getUri() {
+    return uri;
   }
 }

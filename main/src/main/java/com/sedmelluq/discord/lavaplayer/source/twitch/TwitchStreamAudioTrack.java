@@ -34,7 +34,7 @@ public class TwitchStreamAudioTrack extends M3uStreamAudioTrack {
    * @return Name of the channel of the stream.
    */
   public String getChannelName() {
-    return getChannelIdentifierFromUrl(trackInfo.identifier);
+    return getChannelIdentifierFromUrl(trackInfo.getIdentifier());
   }
 
   @Override

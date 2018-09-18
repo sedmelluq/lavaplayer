@@ -57,7 +57,7 @@ public class NicoAudioTrack extends DelegatedAudioTrack {
   }
 
   private void loadVideoMainPage(HttpInterface httpInterface) throws IOException {
-    HttpGet request = new HttpGet("http://www.nicovideo.jp/watch/" + trackInfo.identifier);
+    HttpGet request = new HttpGet("http://www.nicovideo.jp/watch/" + trackInfo.getIdentifier());
 
     try (CloseableHttpResponse response = httpInterface.execute(request)) {
       int statusCode = response.getStatusLine().getStatusCode();
@@ -70,7 +70,7 @@ public class NicoAudioTrack extends DelegatedAudioTrack {
   }
 
   private String loadPlaybackUrl(HttpInterface httpInterface) throws IOException {
-    HttpGet request = new HttpGet("http://flapi.nicovideo.jp/api/getflv/" + trackInfo.identifier);
+    HttpGet request = new HttpGet("http://flapi.nicovideo.jp/api/getflv/" + trackInfo.getIdentifier());
 
     try (CloseableHttpResponse response = httpInterface.execute(request)) {
       int statusCode = response.getStatusLine().getStatusCode();

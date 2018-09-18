@@ -49,11 +49,11 @@ public class TrackStartRequestCodec implements RemoteMessageCodec<TrackStartRequ
     int version = version(message);
 
     out.writeLong(message.executorId);
-    out.writeUTF(message.trackInfo.title);
-    out.writeUTF(message.trackInfo.author);
-    out.writeLong(message.trackInfo.length);
-    out.writeUTF(message.trackInfo.identifier);
-    out.writeBoolean(message.trackInfo.isStream);
+    out.writeUTF(message.trackInfo.getTitle());
+    out.writeUTF(message.trackInfo.getAuthor());
+    out.writeLong(message.trackInfo.getLength());
+    out.writeUTF(message.trackInfo.getIdentifier());
+    out.writeBoolean(message.trackInfo.isStream());
     out.writeInt(message.encodedTrack.length);
     out.write(message.encodedTrack);
     out.writeInt(message.volume);

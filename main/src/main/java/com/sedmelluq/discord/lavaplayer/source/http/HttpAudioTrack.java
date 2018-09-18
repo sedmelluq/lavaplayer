@@ -45,9 +45,9 @@ public class HttpAudioTrack extends DelegatedAudioTrack {
   @Override
   public void process(LocalAudioTrackExecutor localExecutor) throws Exception {
     try (HttpInterface httpInterface = sourceManager.getHttpInterface()) {
-      log.debug("Starting http track from URL: {}", trackInfo.identifier);
+      log.debug("Starting http track from URL: {}", trackInfo.getIdentifier());
 
-      try (PersistentHttpStream inputStream = new PersistentHttpStream(httpInterface, new URI(trackInfo.identifier), Long.MAX_VALUE)) {
+      try (PersistentHttpStream inputStream = new PersistentHttpStream(httpInterface, new URI(trackInfo.getIdentifier()), Long.MAX_VALUE)) {
         processDelegate((InternalAudioTrack) probe.createTrack(trackInfo, inputStream), localExecutor);
       }
     }

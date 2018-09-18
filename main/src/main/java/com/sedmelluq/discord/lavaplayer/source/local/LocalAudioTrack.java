@@ -26,7 +26,7 @@ public class LocalAudioTrack extends DelegatedAudioTrack {
   public LocalAudioTrack(AudioTrackInfo trackInfo, MediaContainerProbe probe, LocalAudioSourceManager sourceManager) {
     super(trackInfo);
 
-    this.file = new File(trackInfo.identifier);
+    this.file = new File(trackInfo.getIdentifier());
     this.probe = probe;
     this.sourceManager = sourceManager;
   }
