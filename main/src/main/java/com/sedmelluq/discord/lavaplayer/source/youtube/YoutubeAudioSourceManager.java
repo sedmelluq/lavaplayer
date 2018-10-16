@@ -57,7 +57,7 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
   static final String CHARSET = "UTF-8";
 
   private static final String PROTOCOL_REGEX = "(?:http://|https://|)";
-  private static final String DOMAIN_REGEX = "(?:www\\.|m\\.|)youtube\\.com";
+  private static final String DOMAIN_REGEX = "(?:www\\.|m\\.|music\\.|)youtube\\.com";
   private static final String SHORT_DOMAIN_REGEX = "(?:www\\.|)youtu\\.be";
   private static final String VIDEO_ID_REGEX = "(?<v>[a-zA-Z0-9_-]{11})";
   private static final String PLAYLIST_ID_REGEX = "(?<list>(PL|LL|FL|UU)[a-zA-Z0-9_-]+)";
