@@ -21,6 +21,7 @@ import org.apache.http.NameValuePair;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.http.impl.client.HttpClientBuilder;
@@ -34,6 +35,7 @@ import org.slf4j.LoggerFactory;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
@@ -246,9 +248,37 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
       if (playlistId != null) {
         return loadPlaylistWithId(playlistId, null);
       }
+    } else if ("/watch_videos".equals(urlInfo.path)) {
+      String videoIds = urlInfo.parameters.get("video_ids");
+      if (videoIds != null) {
+       return loadAnonymous(videoIds);
+      }
     }
 
     return null;
+  }
+
+  private AudioItem loadAnonymous(String videoIds) {
+    try (HttpInterface httpInterface = getHttpInterface()) {
+      try (CloseableHttpResponse response = httpInterface.execute(new HttpGet("https://www.youtube.com/watch_videos?video_ids=" + videoIds))) {
+        int statusCode = response.getStatusLine().getStatusCode();
+        HttpClientContext context = httpInterface.getContext();
+        if (statusCode != 200) {
+          throw new IOException("Invalid status code for playlist response: " + statusCode);
+        }
+        // youtube currently transforms watch_video links into a link with a video id and a list id.
+        // because thats what happens, we can simply re-process with the redirected link
+        List<URI> redirects = context.getRedirectLocations();
+        if (redirects != null && !redirects.isEmpty()) {
+          return loadNonSearch(redirects.get(0).toString());
+        } else {
+          throw new FriendlyException("Unable to process youtube watch_videos link", SUSPICIOUS,
+                  new IllegalStateException("Expected youtube to redirect watch_videos link to a watch?v={id}&list={list_id} link, but it did not redirect at all"));
+        }
+      }
+    } catch (Exception e) {
+      throw ExceptionTools.wrapUnfriendlyExceptions(e);
+    }
   }
 
   private AudioItem loadFromShortDomain(String identifier) {
