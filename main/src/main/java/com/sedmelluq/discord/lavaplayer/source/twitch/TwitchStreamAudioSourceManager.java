@@ -37,6 +37,7 @@ public class TwitchStreamAudioSourceManager implements AudioSourceManager, HttpC
   private static final Pattern streamNameRegex = Pattern.compile(STREAM_NAME_REGEX);
 
   public static final String CLIENT_ID = "jzkbprff40iqj646a697cyrvl0zt2m6";
+  private String twitchClientId = CLIENT_ID;
 
   private final HttpInterfaceManager httpInterfaceManager;
 
@@ -45,6 +46,16 @@ public class TwitchStreamAudioSourceManager implements AudioSourceManager, HttpC
    */
   public TwitchStreamAudioSourceManager() {
     httpInterfaceManager = HttpClientTools.createDefaultThreadLocalManager();
+  }
+
+  /**
+   * Create an instance.
+   * @param clientId The Twitch client id for your application.
+   */
+  public TwitchStreamAudioSourceManager(String clientId)
+  {
+      this();
+      twitchClientId = clientId;
   }
 
   @Override
@@ -153,7 +164,7 @@ public class TwitchStreamAudioSourceManager implements AudioSourceManager, HttpC
   }
 
   private static HttpUriRequest addClientHeaders(HttpUriRequest request) {
-    request.setHeader("Client-ID", CLIENT_ID);
+    request.setHeader("Client-ID", twitchClientId);
     return request;
   }
 
