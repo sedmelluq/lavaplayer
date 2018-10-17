@@ -405,7 +405,7 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
       }
 
       String html = IOUtils.toString(response.getEntity().getContent(), Charset.forName(CHARSET));
-      String configJson = DataFormatTools.extractBetween(html, "'PLAYER_CONFIG': ", ",'EXPERIMENT_FLAGS'");
+      String configJson = DataFormatTools.extractBetween(html, "'PLAYER_CONFIG': ", "});writeEmbed();");
 
       if (configJson != null) {
         return JsonBrowser.parse(configJson);
