@@ -15,25 +15,21 @@ import static com.sedmelluq.discord.lavaplayer.container.mpegts.MpegTsElementary
  * Audio track that handles processing M3U segment streams which using MPEG-TS wrapped ADTS codec.
  */
 public abstract class M3uStreamAudioTrack extends DelegatedAudioTrack {
-  private final M3uStreamSegmentUrlProvider segmentUrlProvider;
-
   /**
    * @param trackInfo Track info
    */
   public M3uStreamAudioTrack(AudioTrackInfo trackInfo) {
     super(trackInfo);
-
-    this.segmentUrlProvider = createSegmentProvider();
   }
 
-  protected abstract M3uStreamSegmentUrlProvider createSegmentProvider();
+  protected abstract M3uStreamSegmentUrlProvider getSegmentUrlProvider();
 
   protected abstract HttpInterface getHttpInterface();
 
   @Override
   public void process(LocalAudioTrackExecutor localExecutor) throws Exception {
     try (final HttpInterface httpInterface = getHttpInterface()) {
-      try (ChainedInputStream chainedInputStream = new ChainedInputStream(() -> segmentUrlProvider.getNextSegmentStream(httpInterface))) {
+      try (ChainedInputStream chainedInputStream = new ChainedInputStream(() -> getSegmentUrlProvider().getNextSegmentStream(httpInterface))) {
         MpegTsElementaryInputStream elementaryInputStream = new MpegTsElementaryInputStream(chainedInputStream, ADTS_ELEMENTARY_STREAM);
         PesPacketInputStream pesPacketInputStream = new PesPacketInputStream(elementaryInputStream);
 

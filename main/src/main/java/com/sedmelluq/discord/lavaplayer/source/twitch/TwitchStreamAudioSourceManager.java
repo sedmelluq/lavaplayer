@@ -22,6 +22,7 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.net.URI;
+import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.regex.Matcher;
@@ -37,9 +38,9 @@ public class TwitchStreamAudioSourceManager implements AudioSourceManager, HttpC
   private static final Pattern streamNameRegex = Pattern.compile(STREAM_NAME_REGEX);
 
   public static final String DEFAULT_CLIENT_ID = "jzkbprff40iqj646a697cyrvl0zt2m6";
-  private String twitchClientId;
 
   private final HttpInterfaceManager httpInterfaceManager;
+  private final String twitchClientId;
 
   /**
    * Create an instance.
@@ -53,6 +54,10 @@ public class TwitchStreamAudioSourceManager implements AudioSourceManager, HttpC
   public TwitchStreamAudioSourceManager(String clientId) {
       httpInterfaceManager = HttpClientTools.createDefaultThreadLocalManager();
       twitchClientId = clientId;
+  }
+
+  public String getClientId() {
+    return twitchClientId;
   }
 
   @Override
@@ -129,20 +134,18 @@ public class TwitchStreamAudioSourceManager implements AudioSourceManager, HttpC
 
   /**
    * @param url Request URL
-   * @param clientId Twitch client ID
    * @return Request with necessary headers attached.
    */
-  public static HttpUriRequest createGetRequest(String url, String clientId) {
-    return addClientHeaders(new HttpGet(url), clientId);
+  public HttpUriRequest createGetRequest(String url) {
+    return addClientHeaders(new HttpGet(url), twitchClientId);
   }
 
   /**
    * @param url Request URL
-   * @param clientId Twitch client ID
    * @return Request with necessary headers attached.
    */
-  public static HttpUriRequest createGetRequest(URI url, String clientId) {
-    return addClientHeaders(new HttpGet(url), clientId);
+  public HttpUriRequest createGetRequest(URI url) {
+    return addClientHeaders(new HttpGet(url), twitchClientId);
   }
 
   /**
@@ -169,7 +172,7 @@ public class TwitchStreamAudioSourceManager implements AudioSourceManager, HttpC
 
   private JsonBrowser fetchStreamChannelInfo(String name) {
     try (HttpInterface httpInterface = getHttpInterface()) {
-      HttpUriRequest request = createGetRequest("https://api.twitch.tv/helix/streams?user_login=" + name, twitchClientId);
+      HttpUriRequest request = createGetRequest("https://api.twitch.tv/helix/streams?user_login=" + name);
 
       return HttpClientTools.fetchResponseAsJson(httpInterface, request);
     } catch (IOException e) {
