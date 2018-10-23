@@ -91,7 +91,7 @@ public class AudioTrackInfoBuilder implements AudioTrackInfoProvider {
         .setAuthor(provider.getAuthor())
         .setLength(provider.getLength())
         .setIdentifier(provider.getIdentifier())
-        .setUri(provider.getIdentifier());
+        .setUri(provider.getUri());
   }
 
   /**
@@ -125,8 +125,10 @@ public class AudioTrackInfoBuilder implements AudioTrackInfoProvider {
 
     builder.apply(reference);
 
-    for (AudioTrackInfoProvider provider : stream.getTrackInfoProviders()) {
-      builder.apply(provider);
+    if (stream != null) {
+      for (AudioTrackInfoProvider provider : stream.getTrackInfoProviders()) {
+        builder.apply(provider);
+      }
     }
 
     return builder;

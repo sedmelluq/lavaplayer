@@ -18,6 +18,8 @@ import java.util.List;
 import static com.sedmelluq.discord.lavaplayer.container.MediaContainerDetection.UNKNOWN_ARTIST;
 import static com.sedmelluq.discord.lavaplayer.container.MediaContainerDetection.UNKNOWN_TITLE;
 import static com.sedmelluq.discord.lavaplayer.container.MediaContainerDetection.checkNextBytes;
+import static com.sedmelluq.discord.lavaplayer.container.MediaContainerDetectionResult.supportedFormat;
+import static com.sedmelluq.discord.lavaplayer.container.MediaContainerDetectionResult.unsupportedFormat;
 
 /**
  * Container detection probe for matroska format.
@@ -54,10 +56,10 @@ public class MatroskaContainerProbe implements MediaContainerProbe {
     file.readFile();
 
     if (!hasSupportedAudioTrack(file)) {
-      return new MediaContainerDetectionResult(this, "No supported audio tracks present in the file.");
+      return unsupportedFormat(this, "No supported audio tracks present in the file.");
     }
 
-    return new MediaContainerDetectionResult(this, new AudioTrackInfo(UNKNOWN_TITLE, UNKNOWN_ARTIST,
+    return supportedFormat(this, null, new AudioTrackInfo(UNKNOWN_TITLE, UNKNOWN_ARTIST,
         (long) file.getDuration(), reference.identifier, false, reference.identifier));
   }
 
@@ -72,7 +74,7 @@ public class MatroskaContainerProbe implements MediaContainerProbe {
   }
 
   @Override
-  public AudioTrack createTrack(AudioTrackInfo trackInfo, SeekableInputStream inputStream) {
+  public AudioTrack createTrack(String parameters, AudioTrackInfo trackInfo, SeekableInputStream inputStream) {
     return new MatroskaAudioTrack(trackInfo, inputStream);
   }
 }

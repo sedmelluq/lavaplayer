@@ -1,5 +1,13 @@
 # Change Log
 
+## [1.3.10] -- 2018-10-24
+### Added
+- Generic HLS stream support.
+- Ability to add custom file format support (as custom MediaContainerRegistry).
+
+### Fixed
+- Fixed YouTube streams not reconnecting due to SSL exception wrapper changes in JDK10+.
+
 ## [1.3.9] -- 2018-10-18
 ### Fixed
 - Fixed playing age-restricted videos using the embed page (PR 136 by duncte123).
