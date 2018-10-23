@@ -1,7 +1,6 @@
 package com.sedmelluq.discord.lavaplayer.natives;
 
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang.SystemUtils;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -210,31 +209,33 @@ public class NativeLibLoader {
     }
 
     public static Architecture detectArchitecture() throws IllegalStateException, IllegalArgumentException {
-      String archName = System.getProperty("lavaplayer.native.arch", archMap.get(SystemUtils.OS_ARCH));
+      final String _os_arch = System.getProperty("os.arch");
+      final String _os_name = System.getProperty("os.name");
+      String archName = System.getProperty("lavaplayer.native.arch", archMap.get(_os_arch));
       String osName, libPrefix, libSuffix;
 
       if (archName == null) {
-        throw new IllegalArgumentException("Unknown architecture: " + SystemUtils.OS_ARCH);
+        throw new IllegalArgumentException("Unknown architecture: " + _os_arch);
       }
 
-      if (SystemUtils.IS_OS_WINDOWS) {
+      if (_os_name.startsWith("Windows")) {
         osName = OS_WINDOWS;
         libPrefix = "";
         libSuffix = ".dll";
-      } else if (SystemUtils.IS_OS_MAC_OSX) {
+      } else if (_os_name.startsWith("Mac OS X")) {
         osName = OS_OSX;
         libPrefix = "lib";
         libSuffix = ".dylib";
-      } else if (SystemUtils.IS_OS_SOLARIS) {
+      } else if (_os_name.startsWith("Solaris")) {
         osName = OS_SOLARIS;
         libPrefix = "lib";
         libSuffix = ".so";
-      } else if (SystemUtils.IS_OS_LINUX) {
+      } else if (_os_name.toLowerCase().startsWith("linux")) {
         osName = OS_LINUX;
         libPrefix = "lib";
         libSuffix = ".so";
       } else {
-        throw new IllegalArgumentException("Unknown operating system: " + SystemUtils.OS_NAME);
+        throw new IllegalArgumentException("Unknown operating system: " + _os_name);
       }
 
       return new Architecture(osName, archName, libPrefix, libSuffix);
