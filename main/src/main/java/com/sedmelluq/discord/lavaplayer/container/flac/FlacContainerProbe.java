@@ -13,10 +13,8 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 
-import static com.sedmelluq.discord.lavaplayer.container.MediaContainerDetection.UNKNOWN_ARTIST;
-import static com.sedmelluq.discord.lavaplayer.container.MediaContainerDetection.UNKNOWN_TITLE;
 import static com.sedmelluq.discord.lavaplayer.container.MediaContainerDetection.checkNextBytes;
-import static com.sedmelluq.discord.lavaplayer.tools.DataFormatTools.defaultOnNull;
+import static com.sedmelluq.discord.lavaplayer.container.MediaContainerDetectionResult.supportedFormat;
 
 /**
  * Container detection probe for MP3 format.
@@ -53,11 +51,11 @@ public class FlacContainerProbe implements MediaContainerProbe {
         .setLength(fileInfo.duration)
         .build();
 
-    return new MediaContainerDetectionResult(this, trackInfo);
+    return supportedFormat(this, null, trackInfo);
   }
 
   @Override
-  public AudioTrack createTrack(AudioTrackInfo trackInfo, SeekableInputStream inputStream) {
+  public AudioTrack createTrack(String parameters, AudioTrackInfo trackInfo, SeekableInputStream inputStream) {
     return new FlacAudioTrack(trackInfo, inputStream);
   }
 }

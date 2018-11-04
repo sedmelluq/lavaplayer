@@ -291,7 +291,8 @@ public class HttpClientTools {
         isSocketTimeoutException(exception) ||
         isIncorrectSslShutdownException(exception) ||
         isPrematureEndException(exception) ||
-        isRetriableConscryptException(exception);
+        isRetriableConscryptException(exception) ||
+        isRetriableNestedSslException(exception);
   }
 
   private static boolean isConnectionResetException(Throwable exception) {
@@ -323,6 +324,10 @@ public class HttpClientTools {
     }
 
     return false;
+  }
+
+  private static boolean isRetriableNestedSslException(Throwable exception) {
+    return exception instanceof SSLException && isRetriableNetworkException(exception.getCause());
   }
 
   /**

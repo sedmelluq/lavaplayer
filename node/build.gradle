@@ -4,13 +4,13 @@ buildscript {
   }
 
   dependencies {
-    classpath("org.springframework.boot:spring-boot-gradle-plugin:1.4.3.RELEASE")
+    classpath("org.springframework.boot:spring-boot-gradle-plugin:1.5.17.RELEASE")
   }
 }
 
 plugins {
   id 'java'
-  id 'org.sonarqube' version '2.1'
+  id 'org.sonarqube' version '2.6.2'
 }
 
 apply plugin: 'spring-boot'
@@ -20,7 +20,7 @@ version = '1.2.50'
 dependencies {
   compile project(':main')
 
-  compile 'org.springframework.boot:spring-boot-starter-web:1.4.3.RELEASE'
+  compile 'org.springframework.boot:spring-boot-starter-web:1.5.17.RELEASE'
 }
 
 springBoot {

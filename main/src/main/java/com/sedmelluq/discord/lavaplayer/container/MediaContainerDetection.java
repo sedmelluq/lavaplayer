@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.regex.Pattern;
 
+import static com.sedmelluq.discord.lavaplayer.container.MediaContainerDetectionResult.unknownFormat;
 import static com.sedmelluq.discord.lavaplayer.tools.FriendlyException.Severity.SUSPICIOUS;
 
 /**
@@ -26,39 +27,56 @@ public class MediaContainerDetection {
 
   private static final int HEAD_MARK_LIMIT = 1024;
 
+  private final MediaContainerRegistry containerRegistry;
+  private final AudioReference reference;
+  private final SeekableInputStream inputStream;
+  private final MediaContainerHints hints;
+
   /**
    * @param reference Reference to the track with an identifier, used in the AudioTrackInfo in result
    * @param inputStream Input stream of the file
    * @param hints Hints about the format (mime type, extension)
-   * @return Result of detection
    */
-  public static MediaContainerDetectionResult detectContainer(AudioReference reference, SeekableInputStream inputStream, MediaContainerHints hints) {
+  public MediaContainerDetection(MediaContainerRegistry containerRegistry, AudioReference reference,
+                                 SeekableInputStream inputStream, MediaContainerHints hints) {
+
+    this.containerRegistry = containerRegistry;
+    this.reference = reference;
+    this.inputStream = inputStream;
+    this.hints = hints;
+  }
+
+  /**
+   * @return Result of detection.
+   */
+  public MediaContainerDetectionResult detectContainer() {
     MediaContainerDetectionResult result;
 
     try {
       SavedHeadSeekableInputStream savedHeadInputStream = new SavedHeadSeekableInputStream(inputStream, HEAD_MARK_LIMIT);
       savedHeadInputStream.loadHead();
 
-      result = detectContainer(reference, savedHeadInputStream, hints, true);
+      result = detectContainer(savedHeadInputStream, true);
 
       if (result == null) {
-        result = detectContainer(reference, savedHeadInputStream, hints, false);
+        result = detectContainer(savedHeadInputStream, false);
       }
     } catch (Exception e) {
       throw ExceptionTools.wrapUnfriendlyExceptions("Could not read the file for detecting file type.", SUSPICIOUS, e);
     }
 
-    return result != null ? result : new MediaContainerDetectionResult();
+    return result != null ? result : unknownFormat();
   }
 
-  private static MediaContainerDetectionResult detectContainer(AudioReference reference, SeekableInputStream inputStream, MediaContainerHints hints,
-                                                               boolean matchHints) throws IOException {
+  private MediaContainerDetectionResult detectContainer(SeekableInputStream innerStream, boolean matchHints)
+      throws IOException {
+
     boolean checked = false;
 
-    for (MediaContainer container : MediaContainer.class.getEnumConstants()) {
-      if (matchHints == container.probe.matchesHints(hints)) {
-        inputStream.seek(0);
-        MediaContainerDetectionResult result = checkContainer(container, reference, inputStream);
+    for (MediaContainerProbe probe : containerRegistry.getAll()) {
+      if (matchHints == probe.matchesHints(hints)) {
+        innerStream.seek(0);
+        MediaContainerDetectionResult result = checkContainer(probe, reference, innerStream);
 
         if (result != null) {
           return result;
@@ -68,14 +86,16 @@ public class MediaContainerDetection {
       }
     }
 
-    return checked ? new MediaContainerDetectionResult() : null;
+    return checked ? unknownFormat() : null;
   }
 
-  private static MediaContainerDetectionResult checkContainer(MediaContainer container, AudioReference reference, SeekableInputStream inputStream) {
+  private static MediaContainerDetectionResult checkContainer(MediaContainerProbe probe, AudioReference reference,
+                                                              SeekableInputStream inputStream) {
+
     try {
-      return container.probe.probe(reference, inputStream);
+      return probe.probe(reference, inputStream);
     } catch (Exception e) {
-      log.warn("Attempting to detect file with container {} failed.", container.name(), e);
+      log.warn("Attempting to detect file with container {} failed.", probe.getName(), e);
       return null;
     }
   }

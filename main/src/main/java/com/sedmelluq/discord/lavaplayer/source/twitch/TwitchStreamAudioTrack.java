@@ -19,6 +19,7 @@ public class TwitchStreamAudioTrack extends M3uStreamAudioTrack {
   private static final Logger log = LoggerFactory.getLogger(TwitchStreamAudioTrack.class);
 
   private final TwitchStreamAudioSourceManager sourceManager;
+  private final M3uStreamSegmentUrlProvider segmentUrlProvider;
 
   /**
    * @param trackInfo Track info
@@ -28,6 +29,7 @@ public class TwitchStreamAudioTrack extends M3uStreamAudioTrack {
     super(trackInfo);
 
     this.sourceManager = sourceManager;
+    this.segmentUrlProvider = new TwitchStreamSegmentUrlProvider(getChannelName(), sourceManager);
   }
 
   /**
@@ -38,8 +40,8 @@ public class TwitchStreamAudioTrack extends M3uStreamAudioTrack {
   }
 
   @Override
-  protected M3uStreamSegmentUrlProvider createSegmentProvider() {
-    return new TwitchStreamSegmentUrlProvider(getChannelName());
+  protected M3uStreamSegmentUrlProvider getSegmentUrlProvider() {
+    return segmentUrlProvider;
   }
 
   @Override

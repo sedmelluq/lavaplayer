@@ -7,58 +7,63 @@ import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo;
  * Result of audio container detection.
  */
 public class MediaContainerDetectionResult {
+  private static final MediaContainerDetectionResult UNKNOWN_FORMAT =
+      new MediaContainerDetectionResult(null, null, null, null, null);
+
   private final AudioTrackInfo trackInfo;
   private final MediaContainerProbe containerProbe;
+  private final String probeSettings;
   private final AudioReference reference;
   private final String unsupportedReason;
 
-  /**
-   * Constructor for supported file.
-   *
-   * @param containerProbe Probe of the container
-   * @param trackInfo Track info for the file
-   */
-  public MediaContainerDetectionResult(MediaContainerProbe containerProbe, AudioTrackInfo trackInfo) {
+  private MediaContainerDetectionResult(AudioTrackInfo trackInfo, MediaContainerProbe containerProbe,
+                                       String probeSettings, AudioReference reference, String unsupportedReason) {
+
     this.trackInfo = trackInfo;
     this.containerProbe = containerProbe;
-    this.unsupportedReason = null;
-    this.reference = null;
+    this.probeSettings = probeSettings;
+    this.reference = reference;
+    this.unsupportedReason = unsupportedReason;
   }
 
   /**
-   * Constructor for load result referring to another item.
+   * Creates an unknown format result.
+   */
+  public static MediaContainerDetectionResult unknownFormat() {
+    return UNKNOWN_FORMAT;
+  }
+
+  /**
+   * Creates a result ofr an unsupported file of a known container.
    *
-   * @param containerProbe Probe of the container
+   * @param probe Probe of the container
+   * @param reason The reason why this track is not supported
+   */
+  public static MediaContainerDetectionResult unsupportedFormat(MediaContainerProbe probe, String reason) {
+    return new MediaContainerDetectionResult(null, probe, null, null, reason);
+  }
+
+  /**
+   * Creates a load result referring to another item.
+   *
+   * @param probe Probe of the container
    * @param reference Reference to another item
    */
-  public MediaContainerDetectionResult(MediaContainerProbe containerProbe, AudioReference reference) {
-    this.trackInfo = null;
-    this.containerProbe = containerProbe;
-    this.unsupportedReason = null;
-    this.reference = reference;
+  public static MediaContainerDetectionResult refer(MediaContainerProbe probe, AudioReference reference) {
+    return new MediaContainerDetectionResult(null, probe, null, reference, null);
   }
 
+
   /**
-   * Constructor for unsupported file of a known container.
+   * Creates a load result for supported file.
    *
-   * @param containerProbe Probe of the container
-   * @param unsupportedReason The reason why this track is not supported
+   * @param probe Probe of the container
+   * @param trackInfo Track info for the file
    */
-  public MediaContainerDetectionResult(MediaContainerProbe containerProbe, String unsupportedReason) {
-    this.trackInfo = null;
-    this.containerProbe = containerProbe;
-    this.unsupportedReason = unsupportedReason;
-    this.reference = null;
-  }
+  public static MediaContainerDetectionResult supportedFormat(MediaContainerProbe probe, String settings,
+                                                        AudioTrackInfo trackInfo) {
 
-  /**
-   * Constructor for unknown format result.
-   */
-  public MediaContainerDetectionResult() {
-    trackInfo = null;
-    containerProbe = null;
-    unsupportedReason = null;
-    reference = null;
+    return new MediaContainerDetectionResult(trackInfo, probe, settings, null, null);
   }
 
   /**
@@ -71,8 +76,8 @@ public class MediaContainerDetectionResult {
   /**
    * @return The probe for the container of the file
    */
-  public MediaContainerProbe getContainerProbe() {
-    return containerProbe;
+  public MediaContainerDescriptor getContainerDescriptor() {
+    return new MediaContainerDescriptor(containerProbe, probeSettings);
   }
 
   /**

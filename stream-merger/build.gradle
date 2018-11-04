@@ -1,7 +1,8 @@
 plugins {
   id 'java'
-  id 'com.jfrog.bintray' version '1.8.0'
 }
+
+apply plugin: 'com.jfrog.bintray'
 
 ext.moduleName = 'lavaplayer-stream-merger'
 version = '0.1.0'

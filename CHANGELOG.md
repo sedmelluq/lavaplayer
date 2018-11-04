@@ -1,5 +1,27 @@
 # Change Log
 
+## [1.3.10] -- 2018-10-24
+### Added
+- Generic HLS stream support.
+- Ability to add custom file format support (as custom MediaContainerRegistry).
+
+### Fixed
+- Fixed YouTube streams not reconnecting due to SSL exception wrapper changes in JDK10+.
+
+## [1.3.9] -- 2018-10-18
+### Fixed
+- Fixed playing age-restricted videos using the embed page (PR 136 by duncte123).
+
+## [1.3.8] -- 2018-10-18
+### Added
+- Added support for YouTube watch_videos urls (PR 123 by matsprehn).
+- Added support for YouTube music.youtube.com domain links (PR 134 by GigaFyde).
+
+### Fixed
+- Fixed Mixer streams.
+- Fixed Twitch streams by using the Helix API (PR 132 by tdeeb).
+- Fixed OGG metadata memory usage exploit (PR 131 by napstr).
+
 ## [1.3.7] -- 2018-07-02
 ### Fixed
 - Fixed YouTube search not working in some regions due to different time format.

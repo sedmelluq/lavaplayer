@@ -4,6 +4,7 @@ import com.sedmelluq.discord.lavaplayer.remote.RemoteAudioTrackExecutor;
 import com.sedmelluq.discord.lavaplayer.remote.RemoteNodeManager;
 import com.sedmelluq.discord.lavaplayer.remote.RemoteNodeRegistry;
 import com.sedmelluq.discord.lavaplayer.source.AudioSourceManager;
+import com.sedmelluq.discord.lavaplayer.source.ProbingAudioSourceManager;
 import com.sedmelluq.discord.lavaplayer.tools.DaemonThreadFactory;
 import com.sedmelluq.discord.lavaplayer.tools.DataFormatTools;
 import com.sedmelluq.discord.lavaplayer.tools.ExceptionTools;
@@ -429,6 +430,10 @@ public class DefaultAudioPlayerManager implements AudioPlayerManager {
 
   private AudioItem checkSourcesForItemOnce(AudioReference reference, AudioLoadResultHandler resultHandler, boolean[] reported) {
     for (AudioSourceManager sourceManager : sourceManagers) {
+      if (reference.containerDescriptor != null && !(sourceManager instanceof ProbingAudioSourceManager)) {
+        continue;
+      }
+
       AudioItem item = sourceManager.loadItem(this, reference);
 
       if (item != null) {
