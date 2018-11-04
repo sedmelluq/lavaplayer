@@ -6,8 +6,10 @@ import com.sedmelluq.discord.lavaplayer.track.playback.AudioProcessingContext;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.AbstractMap;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -86,13 +88,7 @@ public class OggOpusTrackProvider implements OggTrackProvider {
 
       byte[] data = new byte[itemLength];
       tagBuffer.get(data);
-
-      for (int i = 0; i < data.length; i++) {
-        if (data[i] == '=') {
-          tags.put(new String(data, 0, i, UTF_8), new String(data, i, data.length - i, UTF_8));
-          break;
-        }
-      }
+      readTag(data).ifPresent(tag -> tags.put(tag.getKey(), tag.getValue()));
     }
 
     return new OggMetadata(tags);
@@ -130,5 +126,17 @@ public class OggOpusTrackProvider implements OggTrackProvider {
     if (opusPacketRouter != null) {
       opusPacketRouter.close();
     }
+  }
+
+  //visible for testing
+  static Optional<Map.Entry<String, String>> readTag(byte[] data) {
+    for (int i = 0; i < data.length; i++) {
+      if (data[i] == '=') {
+        String key = new String(data, 0, i, UTF_8);
+        String value = new String(data, i, data.length - i, UTF_8);
+        return Optional.of(new AbstractMap.SimpleEntry<>(key, value));
+      }
+    }
+    return Optional.empty();
   }
 }
