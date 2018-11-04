@@ -26,6 +26,7 @@ natives/libs
 natives/opus/opus*
 natives/samplerate/src
 natives/vorbis/*/
+natives/mp3/*/
 udpqueue-natives/dist
 version.txt
 
