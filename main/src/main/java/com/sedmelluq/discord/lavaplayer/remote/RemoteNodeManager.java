@@ -4,6 +4,7 @@ import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
 import com.sedmelluq.discord.lavaplayer.player.DefaultAudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.player.event.AudioEventAdapter;
 import com.sedmelluq.discord.lavaplayer.tools.DaemonThreadFactory;
+import com.sedmelluq.discord.lavaplayer.tools.ExceptionTools;
 import com.sedmelluq.discord.lavaplayer.tools.ExecutorTools;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterfaceManager;
@@ -11,7 +12,6 @@ import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackEndReason;
 import com.sedmelluq.discord.lavaplayer.track.InternalAudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.playback.AudioTrackExecutor;
-import org.apache.commons.io.IOUtils;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -65,7 +65,7 @@ public class RemoteNodeManager extends AudioEventAdapter implements RemoteNodeRe
       for (Iterator<RemoteNodeProcessor> iterator = processors.iterator(); iterator.hasNext(); ) {
         RemoteNodeProcessor processor = iterator.next();
 
-        if (!newNodeAddresses.remove(processor.getNodeAddress())) {
+        if (!newNodeAddresses.remove(processor.getAddress())) {
           processor.shutdown();
           iterator.remove();
         }
@@ -106,7 +106,7 @@ public class RemoteNodeManager extends AudioEventAdapter implements RemoteNodeRe
     }
 
     if (terminal) {
-      IOUtils.closeQuietly(httpInterfaceManager);
+      ExceptionTools.closeWithWarnings(httpInterfaceManager);
     }
   }
 

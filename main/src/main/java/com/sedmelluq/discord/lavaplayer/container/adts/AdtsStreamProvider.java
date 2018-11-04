@@ -1,7 +1,8 @@
 package com.sedmelluq.discord.lavaplayer.container.adts;
 
-import com.sedmelluq.discord.lavaplayer.filter.FilterChainBuilder;
-import com.sedmelluq.discord.lavaplayer.filter.ShortPcmAudioFilter;
+import com.sedmelluq.discord.lavaplayer.filter.AudioPipeline;
+import com.sedmelluq.discord.lavaplayer.filter.AudioPipelineFactory;
+import com.sedmelluq.discord.lavaplayer.filter.PcmFormat;
 import com.sedmelluq.discord.lavaplayer.natives.aac.AacDecoder;
 import com.sedmelluq.discord.lavaplayer.tools.io.DirectBufferStreamBroker;
 import com.sedmelluq.discord.lavaplayer.tools.io.ResettableBoundedInputStream;
@@ -24,11 +25,13 @@ public class AdtsStreamProvider {
   private final DirectBufferStreamBroker directBufferBroker;
   private ShortBuffer outputBuffer;
   private AdtsPacketHeader previousHeader;
-  private ShortPcmAudioFilter downstream;
+  private AudioPipeline downstream;
+  private Long requestedTimecode;
+  private Long providedTimecode;
 
   /**
    * @param inputStream Input stream to read from.
-   * @param context Audio processing context.
+   * @param context Configuration and output information for processing
    */
   public AdtsStreamProvider(InputStream inputStream, AudioProcessingContext context) {
     this.context = context;
@@ -39,8 +42,20 @@ public class AdtsStreamProvider {
   }
 
   /**
+   * Used to pass the initial position of the stream in case it is part of a chain, to keep timecodes of audio frames
+   * continuous.
+   *
+   * @param requestedTimecode The timecode at which the samples from this stream should be outputted.
+   * @param providedTimecode The timecode at which this stream starts.
+   */
+  public void setInitialSeek(long requestedTimecode, long providedTimecode) {
+    this.requestedTimecode = requestedTimecode;
+    this.providedTimecode = providedTimecode;
+  }
+
+  /**
    * Provides frames to the frame consumer.
-   * @throws InterruptedException
+   * @throws InterruptedException When interrupted externally (or for seek/stop).
    */
   public void provideFrames() throws InterruptedException {
     try {
@@ -80,9 +95,14 @@ public class AdtsStreamProvider {
         return;
       }
 
-      downstream = FilterChainBuilder.forShortPcm(context, streamInfo.channels, streamInfo.sampleRate, true);
+      downstream = AudioPipelineFactory.create(context, new PcmFormat(streamInfo.channels, streamInfo.sampleRate));
       outputBuffer = ByteBuffer.allocateDirect(2 * streamInfo.frameSize * streamInfo.channels)
           .order(ByteOrder.nativeOrder()).asShortBuffer();
+
+      if (requestedTimecode != null) {
+        downstream.seekPerformed(requestedTimecode, providedTimecode);
+        requestedTimecode = null;
+      }
     }
 
     outputBuffer.clear();

@@ -39,7 +39,7 @@ public class OggTrackLoader {
     } else if (headerIdentifier == VORBIS_IDENTIFIER) {
       return new OggVorbisTrackProvider(packetInputStream, broker);
     } else if (headerIdentifier == OPUS_IDENTIFIER) {
-      return new OggOpusTrackProvider(packetInputStream, broker);
+      return OggOpusTrackProviderLoader.load(packetInputStream, broker);
     } else {
       throw new IllegalStateException("Unsupported track in OGG stream.");
     }

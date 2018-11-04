@@ -5,10 +5,10 @@ import com.sedmelluq.discord.lavaplayer.source.AudioSourceManager;
 import com.sedmelluq.discord.lavaplayer.tools.DataFormatTools;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.tools.JsonBrowser;
+import com.sedmelluq.discord.lavaplayer.tools.io.HttpClientTools;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpConfigurable;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterface;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterfaceManager;
-import com.sedmelluq.discord.lavaplayer.tools.io.HttpClientTools;
 import com.sedmelluq.discord.lavaplayer.track.AudioItem;
 import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
 import com.sedmelluq.discord.lavaplayer.track.AudioReference;
@@ -21,7 +21,6 @@ import org.apache.http.HttpStatus;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.util.EntityUtils;
@@ -31,7 +30,6 @@ import org.slf4j.LoggerFactory;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.Charset;
@@ -46,7 +44,6 @@ import java.util.StringJoiner;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -183,6 +180,9 @@ public class SoundCloudAudioSourceManager implements AudioSourceManager, HttpCon
     httpInterfaceManager.configureBuilder(configurator);
   }
 
+  /**
+   * Updates the clientID if more than {@link #CLIENT_ID_REFRESH_INTERVAL} time has passed since last updated.
+   */
   public void updateClientId() {
     synchronized (clientIdLock) {
       long now = System.currentTimeMillis();
@@ -384,7 +384,7 @@ public class SoundCloudAudioSourceManager implements AudioSourceManager, HttpCon
     List<String> trackIds = loadPlaylistTrackList(playlistInfo);
 
     return withClientIdRetry(httpInterface,
-        (response) -> handlePlaylistTracksResponse(response, playlistWebUrl, trackIds),
+        response -> handlePlaylistTracksResponse(response, playlistWebUrl, trackIds),
         () -> buildTrackListUrl(trackIds)
     );
   }
@@ -482,7 +482,7 @@ public class SoundCloudAudioSourceManager implements AudioSourceManager, HttpCon
   }
 
   private JsonBrowser loadLikedListForUserId(HttpInterface httpInterface, UserInfo userInfo) throws IOException {
-    return withClientIdRetry(httpInterface, (response) -> {
+    return withClientIdRetry(httpInterface, response -> {
       int statusCode = response.getStatusLine().getStatusCode();
 
       if (statusCode != 200) {
@@ -540,7 +540,7 @@ public class SoundCloudAudioSourceManager implements AudioSourceManager, HttpCon
 
     try (HttpInterface httpInterface = getHttpInterface()) {
       return withClientIdRetry(httpInterface,
-          (response) -> loadSearchResultsFromResponse(response, query),
+          response -> loadSearchResultsFromResponse(response, query),
           () -> buildSearchUri(query, offset, limit)
       );
     } catch (IOException e) {

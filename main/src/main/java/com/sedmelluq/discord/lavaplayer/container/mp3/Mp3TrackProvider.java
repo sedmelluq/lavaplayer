@@ -1,9 +1,11 @@
 package com.sedmelluq.discord.lavaplayer.container.mp3;
 
-import com.sedmelluq.discord.lavaplayer.filter.FilterChainBuilder;
-import com.sedmelluq.discord.lavaplayer.filter.ShortPcmAudioFilter;
+import com.sedmelluq.discord.lavaplayer.filter.AudioPipeline;
+import com.sedmelluq.discord.lavaplayer.filter.AudioPipelineFactory;
+import com.sedmelluq.discord.lavaplayer.filter.PcmFormat;
 import com.sedmelluq.discord.lavaplayer.natives.mp3.Mp3Decoder;
 import com.sedmelluq.discord.lavaplayer.tools.io.SeekableInputStream;
+import com.sedmelluq.discord.lavaplayer.track.info.AudioTrackInfoProvider;
 import com.sedmelluq.discord.lavaplayer.track.playback.AudioProcessingContext;
 
 import java.io.DataInputStream;
@@ -22,11 +24,14 @@ import static com.sedmelluq.discord.lavaplayer.natives.mp3.Mp3Decoder.MPEG1_SAMP
 /**
  * Handles parsing MP3 files, seeking and sending the decoded frames to the specified frame consumer.
  */
-public class Mp3TrackProvider {
+public class Mp3TrackProvider implements AudioTrackInfoProvider {
   private static final byte[] IDV3_TAG = new byte[] { 0x49, 0x44, 0x33 };
   private static final int IDV3_FLAG_EXTENDED = 0x40;
 
-  private static final List<String> knownTextExtensions = Arrays.asList("TIT2", "TPE1");
+  private static final String TITLE_TAG = "TIT2";
+  private static final String ARTIST_TAG = "TPE1";
+
+  private static final List<String> knownTextExtensions = Arrays.asList(TITLE_TAG, ARTIST_TAG);
 
   private final AudioProcessingContext context;
   private final SeekableInputStream inputStream;
@@ -41,7 +46,7 @@ public class Mp3TrackProvider {
 
   private int sampleRate;
   private int channelCount;
-  private ShortPcmAudioFilter downstream;
+  private AudioPipeline downstream;
   private Mp3Seeker seeker;
 
   /**
@@ -75,7 +80,7 @@ public class Mp3TrackProvider {
 
     sampleRate = Mp3Decoder.getFrameSampleRate(frameBuffer, 0);
     channelCount = Mp3Decoder.getFrameChannelCount(frameBuffer, 0);
-    downstream = context != null ? FilterChainBuilder.forShortPcm(context, channelCount, sampleRate, true) : null;
+    downstream = context != null ? AudioPipelineFactory.create(context, new PcmFormat(channelCount, sampleRate)) : null;
 
     initialiseSeeker();
   }
@@ -97,7 +102,7 @@ public class Mp3TrackProvider {
 
   /**
    * Decodes audio frames and sends them to frame consumer
-   * @throws InterruptedException
+   * @throws InterruptedException When interrupted externally (or for seek/stop).
    */
   public void provideFrames() throws InterruptedException {
     try {
@@ -318,13 +323,41 @@ public class Mp3TrackProvider {
     return null;
   }
 
-  @SuppressWarnings("unused")
+  @Override
+  public String getTitle() {
+    return getIdv3Tag(TITLE_TAG);
+  }
+
+  @Override
+  public String getAuthor() {
+    return getIdv3Tag(ARTIST_TAG);
+  }
+
+  @Override
+  public Long getLength() {
+    return getDuration();
+  }
+
+  @Override
+  public String getIdentifier() {
+    return null;
+  }
+
+  @Override
+  public String getUri() {
+    return null;
+  }
+
   private static class FrameHeader {
     private final String id;
     private final int size;
+    @SuppressWarnings("unused")
     private final boolean tagAlterPreservation;
+    @SuppressWarnings("unused")
     private final boolean fileAlterPreservation;
+    @SuppressWarnings("unused")
     private final boolean readOnly;
+    @SuppressWarnings("unused")
     private final boolean groupingIdentity;
     private final boolean compression;
     private final boolean encryption;

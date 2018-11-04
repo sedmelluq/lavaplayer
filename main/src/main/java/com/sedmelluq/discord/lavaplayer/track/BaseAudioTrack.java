@@ -4,6 +4,7 @@ import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.source.AudioSourceManager;
 import com.sedmelluq.discord.lavaplayer.track.playback.AudioFrame;
 import com.sedmelluq.discord.lavaplayer.track.playback.AudioTrackExecutor;
+import com.sedmelluq.discord.lavaplayer.track.playback.MutableAudioFrame;
 import com.sedmelluq.discord.lavaplayer.track.playback.PrimordialAudioTrackExecutor;
 
 import java.util.concurrent.TimeUnit;
@@ -94,6 +95,18 @@ public abstract class BaseAudioTrack implements InternalAudioTrack {
   @Override
   public AudioFrame provide(long timeout, TimeUnit unit) throws TimeoutException, InterruptedException {
     return getActiveExecutor().provide(timeout, unit);
+  }
+
+  @Override
+  public boolean provide(MutableAudioFrame targetFrame) {
+    return getActiveExecutor().provide(targetFrame);
+  }
+
+  @Override
+  public boolean provide(MutableAudioFrame targetFrame, long timeout, TimeUnit unit)
+      throws TimeoutException, InterruptedException {
+
+    return getActiveExecutor().provide(targetFrame, timeout, unit);
   }
 
   @Override

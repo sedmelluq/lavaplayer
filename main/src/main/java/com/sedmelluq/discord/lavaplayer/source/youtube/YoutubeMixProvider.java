@@ -7,6 +7,7 @@ import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterface;
 import com.sedmelluq.discord.lavaplayer.track.AudioItem;
 import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
+import com.sedmelluq.discord.lavaplayer.track.AudioReference;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.BasicAudioPlaylist;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -23,7 +24,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorCompletionService;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -71,7 +71,7 @@ public class YoutubeMixProvider {
    * @param selectedVideoId Selected track, {@link AudioPlaylist#getSelectedTrack()} will return this.
    * @return Playlist of the tracks in the mix.
    */
-  public AudioPlaylist loadMixWithId(String mixId, String selectedVideoId) {
+  public AudioItem loadMixWithId(String mixId, String selectedVideoId) {
     List<String> videoIds = new ArrayList<>();
 
     try (HttpInterface httpInterface = sourceManager.getHttpInterface()) {
@@ -85,6 +85,10 @@ public class YoutubeMixProvider {
 
         Document document = Jsoup.parse(response.getEntity().getContent(), StandardCharsets.UTF_8.name(), "");
         extractVideoIdsFromMix(document, videoIds);
+
+        if (videoIds.isEmpty() && !document.select("#player-unavailable").isEmpty()) {
+          return AudioReference.NO_TRACK;
+        }
       }
     } catch (IOException e) {
       throw new FriendlyException("Could not read mix page.", SUSPICIOUS, e);

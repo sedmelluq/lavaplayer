@@ -60,7 +60,7 @@ public class RemoteMessageMapper {
     RemoteMessageType type = types[typeIndex];
 
     if (version < 1 || version > type.codec.version(null)) {
-      log.warn("Invalid version {} for message {}.", version, type.name());
+      log.warn("Invalid version {} for message {}.", version, type);
       input.readFully(new byte[messageSize - 2]);
       return UnknownMessage.INSTANCE;
     }

@@ -1,12 +1,14 @@
 package com.sedmelluq.discord.lavaplayer.container.common;
 
-import com.sedmelluq.discord.lavaplayer.filter.FilterChainBuilder;
-import com.sedmelluq.discord.lavaplayer.format.AudioDataFormat;
-import com.sedmelluq.discord.lavaplayer.filter.ShortPcmAudioFilter;
+import com.sedmelluq.discord.lavaplayer.filter.AudioPipeline;
+import com.sedmelluq.discord.lavaplayer.filter.AudioPipelineFactory;
+import com.sedmelluq.discord.lavaplayer.filter.PcmFormat;
 import com.sedmelluq.discord.lavaplayer.filter.volume.AudioFrameVolumeChanger;
+import com.sedmelluq.discord.lavaplayer.format.AudioDataFormat;
+import com.sedmelluq.discord.lavaplayer.format.OpusAudioDataFormat;
 import com.sedmelluq.discord.lavaplayer.natives.opus.OpusDecoder;
-import com.sedmelluq.discord.lavaplayer.track.playback.AudioFrame;
 import com.sedmelluq.discord.lavaplayer.track.playback.AudioProcessingContext;
+import com.sedmelluq.discord.lavaplayer.track.playback.MutableAudioFrame;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,17 +28,18 @@ public class OpusPacketRouter {
   private final int inputFrequency;
   private final int inputChannels;
   private final byte[] headerBytes;
+  private final MutableAudioFrame offeredFrame;
 
   private long currentTimecode;
   private OpusDecoder opusDecoder;
-  private ShortPcmAudioFilter downstream;
+  private AudioPipeline downstream;
   private ByteBuffer directInput;
   private ShortBuffer frameBuffer;
   private AudioDataFormat inputFormat;
   private int lastFrameSize;
 
   /**
-   * @param context Configuration and output information for processing audio
+   * @param context Configuration and output information for processing
    * @param inputFrequency Sample rate of the opus track
    * @param inputChannels Number of channels in the opus track
    */
@@ -45,7 +48,11 @@ public class OpusPacketRouter {
     this.inputFrequency = inputFrequency;
     this.inputChannels = inputChannels;
     this.headerBytes = new byte[2];
+    this.offeredFrame = new MutableAudioFrame();
     this.lastFrameSize = 0;
+
+    offeredFrame.setVolume(100);
+    offeredFrame.setFormat(context.outputFormat);
   }
 
   /**
@@ -64,7 +71,7 @@ public class OpusPacketRouter {
 
   /**
    * Indicates that no more input is coming. Flush any buffers to output.
-   * @throws InterruptedException
+   * @throws InterruptedException When interrupted externally (or for seek/stop).
    */
   public void flush() throws InterruptedException {
     if (downstream != null) {
@@ -75,7 +82,7 @@ public class OpusPacketRouter {
   /**
    * Process one opus packet.
    * @param buffer Byte buffer of the packet
-   * @throws InterruptedException
+   * @throws InterruptedException When interrupted externally (or for seek/stop).
    */
   public void process(ByteBuffer buffer) throws InterruptedException {
     int frameSize = processFrameSize(buffer);
@@ -117,7 +124,7 @@ public class OpusPacketRouter {
       return 0;
     } else if (frameSize != lastFrameSize) {
       lastFrameSize = frameSize;
-      inputFormat = new AudioDataFormat(inputChannels, inputFrequency, frameSize, AudioDataFormat.Codec.OPUS);
+      inputFormat = new OpusAudioDataFormat(inputChannels, inputFrequency, frameSize);
     }
 
     currentTimecode += frameSize * 1000 / inputFrequency;
@@ -153,14 +160,14 @@ public class OpusPacketRouter {
   }
 
   private void passThrough(ByteBuffer buffer) throws InterruptedException {
-    byte[] bytes = new byte[buffer.remaining()];
-    buffer.get(bytes);
+    offeredFrame.setTimecode(currentTimecode);
+    offeredFrame.setBuffer(buffer);
 
-    context.frameConsumer.consume(new AudioFrame(currentTimecode, bytes, 100, inputFormat));
+    context.frameBuffer.consume(offeredFrame);
   }
 
   private void checkDecoderNecessity() {
-    if (FilterChainBuilder.isProcessingRequired(context, inputFormat)) {
+    if (AudioPipelineFactory.isProcessingRequired(context, inputFormat)) {
       if (opusDecoder == null) {
         log.debug("Enabling reencode mode on opus track.");
 
@@ -181,7 +188,7 @@ public class OpusPacketRouter {
 
   private void initialiseDecoder() {
     opusDecoder = new OpusDecoder(inputFrequency, inputChannels);
-    downstream = FilterChainBuilder.forShortPcm(context, inputChannels, inputFrequency, true);
+    downstream = AudioPipelineFactory.create(context, new PcmFormat(inputChannels, inputFrequency));
     downstream.seekPerformed(currentTimecode, currentTimecode);
   }
 

@@ -1,7 +1,8 @@
 plugins {
   id 'java'
-  id 'com.jfrog.bintray' version '1.7.3'
 }
+
+apply plugin: 'com.jfrog.bintray'
 
 version = '1.2.55'
 ext.moduleName = 'lavaplayer-natives'

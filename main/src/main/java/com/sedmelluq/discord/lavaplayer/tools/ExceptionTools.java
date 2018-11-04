@@ -2,6 +2,7 @@ package com.sedmelluq.discord.lavaplayer.tools;
 
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException.Severity;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -13,6 +14,8 @@ import java.util.List;
  * Contains common helper methods for dealing with exceptions.
  */
 public class ExceptionTools {
+  private static final Logger log = LoggerFactory.getLogger(ExceptionTools.class);
+
   /**
    * Sometimes it is necessary to catch Throwable instances for logging or reporting purposes. However, unless for
    * specific known cases, Error instances should not be blocked from propagating, so rethrow them.
@@ -148,6 +151,20 @@ public class ExceptionTools {
     output.writeInt(exception.severity.ordinal());
 
     encodeStackTrace(output, exception);
+  }
+
+  /**
+   * Closes the specified closeable object. In case that throws an error, logs the error with WARN level, but does not
+   * rethrow.
+   *
+   * @param closeable Object to close.
+   */
+  public static void closeWithWarnings(AutoCloseable closeable) {
+    try {
+      closeable.close();
+    } catch (Exception e) {
+      log.warn("Failed to close.", e);
+    }
   }
 
   private static void encodeStackTrace(DataOutput output, Throwable throwable) throws IOException {

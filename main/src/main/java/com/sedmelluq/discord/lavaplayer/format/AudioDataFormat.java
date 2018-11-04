@@ -1,12 +1,15 @@
 package com.sedmelluq.discord.lavaplayer.format;
 
+import com.sedmelluq.discord.lavaplayer.format.transcoder.AudioChunkDecoder;
+import com.sedmelluq.discord.lavaplayer.format.transcoder.AudioChunkEncoder;
+import com.sedmelluq.discord.lavaplayer.player.AudioConfiguration;
+
+import java.util.Objects;
+
 /**
  * Describes the format for audio with fixed chunk size.
  */
-public class AudioDataFormat {
-  private static final byte[] SILENT_OPUS_FRAME = new byte[] {(byte) 0xFC, (byte) 0xFF, (byte) 0xFE};
-
-
+public abstract class AudioDataFormat {
   /**
    * Number of channels.
    */
@@ -19,35 +22,23 @@ public class AudioDataFormat {
    * Number of samples in one chunk.
    */
   public final int chunkSampleCount;
-  /**
-   * Codec used to produce the raw buffer.
-   */
-  public final Codec codec;
-  /**
-   * Bytes representing a silent chunk with this format.
-   */
-  public final byte[] silence;
 
   /**
    * @param channelCount Number of channels.
    * @param sampleRate Sample rate (frequency).
    * @param chunkSampleCount Number of samples in one chunk.
-   * @param codec Codec used to produce the raw buffer.
    */
-  public AudioDataFormat(int channelCount, int sampleRate, int chunkSampleCount, Codec codec) {
+  public AudioDataFormat(int channelCount, int sampleRate, int chunkSampleCount) {
     this.channelCount = channelCount;
     this.sampleRate = sampleRate;
     this.chunkSampleCount = chunkSampleCount;
-    this.codec = codec;
-    this.silence = produceSilence();
   }
 
   /**
-   * @param sampleSize Size per sample.
-   * @return Size of a buffer that can fit one chunk in this format, assuming fixed sample size.
+   * @return Total number of samples in one frame.
    */
-  public int bufferSize(int sampleSize) {
-    return chunkSampleCount * channelCount * sampleSize;
+  public int totalSampleCount() {
+    return chunkSampleCount * channelCount;
   }
 
   /**
@@ -56,6 +47,37 @@ public class AudioDataFormat {
   public long frameDuration() {
     return chunkSampleCount * 1000L / sampleRate;
   }
+
+  /**
+   * @return Name of the codec.
+   */
+  public abstract String codecName();
+
+  /**
+   * @return Byte array representing a frame of silence in this format.
+   */
+  public abstract byte[] silenceBytes();
+
+  /**
+   * @return Generally expected average size of a frame in this format.
+   */
+  public abstract int expectedChunkSize();
+
+  /**
+   * @return Maximum size of a frame in this format.
+   */
+  public abstract int maximumChunkSize();
+
+  /**
+   * @return Decoder to convert data in this format to short PCM.
+   */
+  public abstract AudioChunkDecoder createDecoder();
+
+  /**
+   * @param configuration Configuration to use for encoding.
+   * @return Encoder to convert data in short PCM format to this format.
+   */
+  public abstract AudioChunkEncoder createEncoder(AudioConfiguration configuration);
 
   @Override
   public boolean equals(Object o) {
@@ -67,7 +89,7 @@ public class AudioDataFormat {
     if (channelCount != that.channelCount) return false;
     if (sampleRate != that.sampleRate) return false;
     if (chunkSampleCount != that.chunkSampleCount) return false;
-    return codec == that.codec;
+    return Objects.equals(codecName(), that.codecName());
   }
 
   @Override
@@ -75,33 +97,7 @@ public class AudioDataFormat {
     int result = channelCount;
     result = 31 * result + sampleRate;
     result = 31 * result + chunkSampleCount;
-    result = 31 * result + codec.hashCode();
+    result = 31 * result + codecName().hashCode();
     return result;
-  }
-
-  private byte[] produceSilence() {
-    if (codec == Codec.OPUS) {
-      return SILENT_OPUS_FRAME;
-    } else {
-      return new byte[bufferSize(2)];
-    }
-  }
-
-  /**
-   * Codec of the audio.
-   */
-  public enum Codec {
-    /**
-     * Opus codec.
-     */
-    OPUS,
-    /**
-     * Signed 16-bit little-endian PCM
-     */
-    PCM_S16_LE,
-    /**
-     * Signed 16-bit big-endian PCM
-     */
-    PCM_S16_BE
   }
 }

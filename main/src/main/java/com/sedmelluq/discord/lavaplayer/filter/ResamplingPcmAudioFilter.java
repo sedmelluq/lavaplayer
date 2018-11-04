@@ -21,7 +21,9 @@ public class ResamplingPcmAudioFilter implements FloatPcmAudioFilter {
    * @param sourceRate Source sample rate
    * @param targetRate Target sample rate
    */
-  public ResamplingPcmAudioFilter(AudioConfiguration configuration, int channels, FloatPcmAudioFilter downstream, int sourceRate, int targetRate) {
+  public ResamplingPcmAudioFilter(AudioConfiguration configuration, int channels, FloatPcmAudioFilter downstream,
+                                  int sourceRate, int targetRate) {
+
     this.downstream = downstream;
     converters = new SampleRateConverter[channels];
     outputSegments = new float[channels][];
@@ -39,13 +41,11 @@ public class ResamplingPcmAudioFilter implements FloatPcmAudioFilter {
     for (SampleRateConverter converter : converters) {
       converter.reset();
     }
-
-    downstream.seekPerformed(requestedTime, providedTime);
   }
 
   @Override
   public void flush() throws InterruptedException {
-    downstream.flush();
+    // Nothing to do.
   }
 
   @Override
@@ -53,8 +53,6 @@ public class ResamplingPcmAudioFilter implements FloatPcmAudioFilter {
     for (SampleRateConverter converter : converters) {
       converter.close();
     }
-
-    downstream.close();
   }
 
   @Override

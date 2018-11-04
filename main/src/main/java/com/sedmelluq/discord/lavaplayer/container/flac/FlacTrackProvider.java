@@ -1,8 +1,9 @@
 package com.sedmelluq.discord.lavaplayer.container.flac;
 
 import com.sedmelluq.discord.lavaplayer.container.flac.frame.FlacFrameReader;
-import com.sedmelluq.discord.lavaplayer.filter.FilterChainBuilder;
-import com.sedmelluq.discord.lavaplayer.filter.SplitShortPcmAudioFilter;
+import com.sedmelluq.discord.lavaplayer.filter.AudioPipeline;
+import com.sedmelluq.discord.lavaplayer.filter.AudioPipelineFactory;
+import com.sedmelluq.discord.lavaplayer.filter.PcmFormat;
 import com.sedmelluq.discord.lavaplayer.tools.io.BitStreamReader;
 import com.sedmelluq.discord.lavaplayer.tools.io.SeekableInputStream;
 import com.sedmelluq.discord.lavaplayer.track.playback.AudioProcessingContext;
@@ -15,7 +16,7 @@ import java.io.IOException;
 public class FlacTrackProvider {
   private final FlacTrackInfo info;
   private final SeekableInputStream inputStream;
-  private final SplitShortPcmAudioFilter downstream;
+  private final AudioPipeline downstream;
   private final BitStreamReader bitStreamReader;
   private final int[] decodingBuffer;
   private final int[][] rawSampleBuffers;
@@ -29,7 +30,8 @@ public class FlacTrackProvider {
   public FlacTrackProvider(AudioProcessingContext context, FlacTrackInfo info, SeekableInputStream inputStream) {
     this.info = info;
     this.inputStream = inputStream;
-    this.downstream = FilterChainBuilder.forSplitShortPcm(context, info.stream.sampleRate);
+    this.downstream = AudioPipelineFactory.create(context,
+        new PcmFormat(info.stream.channelCount, info.stream.sampleRate));
     this.bitStreamReader = new BitStreamReader(inputStream);
     this.decodingBuffer = new int[FlacFrameReader.TEMPORARY_BUFFER_SIZE];
     this.rawSampleBuffers = new int[info.stream.channelCount][];
@@ -43,7 +45,7 @@ public class FlacTrackProvider {
 
   /**
    * Decodes audio frames and sends them to frame consumer
-   * @throws InterruptedException
+   * @throws InterruptedException When interrupted externally (or for seek/stop).
    */
   public void provideFrames() throws InterruptedException {
     try {

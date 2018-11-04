@@ -1,18 +1,17 @@
 package com.sedmelluq.discord.lavaplayer.player;
 
-import com.sedmelluq.discord.lavaplayer.player.hook.AudioOutputHook;
-import com.sedmelluq.discord.lavaplayer.player.hook.AudioOutputHookFactory;
 import com.sedmelluq.discord.lavaplayer.remote.RemoteAudioTrackExecutor;
 import com.sedmelluq.discord.lavaplayer.remote.RemoteNodeManager;
 import com.sedmelluq.discord.lavaplayer.remote.RemoteNodeRegistry;
 import com.sedmelluq.discord.lavaplayer.source.AudioSourceManager;
+import com.sedmelluq.discord.lavaplayer.source.ProbingAudioSourceManager;
 import com.sedmelluq.discord.lavaplayer.tools.DaemonThreadFactory;
 import com.sedmelluq.discord.lavaplayer.tools.DataFormatTools;
 import com.sedmelluq.discord.lavaplayer.tools.ExceptionTools;
 import com.sedmelluq.discord.lavaplayer.tools.ExecutorTools;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
-import com.sedmelluq.discord.lavaplayer.tools.OrderedExecutor;
 import com.sedmelluq.discord.lavaplayer.tools.GarbageCollectionMonitor;
+import com.sedmelluq.discord.lavaplayer.tools.OrderedExecutor;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpConfigurable;
 import com.sedmelluq.discord.lavaplayer.tools.io.MessageInput;
 import com.sedmelluq.discord.lavaplayer.tools.io.MessageOutput;
@@ -40,9 +39,8 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -52,7 +50,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -92,7 +89,6 @@ public class DefaultAudioPlayerManager implements AudioPlayerManager {
   private final AtomicLong cleanupThreshold;
   private volatile int frameBufferDuration;
   private volatile boolean useSeekGhosting;
-  private volatile AudioOutputHookFactory outputHookFactory;
 
   // Additional services
   private final RemoteNodeManager remoteNodeManager;
@@ -120,7 +116,6 @@ public class DefaultAudioPlayerManager implements AudioPlayerManager {
     cleanupThreshold = new AtomicLong(DEFAULT_CLEANUP_THRESHOLD);
     frameBufferDuration = DEFAULT_FRAME_BUFFER_DURATION;
     useSeekGhosting = true;
-    outputHookFactory = null;
 
     // Additional services
     remoteNodeManager = new RemoteNodeManager(this);
@@ -142,11 +137,6 @@ public class DefaultAudioPlayerManager implements AudioPlayerManager {
     ExecutorTools.shutdownExecutor(trackPlaybackExecutorService, "track playback");
     ExecutorTools.shutdownExecutor(trackInfoExecutorService, "track info");
     ExecutorTools.shutdownExecutor(scheduledExecutorService, "scheduled operations");
-  }
-
-  @Override
-  public void setOutputHookFactory(AudioOutputHookFactory outputHookFactory) {
-    this.outputHookFactory = outputHookFactory;
   }
 
   @Override
@@ -350,27 +340,32 @@ public class DefaultAudioPlayerManager implements AudioPlayerManager {
    * @param listener A listener for track state events
    * @param track The audio track to execute
    * @param configuration The audio configuration to use for executing
-   * @param volumeLevel The mutable volume level to use
+   * @param playerOptions Options of the audio player
    */
-  public void executeTrack(final TrackStateListener listener, InternalAudioTrack track, AudioConfiguration configuration, AtomicInteger volumeLevel) {
-    final AudioTrackExecutor executor = createExecutorForTrack(track, configuration, volumeLevel);
+  public void executeTrack(TrackStateListener listener, InternalAudioTrack track, AudioConfiguration configuration,
+                           AudioPlayerOptions playerOptions) {
+
+    final AudioTrackExecutor executor = createExecutorForTrack(track, configuration, playerOptions);
     track.assignExecutor(executor, true);
 
     trackPlaybackExecutorService.execute(() -> executor.execute(listener));
   }
 
-  private AudioTrackExecutor createExecutorForTrack(InternalAudioTrack track, AudioConfiguration configuration, AtomicInteger volumeLevel) {
+  private AudioTrackExecutor createExecutorForTrack(InternalAudioTrack track, AudioConfiguration configuration,
+                                                    AudioPlayerOptions playerOptions) {
+
     AudioSourceManager sourceManager = track.getSourceManager();
 
     if (remoteNodeManager.isEnabled() && sourceManager != null && sourceManager.isTrackEncodable(track)) {
-      return new RemoteAudioTrackExecutor(track, configuration, remoteNodeManager, volumeLevel);
+      return new RemoteAudioTrackExecutor(track, configuration, remoteNodeManager, playerOptions.volumeLevel);
     } else {
       AudioTrackExecutor customExecutor = track.createLocalExecutor(this);
 
       if (customExecutor != null) {
         return customExecutor;
       } else {
-        return new LocalAudioTrackExecutor(track, configuration, volumeLevel, useSeekGhosting, frameBufferDuration);
+        int bufferDuration = Optional.ofNullable(playerOptions.frameBufferDuration.get()).orElse(frameBufferDuration);
+        return new LocalAudioTrackExecutor(track, configuration, playerOptions, useSeekGhosting, bufferDuration);
       }
     }
   }
@@ -437,6 +432,10 @@ public class DefaultAudioPlayerManager implements AudioPlayerManager {
 
   private AudioItem checkSourcesForItemOnce(AudioReference reference, AudioLoadResultHandler resultHandler, boolean[] reported) {
     for (AudioSourceManager sourceManager : sourceManagers) {
+      if (reference.containerDescriptor != null && !(sourceManager instanceof ProbingAudioSourceManager)) {
+        continue;
+      }
+
       AudioItem item = sourceManager.loadItem(this, reference);
 
       if (item != null) {
@@ -462,8 +461,7 @@ public class DefaultAudioPlayerManager implements AudioPlayerManager {
 
   @Override
   public AudioPlayer createPlayer() {
-    AudioOutputHook outputHook = outputHookFactory != null ? outputHookFactory.createOutputHook() : null;
-    AudioPlayer player = new AudioPlayer(this, outputHook);
+    AudioPlayer player = constructPlayer();
     player.addListener(lifecycleManager);
 
     if (remoteNodeManager.isEnabled()) {
@@ -471,6 +469,10 @@ public class DefaultAudioPlayerManager implements AudioPlayerManager {
     }
 
     return player;
+  }
+
+  protected AudioPlayer constructPlayer() {
+    return new DefaultAudioPlayer(this);
   }
 
   @Override

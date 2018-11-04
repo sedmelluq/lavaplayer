@@ -77,8 +77,9 @@ public interface AudioTrack extends AudioItem {
   Object getUserData();
 
   /**
+   * @param klass The expected class of the user data (or a superclass of it).
    * @return Object previously stored with {@link #setUserData(Object)} if it is of the specified type. If it is set,
-   * but with a different type, null is returned.
+   *         but with a different type, null is returned.
    */
   <T> T getUserData(Class<T> klass);
 }

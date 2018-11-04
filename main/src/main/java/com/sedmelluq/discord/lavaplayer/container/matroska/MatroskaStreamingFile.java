@@ -72,6 +72,8 @@ public class MatroskaStreamingFile {
 
   /**
    * Read the headers and tracks from the file.
+   *
+   * @throws IOException On read error.
    */
   public void readFile() throws IOException {
     MatroskaElement ebmlElement = reader.readNextElement(null);
@@ -282,7 +284,7 @@ public class MatroskaStreamingFile {
   /**
    * Provide data chunks for the specified track consumer
    * @param consumer Track data consumer
-   * @throws InterruptedException
+   * @throws InterruptedException When interrupted externally (or for seek/stop).
    */
   public void provideFrames(MatroskaTrackConsumer consumer) throws InterruptedException {
     try {

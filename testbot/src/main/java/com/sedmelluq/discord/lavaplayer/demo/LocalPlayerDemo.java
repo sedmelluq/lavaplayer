@@ -15,11 +15,13 @@ import javax.sound.sampled.LineUnavailableException;
 import javax.sound.sampled.SourceDataLine;
 import java.io.IOException;
 
+import static com.sedmelluq.discord.lavaplayer.format.StandardAudioDataFormats.COMMON_PCM_S16_BE;
+
 public class LocalPlayerDemo {
   public static void main(String[] args) throws LineUnavailableException, IOException {
     AudioPlayerManager manager = new DefaultAudioPlayerManager();
     AudioSourceManagers.registerRemoteSources(manager);
-    manager.getConfiguration().setOutputFormat(new AudioDataFormat(2, 44100, 960, AudioDataFormat.Codec.PCM_S16_BE));
+    manager.getConfiguration().setOutputFormat(COMMON_PCM_S16_BE);
 
     AudioPlayer player = manager.createPlayer();
 
@@ -35,7 +37,7 @@ public class LocalPlayerDemo {
     line.open(stream.getFormat());
     line.start();
 
-    byte[] buffer = new byte[format.bufferSize(2)];
+    byte[] buffer = new byte[COMMON_PCM_S16_BE.maximumChunkSize()];
     int chunkSize;
 
     while ((chunkSize = stream.read(buffer)) >= 0) {

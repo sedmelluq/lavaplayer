@@ -134,9 +134,9 @@ public class GarbageCollectionMonitor implements NotificationListener, Runnable 
     }
 
     if (hasBadLatency) {
-      log.warn("Suspicious GC results for the last 2 minutes: {}", statistics.toString());
+      log.warn("Suspicious GC results for the last 2 minutes: {}", statistics);
     } else {
-      log.debug("GC results for the last 2 minutes: {}", statistics.toString());
+      log.debug("GC results for the last 2 minutes: {}", statistics);
     }
   }
 }

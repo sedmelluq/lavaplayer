@@ -11,6 +11,11 @@ import com.sedmelluq.discord.lavaplayer.container.playlists.PlainPlaylistContain
 import com.sedmelluq.discord.lavaplayer.container.playlists.PlsPlaylistContainerProbe;
 import com.sedmelluq.discord.lavaplayer.container.wav.WavContainerProbe;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 /**
  * Lists currently supported containers and their probes.
  */
@@ -33,5 +38,15 @@ public enum MediaContainer {
 
   MediaContainer(MediaContainerProbe probe) {
     this.probe = probe;
+  }
+
+  public static List<MediaContainerProbe> asList() {
+    List<MediaContainerProbe> probes = new ArrayList<>();
+
+    for (MediaContainer container : MediaContainer.class.getEnumConstants()) {
+      probes.add(container.probe);
+    }
+
+    return probes;
   }
 }

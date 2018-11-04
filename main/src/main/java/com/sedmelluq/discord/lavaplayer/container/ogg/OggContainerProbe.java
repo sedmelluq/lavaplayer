@@ -7,14 +7,14 @@ import com.sedmelluq.discord.lavaplayer.tools.io.SeekableInputStream;
 import com.sedmelluq.discord.lavaplayer.track.AudioReference;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo;
+import com.sedmelluq.discord.lavaplayer.track.info.AudioTrackInfoBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 
-import static com.sedmelluq.discord.lavaplayer.container.MediaContainerDetection.UNKNOWN_ARTIST;
-import static com.sedmelluq.discord.lavaplayer.container.MediaContainerDetection.UNKNOWN_TITLE;
 import static com.sedmelluq.discord.lavaplayer.container.MediaContainerDetection.checkNextBytes;
+import static com.sedmelluq.discord.lavaplayer.container.MediaContainerDetectionResult.supportedFormat;
 import static com.sedmelluq.discord.lavaplayer.container.ogg.OggPacketInputStream.OGG_PAGE_HEADER;
 
 /**
@@ -41,18 +41,38 @@ public class OggContainerProbe implements MediaContainerProbe {
 
     log.debug("Track {} is an OGG stream.", reference.identifier);
 
-    return new MediaContainerDetectionResult(this, new AudioTrackInfo(
-        reference.title != null ? reference.title : UNKNOWN_TITLE,
-        UNKNOWN_ARTIST,
-        Long.MAX_VALUE,
-        reference.identifier,
-        true,
-        reference.identifier
-    ));
+    AudioTrackInfoBuilder infoBuilder = AudioTrackInfoBuilder.create(reference, stream).setIsStream(true);
+
+    try {
+      collectStreamInformation(stream, infoBuilder);
+    } catch (Exception e) {
+      log.warn("Failed to collect additional information on OGG stream.", e);
+    }
+
+    return supportedFormat(this, null, infoBuilder.build());
   }
 
   @Override
-  public AudioTrack createTrack(AudioTrackInfo trackInfo, SeekableInputStream inputStream) {
+  public AudioTrack createTrack(String parameters, AudioTrackInfo trackInfo, SeekableInputStream inputStream) {
     return new OggAudioTrack(trackInfo, inputStream);
+  }
+
+  private void collectStreamInformation(SeekableInputStream stream, AudioTrackInfoBuilder infoBuilder) throws IOException {
+    OggPacketInputStream packetInputStream = new OggPacketInputStream(stream);
+    OggTrackProvider track = OggTrackLoader.loadTrack(packetInputStream);
+
+    if (track != null) {
+      try {
+        infoBuilder.apply(track.getMetadata());
+
+        OggStreamSizeInfo sizeInfo = track.seekForSizeInfo();
+
+        if (sizeInfo != null) {
+          infoBuilder.setLength(sizeInfo.totalSamples * 1000 / sizeInfo.sampleRate);
+        }
+      } finally {
+        track.close();
+      }
+    }
   }
 }

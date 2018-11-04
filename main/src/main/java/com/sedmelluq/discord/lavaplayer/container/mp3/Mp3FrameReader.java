@@ -55,14 +55,13 @@ public class Mp3FrameReader {
 
   private boolean runFrameScanLoop(int bytesToCheck, int bytesInBuffer, boolean throwOnLimit) throws IOException {
     while (bytesToCheck > 0) {
-      for (int i = bytesInBuffer; i < scanBuffer.length && bytesToCheck > 0; i++) {
+      for (int i = bytesInBuffer; i < scanBuffer.length && bytesToCheck > 0; i++, bytesToCheck--) {
         int next = inputStream.read();
         if (next == -1) {
           return false;
         }
 
         scanBuffer[i] = (byte) (next & 0xFF);
-        bytesToCheck--;
 
         if (parseFrameAt(i + 1)) {
           frameHeaderRead = true;

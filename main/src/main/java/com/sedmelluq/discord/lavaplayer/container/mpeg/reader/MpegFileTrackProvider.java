@@ -19,6 +19,8 @@ public interface MpegFileTrackProvider {
 
   /**
    * Provide audio frames to the frame consumer until the end of the track or interruption.
+   *
+   * @throws InterruptedException When interrupted externally (or for seek/stop).
    */
   void provideFrames() throws InterruptedException;
 

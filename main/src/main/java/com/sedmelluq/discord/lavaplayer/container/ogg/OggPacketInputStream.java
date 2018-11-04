@@ -1,6 +1,7 @@
 package com.sedmelluq.discord.lavaplayer.container.ogg;
 
 import com.sedmelluq.discord.lavaplayer.tools.io.SeekableInputStream;
+import com.sedmelluq.discord.lavaplayer.tools.io.StreamTools;
 
 import java.io.DataInput;
 import java.io.DataInputStream;
@@ -17,6 +18,9 @@ import static com.sedmelluq.discord.lavaplayer.container.MediaContainerDetection
  */
 public class OggPacketInputStream extends InputStream {
   static final int[] OGG_PAGE_HEADER = new int[] { 0x4F, 0x67, 0x67, 0x53 };
+
+  private static final int SHORT_SCAN = 10240;
+  private static final int LONG_SCAN = 65307;
 
   private final SeekableInputStream inputStream;
   private final DataInput dataInput;
@@ -41,9 +45,8 @@ public class OggPacketInputStream extends InputStream {
   /**
    * Load the next track from the stream. This is only valid when the stream is in a track boundary state.
    * @return True if next track is present in the stream, false if the stream has terminated.
-   * @throws IOException On read error.
    */
-  public boolean startNewTrack() throws IOException {
+  public boolean startNewTrack() {
     if (state == State.TERMINATED) {
       return false;
     } else if (state != State.TRACK_BOUNDARY) {
@@ -93,8 +96,10 @@ public class OggPacketInputStream extends InputStream {
     int pageSequence = Integer.reverseBytes(dataInput.readInt());
     int checksum = Integer.reverseBytes(dataInput.readInt());
     int segmentCount = dataInput.readByte() & 0xFF;
+    long byteStreamPosition = inputStream.getPosition() - 27;
 
-    pageHeader = new OggPageHeader(flags, position, streamIdentifier, pageSequence, checksum, segmentCount);
+    pageHeader = new OggPageHeader(flags, position, streamIdentifier, pageSequence, checksum, segmentCount,
+        byteStreamPosition);
 
     for (int i = 0; i < segmentCount; i++) {
       segmentSizes[i] = dataInput.readByte() & 0xFF;
@@ -159,9 +164,8 @@ public class OggPacketInputStream extends InputStream {
    *
    * @return Returns false if the remaining size of the packet was zero, state is PACKET_BOUNDARY.
    *         Returns true if the initialised packet has any bytes in it, state is PACKET_READ.
-   * @throws IOException On read error.
    */
-  private boolean initialisePacket() throws IOException {
+  private boolean initialisePacket() {
     while (nextPacketSegmentIndex < pageHeader.segmentCount) {
       int size = segmentSizes[nextPacketSegmentIndex++];
       bytesLeftInPacket += size;
@@ -252,6 +256,46 @@ public class OggPacketInputStream extends InputStream {
     }
 
     return Math.min(inputStream.available(), bytesLeftInPacket);
+  }
+
+  /**
+   * If it is possible to seek backwards on this stream, and the length of the stream is known, seeks to the end of the
+   * track to determine the stream length both in bytes and samples.
+   *
+   * @param sampleRate Sample rate of the track in this stream.
+   * @return OGG stream size information.
+   * @throws IOException On read error.
+   */
+  public OggStreamSizeInfo seekForSizeInfo(int sampleRate) throws IOException {
+    if (!inputStream.canSeekHard()) {
+      return null;
+    }
+
+    long savedPosition = inputStream.getPosition();
+
+    OggStreamSizeInfo sizeInfo = scanForSizeInfo(SHORT_SCAN, sampleRate);
+
+    if (sizeInfo == null) {
+      sizeInfo = scanForSizeInfo(LONG_SCAN, sampleRate);
+    }
+
+    inputStream.seek(savedPosition);
+    return sizeInfo;
+  }
+
+  private OggStreamSizeInfo scanForSizeInfo(int tailLength, int sampleRate) throws IOException {
+    if (pageHeader == null) {
+      return null;
+    }
+
+    long absoluteOffset = Math.max(pageHeader.byteStreamPosition, inputStream.getContentLength() - tailLength);
+    inputStream.seek(absoluteOffset);
+
+    byte[] data = new byte[tailLength];
+    int dataLength = StreamTools.readUntilEnd(inputStream, data, 0, data.length);
+
+    return new OggPageScanner(absoluteOffset, data, dataLength).scanForSizeInfo(pageHeader.byteStreamPosition,
+        sampleRate);
   }
 
   /**

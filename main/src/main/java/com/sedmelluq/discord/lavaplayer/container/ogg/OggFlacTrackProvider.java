@@ -2,8 +2,9 @@ package com.sedmelluq.discord.lavaplayer.container.ogg;
 
 import com.sedmelluq.discord.lavaplayer.container.flac.FlacTrackInfo;
 import com.sedmelluq.discord.lavaplayer.container.flac.frame.FlacFrameReader;
-import com.sedmelluq.discord.lavaplayer.filter.FilterChainBuilder;
-import com.sedmelluq.discord.lavaplayer.filter.SplitShortPcmAudioFilter;
+import com.sedmelluq.discord.lavaplayer.filter.AudioPipeline;
+import com.sedmelluq.discord.lavaplayer.filter.AudioPipelineFactory;
+import com.sedmelluq.discord.lavaplayer.filter.PcmFormat;
 import com.sedmelluq.discord.lavaplayer.tools.io.BitStreamReader;
 import com.sedmelluq.discord.lavaplayer.track.playback.AudioProcessingContext;
 
@@ -19,7 +20,7 @@ public class OggFlacTrackProvider implements OggTrackProvider {
   private final int[] decodingBuffer;
   private final int[][] rawSampleBuffers;
   private final short[][] sampleBuffers;
-  private SplitShortPcmAudioFilter downstream;
+  private AudioPipeline downstream;
 
   /**
    * @param info FLAC track info
@@ -40,8 +41,23 @@ public class OggFlacTrackProvider implements OggTrackProvider {
   }
 
   @Override
-  public void initialise(AudioProcessingContext context) {
-    downstream = FilterChainBuilder.forSplitShortPcm(context, info.stream.sampleRate);
+  public void initialise(AudioProcessingContext context) throws IOException {
+    downstream = AudioPipelineFactory.create(context,
+        new PcmFormat(info.stream.channelCount, info.stream.sampleRate));
+  }
+
+  @Override
+  public OggMetadata getMetadata() {
+    return new OggMetadata(info.tags);
+  }
+
+  @Override
+  public OggStreamSizeInfo seekForSizeInfo() throws IOException {
+    if (info.stream.sampleCount > 0) {
+      return new OggStreamSizeInfo(0, info.stream.sampleCount, 0, 0, info.stream.sampleRate);
+    } else {
+      return packetInputStream.seekForSizeInfo(info.stream.sampleRate);
+    }
   }
 
   @Override

@@ -2,6 +2,8 @@ package com.sedmelluq.discord.lavaplayer.player;
 
 import com.sedmelluq.discord.lavaplayer.format.AudioDataFormat;
 import com.sedmelluq.discord.lavaplayer.format.StandardAudioDataFormats;
+import com.sedmelluq.discord.lavaplayer.track.playback.AllocatingAudioFrameBuffer;
+import com.sedmelluq.discord.lavaplayer.track.playback.AudioFrameBufferFactory;
 
 /**
  * Configuration for audio processing.
@@ -12,6 +14,8 @@ public class AudioConfiguration {
   private volatile ResamplingQuality resamplingQuality;
   private volatile int opusEncodingQuality;
   private volatile AudioDataFormat outputFormat;
+  private volatile boolean filterHotSwapEnabled;
+  private volatile AudioFrameBufferFactory frameBufferFactory;
 
   /**
    * Create a new configuration with default values.
@@ -20,6 +24,8 @@ public class AudioConfiguration {
     resamplingQuality = ResamplingQuality.LOW;
     opusEncodingQuality = OPUS_QUALITY_MAX;
     outputFormat = StandardAudioDataFormats.DISCORD_OPUS;
+    filterHotSwapEnabled = false;
+    frameBufferFactory = AllocatingAudioFrameBuffer::new;
   }
 
   public ResamplingQuality getResamplingQuality() {
@@ -46,6 +52,22 @@ public class AudioConfiguration {
     this.outputFormat = outputFormat;
   }
 
+  public boolean isFilterHotSwapEnabled() {
+    return filterHotSwapEnabled;
+  }
+
+  public void setFilterHotSwapEnabled(boolean filterHotSwapEnabled) {
+    this.filterHotSwapEnabled = filterHotSwapEnabled;
+  }
+
+  public AudioFrameBufferFactory getFrameBufferFactory() {
+    return frameBufferFactory;
+  }
+
+  public void setFrameBufferFactory(AudioFrameBufferFactory frameBufferFactory) {
+    this.frameBufferFactory = frameBufferFactory;
+  }
+
   /**
    * @return A copy of this configuration.
    */
@@ -54,6 +76,8 @@ public class AudioConfiguration {
     copy.setResamplingQuality(resamplingQuality);
     copy.setOpusEncodingQuality(opusEncodingQuality);
     copy.setOutputFormat(outputFormat);
+    copy.setFilterHotSwapEnabled(filterHotSwapEnabled);
+    copy.setFrameBufferFactory(frameBufferFactory);
     return copy;
   }
 

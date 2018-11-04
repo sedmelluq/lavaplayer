@@ -4,19 +4,19 @@ import com.sedmelluq.discord.lavaplayer.container.MediaContainerDetectionResult;
 import com.sedmelluq.discord.lavaplayer.container.MediaContainerHints;
 import com.sedmelluq.discord.lavaplayer.container.MediaContainerProbe;
 import com.sedmelluq.discord.lavaplayer.container.mpeg.reader.MpegFileTrackProvider;
-import com.sedmelluq.discord.lavaplayer.tools.DataFormatTools;
 import com.sedmelluq.discord.lavaplayer.tools.io.SeekableInputStream;
 import com.sedmelluq.discord.lavaplayer.track.AudioReference;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo;
+import com.sedmelluq.discord.lavaplayer.track.info.AudioTrackInfoBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 
-import static com.sedmelluq.discord.lavaplayer.container.MediaContainerDetection.UNKNOWN_ARTIST;
-import static com.sedmelluq.discord.lavaplayer.container.MediaContainerDetection.UNKNOWN_TITLE;
 import static com.sedmelluq.discord.lavaplayer.container.MediaContainerDetection.checkNextBytes;
+import static com.sedmelluq.discord.lavaplayer.container.MediaContainerDetectionResult.supportedFormat;
+import static com.sedmelluq.discord.lavaplayer.container.MediaContainerDetectionResult.unsupportedFormat;
 
 /**
  * Container detection probe for MP4 format.
@@ -50,28 +50,27 @@ public class MpegContainerProbe implements MediaContainerProbe {
     MpegTrackInfo audioTrack = getSupportedAudioTrack(file);
 
     if (audioTrack == null) {
-      return new MediaContainerDetectionResult(this, "No supported audio format in the MP4 file.");
+      return unsupportedFormat(this, "No supported audio format in the MP4 file.");
     }
 
     MpegTrackConsumer trackConsumer = new MpegNoopTrackConsumer(audioTrack);
     MpegFileTrackProvider fileReader = file.loadReader(trackConsumer);
 
     if (fileReader == null) {
-      return new MediaContainerDetectionResult(this, "MP4 file uses an unsupported format.");
+      return unsupportedFormat(this, "MP4 file uses an unsupported format.");
     }
 
-    return new MediaContainerDetectionResult(this, new AudioTrackInfo(
-        DataFormatTools.defaultOnNull(file.getTextMetadata("Title"), UNKNOWN_TITLE),
-        DataFormatTools.defaultOnNull(file.getTextMetadata("Artist"), UNKNOWN_ARTIST),
-        fileReader.getDuration(),
-        reference.identifier,
-        false,
-        reference.identifier
-    ));
+    AudioTrackInfo trackInfo = AudioTrackInfoBuilder.create(reference, inputStream)
+        .setTitle(file.getTextMetadata("Title"))
+        .setAuthor(file.getTextMetadata("Artist"))
+        .setLength(fileReader.getDuration())
+        .build();
+
+    return supportedFormat(this, null, trackInfo);
   }
 
   @Override
-  public AudioTrack createTrack(AudioTrackInfo trackInfo, SeekableInputStream inputStream) {
+  public AudioTrack createTrack(String parameters, AudioTrackInfo trackInfo, SeekableInputStream inputStream) {
     return new MpegAudioTrack(trackInfo, inputStream);
   }
 

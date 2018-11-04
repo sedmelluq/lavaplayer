@@ -1,8 +1,10 @@
 package com.sedmelluq.discord.lavaplayer.container.mpeg;
 
-import com.sedmelluq.discord.lavaplayer.filter.FilterChainBuilder;
+import com.sedmelluq.discord.lavaplayer.container.common.AacPacketRouter;
+import com.sedmelluq.discord.lavaplayer.filter.AudioPipeline;
+import com.sedmelluq.discord.lavaplayer.filter.AudioPipelineFactory;
+import com.sedmelluq.discord.lavaplayer.filter.PcmFormat;
 import com.sedmelluq.discord.lavaplayer.natives.aac.AacDecoder;
-import com.sedmelluq.discord.lavaplayer.filter.ShortPcmAudioFilter;
 import com.sedmelluq.discord.lavaplayer.track.playback.AudioProcessingContext;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
@@ -24,10 +26,7 @@ public class MpegAacTrackConsumer implements MpegTrackConsumer {
 
   private final MpegTrackInfo track;
   private final ByteBuffer inputBuffer;
-  private final ShortBuffer outputBuffer;
-  private final ShortPcmAudioFilter downstream;
-
-  private AacDecoder decoder;
+  private final AacPacketRouter packetRouter;
 
   /**
    * @param context Configuration and output information for processing
@@ -35,17 +34,14 @@ public class MpegAacTrackConsumer implements MpegTrackConsumer {
    */
   public MpegAacTrackConsumer(AudioProcessingContext context, MpegTrackInfo track) {
     this.track = track;
-    this.decoder = new AacDecoder();
     this.inputBuffer = ByteBuffer.allocateDirect(4096);
-    this.outputBuffer = ByteBuffer.allocateDirect(2048 * track.channelCount).order(ByteOrder.nativeOrder()).asShortBuffer();
-    this.downstream = FilterChainBuilder.forShortPcm(context, track.channelCount, track.sampleRate, true);
+    this.packetRouter = new AacPacketRouter(context, this::configureDecoder);
   }
 
   @Override
   public void initialise() {
-    log.debug("Initialising AAC track with frequency {} and channel count {}.", track.sampleRate, track.channelCount);
-
-    decoder.configure(AacDecoder.AAC_LC, track.sampleRate, track.channelCount);
+    log.debug("Initialising AAC track with expected frequency {} and channel count {}.",
+        track.sampleRate, track.channelCount);
   }
 
   @Override
@@ -55,19 +51,12 @@ public class MpegAacTrackConsumer implements MpegTrackConsumer {
 
   @Override
   public void seekPerformed(long requestedTimecode, long providedTimecode) {
-    downstream.seekPerformed(requestedTimecode, providedTimecode);
-
-    decoder.close();
-    decoder = new AacDecoder();
-    decoder.configure(AacDecoder.AAC_LC, track.sampleRate, track.channelCount);
+    packetRouter.seekPerformed(requestedTimecode, providedTimecode);
   }
 
   @Override
   public void flush() throws InterruptedException {
-    while (decoder.decode(outputBuffer, true)) {
-      downstream.process(outputBuffer);
-      outputBuffer.clear();
-    }
+    packetRouter.flush();
   }
 
   @Override
@@ -92,12 +81,7 @@ public class MpegAacTrackConsumer implements MpegTrackConsumer {
       }
 
       inputBuffer.flip();
-      decoder.fill(inputBuffer);
-
-      while (decoder.decode(outputBuffer, false)) {
-        downstream.process(outputBuffer);
-        outputBuffer.clear();
-      }
+      packetRouter.processInput(inputBuffer);
 
       remaining -= chunk;
     }
@@ -105,7 +89,10 @@ public class MpegAacTrackConsumer implements MpegTrackConsumer {
 
   @Override
   public void close() {
-    downstream.close();
-    decoder.close();
+    packetRouter.close();
+  }
+
+  private void configureDecoder(AacDecoder decoder) {
+    decoder.configure(AacDecoder.AAC_LC, track.sampleRate, track.channelCount);
   }
 }

@@ -3,6 +3,7 @@ package com.sedmelluq.discord.lavaplayer.source.vimeo;
 import com.sedmelluq.discord.lavaplayer.player.DefaultAudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.source.AudioSourceManager;
 import com.sedmelluq.discord.lavaplayer.tools.DataFormatTools;
+import com.sedmelluq.discord.lavaplayer.tools.ExceptionTools;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.tools.JsonBrowser;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpConfigurable;
@@ -80,7 +81,7 @@ public class VimeoAudioSourceManager implements AudioSourceManager, HttpConfigur
 
   @Override
   public void shutdown() {
-    // Nothing to shut down
+    ExceptionTools.closeWithWarnings(httpInterfaceManager);
   }
 
   /**

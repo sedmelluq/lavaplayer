@@ -20,6 +20,8 @@ import java.util.regex.Pattern;
 
 import static com.sedmelluq.discord.lavaplayer.container.MediaContainerDetection.UNKNOWN_TITLE;
 import static com.sedmelluq.discord.lavaplayer.container.MediaContainerDetection.checkNextBytes;
+import static com.sedmelluq.discord.lavaplayer.container.MediaContainerDetectionResult.refer;
+import static com.sedmelluq.discord.lavaplayer.container.MediaContainerDetectionResult.unsupportedFormat;
 
 /**
  * Probe for PLS playlist.
@@ -72,14 +74,14 @@ public class PlsPlaylistContainerProbe implements MediaContainerProbe {
 
     for (Map.Entry<String, String> entry : trackFiles.entrySet()) {
       String title = trackTitles.get(entry.getKey());
-      return new MediaContainerDetectionResult(this, new AudioReference(entry.getValue(), title != null ? title : UNKNOWN_TITLE));
+      return refer(this, new AudioReference(entry.getValue(), title != null ? title : UNKNOWN_TITLE));
     }
 
-    return new MediaContainerDetectionResult(this, "The playlist file contains no links.");
+    return unsupportedFormat(this, "The playlist file contains no links.");
   }
 
   @Override
-  public AudioTrack createTrack(AudioTrackInfo trackInfo, SeekableInputStream inputStream) {
+  public AudioTrack createTrack(String parameters, AudioTrackInfo trackInfo, SeekableInputStream inputStream) {
     throw new UnsupportedOperationException();
   }
 }

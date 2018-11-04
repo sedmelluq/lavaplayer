@@ -100,9 +100,8 @@ public class BitStreamReader {
   /**
    * Reads the number of bits it requires to make the reader align on a byte.
    * @return The read bits as an unsigned value
-   * @throws IOException On read error
    */
-  public int readRemainingBits() throws IOException {
+  public int readRemainingBits() {
     int value = currentByte & ((1 << bitsLeft) - 1);
     bitsLeft = 0;
     return value;

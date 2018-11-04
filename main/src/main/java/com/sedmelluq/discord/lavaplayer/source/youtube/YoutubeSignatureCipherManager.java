@@ -17,6 +17,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -101,8 +102,8 @@ public class YoutubeSignatureCipherManager {
 
     try {
       return new URIBuilder(initialUrl)
-          .addParameter("ratebypass", "yes")
-          .addParameter("signature", cipher.apply(signature))
+          .setParameter("ratebypass", "yes")
+          .setParameter("signature", cipher.apply(signature))
           .build();
     } catch (URISyntaxException e) {
       throw new RuntimeException(e);
@@ -157,7 +158,7 @@ public class YoutubeSignatureCipherManager {
 
   private List<String> getQuotedFunctions(String... functionNames) {
     return Stream.of(functionNames)
-        .filter(function -> function != null)
+        .filter(Objects::nonNull)
         .map(Pattern::quote)
         .collect(Collectors.toList());
   }

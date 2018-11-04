@@ -1,7 +1,8 @@
 package com.sedmelluq.discord.lavaplayer.container.wav;
 
-import com.sedmelluq.discord.lavaplayer.filter.FilterChainBuilder;
-import com.sedmelluq.discord.lavaplayer.filter.ShortPcmAudioFilter;
+import com.sedmelluq.discord.lavaplayer.filter.AudioPipeline;
+import com.sedmelluq.discord.lavaplayer.filter.AudioPipelineFactory;
+import com.sedmelluq.discord.lavaplayer.filter.PcmFormat;
 import com.sedmelluq.discord.lavaplayer.tools.io.SeekableInputStream;
 import com.sedmelluq.discord.lavaplayer.track.playback.AudioProcessingContext;
 
@@ -22,7 +23,7 @@ public class WavTrackProvider {
   private final SeekableInputStream inputStream;
   private final DataInput dataInput;
   private final WavFileInfo info;
-  private final ShortPcmAudioFilter downstream;
+  private final AudioPipeline downstream;
   private final short[] buffer;
   private final ShortBuffer nioBuffer;
   private final byte[] rawBuffer;
@@ -36,7 +37,7 @@ public class WavTrackProvider {
     this.inputStream = inputStream;
     this.dataInput = new DataInputStream(inputStream);
     this.info = info;
-    this.downstream = FilterChainBuilder.forShortPcm(context, info.channelCount, info.sampleRate, true);
+    this.downstream = AudioPipelineFactory.create(context, new PcmFormat(info.channelCount, info.sampleRate));
     this.buffer = info.getPadding() > 0 ? new short[info.channelCount * BLOCKS_IN_BUFFER] : null;
 
     ByteBuffer byteBuffer = ByteBuffer.allocate(info.blockAlign * BLOCKS_IN_BUFFER).order(LITTLE_ENDIAN);
@@ -60,7 +61,7 @@ public class WavTrackProvider {
 
   /**
    * Reads audio frames and sends them to frame consumer
-   * @throws InterruptedException When interrupted
+   * @throws InterruptedException When interrupted externally (or for seek/stop).
    */
   public void provideFrames() throws InterruptedException {
     try {

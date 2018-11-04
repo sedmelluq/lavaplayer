@@ -201,7 +201,7 @@ public class BandcampAudioSourceManager implements AudioSourceManager, HttpConfi
 
   @Override
   public void shutdown() {
-    IOUtils.closeQuietly(httpInterfaceManager);
+    ExceptionTools.closeWithWarnings(httpInterfaceManager);
   }
 
   /**

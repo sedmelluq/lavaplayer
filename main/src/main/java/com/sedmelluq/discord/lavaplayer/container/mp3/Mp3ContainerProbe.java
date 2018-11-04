@@ -7,16 +7,15 @@ import com.sedmelluq.discord.lavaplayer.tools.io.SeekableInputStream;
 import com.sedmelluq.discord.lavaplayer.track.AudioReference;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo;
+import com.sedmelluq.discord.lavaplayer.track.info.AudioTrackInfoBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 
 import static com.sedmelluq.discord.lavaplayer.container.MediaContainerDetection.STREAM_SCAN_DISTANCE;
-import static com.sedmelluq.discord.lavaplayer.container.MediaContainerDetection.UNKNOWN_ARTIST;
-import static com.sedmelluq.discord.lavaplayer.container.MediaContainerDetection.UNKNOWN_TITLE;
 import static com.sedmelluq.discord.lavaplayer.container.MediaContainerDetection.checkNextBytes;
-import static com.sedmelluq.discord.lavaplayer.tools.DataFormatTools.defaultOnNull;
+import static com.sedmelluq.discord.lavaplayer.container.MediaContainerDetectionResult.supportedFormat;
 
 /**
  * Container detection probe for MP3 format.
@@ -25,8 +24,6 @@ public class Mp3ContainerProbe implements MediaContainerProbe {
   private static final Logger log = LoggerFactory.getLogger(Mp3ContainerProbe.class);
 
   private static final int[] ID3_TAG = new int[] { 0x49, 0x44, 0x33 };
-  private static final String TITLE_TAG = "TIT2";
-  private static final String ARTIST_TAG = "TPE1";
 
   @Override
   public String getName() {
@@ -59,21 +56,15 @@ public class Mp3ContainerProbe implements MediaContainerProbe {
     try {
       file.parseHeaders();
 
-      return new MediaContainerDetectionResult(this, new AudioTrackInfo(
-          defaultOnNull(file.getIdv3Tag(TITLE_TAG), reference.title != null ? reference.title : UNKNOWN_TITLE),
-          defaultOnNull(file.getIdv3Tag(ARTIST_TAG), UNKNOWN_ARTIST),
-          file.getDuration(),
-          reference.identifier,
-          !file.isSeekable(),
-          reference.identifier
-      ));
+      return supportedFormat(this, null, AudioTrackInfoBuilder.create(reference, inputStream)
+          .apply(file).setIsStream(!file.isSeekable()).build());
     } finally {
       file.close();
     }
   }
 
   @Override
-  public AudioTrack createTrack(AudioTrackInfo trackInfo, SeekableInputStream inputStream) {
+  public AudioTrack createTrack(String parameters, AudioTrackInfo trackInfo, SeekableInputStream inputStream) {
     return new Mp3AudioTrack(trackInfo, inputStream);
   }
 }

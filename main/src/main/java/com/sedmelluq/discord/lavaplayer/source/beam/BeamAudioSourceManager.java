@@ -60,7 +60,7 @@ public class BeamAudioSourceManager implements AudioSourceManager, HttpConfigura
       return AudioReference.NO_TRACK;
     } else {
       String displayName = channelInfo.get("name").text();
-      String id = channelInfo.get("id").text();
+      String id = getPlayedStreamId(channelInfo);
       String thumbnailUrl = channelInfo.get("thumbnail").get("url").text();
 
       if (displayName == null || id == null) {
@@ -99,6 +99,14 @@ public class BeamAudioSourceManager implements AudioSourceManager, HttpConfigura
     // Nothing to shut down.
   }
 
+  private static String getPlayedStreamId(JsonBrowser channelInfo) {
+    // If there is a hostee, this means that the current channel itself is not actually broadcasting anything and all
+    // further requests should be performed with the ID of the hostee. Hostee is not rechecked later so it will keep
+    // playing the current hostee even if it changes.
+    String hosteeId = channelInfo.get("hosteeId").text();
+    return hosteeId != null ? hosteeId : channelInfo.get("id").text();
+  }
+
   private static String getChannelNameFromUrl(String url) {
     Matcher matcher = streamNameRegex.matcher(url);
     if (!matcher.matches()) {
@@ -110,7 +118,8 @@ public class BeamAudioSourceManager implements AudioSourceManager, HttpConfigura
 
   private JsonBrowser fetchStreamChannelInfo(String name) {
     try (HttpInterface httpInterface = getHttpInterface()) {
-      return HttpClientTools.fetchResponseAsJson(httpInterface, new HttpGet("https://beam.pro/api/v1/channels/" + name));
+      return HttpClientTools.fetchResponseAsJson(httpInterface,
+          new HttpGet("https://mixer.com/api/v1/channels/" + name + "?noCount=1"));
     } catch (IOException e) {
       throw new FriendlyException("Loading Beam channel information failed.", SUSPICIOUS, e);
     }

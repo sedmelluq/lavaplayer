@@ -116,26 +116,34 @@ public class FlacFrameReader {
 
   private static void convertToShortPcm(FlacStreamInfo streamInfo, int sampleCount, int[][] rawSampleBuffers, short[][] sampleBuffers) {
     if (streamInfo.bitsPerSample < 16) {
-      int shiftLeft = 16 - streamInfo.bitsPerSample;
-
-      for (int channel = 0; channel < streamInfo.channelCount; channel++) {
-        for (int i = 0; i < sampleCount; i++) {
-          sampleBuffers[channel][i] = (short) (rawSampleBuffers[channel][i] << shiftLeft);
-        }
-      }
+      increaseSampleSize(streamInfo, sampleCount, rawSampleBuffers, sampleBuffers);
     } else if (streamInfo.bitsPerSample > 16) {
-      int shiftRight = streamInfo.bitsPerSample - 16;
-
-      for (int channel = 0; channel < streamInfo.channelCount; channel++) {
-        for (int i = 0; i < sampleCount; i++) {
-          sampleBuffers[channel][i] = (short) (rawSampleBuffers[channel][i] >> shiftRight);
-        }
-      }
+      decreaseSampleSize(streamInfo, sampleCount, rawSampleBuffers, sampleBuffers);
     } else {
       for (int channel = 0; channel < streamInfo.channelCount; channel++) {
         for (int i = 0; i < sampleCount; i++) {
           sampleBuffers[channel][i] = (short) rawSampleBuffers[channel][i];
         }
+      }
+    }
+  }
+
+  private static void increaseSampleSize(FlacStreamInfo streamInfo, int sampleCount, int[][] rawSampleBuffers, short[][] sampleBuffers) {
+    int shiftLeft = 16 - streamInfo.bitsPerSample;
+
+    for (int channel = 0; channel < streamInfo.channelCount; channel++) {
+      for (int i = 0; i < sampleCount; i++) {
+        sampleBuffers[channel][i] = (short) (rawSampleBuffers[channel][i] << shiftLeft);
+      }
+    }
+  }
+
+  private static void decreaseSampleSize(FlacStreamInfo streamInfo, int sampleCount, int[][] rawSampleBuffers, short[][] sampleBuffers) {
+    int shiftRight = streamInfo.bitsPerSample - 16;
+
+    for (int channel = 0; channel < streamInfo.channelCount; channel++) {
+      for (int i = 0; i < sampleCount; i++) {
+        sampleBuffers[channel][i] = (short) (rawSampleBuffers[channel][i] >> shiftRight);
       }
     }
   }

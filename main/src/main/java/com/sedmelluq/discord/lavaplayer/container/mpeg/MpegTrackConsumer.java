@@ -26,7 +26,7 @@ public interface MpegTrackConsumer {
 
   /**
    * Indicates that no more input is coming. Flush any buffers to output.
-   * @throws InterruptedException
+   * @throws InterruptedException When interrupted externally (or for seek/stop).
    */
   void flush() throws InterruptedException;
 
@@ -34,7 +34,7 @@ public interface MpegTrackConsumer {
    * Consume one chunk from the track
    * @param channel Byte channel to consume from
    * @param length Lenth of the chunk in bytes
-   * @throws InterruptedException
+   * @throws InterruptedException When interrupted externally (or for seek/stop).
    */
   void consume(ReadableByteChannel channel, int length) throws InterruptedException;
 

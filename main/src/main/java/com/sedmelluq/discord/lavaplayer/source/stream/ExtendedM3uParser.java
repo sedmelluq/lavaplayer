@@ -26,7 +26,7 @@ public class ExtendedM3uParser {
     if (trimmed.isEmpty()) {
       return Line.EMPTY_LINE;
     } else if (!trimmed.startsWith("#")) {
-      return new Line(trimmed, null, null);
+      return new Line(trimmed, null, Collections.emptyMap(), null);
     } else {
       return parseDirectiveLine(trimmed);
     }
@@ -36,7 +36,7 @@ public class ExtendedM3uParser {
     String[] parts = line.split(":", 2);
 
     if (parts.length == 1) {
-      return new Line(null, line.substring(1), Collections.emptyMap());
+      return new Line(null, line.substring(1), Collections.emptyMap(), "");
     }
 
     Matcher matcher = directiveArgumentPattern.matcher(parts[1]);
@@ -46,7 +46,7 @@ public class ExtendedM3uParser {
       arguments.put(matcher.group(1), DataFormatTools.defaultOnNull(matcher.group(2), matcher.group(3)));
     }
 
-    return new Line(null, parts[0].substring(1), arguments);
+    return new Line(null, parts[0].substring(1), arguments, parts[1]);
   }
 
   /**
@@ -54,7 +54,7 @@ public class ExtendedM3uParser {
    * or a data line.
    */
   public static class Line {
-    private static final Line EMPTY_LINE = new Line(null, null, null);
+    private static final Line EMPTY_LINE = new Line(null, null, null, null);
 
     /**
      * The data of a data line.
@@ -68,11 +68,16 @@ public class ExtendedM3uParser {
      * Directive arguments of a directive line.
      */
     public final Map<String, String> directiveArguments;
+    /**
+     * Raw unprocessed directive extra data (where arguments are parsed from).
+     */
+    public final String extraData;
 
-    private Line(String lineData, String directiveName, Map<String, String> directiveArguments) {
+    private Line(String lineData, String directiveName, Map<String, String> directiveArguments, String extraData) {
       this.lineData = lineData;
       this.directiveName = directiveName;
       this.directiveArguments = directiveArguments;
+      this.extraData = extraData;
     }
 
     /**

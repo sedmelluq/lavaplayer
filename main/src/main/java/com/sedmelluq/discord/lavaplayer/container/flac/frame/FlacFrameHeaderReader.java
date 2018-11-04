@@ -58,7 +58,7 @@ public class FlacFrameHeaderReader {
    * @param variableBlock If this is a variable block header. This information was included in the frame sync bytes
    *                      consumed before calling this method.
    * @return The frame information.
-   * @throws IOException
+   * @throws IOException On read error.
    */
   public static FlacFrameInfo readFrameHeader(BitStreamReader bitStreamReader, FlacStreamInfo streamInfo,
                                               boolean variableBlock) throws IOException {
