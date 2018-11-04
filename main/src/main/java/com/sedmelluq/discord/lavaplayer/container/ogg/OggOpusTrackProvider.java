@@ -133,7 +133,7 @@ public class OggOpusTrackProvider implements OggTrackProvider {
     for (int i = 0; i < data.length; i++) {
       if (data[i] == '=') {
         String key = new String(data, 0, i, UTF_8);
-        String value = new String(data, i, data.length - i, UTF_8);
+        String value = new String(data, (i + 1), data.length - (i + 1), UTF_8);
         return Optional.of(new AbstractMap.SimpleEntry<>(key, value));
       }
     }
