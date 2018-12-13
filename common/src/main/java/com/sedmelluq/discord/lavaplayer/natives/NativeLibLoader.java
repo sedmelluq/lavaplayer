@@ -93,7 +93,7 @@ public class NativeLibLoader {
         throw new UnsatisfiedLinkError("Required library at " + path + " was not found");
       }
 
-      File temporaryContainer = new File(System.getProperty("java.io.tmpdir"), "lava-jni-natives/" + libraryDirectory);
+      File temporaryContainer = new File(System.getProperty("java.io.tmpdir"), "lava-jni-natives/" + libraryDirectory + "." + System.getProperty("user.name"););
 
       if (!temporaryContainer.exists()) {
         try {
