@@ -81,7 +81,7 @@ public class DirectBufferStreamBroker {
     ensureCapacity(Math.min(maximumSavedBytes, inputStream.available()));
 
     while (readByteCount < maximumReadBytes) {
-      int maximumReadFragment = Math.min(maximumReadBytes, maximumReadBytes - readByteCount);
+      int maximumReadFragment = Math.min(copyBuffer.length, maximumReadBytes - readByteCount);
       int fragmentLength = inputStream.read(copyBuffer, 0, maximumReadFragment);
 
       if (fragmentLength == -1) {

@@ -38,9 +38,11 @@ public class OggVorbisTrackHandler implements OggTrackHandler {
     this.packetInputStream = packetInputStream;
     this.broker = broker;
     this.decoder = new VorbisDecoder();
-    this.sampleRate =  Integer.reverseBytes(broker.getBuffer().getInt(12));
 
-    int channelCount = broker.getBuffer().get(11) & 0xFF;
+    ByteBuffer infoBuffer = ByteBuffer.wrap(infoPacket);
+    this.sampleRate =  Integer.reverseBytes(infoBuffer.getInt(12));
+
+    int channelCount = infoBuffer.get(11) & 0xFF;
     channelPcmBuffers = new float[channelCount][];
 
     for (int i = 0; i < channelPcmBuffers.length; i++) {
