@@ -25,7 +25,7 @@ include_directories("../fdk-aac/libAACdec/include")
 include_directories("../fdk-aac/libSYS/include")
 include_directories("../vorbis/libvorbis-1.3.5/include")
 include_directories("../vorbis/libogg-1.3.3/include")
-link_directories("../libs/${BITZ}")
+link_directories("../libs/64")
 
 if (DEFINED ENV{DIST_DIR})
 	set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "$ENV{DIST_DIR}")

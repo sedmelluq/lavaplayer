@@ -15,7 +15,7 @@ dependencies {
 
   compile "org.slf4j:slf4j-api:$slf4jVersion"
 
-  compile 'org.apache.httpcomponents:httpclient:4.5.5'
+  compile 'org.apache.httpcomponents:httpclient:4.5.6'
   compile 'commons-io:commons-io:2.6'
 
   compile 'com.fasterxml.jackson.core:jackson-core:2.9.4'

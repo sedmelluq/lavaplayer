@@ -47,10 +47,16 @@ public class VorbisDecoder extends NativeResourceHolder {
   /**
    * Initialise the decoder, headers must already be processed.
    */
-  public void initialise() {
+  public void initialise(ByteBuffer infoBuffer, ByteBuffer setupBuffer) {
     checkNotReleased();
 
-    if (!library.initialise(instance)) {
+    if (!infoBuffer.isDirect() || !setupBuffer.isDirect()) {
+      throw new IllegalArgumentException("Buffer argument must be a direct buffer.");
+    }
+
+    if (!library.initialise(instance, infoBuffer, infoBuffer.position(), infoBuffer.remaining(), setupBuffer,
+        setupBuffer.position(), setupBuffer.remaining())) {
+
       throw new IllegalStateException("Could not initialise library.");
     }
 

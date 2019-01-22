@@ -79,6 +79,10 @@ public class OggPacketInputStream extends InputStream {
     return true;
   }
 
+  public boolean isPacketComplete() {
+    return state == State.PACKET_READ;
+  }
+
   private boolean readPageHeader() throws IOException {
     if (!checkNextBytes(inputStream, OGG_PAGE_HEADER, false)) {
       if (inputStream.read() == -1) {

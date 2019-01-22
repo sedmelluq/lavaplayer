@@ -75,9 +75,9 @@ public class FlacFrameHeaderReader {
     readUtf8Value(variableBlock, bitStreamReader);
 
     if (blockSize == BLOCK_SIZE_EXPLICIT_8_BIT) {
-      blockSize = bitStreamReader.asInteger(8);
+      blockSize = bitStreamReader.asInteger(8) + 1;
     } else if (blockSize == BLOCK_SIZE_EXPLICIT_16_BIT) {
-      blockSize = bitStreamReader.asInteger(16);
+      blockSize = bitStreamReader.asInteger(16) + 1;
     }
 
     verifyNotInvalid(blockSize, "block size");

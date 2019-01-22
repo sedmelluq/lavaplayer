@@ -5,7 +5,6 @@
 
 typedef struct vorbis_state_s {
 	vorbis_info info;
-	vorbis_comment comment;
 	vorbis_block block;
 	vorbis_dsp_state dsp_state;
 	bool initialised;
@@ -30,24 +29,38 @@ JNIEXPORT jlong JNICALL Java_com_sedmelluq_discord_lavaplayer_natives_vorbis_Vor
 	}
 
 	vorbis_info_init(&state->info);
-	vorbis_comment_init(&state->comment);
 
 	return (jlong) state;
 }
 
-JNIEXPORT jint JNICALL Java_com_sedmelluq_discord_lavaplayer_natives_vorbis_VorbisDecoderLibrary_processHeader(JNIEnv *jni, jobject me, jlong instance, jobject direct_buffer, jint offset, jint length, jboolean is_beginning) {
+JNIEXPORT jint JNICALL Java_com_sedmelluq_discord_lavaplayer_natives_vorbis_VorbisDecoderLibrary_initialise(JNIEnv *jni, jobject me,
+	jlong instance, jobject id_direct_buffer, jint id_offset, jint id_length, jobject setup_direct_buffer, jint setup_offset, jint setup_length) {
+
 	vorbis_state_t* state = (vorbis_state_t*) instance;
+
+	// Dummy comment instance - needs non-NULL vendor, otherwise headerin will reject setup (codebook) packet.
+	vorbis_comment comment;
+	vorbis_comment_init(&comment);
+	comment.vendor = "";
+
+	// Pass in identification header packet
 	ogg_packet packet;
+	build_ogg_packet(jni, &packet, id_direct_buffer, id_offset, id_length, JNI_TRUE);
+	int error = vorbis_synthesis_headerin(&state->info, &comment, &packet);
 
-	build_ogg_packet(jni, &packet, direct_buffer, offset, length, is_beginning);
-	return vorbis_synthesis_headerin(&state->info, &state->comment, &packet);
-}
+	if (error != 0) {
+		return error | 0x01000000;
+	}
 
-JNIEXPORT jboolean JNICALL Java_com_sedmelluq_discord_lavaplayer_natives_vorbis_VorbisDecoderLibrary_initialise(JNIEnv *jni, jobject me, jlong instance) {
-	vorbis_state_t* state = (vorbis_state_t*) instance;
-	ogg_packet packet;
+	build_ogg_packet(jni, &packet, setup_direct_buffer, setup_offset, setup_length, JNI_FALSE);
+	error = vorbis_synthesis_headerin(&state->info, &comment, &packet);
 
-	if (vorbis_synthesis_init(&state->dsp_state, &state->info) != 0) {
+	if (error != NULL) {
+		return error | 0x02000000;
+	}
+
+	error = vorbis_synthesis_init(&state->dsp_state, &state->info);
+	if (error != 0) {
 		return JNI_FALSE;
 	}
 
@@ -112,7 +125,6 @@ JNIEXPORT void JNICALL Java_com_sedmelluq_discord_lavaplayer_natives_vorbis_Vorb
 		vorbis_dsp_clear(&state->dsp_state);
 	}
 
-	vorbis_comment_clear(&state->comment);
 	vorbis_info_clear(&state->info);
 
 	free(state);

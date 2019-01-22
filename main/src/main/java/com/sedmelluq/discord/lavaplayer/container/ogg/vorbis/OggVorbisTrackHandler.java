@@ -1,5 +1,7 @@
-package com.sedmelluq.discord.lavaplayer.container.ogg;
+package com.sedmelluq.discord.lavaplayer.container.ogg.vorbis;
 
+import com.sedmelluq.discord.lavaplayer.container.ogg.OggPacketInputStream;
+import com.sedmelluq.discord.lavaplayer.container.ogg.OggTrackHandler;
 import com.sedmelluq.discord.lavaplayer.filter.AudioPipeline;
 import com.sedmelluq.discord.lavaplayer.filter.AudioPipelineFactory;
 import com.sedmelluq.discord.lavaplayer.filter.PcmFormat;
@@ -13,9 +15,10 @@ import java.nio.ByteBuffer;
 /**
  * OGG stream handler for Vorbis codec.
  */
-public class OggVorbisTrackProvider implements OggTrackProvider {
+public class OggVorbisTrackHandler implements OggTrackHandler {
   private static final int PCM_BUFFER_SIZE = 4096;
 
+  private final byte[] infoPacket;
   private final OggPacketInputStream packetInputStream;
   private final DirectBufferStreamBroker broker;
   private final VorbisDecoder decoder;
@@ -25,10 +28,13 @@ public class OggVorbisTrackProvider implements OggTrackProvider {
 
   /**
    * @param packetInputStream OGG packet input stream
-   * @param broker Broker for loading stream data into direct byte buffer, it has already loaded the first packet of the
-   *               stream at this point.
+   * @param broker Broker for loading stream data into direct byte buffer, it has already loaded the first two packets
+   *               (info and comments) and should be in the state where we should request the next - the setup packet.
    */
-  public OggVorbisTrackProvider(OggPacketInputStream packetInputStream, DirectBufferStreamBroker broker) {
+  public OggVorbisTrackHandler(byte[] infoPacket, OggPacketInputStream packetInputStream,
+                               DirectBufferStreamBroker broker) {
+
+    this.infoPacket = infoPacket;
     this.packetInputStream = packetInputStream;
     this.broker = broker;
     this.decoder = new VorbisDecoder();
@@ -44,44 +50,27 @@ public class OggVorbisTrackProvider implements OggTrackProvider {
 
   @Override
   public void initialise(AudioProcessingContext context) throws IOException {
-    passHeader(0);
-    passHeader(1);
-    passHeader(2);
+    ByteBuffer infoBuffer = ByteBuffer.allocateDirect(infoPacket.length);
+    infoBuffer.put(infoPacket);
+    infoBuffer.flip();
 
-    decoder.initialise();
+    if (!packetInputStream.startNewPacket()) {
+      throw new IllegalStateException("End of track before header setup header.");
+    }
+
+    broker.consumeNext(packetInputStream, Integer.MAX_VALUE, Integer.MAX_VALUE);
+    decoder.initialise(infoBuffer, broker.getBuffer());
+
     broker.resetAndCompact();
 
     downstream = AudioPipelineFactory.create(context, new PcmFormat(decoder.getChannelCount(), sampleRate));
   }
 
   @Override
-  public OggMetadata getMetadata() {
-    return OggMetadata.EMPTY;
-  }
-
-  @Override
-  public OggStreamSizeInfo seekForSizeInfo() throws IOException {
-    return null;
-  }
-
-  private void passHeader(int index) throws IOException {
-    if (index > 0) {
-      if (!packetInputStream.startNewPacket()) {
-        throw new IllegalStateException("End of track before header " + index + " .");
-      }
-
-      broker.consume(true, packetInputStream);
-    }
-
-    ByteBuffer headerBuffer = broker.getBuffer();
-    decoder.parseHeader(headerBuffer, headerBuffer.limit(), index == 0);
-  }
-
-  @Override
   public void provideFrames() throws InterruptedException {
     try {
       while (packetInputStream.startNewPacket()) {
-        broker.consume(true, packetInputStream);
+        broker.consumeNext(packetInputStream, Integer.MAX_VALUE, Integer.MAX_VALUE);
         provideFromBuffer(broker.getBuffer());
       }
     } catch (IOException e) {

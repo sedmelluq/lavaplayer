@@ -29,7 +29,8 @@ public class AdtsContainerProbe implements MediaContainerProbe {
 
   @Override
   public boolean matchesHints(MediaContainerHints hints) {
-    return false;
+    boolean invalidFileExtension = hints.fileExtension != null && !"aac".equalsIgnoreCase(hints.fileExtension);
+    return hints.present() && !invalidFileExtension;
   }
 
   @Override

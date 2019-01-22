@@ -11,6 +11,7 @@ import java.nio.ByteBuffer;
 public class DirectBufferStreamBroker {
   private final byte[] copyBuffer;
   private final int initialSize;
+  private int readByteCount;
   private ByteBuffer currentBuffer;
 
   /**
@@ -45,26 +46,57 @@ public class DirectBufferStreamBroker {
     return buffer;
   }
 
+  public boolean isTruncated() {
+    return currentBuffer.position() < readByteCount;
+  }
+
+  /**
+   * Copies the final state after a {@link #consumeNext(InputStream, int, int)} operation into a new byte array.
+   *
+   * @return New byte array containing consumed data.
+   */
+  public byte[] extractBytes() {
+    byte[] data = new byte[currentBuffer.position()];
+    currentBuffer.position(0);
+    currentBuffer.get(data, 0, data.length);
+    return data;
+  }
+
   /**
    * Consume an entire stream and append it into the buffer (or clear first if clear parameter is true).
    *
-   * @param clear Whether to clear the buffer before appending the stream contents to it
-   * @param inputStream The input stream to fully consume
+   * @param inputStream The input stream to fully consume.
+   * @param maximumSavedBytes Maximum number of bytes to save internally. If this is exceeded, it will continue reading
+   *                          and discarding until maximum read byte count is reached.
+   * @param maximumReadBytes Maximum number of bytes to read.
+   * @return If stream was fully read before {@code maximumReadBytes} was reached, returns {@code true}. Returns
+   *         {@code false} if the number of bytes read is {@code maximumReadBytes}, even if no more data is left in the
+   *         stream.
    * @throws IOException On read error
    */
-  public void consume(boolean clear, InputStream inputStream) throws IOException {
-    if (clear) {
-      clear();
+  public boolean consumeNext(InputStream inputStream, int maximumSavedBytes, int maximumReadBytes) throws IOException {
+    currentBuffer.clear();
+    readByteCount = 0;
+
+    ensureCapacity(Math.min(maximumSavedBytes, inputStream.available()));
+
+    while (readByteCount < maximumReadBytes) {
+      int maximumReadFragment = Math.min(maximumReadBytes, maximumReadBytes - readByteCount);
+      int fragmentLength = inputStream.read(copyBuffer, 0, maximumReadFragment);
+
+      if (fragmentLength == -1) {
+        return true;
+      }
+
+      int bytesToSave = Math.min(fragmentLength, maximumSavedBytes - readByteCount);
+
+      if (bytesToSave > 0) {
+        ensureCapacity(currentBuffer.position() + bytesToSave);
+        currentBuffer.put(copyBuffer, 0, bytesToSave);
+      }
     }
 
-    ensureCapacity(currentBuffer.position() + inputStream.available());
-
-    int chunk;
-
-    while ((chunk = inputStream.read(copyBuffer)) != -1) {
-      ensureCapacity(currentBuffer.position() + chunk);
-      currentBuffer.put(copyBuffer, 0, chunk);
-    }
+    return false;
   }
 
   private void ensureCapacity(int capacity) {

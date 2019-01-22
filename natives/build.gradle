@@ -8,6 +8,8 @@ import java.util.regex.Pattern
 
 apply plugin: 'de.undercouch.download'
 
+apply from: 'natives.gradle'
+
 ext.opusVersion = '1.2.1'
 ext.mpg123Version = '1.25.8'
 ext.oggVersion = '1.3.3'
@@ -141,8 +143,8 @@ def getDevEnvLocation() {
   return ext.devEnvPath
 }
 
-def buildOpusOnWindows(bits, force) {
-  def base = "$projectDir/libs/${bits}"
+def buildOpusOnWindows(force) {
+  def base = "$projectDir/libs/64"
   def libs = ['opus']
   def present = libs.every { file("${base}/${it}.lib").exists() }
 
@@ -151,7 +153,7 @@ def buildOpusOnWindows(bits, force) {
     file(base).mkdirs()
 
     def devenv = getDevEnvLocation()
-    def platformName = bits == 64 ? "x64" : "Win32"
+    def platformName = "x64"
 
     def process = [devenv, "opus.sln", "/Project", "opus", "/Build", "Release|${platformName}"].
         execute(null as String[], file("$projectDir/opus/opus-${opusVersion}/win32/VS2015"))
@@ -172,12 +174,12 @@ def waitForAndCheckSuccess(process, name) {
   }
 }
 
-def buildOpusOnLinux(bits, force) {
-  def present = file("${projectDir}/libs/${bits}/libopus.a").exists()
+def buildOpusOnLinux(force) {
+  def present = file("${projectDir}/libs/64/libopus.a").exists()
 
   if (force || !present) {
-    def flags = "-m${bits} -fPIC -O3"
-    def process = ["./configure", "--enable-static", "--with-cpu=" + (bits == 32 ? "x86" : "x64-64"), "--with-pic", "CFLAGS=${flags}", "CXXFLAGS=${flags}", "LDFLAGS=${flags}"].
+    def flags = "-fPIC -O3"
+    def process = ["./configure", "--enable-static", "--with-cpu=x64-64", "--with-pic", "CFLAGS=${flags}", "CXXFLAGS=${flags}", "LDFLAGS=${flags}"].
         execute(null as String[], file("$projectDir/opus/opus-${opusVersion}"))
 
     waitForAndCheckSuccess(process, "Opus ./configure")
@@ -190,19 +192,19 @@ def buildOpusOnLinux(bits, force) {
 
     copy {
       from "$projectDir/opus/opus-${opusVersion}/.libs/libopus.a"
-      into "$projectDir/libs/${bits}"
+      into "$projectDir/libs/64"
     }
   }
 }
 
-def buildMpg123OnLinux(bits, force) {
-  def present = file("${projectDir}/libs/${bits}/libmpg123.a").exists()
+def buildMpg123OnLinux(force) {
+  def present = file("${projectDir}/libs/64/libmpg123.a").exists()
 
   if (force || !present) {
     def process = ["patch", "-N", "mpg123-${mpg123Version}/configure", "configure.patch"].execute(null as String[], file("$projectDir/mp3"))
     process.waitForProcessOutput(System.out as Appendable, System.err)
 
-    process = ["./configure", "--enable-static", "--with-cpu=" + (bits == 32 ? "x86" : "x86-64"), "--with-pic", "CFLAGS=-fPIC -O3 -m${bits}", "CXXFLAGS=-fPIC -O3 -m${bits}"].
+    process = ['./configure', '--enable-static', '--with-cpu=x86-64', '--with-pic', 'CFLAGS=-fPIC -O3', 'CXXFLAGS=-fPIC -O3'].
         execute(null as String[], file("$projectDir/mp3/mpg123-${mpg123Version}"))
 
     waitForAndCheckSuccess(process, "Mpg123 ./configure")
@@ -215,12 +217,12 @@ def buildMpg123OnLinux(bits, force) {
 
     copy {
       from "$projectDir/mp3/mpg123-${mpg123Version}/src/libmpg123/.libs/libmpg123.a"
-      into "$projectDir/libs/${bits}"
+      into "$projectDir/libs/64"
     }
   }
 }
 
-def prepareOggOnLinux(bits, force) {
+def prepareOggOnLinux(force) {
   def configured = file("$projectDir/vorbis/libogg-${oggVersion}/include/ogg/config_types.h").exists()
 
   if (force || !configured) {
@@ -231,13 +233,13 @@ def prepareOggOnLinux(bits, force) {
   }
 }
 
-def prepareBuilds(bits, force) {
+def prepareBuilds(force) {
   if (Os.isFamily(Os.FAMILY_WINDOWS)) {
-    buildOpusOnWindows(bits, force)
+    buildOpusOnWindows(force)
   } else {
-    prepareOggOnLinux(bits, force)
-    buildOpusOnLinux(bits, force)
-    buildMpg123OnLinux(bits, force)
+    prepareOggOnLinux(force)
+    buildOpusOnLinux(force)
+    buildMpg123OnLinux(force)
   }
 }
 
@@ -249,11 +251,10 @@ def buildTaskConfig = [
     projectBase: projectDir,
     deployBase: project(':natives-publish').projectDir,
     setupDependency: tasks.load,
-    setupDoFirst: { config, bits -> prepareBuilds(bits, false) },
+    setupDoFirst: { config -> prepareBuilds(false) },
     compileTask: tasks.compileNatives,
     checkTask: tasks.checkNatives,
     name: 'connector'
 ]
 
-createBuildTask(tasks, buildTaskConfig, 32)
-createBuildTask(tasks, buildTaskConfig, 64)
+createBuildTask(tasks, buildTaskConfig)

@@ -59,20 +59,10 @@ public class OggContainerProbe implements MediaContainerProbe {
 
   private void collectStreamInformation(SeekableInputStream stream, AudioTrackInfoBuilder infoBuilder) throws IOException {
     OggPacketInputStream packetInputStream = new OggPacketInputStream(stream);
-    OggTrackProvider track = OggTrackLoader.loadTrack(packetInputStream);
+    OggMetadata metadata = OggTrackLoader.loadMetadata(packetInputStream);
 
-    if (track != null) {
-      try {
-        infoBuilder.apply(track.getMetadata());
-
-        OggStreamSizeInfo sizeInfo = track.seekForSizeInfo();
-
-        if (sizeInfo != null) {
-          infoBuilder.setLength(sizeInfo.totalSamples * 1000 / sizeInfo.sampleRate);
-        }
-      } finally {
-        track.close();
-      }
+    if (metadata != null) {
+      infoBuilder.apply(metadata);
     }
   }
 }
