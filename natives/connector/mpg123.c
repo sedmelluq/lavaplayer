@@ -1,4 +1,4 @@
-#include <jni.h>
+#include "connector.h"
 #include <aacdecoder_lib.h>
 
 #ifdef MSC_VER
@@ -7,14 +7,14 @@
 #define IMPORT
 #endif
 
-IMPORT int mpg123_init(void);
-IMPORT void* mpg123_new(const char* decoder, int *error);
-IMPORT void mpg123_delete(void *mh);
-IMPORT int mpg123_open_feed(void *mh);
-IMPORT int mpg123_close(void *mh);
-IMPORT int mpg123_decode(void *mh, const unsigned char *inmemory, size_t inmemsize,	unsigned char *outmemory, size_t outmemsize, size_t *done);
+CONNECTOR_IMPORT int mpg123_init(void);
+CONNECTOR_IMPORT void* mpg123_new(const char* decoder, int *error);
+CONNECTOR_IMPORT void mpg123_delete(void *mh);
+CONNECTOR_IMPORT int mpg123_open_feed(void *mh);
+CONNECTOR_IMPORT int mpg123_close(void *mh);
+CONNECTOR_IMPORT int mpg123_decode(void *mh, const unsigned char *inmemory, size_t inmemsize,	unsigned char *outmemory, size_t outmemsize, size_t *done);
 
-JNIEXPORT jlong JNICALL Java_com_sedmelluq_discord_lavaplayer_natives_mp3_Mp3DecoderLibrary_create(JNIEnv *jni, jobject me) {
+CONNECTOR_EXPORT jlong JNICALL Java_com_sedmelluq_discord_lavaplayer_natives_mp3_Mp3DecoderLibrary_create(JNIEnv *jni, jobject me) {
 	mpg123_init();
 	
 	void* handle = mpg123_new(NULL, NULL);
@@ -30,7 +30,7 @@ JNIEXPORT jlong JNICALL Java_com_sedmelluq_discord_lavaplayer_natives_mp3_Mp3Dec
 	return (jlong) handle;
 }
 
-JNIEXPORT void JNICALL Java_com_sedmelluq_discord_lavaplayer_natives_mp3_Mp3DecoderLibrary_destroy(JNIEnv *jni, jobject me, jlong instance) {
+CONNECTOR_EXPORT void JNICALL Java_com_sedmelluq_discord_lavaplayer_natives_mp3_Mp3DecoderLibrary_destroy(JNIEnv *jni, jobject me, jlong instance) {
 	void* handle = (void*) instance;
 	
 	if (handle != NULL) {
@@ -39,7 +39,7 @@ JNIEXPORT void JNICALL Java_com_sedmelluq_discord_lavaplayer_natives_mp3_Mp3Deco
 	}
 }
 
-JNIEXPORT jint JNICALL Java_com_sedmelluq_discord_lavaplayer_natives_mp3_Mp3DecoderLibrary_decode(JNIEnv *jni, jobject me, jlong instance, jobject direct_input,
+CONNECTOR_EXPORT jint JNICALL Java_com_sedmelluq_discord_lavaplayer_natives_mp3_Mp3DecoderLibrary_decode(JNIEnv *jni, jobject me, jlong instance, jobject direct_input,
 		jint input_length, jobject direct_output, jint output_length) {
 	
 	if (instance == 0) {

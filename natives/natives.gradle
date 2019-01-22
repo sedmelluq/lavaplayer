@@ -5,7 +5,7 @@ def getBuildParameters(base) {
     return [
         'identifier': "win-x86-64",
         'library': "${base}.dll",
-        'setupArguments': ['-A', 'x64'],
+        'setupArguments': ['-DCMAKE_BUILD_TYPE=Release', '-A', 'x64'],
         'buildArguments': ['--config', 'Release'],
         'env': [:]
     ]
@@ -13,7 +13,7 @@ def getBuildParameters(base) {
     return [
         'identifier': 'darwin',
         'library': "lib${base}.dylib",
-        'setupArguments': [],
+        'setupArguments': ['-DCMAKE_BUILD_TYPE=Release'],
         'buildArguments': [],
         'env': [:]
     ]
@@ -21,7 +21,7 @@ def getBuildParameters(base) {
     return [
         'identifier': "linux-x86-64",
         'library': "lib${base}.so",
-        'setupArguments': [],
+        'setupArguments': ['-DCMAKE_BUILD_TYPE=Release'],
         'buildArguments': [],
         'env': [:]
     ]

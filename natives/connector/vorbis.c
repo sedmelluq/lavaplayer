@@ -1,4 +1,4 @@
-#include <jni.h>
+#include "connector.h"
 #include <vorbis/codec.h>
 #include <stdlib.h>
 #include <stdbool.h>
@@ -21,11 +21,11 @@ static void build_ogg_packet(JNIEnv* jni, ogg_packet* packet, jobject direct_buf
 	packet->packetno = 0;
 }
 
-JNIEXPORT jlong JNICALL Java_com_sedmelluq_discord_lavaplayer_natives_vorbis_VorbisDecoderLibrary_create(JNIEnv *jni, jobject me) {
+CONNECTOR_EXPORT jlong JNICALL Java_com_sedmelluq_discord_lavaplayer_natives_vorbis_VorbisDecoderLibrary_create(JNIEnv *jni, jobject me) {
 	vorbis_state_t* state = calloc(1, sizeof(*state));
 
 	if (state == NULL) {
-		return NULL;
+		return 0;
 	}
 
 	vorbis_info_init(&state->info);
@@ -33,7 +33,7 @@ JNIEXPORT jlong JNICALL Java_com_sedmelluq_discord_lavaplayer_natives_vorbis_Vor
 	return (jlong) state;
 }
 
-JNIEXPORT jint JNICALL Java_com_sedmelluq_discord_lavaplayer_natives_vorbis_VorbisDecoderLibrary_initialise(JNIEnv *jni, jobject me,
+CONNECTOR_EXPORT jint JNICALL Java_com_sedmelluq_discord_lavaplayer_natives_vorbis_VorbisDecoderLibrary_initialise(JNIEnv *jni, jobject me,
 	jlong instance, jobject id_direct_buffer, jint id_offset, jint id_length, jobject setup_direct_buffer, jint setup_offset, jint setup_length) {
 
 	vorbis_state_t* state = (vorbis_state_t*) instance;
@@ -55,7 +55,7 @@ JNIEXPORT jint JNICALL Java_com_sedmelluq_discord_lavaplayer_natives_vorbis_Vorb
 	build_ogg_packet(jni, &packet, setup_direct_buffer, setup_offset, setup_length, JNI_FALSE);
 	error = vorbis_synthesis_headerin(&state->info, &comment, &packet);
 
-	if (error != NULL) {
+	if (error != 0) {
 		return error | 0x02000000;
 	}
 
@@ -69,12 +69,12 @@ JNIEXPORT jint JNICALL Java_com_sedmelluq_discord_lavaplayer_natives_vorbis_Vorb
 	return JNI_TRUE;
 }
 
-JNIEXPORT jint JNICALL Java_com_sedmelluq_discord_lavaplayer_natives_vorbis_VorbisDecoderLibrary_getChannelCount(JNIEnv *jni, jobject me, jlong instance) {
+CONNECTOR_EXPORT jint JNICALL Java_com_sedmelluq_discord_lavaplayer_natives_vorbis_VorbisDecoderLibrary_getChannelCount(JNIEnv *jni, jobject me, jlong instance) {
 	vorbis_state_t* state = (vorbis_state_t*) instance;
 	return state->info.channels;
 }
 
-JNIEXPORT jint JNICALL Java_com_sedmelluq_discord_lavaplayer_natives_vorbis_VorbisDecoderLibrary_input(JNIEnv *jni, jobject me, jlong instance, jobject direct_buffer, jint offset, jint length) {
+CONNECTOR_EXPORT jint JNICALL Java_com_sedmelluq_discord_lavaplayer_natives_vorbis_VorbisDecoderLibrary_input(JNIEnv *jni, jobject me, jlong instance, jobject direct_buffer, jint offset, jint length) {
 	vorbis_state_t* state = (vorbis_state_t*) instance;
 	ogg_packet packet;
 
@@ -88,7 +88,7 @@ JNIEXPORT jint JNICALL Java_com_sedmelluq_discord_lavaplayer_natives_vorbis_Vorb
 	return vorbis_synthesis_blockin(&state->dsp_state, &state->block);
 }
 
-JNIEXPORT jint JNICALL Java_com_sedmelluq_discord_lavaplayer_natives_vorbis_VorbisDecoderLibrary_output(JNIEnv *jni, jobject me, jlong instance, jobjectArray channels, jint length) {
+CONNECTOR_EXPORT jint JNICALL Java_com_sedmelluq_discord_lavaplayer_natives_vorbis_VorbisDecoderLibrary_output(JNIEnv *jni, jobject me, jlong instance, jobjectArray channels, jint length) {
 	vorbis_state_t* state = (vorbis_state_t*) instance;
 	float** buffers;
 
@@ -117,7 +117,7 @@ JNIEXPORT jint JNICALL Java_com_sedmelluq_discord_lavaplayer_natives_vorbis_Vorb
 	return chunk;
 }
 
-JNIEXPORT void JNICALL Java_com_sedmelluq_discord_lavaplayer_natives_vorbis_VorbisDecoderLibrary_destroy(JNIEnv *jni, jobject me, jlong instance) {
+CONNECTOR_EXPORT void JNICALL Java_com_sedmelluq_discord_lavaplayer_natives_vorbis_VorbisDecoderLibrary_destroy(JNIEnv *jni, jobject me, jlong instance) {
 	vorbis_state_t* state = (vorbis_state_t*) instance;
 
 	if (state->initialised) {

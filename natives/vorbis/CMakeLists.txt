@@ -9,7 +9,7 @@ set(OGG_SOURCE "${ROOT_DIR}/libogg-1.3.3/src")
 if ("${CMAKE_C_COMPILER_ID}" STREQUAL "MSVC")
 	set(CMAKE_C_FLAGS_RELEASE "/MT")
 else()
-	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC")
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC -fdata-sections -ffunction-sections")
 endif()
 
 file(GLOB MAIN_SOURCES "${VORBIS_SOURCE}/*.c" "${OGG_SOURCE}/*.c")

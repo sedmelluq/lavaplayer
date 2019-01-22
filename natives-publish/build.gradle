@@ -1,13 +1,10 @@
 plugins {
   id 'java'
+  id 'com.jfrog.bintray'
 }
-
-apply plugin: 'com.jfrog.bintray'
 
 version = '1.2.55'
 ext.moduleName = 'lavaplayer-natives'
-
-compileJava.dependsOn(':natives:checkNatives')
 
 task sourceJar(type: Jar) {
   from sourceSets.main.allJava

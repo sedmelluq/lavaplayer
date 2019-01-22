@@ -14,8 +14,21 @@ endif()
 
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
 	add_definitions(-Dinline=__inline)
-	set(CMAKE_CXX_FLAGS_RELEASE "/MT")
+
+	set(COMPILER_FLAGS "")
+	set(COMPILER_FLAGS_DEBUG "/MTd")
+	set(COMPILER_FLAGS_RELEASE "/Ox /MT")
+else()
+	set(COMPILER_FLAGS "-Wall -Wextra -Werror -Wno-unused-parameter -Wno-unused-function -fvisibility=hidden")
+	set(COMPILER_FLAGS_DEBUG "-g")
+	set(COMPILER_FLAGS_RELEASE "-O3 -DNDEBUG -s")
+	set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--gc-sections -Wl,--exclude-libs,ALL")
 endif()
+
+set(CMAKE_C_FLAGS_DEBUG "${COMPILER_FLAGS} ${COMPILER_FLAGS_DEBUG}")
+set(CMAKE_C_FLAGS_RELEASE "${COMPILER_FLAGS} ${COMPILER_FLAGS_RELEASE}")
+set(CMAKE_CXX_FLAGS_DEBUG "${COMPILER_FLAGS} ${COMPILER_FLAGS_DEBUG}")
+set(CMAKE_CXX_FLAGS_RELEASE "${COMPILER_FLAGS} ${COMPILER_FLAGS_RELEASE}")
 
 include_directories("$ENV{JAVA_HOME}/include/")
 

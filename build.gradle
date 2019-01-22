@@ -1,10 +1,7 @@
-buildscript {
-  repositories {
-    jcenter()
-  }
-  dependencies {
-    classpath "com.jfrog.bintray.gradle:gradle-bintray-plugin:1.8.4"
-  }
+plugins {
+  id 'de.undercouch.download' version '3.4.3' apply false
+  id 'com.jfrog.bintray' version '1.8.4' apply false
+  id 'org.sonarqube' version '2.7' apply false
 }
 
 allprojects {
