@@ -75,7 +75,10 @@ public class OggPacketInputStream extends InputStream {
       return false;
     }
 
-    initialisePacket();
+    if (!initialisePacket()) {
+      return loadNextNonEmptyPage();
+    }
+
     return true;
   }
 

@@ -310,4 +310,11 @@ public class NonAllocatingAudioFrameBuffer extends AbstractAudioFrameBuffer {
     frame.setVolume(0);
     return frame;
   }
+
+  @Override
+  protected void signalWaiters() {
+    synchronized (synchronizer) {
+      synchronizer.notifyAll();
+    }
+  }
 }

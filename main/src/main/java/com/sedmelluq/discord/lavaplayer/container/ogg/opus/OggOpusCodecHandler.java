@@ -41,7 +41,7 @@ public class OggOpusCodecHandler implements OggCodecHandler {
     ByteBuffer firstPacket = broker.getBuffer();
     verifyFirstPacket(firstPacket);
 
-    loadCommentsHeader(stream, broker, false);
+    loadCommentsHeader(stream, broker, true);
 
     int channelCount = firstPacket.get(9) & 0xFF;
     return new OggOpusTrackHandler(stream, broker, channelCount, getSampleRate(firstPacket));
@@ -52,7 +52,7 @@ public class OggOpusCodecHandler implements OggCodecHandler {
     ByteBuffer firstPacket = broker.getBuffer();
     verifyFirstPacket(firstPacket);
 
-    loadCommentsHeader(stream, broker, true);
+    loadCommentsHeader(stream, broker, false);
 
     return new OggMetadata(
         parseTags(broker.getBuffer(), broker.isTruncated()),
