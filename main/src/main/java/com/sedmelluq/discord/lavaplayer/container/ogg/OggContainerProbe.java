@@ -14,6 +14,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 
 import static com.sedmelluq.discord.lavaplayer.container.MediaContainerDetection.checkNextBytes;
+import static com.sedmelluq.discord.lavaplayer.container.MediaContainerDetectionResult.supportedFormat;
 import static com.sedmelluq.discord.lavaplayer.container.ogg.OggPacketInputStream.OGG_PAGE_HEADER;
 
 /**
@@ -48,30 +49,20 @@ public class OggContainerProbe implements MediaContainerProbe {
       log.warn("Failed to collect additional information on OGG stream.", e);
     }
 
-    return new MediaContainerDetectionResult(this, infoBuilder.build());
+    return supportedFormat(this, null, infoBuilder.build());
   }
 
   @Override
-  public AudioTrack createTrack(AudioTrackInfo trackInfo, SeekableInputStream inputStream) {
+  public AudioTrack createTrack(String parameters, AudioTrackInfo trackInfo, SeekableInputStream inputStream) {
     return new OggAudioTrack(trackInfo, inputStream);
   }
 
   private void collectStreamInformation(SeekableInputStream stream, AudioTrackInfoBuilder infoBuilder) throws IOException {
     OggPacketInputStream packetInputStream = new OggPacketInputStream(stream);
-    OggTrackProvider track = OggTrackLoader.loadTrack(packetInputStream);
+    OggMetadata metadata = OggTrackLoader.loadMetadata(packetInputStream);
 
-    if (track != null) {
-      try {
-        infoBuilder.apply(track.getMetadata());
-
-        OggStreamSizeInfo sizeInfo = track.seekForSizeInfo();
-
-        if (sizeInfo != null) {
-          infoBuilder.setLength(sizeInfo.totalSamples * 1000 / sizeInfo.sampleRate);
-        }
-      } finally {
-        track.close();
-      }
+    if (metadata != null) {
+      infoBuilder.apply(metadata);
     }
   }
 }

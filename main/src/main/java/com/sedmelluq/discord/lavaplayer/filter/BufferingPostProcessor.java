@@ -26,7 +26,6 @@ public class BufferingPostProcessor implements AudioPostProcessor {
     this.offeredFrame = new MutableAudioFrame();
     this.outputBuffer = ByteBuffer.allocateDirect(context.outputFormat.maximumChunkSize());
 
-    offeredFrame.setBuffer(outputBuffer);
     offeredFrame.setFormat(context.outputFormat);
   }
 
@@ -38,6 +37,7 @@ public class BufferingPostProcessor implements AudioPostProcessor {
     offeredFrame.setTimecode(timecode);
     offeredFrame.setVolume(context.playerOptions.volumeLevel.get());
 
+    offeredFrame.setBuffer(outputBuffer);
     context.frameBuffer.consume(offeredFrame);
   }
 

@@ -41,4 +41,11 @@ public class OggStreamSizeInfo {
     this.lastPageOffset = lastPageOffset;
     this.sampleRate = sampleRate;
   }
+
+  /**
+   * @return Duration calculated from size info in milliseconds (rounded down).
+   */
+  public long getDuration() {
+    return totalSamples * 1000 / sampleRate;
+  }
 }

@@ -141,6 +141,8 @@ public class PersistentHttpStream extends SeekableInputStream implements AutoClo
     }
 
     close();
+
+    log.debug("Encountered retriable exception on url {}.", contentUrl, exception);
   }
 
   private int internalRead(boolean attemptReconnect) throws IOException {

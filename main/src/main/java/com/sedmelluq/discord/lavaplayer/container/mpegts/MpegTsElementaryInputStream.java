@@ -2,20 +2,29 @@ package com.sedmelluq.discord.lavaplayer.container.mpegts;
 
 import com.sedmelluq.discord.lavaplayer.tools.io.BitBufferReader;
 import com.sedmelluq.discord.lavaplayer.tools.io.GreedyInputStream;
+import com.sedmelluq.discord.lavaplayer.track.info.AudioTrackInfoBuilder;
+import com.sedmelluq.discord.lavaplayer.track.info.AudioTrackInfoProvider;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 
 /**
  * Input stream which takes in a stream providing MPEG TS data and outputs a single track from it specified by the
  * elementary data type.
  */
 public class MpegTsElementaryInputStream extends InputStream {
+  private static final Logger log = LoggerFactory.getLogger(MpegTsElementaryInputStream.class);
+
   public static final int ADTS_ELEMENTARY_STREAM = 0x0F;
 
   private static final int PID_UNKNOWN = -1;
   private static final int PID_NOT_PRESENT = -2;
+
+  private static final int PACKET_IDENTIFIER_SDT = 0x11;
 
   private static final int TS_PACKET_SIZE = 188;
 
@@ -29,6 +38,9 @@ public class MpegTsElementaryInputStream extends InputStream {
   private boolean elementaryDataInPacket;
   private boolean streamEndReached;
 
+  private String serviceProviderName;
+  private String serviceName;
+
   /**
    * @param inputStream Underlying input stream
    * @param elementaryDataType ID of the media type to pass upstream
@@ -41,6 +53,35 @@ public class MpegTsElementaryInputStream extends InputStream {
     this.bufferReader = new BitBufferReader(packetBuffer);
     this.elementaryStreamIdentifier = PID_UNKNOWN;
     this.programMapIdentifier = PID_UNKNOWN;
+  }
+
+  public AudioTrackInfoProvider getLoadedMetadata() {
+    return new AudioTrackInfoProvider() {
+      @Override
+      public String getTitle() {
+        return serviceName;
+      }
+
+      @Override
+      public String getAuthor() {
+        return serviceProviderName;
+      }
+
+      @Override
+      public Long getLength() {
+        return null;
+      }
+
+      @Override
+      public String getIdentifier() {
+        return null;
+      }
+
+      @Override
+      public String getUri() {
+        return null;
+      }
+    };
   }
 
   @Override
@@ -116,6 +157,47 @@ public class MpegTsElementaryInputStream extends InputStream {
       processProgramPacket();
     } else if (identifier == elementaryStreamIdentifier) {
       elementaryDataInPacket = true;
+    } else if (identifier == PACKET_IDENTIFIER_SDT) {
+      try {
+        parseSdtTable();
+      } catch (RuntimeException e) {
+        log.warn("Exception when parsing MPEG-TS SDT table.", e);
+      }
+    }
+  }
+
+  private void parseSdtTable() {
+    bufferReader.asLong(20);
+    int sectionLength = bufferReader.asInteger(12);
+    bufferReader.asLong(64);
+
+    if (sectionLength > 0) {
+      bufferReader.asLong(28);
+      int loopLength = bufferReader.asInteger(12);
+
+      if (loopLength > 0) {
+        int descriptorTag = bufferReader.asInteger(8);
+
+        if (descriptorTag == 0x48) {
+          bufferReader.asLong(16);
+
+          serviceProviderName = parseSdtAsciiString();
+          serviceName = parseSdtAsciiString();
+        }
+      }
+    }
+  }
+
+  private String parseSdtAsciiString() {
+    int length = packetBuffer.get() & 0xFF;
+
+    if (length > 0) {
+      byte[] textBytes = new byte[length];
+      packetBuffer.get(textBytes);
+
+      return new String(textBytes, 0, textBytes.length, StandardCharsets.US_ASCII);
+    } else {
+      return null;
     }
   }
 

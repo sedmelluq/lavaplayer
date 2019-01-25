@@ -14,10 +14,8 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 
 import static com.sedmelluq.discord.lavaplayer.container.MediaContainerDetection.STREAM_SCAN_DISTANCE;
-import static com.sedmelluq.discord.lavaplayer.container.MediaContainerDetection.UNKNOWN_ARTIST;
-import static com.sedmelluq.discord.lavaplayer.container.MediaContainerDetection.UNKNOWN_TITLE;
 import static com.sedmelluq.discord.lavaplayer.container.MediaContainerDetection.checkNextBytes;
-import static com.sedmelluq.discord.lavaplayer.tools.DataFormatTools.defaultOnNull;
+import static com.sedmelluq.discord.lavaplayer.container.MediaContainerDetectionResult.supportedFormat;
 
 /**
  * Container detection probe for MP3 format.
@@ -35,7 +33,7 @@ public class Mp3ContainerProbe implements MediaContainerProbe {
   @Override
   public boolean matchesHints(MediaContainerHints hints) {
     boolean invalidMimeType = hints.mimeType != null && !"audio/mpeg".equalsIgnoreCase(hints.mimeType);
-    boolean invalidFileExtension = hints.fileExtension != null && !"mp3".equalsIgnoreCase(hints.mimeType);
+    boolean invalidFileExtension = hints.fileExtension != null && !"mp3".equalsIgnoreCase(hints.fileExtension);
     return hints.present() && !invalidMimeType && !invalidFileExtension;
   }
 
@@ -58,7 +56,7 @@ public class Mp3ContainerProbe implements MediaContainerProbe {
     try {
       file.parseHeaders();
 
-      return new MediaContainerDetectionResult(this, AudioTrackInfoBuilder.create(reference, inputStream)
+      return supportedFormat(this, null, AudioTrackInfoBuilder.create(reference, inputStream)
           .apply(file).setIsStream(!file.isSeekable()).build());
     } finally {
       file.close();
@@ -66,7 +64,7 @@ public class Mp3ContainerProbe implements MediaContainerProbe {
   }
 
   @Override
-  public AudioTrack createTrack(AudioTrackInfo trackInfo, SeekableInputStream inputStream) {
+  public AudioTrack createTrack(String parameters, AudioTrackInfo trackInfo, SeekableInputStream inputStream) {
     return new Mp3AudioTrack(trackInfo, inputStream);
   }
 }

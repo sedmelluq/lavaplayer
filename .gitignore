@@ -23,6 +23,7 @@ natives/dist
 natives/fdk-aac/**
 !natives/fdk-aac/CMakeLists.txt
 natives/libs
+natives/mp3/mpg*
 natives/opus/opus*
 natives/samplerate/src
 natives/vorbis/*/

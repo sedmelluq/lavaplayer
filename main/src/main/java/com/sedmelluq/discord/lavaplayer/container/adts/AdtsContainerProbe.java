@@ -14,6 +14,8 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 
+import static com.sedmelluq.discord.lavaplayer.container.MediaContainerDetectionResult.supportedFormat;
+
 /**
  * Container detection probe for ADTS stream format.
  */
@@ -27,7 +29,8 @@ public class AdtsContainerProbe implements MediaContainerProbe {
 
   @Override
   public boolean matchesHints(MediaContainerHints hints) {
-    return false;
+    boolean invalidFileExtension = hints.fileExtension != null && !"aac".equalsIgnoreCase(hints.fileExtension);
+    return hints.present() && !invalidFileExtension;
   }
 
   @Override
@@ -40,14 +43,11 @@ public class AdtsContainerProbe implements MediaContainerProbe {
 
     log.debug("Track {} is an ADTS stream.", reference.identifier);
 
-    return new MediaContainerDetectionResult(
-        this,
-        AudioTrackInfoBuilder.create(reference, inputStream).build()
-    );
+    return supportedFormat(this, null, AudioTrackInfoBuilder.create(reference, inputStream).build());
   }
 
   @Override
-  public AudioTrack createTrack(AudioTrackInfo trackInfo, SeekableInputStream inputStream) {
+  public AudioTrack createTrack(String parameters, AudioTrackInfo trackInfo, SeekableInputStream inputStream) {
     return new AdtsAudioTrack(trackInfo, inputStream);
   }
 }

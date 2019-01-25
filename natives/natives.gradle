@@ -1,0 +1,98 @@
+import org.apache.tools.ant.taskdefs.condition.Os
+
+def getBuildParameters(base) {
+  if (Os.isFamily(Os.FAMILY_WINDOWS)) {
+    return [
+        'identifier': "win-x86-64",
+        'library': "${base}.dll",
+        'setupArguments': ['-DCMAKE_BUILD_TYPE=Release', '-A', 'x64'],
+        'buildArguments': ['--config', 'Release'],
+        'env': [:]
+    ]
+  } else if (Os.isFamily(Os.FAMILY_MAC)) {
+    return [
+        'identifier': 'darwin',
+        'library': "lib${base}.dylib",
+        'setupArguments': ['-DCMAKE_BUILD_TYPE=Release'],
+        'buildArguments': [],
+        'env': [:]
+    ]
+  } else {
+    return [
+        'identifier': "linux-x86-64",
+        'library': "lib${base}.so",
+        'setupArguments': ['-DCMAKE_BUILD_TYPE=Release'],
+        'buildArguments': [],
+        'env': [:]
+    ]
+  }
+}
+
+def getHomeDirectory() {
+  def directory = file(System.getProperty('java.home'))
+  return directory.name == 'jre' ? directory.parentFile.absolutePath : directory.absolutePath
+}
+
+def createBuildTask(tasksHolder, config) {
+  def parameters = getBuildParameters(config.name)
+  def buildDirectory = "${config.buildBase}/${parameters.identifier}"
+  def distDirectory = "${config.projectBase}/dist/${parameters.identifier}"
+  def deployDirectory = "${config.deployBase}/src/main/resources/natives/${parameters.identifier}"
+  def taskBase = "${config.name}-64"
+
+  parameters.env.put('DIST_DIR', distDirectory)
+  parameters.env.put('JAVA_HOME', getHomeDirectory())
+
+  def setupTask = tasksHolder.create("${taskBase}-setup", Exec) {
+    doFirst {
+      if (config.setupDoFirst) {
+        config.setupDoFirst(config)
+      }
+
+      file(buildDirectory).with {
+        it.deleteDir()
+        it.mkdirs()
+      }
+    }
+
+    workingDir buildDirectory
+    executable 'cmake'
+    args(parameters.setupArguments + ['../..'])
+    environment parameters.env
+  }
+
+  def buildTask = tasksHolder.create("${taskBase}-build", Exec) {
+    workingDir buildDirectory
+    executable 'cmake'
+    args(['--build', '.'] + parameters.buildArguments)
+    environment parameters.env
+  }
+
+  def deployTask = tasksHolder.create("${taskBase}-deploy") { doLast {
+    copy {
+      from distDirectory
+      into deployDirectory
+    }
+  }}
+
+  tasksHolder.create("${taskBase}-deploy-only") { doLast {
+    copy {
+      from distDirectory
+      into deployDirectory
+    }
+  }}
+
+  if (config.setupDependency) {
+    setupTask.dependsOn(config.setupDependency)
+  }
+
+  buildTask.dependsOn(setupTask)
+  deployTask.dependsOn(buildTask)
+  config.compileTask.dependsOn(deployTask)
+
+  if (!file("${deployDirectory}/${parameters.library}").exists()) {
+    config.checkTask.dependsOn(deployTask)
+  }
+}
+
+ext.createBuildTask = { tasksHolder, config -> createBuildTask(tasksHolder, config) }

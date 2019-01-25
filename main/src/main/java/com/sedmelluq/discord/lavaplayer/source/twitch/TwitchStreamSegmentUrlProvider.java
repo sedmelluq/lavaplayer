@@ -17,8 +17,6 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.List;
 
-import static com.sedmelluq.discord.lavaplayer.source.twitch.TwitchStreamAudioSourceManager.createGetRequest;
-
 /**
  * Provider for Twitch segment URLs from a channel.
  */
@@ -28,14 +26,18 @@ public class TwitchStreamSegmentUrlProvider extends M3uStreamSegmentUrlProvider 
   private static final Logger log = LoggerFactory.getLogger(TwitchStreamSegmentUrlProvider.class);
 
   private final String channelName;
+  private final TwitchStreamAudioSourceManager manager;
+
   private String streamSegmentPlaylistUrl;
   private long tokenExpirationTime;
 
   /**
    * @param channelName Channel identifier.
+   * @param manager Twitch source manager.
    */
-  public TwitchStreamSegmentUrlProvider(String channelName) {
+  public TwitchStreamSegmentUrlProvider(String channelName, TwitchStreamAudioSourceManager manager) {
     this.channelName = channelName;
+    this.manager = manager;
     this.tokenExpirationTime = -1;
   }
 
@@ -69,8 +71,13 @@ public class TwitchStreamSegmentUrlProvider extends M3uStreamSegmentUrlProvider 
     return streamSegmentPlaylistUrl;
   }
 
+  @Override
+  protected HttpUriRequest createSegmentGetRequest(String url) {
+    return manager.createGetRequest(url);
+  }
+
   private JsonBrowser loadAccessToken(HttpInterface httpInterface) throws IOException {
-    HttpUriRequest request = createGetRequest("https://api.twitch.tv/api/channels/" + channelName +
+    HttpUriRequest request = createSegmentGetRequest("https://api.twitch.tv/api/channels/" + channelName +
         "/access_token?adblock=false&need_https=true&platform=web&player_type=site");
 
     try (CloseableHttpResponse response = httpInterface.execute(request)) {

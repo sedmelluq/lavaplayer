@@ -1,3 +1,9 @@
+plugins {
+  id 'de.undercouch.download' version '3.4.3' apply false
+  id 'com.jfrog.bintray' version '1.8.4' apply false
+  id 'org.sonarqube' version '2.7' apply false
+}
+
 allprojects {
   repositories {
     mavenCentral()
@@ -16,106 +22,3 @@ allprojects {
 ext.slf4jVersion = '1.7.25'
 
 group = 'com.sedmelluq'
-
-import org.apache.tools.ant.taskdefs.condition.Os
-
-def getBuildParameters(base, bits) {
-  def bitSuffix = (bits == 32) ? 'x86' : 'x86-64'
-
-  if (Os.isFamily(Os.FAMILY_WINDOWS)) {
-    return [
-        'identifier': "win-${bitSuffix}",
-        'library': "${base}.dll",
-        'setupArguments': ["-DBITZ:STRING=${bits}", '-A', (bits == 64 ? 'x64' : 'Win32')],
-        'buildArguments': ['--config', 'Release'],
-        'env': [:]
-    ]
-  } else if (Os.isFamily(Os.FAMILY_MAC)) {
-    return [
-        'identifier': 'darwin',
-        'library': "lib${base}.dylib",
-        'setupArguments': ["-DBITZ:STRING=${bits}"],
-        'buildArguments': [],
-        'env': ['CXXFLAGS': "-m${bits}", 'CFLAGS': "-m${bits}", 'LDFLAGS': "-m${bits}"]
-    ]
-  } else {
-    return [
-        'identifier': "linux-${bitSuffix}",
-        'library': "lib${base}.so",
-        'setupArguments': ["-DBITZ:STRING=${bits}"],
-        'buildArguments': [],
-        'env': ['CXXFLAGS': "-m${bits}", 'CFLAGS': "-m${bits}", 'LDFLAGS': "-m${bits}"]
-    ]
-  }
-}
-
-def getHomeDirectory() {
-  def directory = file(System.getProperty('java.home'))
-  return directory.name == 'jre' ? directory.parentFile.absolutePath : directory.absolutePath
-}
-
-def createBuildTask(tasksHolder, config, bits) {
-  def parameters = getBuildParameters(config.name, bits)
-  def buildDirectory = "${config.buildBase}/${parameters.identifier}"
-  def distDirectory = "${config.projectBase}/dist/${parameters.identifier}"
-  def deployDirectory = "${config.deployBase}/src/main/resources/natives/${parameters.identifier}"
-  def taskBase = "${config.name}-${bits}"
-
-  if (Os.isFamily(Os.FAMILY_MAC) && bits != 64) {
-    return
-  }
-
-  parameters.env.put('DIST_DIR', distDirectory)
-  parameters.env.put('JAVA_HOME', getHomeDirectory())
-
-  def setupTask = tasksHolder.create("${taskBase}-setup", Exec) {
-    doFirst {
-      if (config.setupDoFirst) {
-        config.setupDoFirst(config, bits)
-      }
-
-      file(buildDirectory).with {
-        it.deleteDir()
-        it.mkdirs()
-      }
-    }
-
-    workingDir buildDirectory
-    executable 'cmake'
-    args(parameters.setupArguments + ['../..'])
-    environment parameters.env
-  }
-
-  def buildTask = tasksHolder.create("${taskBase}-build", Exec) {
-    workingDir buildDirectory
-    executable 'cmake'
-    args(['--build', '.'] + parameters.buildArguments)
-    environment parameters.env
-  }
-
-  def deployTask = tasksHolder.create("${taskBase}-deploy") { doLast {
-    copy {
-      from distDirectory
-      into deployDirectory
-    }
-  }}
-
-  tasksHolder.create("${taskBase}-deploy-only") { doLast {
-    copy {
-      from distDirectory
-      into deployDirectory
-    }
-  }}
-
-  if (config.setupDependency) {
-    setupTask.dependsOn(config.setupDependency)
-  }
-
-  buildTask.dependsOn(setupTask)
-  deployTask.dependsOn(buildTask)
-  config.compileTask.dependsOn(deployTask)
-
-  if (!file("${deployDirectory}/${parameters.library}").exists()) {
-    config.checkTask.dependsOn(deployTask)
-  }
-}

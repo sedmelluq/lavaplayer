@@ -1,6 +1,10 @@
 package com.sedmelluq.discord.lavaplayer.source.local;
 
-import com.sedmelluq.discord.lavaplayer.container.*;
+import com.sedmelluq.discord.lavaplayer.container.MediaContainerDetection;
+import com.sedmelluq.discord.lavaplayer.container.MediaContainerDetectionResult;
+import com.sedmelluq.discord.lavaplayer.container.MediaContainerHints;
+import com.sedmelluq.discord.lavaplayer.container.MediaContainerRegistry;
+import com.sedmelluq.discord.lavaplayer.container.MediaContainerDescriptor;
 import com.sedmelluq.discord.lavaplayer.player.DefaultAudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.source.ProbingAudioSourceManager;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
@@ -20,6 +24,14 @@ import static com.sedmelluq.discord.lavaplayer.tools.FriendlyException.Severity.
  * Audio source manager that implements finding audio files from the local file system.
  */
 public class LocalAudioSourceManager extends ProbingAudioSourceManager {
+  public LocalAudioSourceManager() {
+    this(MediaContainerRegistry.DEFAULT_REGISTRY);
+  }
+
+  public LocalAudioSourceManager(MediaContainerRegistry containerRegistry) {
+    super(containerRegistry);
+  }
+
   @Override
   public String getSourceName() {
     return "local";
@@ -37,13 +49,17 @@ public class LocalAudioSourceManager extends ProbingAudioSourceManager {
   }
 
   @Override
-  protected AudioTrack createTrack(AudioTrackInfo trackInfo, MediaContainerProbe probe) {
-    return new LocalAudioTrack(trackInfo, probe, this);
+  protected AudioTrack createTrack(AudioTrackInfo trackInfo, MediaContainerDescriptor containerTrackFactory) {
+    return new LocalAudioTrack(trackInfo, containerTrackFactory, this);
   }
 
   private MediaContainerDetectionResult detectContainerForFile(AudioReference reference, File file) {
     try (LocalSeekableInputStream inputStream = new LocalSeekableInputStream(file)) {
-      return MediaContainerDetection.detectContainer(reference, inputStream, MediaContainerHints.from(null, null));
+      int lastDotIndex = file.getName().lastIndexOf('.');
+      String fileExtension = lastDotIndex >= 0 ? file.getName().substring(lastDotIndex + 1) : null;
+
+      return new MediaContainerDetection(containerRegistry, reference, inputStream,
+          MediaContainerHints.from(null, fileExtension)).detectContainer();
     } catch (IOException e) {
       throw new FriendlyException("Failed to open file for reading.", SUSPICIOUS, e);
     }
@@ -56,17 +72,15 @@ public class LocalAudioSourceManager extends ProbingAudioSourceManager {
 
   @Override
   public void encodeTrack(AudioTrack track, DataOutput output) throws IOException {
-    output.writeUTF(((LocalAudioTrack) track).getProbe().getName());
+    encodeTrackFactory(((LocalAudioTrack) track).getContainerTrackFactory(), output);
   }
 
   @Override
   public AudioTrack decodeTrack(AudioTrackInfo trackInfo, DataInput input) throws IOException {
-    String probeName = input.readUTF();
+    MediaContainerDescriptor containerTrackFactory = decodeTrackFactory(input);
 
-    for (MediaContainer container : MediaContainer.class.getEnumConstants()) {
-      if (container.probe.getName().equals(probeName)) {
-        return new LocalAudioTrack(trackInfo, container.probe, this);
-      }
+    if (containerTrackFactory != null) {
+      return new LocalAudioTrack(trackInfo, containerTrackFactory, this);
     }
 
     return null;

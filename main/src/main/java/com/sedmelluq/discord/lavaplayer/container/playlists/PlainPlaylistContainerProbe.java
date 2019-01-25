@@ -18,6 +18,8 @@ import java.util.regex.Pattern;
 
 import static com.sedmelluq.discord.lavaplayer.container.MediaContainerDetection.STREAM_SCAN_DISTANCE;
 import static com.sedmelluq.discord.lavaplayer.container.MediaContainerDetection.matchNextBytesAsRegex;
+import static com.sedmelluq.discord.lavaplayer.container.MediaContainerDetectionResult.refer;
+import static com.sedmelluq.discord.lavaplayer.container.MediaContainerDetectionResult.unsupportedFormat;
 
 /**
  * Probe for a playlist containing the raw link without any format.
@@ -52,15 +54,15 @@ public class PlainPlaylistContainerProbe implements MediaContainerProbe {
       Matcher matcher = linkPattern.matcher(line);
 
       if (matcher.matches()) {
-        return new MediaContainerDetectionResult(this, new AudioReference(matcher.group(0), null));
+        return refer(this, new AudioReference(matcher.group(0), null));
       }
     }
 
-    return new MediaContainerDetectionResult(this, "The playlist file contains no links.");
+    return unsupportedFormat(this, "The playlist file contains no links.");
   }
 
   @Override
-  public AudioTrack createTrack(AudioTrackInfo trackInfo, SeekableInputStream inputStream) {
+  public AudioTrack createTrack(String parameters, AudioTrackInfo trackInfo, SeekableInputStream inputStream) {
     throw new UnsupportedOperationException();
   }
 }

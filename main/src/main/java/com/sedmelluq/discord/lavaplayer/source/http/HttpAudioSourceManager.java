@@ -1,23 +1,24 @@
 package com.sedmelluq.discord.lavaplayer.source.http;
 
-import com.sedmelluq.discord.lavaplayer.container.MediaContainer;
 import com.sedmelluq.discord.lavaplayer.container.MediaContainerDetection;
 import com.sedmelluq.discord.lavaplayer.container.MediaContainerDetectionResult;
 import com.sedmelluq.discord.lavaplayer.container.MediaContainerHints;
-import com.sedmelluq.discord.lavaplayer.container.MediaContainerProbe;
+import com.sedmelluq.discord.lavaplayer.container.MediaContainerDescriptor;
+import com.sedmelluq.discord.lavaplayer.container.MediaContainerRegistry;
 import com.sedmelluq.discord.lavaplayer.player.DefaultAudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.source.ProbingAudioSourceManager;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
+import com.sedmelluq.discord.lavaplayer.tools.io.HttpClientTools;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpConfigurable;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterface;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterfaceManager;
-import com.sedmelluq.discord.lavaplayer.tools.io.HttpClientTools;
 import com.sedmelluq.discord.lavaplayer.tools.io.PersistentHttpStream;
 import com.sedmelluq.discord.lavaplayer.tools.io.ThreadLocalHttpInterfaceManager;
 import com.sedmelluq.discord.lavaplayer.track.AudioItem;
 import com.sedmelluq.discord.lavaplayer.track.AudioReference;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo;
+import com.sedmelluq.discord.lavaplayer.track.info.AudioTrackInfoBuilder;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.impl.client.HttpClientBuilder;
@@ -30,6 +31,7 @@ import java.net.URISyntaxException;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
+import static com.sedmelluq.discord.lavaplayer.container.MediaContainerDetectionResult.refer;
 import static com.sedmelluq.discord.lavaplayer.tools.FriendlyException.Severity.COMMON;
 import static com.sedmelluq.discord.lavaplayer.tools.FriendlyException.Severity.SUSPICIOUS;
 import static com.sedmelluq.discord.lavaplayer.tools.io.HttpClientTools.getHeaderValue;
@@ -41,9 +43,18 @@ public class HttpAudioSourceManager extends ProbingAudioSourceManager implements
   private final HttpInterfaceManager httpInterfaceManager;
 
   /**
-   * Create a new instance.
+   * Create a new instance with default media container registry.
    */
   public HttpAudioSourceManager() {
+    this(MediaContainerRegistry.DEFAULT_REGISTRY);
+  }
+
+  /**
+   * Create a new instance.
+   */
+  public HttpAudioSourceManager(MediaContainerRegistry containerRegistry) {
+    super(containerRegistry);
+
     httpInterfaceManager = new ThreadLocalHttpInterfaceManager(
         HttpClientTools
             .createSharedCookiesHttpBuilder()
@@ -64,12 +75,16 @@ public class HttpAudioSourceManager extends ProbingAudioSourceManager implements
       return null;
     }
 
-    return handleLoadResult(detectContainer(httpReference));
+    if (httpReference.containerDescriptor != null) {
+      return createTrack(AudioTrackInfoBuilder.create(reference, null).build(), httpReference.containerDescriptor);
+    } else {
+      return handleLoadResult(detectContainer(httpReference));
+    }
   }
 
   @Override
-  protected AudioTrack createTrack(AudioTrackInfo trackInfo, MediaContainerProbe probe) {
-    return new HttpAudioTrack(trackInfo, probe, this);
+  protected AudioTrack createTrack(AudioTrackInfo trackInfo, MediaContainerDescriptor containerDescriptor) {
+    return new HttpAudioTrack(trackInfo, containerDescriptor, this);
   }
 
   /**
@@ -89,7 +104,7 @@ public class HttpAudioSourceManager extends ProbingAudioSourceManager implements
     httpInterfaceManager.configureBuilder(configurator);
   }
 
-  private AudioReference getAsHttpReference(AudioReference reference) {
+  public static AudioReference getAsHttpReference(AudioReference reference) {
     if (reference.identifier.startsWith("https://") || reference.identifier.startsWith("http://")) {
       return reference;
     } else if (reference.identifier.startsWith("icy://")) {
@@ -116,7 +131,7 @@ public class HttpAudioSourceManager extends ProbingAudioSourceManager implements
       String redirectUrl = HttpClientTools.getRedirectLocation(reference.identifier, inputStream.getCurrentResponse());
 
       if (redirectUrl != null) {
-        return new MediaContainerDetectionResult(null, new AudioReference(redirectUrl, null));
+        return refer(null, new AudioReference(redirectUrl, null));
       } else if (statusCode == HttpStatus.SC_NOT_FOUND) {
         return null;
       } else if (!HttpClientTools.isSuccessWithContent(statusCode)) {
@@ -124,7 +139,7 @@ public class HttpAudioSourceManager extends ProbingAudioSourceManager implements
       }
 
       MediaContainerHints hints = MediaContainerHints.from(getHeaderValue(inputStream.getCurrentResponse(), "Content-Type"), null);
-      return MediaContainerDetection.detectContainer(reference, inputStream, hints);
+      return new MediaContainerDetection(containerRegistry, reference, inputStream, hints).detectContainer();
     } catch (URISyntaxException e) {
       throw new FriendlyException("Not a valid URL.", COMMON, e);
     }
@@ -137,17 +152,15 @@ public class HttpAudioSourceManager extends ProbingAudioSourceManager implements
 
   @Override
   public void encodeTrack(AudioTrack track, DataOutput output) throws IOException {
-    output.writeUTF(((HttpAudioTrack) track).getProbe().getName());
+    encodeTrackFactory(((HttpAudioTrack) track).getContainerTrackFactory(), output);
   }
 
   @Override
   public AudioTrack decodeTrack(AudioTrackInfo trackInfo, DataInput input) throws IOException {
-    String probeName = input.readUTF();
+    MediaContainerDescriptor containerTrackFactory = decodeTrackFactory(input);
 
-    for (MediaContainer container : MediaContainer.class.getEnumConstants()) {
-      if (container.probe.getName().equals(probeName)) {
-        return new HttpAudioTrack(trackInfo, container.probe, this);
-      }
+    if (containerTrackFactory != null) {
+      return new HttpAudioTrack(trackInfo, containerTrackFactory, this);
     }
 
     return null;

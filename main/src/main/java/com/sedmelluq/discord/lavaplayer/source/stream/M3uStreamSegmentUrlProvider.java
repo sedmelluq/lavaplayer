@@ -3,16 +3,15 @@ package com.sedmelluq.discord.lavaplayer.source.stream;
 import com.sedmelluq.discord.lavaplayer.tools.ExceptionTools;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterface;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpGet;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpUriRequest;
 
-import static com.sedmelluq.discord.lavaplayer.source.twitch.TwitchStreamAudioSourceManager.createGetRequest;
 import static com.sedmelluq.discord.lavaplayer.tools.FriendlyException.Severity.SUSPICIOUS;
 import static com.sedmelluq.discord.lavaplayer.tools.io.HttpClientTools.fetchResponseLines;
 
@@ -97,7 +96,7 @@ public abstract class M3uStreamSegmentUrlProvider {
     boolean success = false;
 
     try {
-      response = httpInterface.execute(createGetRequest(url));
+      response = httpInterface.execute(createSegmentGetRequest(url));
       int statusCode = response.getStatusLine().getStatusCode();
 
       if (statusCode != 200) {
@@ -114,6 +113,8 @@ public abstract class M3uStreamSegmentUrlProvider {
       }
     }
   }
+
+  protected abstract HttpUriRequest createSegmentGetRequest(String url);
 
   protected List<ChannelStreamInfo> loadChannelStreamsList(String[] lines) {
     ExtendedM3uParser.Line streamInfoLine = null;

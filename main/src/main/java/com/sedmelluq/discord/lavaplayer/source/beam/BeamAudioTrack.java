@@ -17,6 +17,8 @@ public class BeamAudioTrack extends M3uStreamAudioTrack {
   private static final Logger log = LoggerFactory.getLogger(BeamAudioTrack.class);
 
   private final BeamAudioSourceManager sourceManager;
+  private final M3uStreamSegmentUrlProvider segmentUrlProvider;
+
 
   /**
    * @param trackInfo Track info
@@ -26,11 +28,12 @@ public class BeamAudioTrack extends M3uStreamAudioTrack {
     super(trackInfo);
 
     this.sourceManager = sourceManager;
+    this.segmentUrlProvider = new BeamSegmentUrlProvider(getChannelId());
   }
 
   @Override
-  protected M3uStreamSegmentUrlProvider createSegmentProvider() {
-    return new BeamSegmentUrlProvider(getChannelId());
+  protected M3uStreamSegmentUrlProvider getSegmentUrlProvider() {
+    return segmentUrlProvider;
   }
 
   @Override

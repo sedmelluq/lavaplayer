@@ -63,7 +63,7 @@ public class ImmutableAudioFrame implements AudioFrame {
 
   @Override
   public void getData(byte[] buffer, int offset) {
-    System.arraycopy(data, 0, buffer, 0, offset);
+    System.arraycopy(data, 0, buffer, offset, getDataLength());
   }
 
   @Override

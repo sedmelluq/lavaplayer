@@ -39,9 +39,10 @@ public interface MediaContainerProbe {
    * Creates a new track for this container. The audio tracks created here are never used directly, but the playback is
    * delegated to them. As such, they do not have to support cloning or have a source manager.
    *
+   * @param parameters Parameters specific to the probe.
    * @param trackInfo Track meta information
    * @param inputStream Input stream of the track file
    * @return A new audio track
    */
-  AudioTrack createTrack(AudioTrackInfo trackInfo, SeekableInputStream inputStream);
+  AudioTrack createTrack(String parameters, AudioTrackInfo trackInfo, SeekableInputStream inputStream);
 }

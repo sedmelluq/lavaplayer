@@ -194,4 +194,9 @@ public class AllocatingAudioFrameBuffer extends AbstractAudioFrameBuffer {
 
     return frame;
   }
+
+  @Override
+  protected void signalWaiters() {
+    audioFrames.offer(TerminatorAudioFrame.INSTANCE);
+  }
 }

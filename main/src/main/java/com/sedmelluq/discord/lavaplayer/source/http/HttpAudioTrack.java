@@ -1,14 +1,14 @@
 package com.sedmelluq.discord.lavaplayer.source.http;
 
-import com.sedmelluq.discord.lavaplayer.container.MediaContainerProbe;
+import com.sedmelluq.discord.lavaplayer.container.MediaContainerDescriptor;
 import com.sedmelluq.discord.lavaplayer.source.AudioSourceManager;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterface;
 import com.sedmelluq.discord.lavaplayer.tools.io.PersistentHttpStream;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
-import com.sedmelluq.discord.lavaplayer.track.InternalAudioTrack;
-import com.sedmelluq.discord.lavaplayer.track.playback.LocalAudioTrackExecutor;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo;
 import com.sedmelluq.discord.lavaplayer.track.DelegatedAudioTrack;
+import com.sedmelluq.discord.lavaplayer.track.InternalAudioTrack;
+import com.sedmelluq.discord.lavaplayer.track.playback.LocalAudioTrackExecutor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,26 +20,28 @@ import java.net.URI;
 public class HttpAudioTrack extends DelegatedAudioTrack {
   private static final Logger log = LoggerFactory.getLogger(HttpAudioTrack.class);
 
-  private final MediaContainerProbe probe;
+  private final MediaContainerDescriptor containerTrackFactory;
   private final HttpAudioSourceManager sourceManager;
 
   /**
    * @param trackInfo Track info
-   * @param probe Probe for the media container of this track
+   * @param containerTrackFactory Container track factory - contains the probe with its parameters.
    * @param sourceManager Source manager used to load this track
    */
-  public HttpAudioTrack(AudioTrackInfo trackInfo, MediaContainerProbe probe, HttpAudioSourceManager sourceManager) {
+  public HttpAudioTrack(AudioTrackInfo trackInfo, MediaContainerDescriptor containerTrackFactory,
+                        HttpAudioSourceManager sourceManager) {
+
     super(trackInfo);
 
-    this.probe = probe;
+    this.containerTrackFactory = containerTrackFactory;
     this.sourceManager = sourceManager;
   }
 
   /**
    * @return The media probe which handles creating a container-specific delegated track for this track.
    */
-  public MediaContainerProbe getProbe() {
-    return probe;
+  public MediaContainerDescriptor getContainerTrackFactory() {
+    return containerTrackFactory;
   }
 
   @Override
@@ -48,14 +50,14 @@ public class HttpAudioTrack extends DelegatedAudioTrack {
       log.debug("Starting http track from URL: {}", trackInfo.identifier);
 
       try (PersistentHttpStream inputStream = new PersistentHttpStream(httpInterface, new URI(trackInfo.identifier), Long.MAX_VALUE)) {
-        processDelegate((InternalAudioTrack) probe.createTrack(trackInfo, inputStream), localExecutor);
+        processDelegate((InternalAudioTrack) containerTrackFactory.createTrack(trackInfo, inputStream), localExecutor);
       }
     }
   }
 
   @Override
   public AudioTrack makeClone() {
-    return new HttpAudioTrack(trackInfo, probe, sourceManager);
+    return new HttpAudioTrack(trackInfo, containerTrackFactory, sourceManager);
   }
 
   @Override

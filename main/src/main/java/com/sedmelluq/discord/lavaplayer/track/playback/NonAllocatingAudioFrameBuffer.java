@@ -36,7 +36,6 @@ public class NonAllocatingAudioFrameBuffer extends AbstractAudioFrameBuffer {
     int maximumFrameCount = bufferDuration / (int) format.frameDuration() + 1;
     frames = createFrames(maximumFrameCount, format);
     silentFrame = createSilentFrame(format);
-    bridgeFrame = new MutableAudioFrame();
     this.frameBuffer = new byte[format.expectedChunkSize() * maximumFrameCount];
     worstCaseFrameCount = frameBuffer.length / format.maximumChunkSize();
     this.stopping = stopping;
@@ -310,5 +309,12 @@ public class NonAllocatingAudioFrameBuffer extends AbstractAudioFrameBuffer {
     frame.setDataReference(format.silenceBytes(), 0, format.silenceBytes().length);
     frame.setVolume(0);
     return frame;
+  }
+
+  @Override
+  protected void signalWaiters() {
+    synchronized (synchronizer) {
+      synchronizer.notifyAll();
+    }
   }
 }
