@@ -10,7 +10,12 @@ jobs:
                 keys:
                     - gradle-{{ checksum "build.gradle" }}
             - run: sudo apt-get update && sudo apt-get install autoconf && sudo apt-get install cmake
-            - run: ./gradlew build
+            - run: ./gradlew natives:connector-64-deploy
+            - run: ./gradlew natives:checkNatives
+            - run: ./gradlew common:compileJava
+            - run: ./gradlew common:processResources
+            - run: ./gradlew common:classes
+            - run: ./gradlew common:jar
             - save_cache:
                 paths:
                     - ~/.gradle
