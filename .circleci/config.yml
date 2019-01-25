@@ -10,9 +10,7 @@ jobs:
                 keys:
                     - gradle-{{ checksum "build.gradle" }}
             - run: sudo apt-get update && sudo apt-get install autoconf
-            - run: gradle assemble
-            - run: gradle run
-            - run: gradle test
+            - run: ./gradlew build
             - save_cache:
                 paths:
                     - ~/.gradle
