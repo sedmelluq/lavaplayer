@@ -9,7 +9,7 @@ jobs:
             - restore_cache:
                 keys:
                     - gradle-{{ checksum "build.gradle" }}
-            - run: sudo apt-get update && sudo apt-get install autoconf
+            - run: sudo apt-get update && sudo apt-get install autoconf && sudo apt-get install cmake
             - run: ./gradlew build
             - save_cache:
                 paths:
