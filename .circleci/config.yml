@@ -11,7 +11,7 @@ jobs:
                     - gradle-{{ checksum "build.gradle" }}
             - run: sudo apt-get update && sudo apt-get install autoconf && sudo apt-get install cmake
             - run: ./gradlew natives:connector-64-deploy
-            - run: ./gradlew natives:checkNatives
+          #  - run: ./gradlew natives:checkNatives
             - run: ./gradlew common:compileJava
             - run: ./gradlew common:processResources
             - run: ./gradlew common:classes
@@ -22,8 +22,8 @@ jobs:
                 key: gradle-{{ checksum "build.gradle" }}
             - store_artifacts:
                 path: build
-            - store_artifacts:
-                path: natives
+          #  - store_artifacts:
+          #      path: natives
             - store_artifacts:
                 path: natives-publish
                 
