@@ -1,4 +1,4 @@
-package com.sedmelluq.discord.lavaplayer.natives;
+package com.sedmelluq.lava.common.natives;
 
 import org.apache.commons.io.IOUtils;
 
