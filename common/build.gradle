@@ -13,8 +13,6 @@ dependencies {
   compile 'commons-io:commons-io:2.6'
 }
 
-compileJava.dependsOn(':natives:checkNatives')
-
 task sourceJar(type: Jar) {
   from sourceSets.main.allJava
 }
