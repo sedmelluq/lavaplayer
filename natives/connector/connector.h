@@ -4,7 +4,7 @@
 
 #ifdef __GNUC__
 #define CONNECTOR_EXPORT __attribute__ ((visibility("default"))) JNIEXPORT
-#elif
+#else
 #define CONNECTOR_EXPORT JNIEXPORT
 #endif
 
