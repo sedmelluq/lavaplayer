@@ -103,7 +103,7 @@ public class YoutubeSignatureCipherManager {
     try {
       return new URIBuilder(initialUrl)
           .setParameter("ratebypass", "yes")
-          .setParameter("signature", cipher.apply(signature))
+          .setParameter(format.getSignatureKey(), cipher.apply(signature))
           .build();
     } catch (URISyntaxException e) {
       throw new RuntimeException(e);
