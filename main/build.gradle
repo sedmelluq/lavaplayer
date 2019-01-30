@@ -1,6 +1,6 @@
 plugins {
   id 'java'
-  id 'application'
+  id 'groovy'
   id 'org.sonarqube'
   id 'com.jfrog.bintray'
 }
@@ -17,12 +17,15 @@ dependencies {
   compile 'org.apache.httpcomponents:httpclient:4.5.6'
   compile 'commons-io:commons-io:2.6'
 
-  compile 'com.fasterxml.jackson.core:jackson-core:2.9.4'
-  compile 'com.fasterxml.jackson.core:jackson-databind:2.9.4'
+  compile 'com.fasterxml.jackson.core:jackson-core:2.9.8'
+  compile 'com.fasterxml.jackson.core:jackson-databind:2.9.8'
 
-  compile 'org.jsoup:jsoup:1.11.2'
+  compile 'org.jsoup:jsoup:1.11.3'
 
   compile 'net.iharder:base64:2.3.9'
+
+  testCompile 'org.codehaus.groovy:groovy:2.5.5'
+  testCompile 'org.spockframework:spock-core:1.2-groovy-2.5'
 }
 
 task updateVersion {
