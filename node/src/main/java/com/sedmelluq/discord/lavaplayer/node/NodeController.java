@@ -4,11 +4,11 @@ import com.sedmelluq.discord.lavaplayer.node.message.MessageHandlerRegistry;
 import com.sedmelluq.discord.lavaplayer.node.message.MessageOutput;
 import com.sedmelluq.discord.lavaplayer.remote.message.RemoteMessage;
 import com.sedmelluq.discord.lavaplayer.remote.message.RemoteMessageMapper;
-import org.apache.catalina.servlet4preview.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
