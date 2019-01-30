@@ -15,6 +15,7 @@ public class YoutubeTrackFormat {
   private final long contentLength;
   private final String url;
   private final String signature;
+  private final String signatureKey;
 
   /**
    * @param type Mime type of the format
@@ -22,14 +23,18 @@ public class YoutubeTrackFormat {
    * @param contentLength Length in bytes of the media
    * @param url Base URL for the playback of this format
    * @param signature Cipher signature for this format
+   * @param signatureKey The key to use for deciphered signature in the final playback URL
    */
-  public YoutubeTrackFormat(ContentType type, long bitrate, long contentLength, String url, String signature) {
+  public YoutubeTrackFormat(ContentType type, long bitrate, long contentLength, String url, String signature,
+                            String signatureKey) {
+
     this.info = YoutubeFormatInfo.get(type);
     this.type = type;
     this.bitrate = bitrate;
     this.contentLength = contentLength;
     this.url = url;
     this.signature = signature;
+    this.signatureKey = signatureKey;
   }
 
   /**
@@ -76,5 +81,12 @@ public class YoutubeTrackFormat {
    */
   public String getSignature() {
     return signature;
+  }
+
+  /**
+   * @return The key to use for deciphered signature in the final playback URL
+   */
+  public String getSignatureKey() {
+    return signatureKey;
   }
 }

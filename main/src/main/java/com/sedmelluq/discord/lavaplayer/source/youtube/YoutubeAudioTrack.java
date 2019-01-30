@@ -42,6 +42,8 @@ import static com.sedmelluq.discord.lavaplayer.tools.FriendlyException.Severity.
 public class YoutubeAudioTrack extends DelegatedAudioTrack {
   private static final Logger log = LoggerFactory.getLogger(YoutubeAudioTrack.class);
 
+  private static final String DEFAULT_SIGNATURE_KEY = "signature";
+
   private final YoutubeAudioSourceManager sourceManager;
 
   /**
@@ -148,7 +150,8 @@ public class YoutubeAudioTrack extends DelegatedAudioTrack {
           Long.parseLong(format.get("bitrate")),
           Long.parseLong(format.get("clen")),
           format.get("url"),
-          format.get("s")
+          format.get("s"),
+          format.getOrDefault("sp", DEFAULT_SIGNATURE_KEY)
       ));
     }
 
@@ -173,7 +176,8 @@ public class YoutubeAudioTrack extends DelegatedAudioTrack {
           qualityToBitrateValue(format.get("quality")),
           Long.parseLong(contentLength),
           url,
-          format.get("s")
+          format.get("s"),
+          format.getOrDefault("sp", DEFAULT_SIGNATURE_KEY)
       ));
     }
 
@@ -228,7 +232,8 @@ public class YoutubeAudioTrack extends DelegatedAudioTrack {
             Long.parseLong(representation.attr("bandwidth")),
             Long.parseLong(contentLength),
             url,
-            null
+            null,
+            DEFAULT_SIGNATURE_KEY
         ));
       }
     }
