@@ -21,8 +21,9 @@ jobs:
                     - ~/.gradle
                 key: gradle-{{ checksum "build.gradle" }}
             - store_artifacts:
-                path: build/distributions
-                destination: distributions
+                path: build
             - store_artifacts:
-                path: build/libs
-                destination: libs
+                path: natives
+            - store_artifacts:
+                path: natives-publish
+                
