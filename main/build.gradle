@@ -8,6 +8,13 @@ plugins {
 ext.moduleName = 'lavaplayer'
 version = '1.3.11'
 
+repositories {
+  maven {
+    // Only used for tests
+    url 'https://dl.bintray.com/sedmelluq/com.sedmelluq'
+  }
+}
+
 dependencies {
   compile 'com.sedmelluq:lavaplayer-common:1.0.6'
   compile 'com.sedmelluq:lavaplayer-natives:1.3.11'
@@ -26,6 +33,8 @@ dependencies {
 
   testCompile 'org.codehaus.groovy:groovy:2.5.5'
   testCompile 'org.spockframework:spock-core:1.2-groovy-2.5'
+  testCompile 'ch.qos.logback:logback-classic:1.2.3'
+  testCompile 'com.sedmelluq:lavaplayer-test-samples:1.3.11'
 }
 
 task updateVersion {
