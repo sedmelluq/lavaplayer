@@ -44,7 +44,7 @@ public class OggFlacCodecHandler implements OggCodecHandler {
   @Override
   public OggMetadata loadMetadata(OggPacketInputStream stream, DirectBufferStreamBroker broker) throws IOException {
     FlacTrackInfo info = load(stream, broker);
-    return new OggMetadata(load(stream, broker).tags, detectLength(info, stream));
+    return new OggMetadata(info.tags, detectLength(info, stream));
   }
 
   private FlacTrackInfo load(OggPacketInputStream stream, DirectBufferStreamBroker broker) throws IOException {
