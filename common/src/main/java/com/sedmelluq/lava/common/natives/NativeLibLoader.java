@@ -21,7 +21,8 @@ import static java.nio.file.attribute.PosixFilePermissions.fromString;
  */
 public class NativeLibLoader {
   private static final Set<String> loadedLibraries = new HashSet<>();
-  private static File extractionDirectory = new File(System.getProperty("java.io.tmpdir"), "lava-jni-natives/" + String.valueOf(System.currentTimeMillis()));
+  private static File extractionDirectory = new File(System.getProperty("java.io.tmpdir"), "lava-jni-natives/" +
+      String.valueOf(System.currentTimeMillis()));
   private static final Architecture architecture = Architecture.detectArchitecture();
 
   /**
@@ -62,7 +63,7 @@ public class NativeLibLoader {
    * @param name Name of the library
    * @throws LinkageError When loading the library fails
    */
-  public static void load(Class<?> resourceBase, String name) throws LinkageError, UnsatisfiedLinkError {
+  public static void load(Class<?> resourceBase, String name) throws LinkageError {
     synchronized (loadedLibraries) {
       if (!loadedLibraries.contains(name)) {
         String libPath = System.getProperty("lavaplayer." + name + ".path");

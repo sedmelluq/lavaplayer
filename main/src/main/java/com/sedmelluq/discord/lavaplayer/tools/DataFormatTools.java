@@ -123,4 +123,18 @@ public class DataFormatTools {
     boolean exists = input.readBoolean();
     return exists ? input.readUTF() : null;
   }
+
+  public static boolean arrayRangeEquals(byte[] array, int offset, byte[] segment) {
+    if (array.length < offset + segment.length) {
+      return false;
+    }
+
+    for (int i = 0; i < segment.length; i++) {
+      if (segment[i] != array[i + offset]) {
+        return false;
+      }
+    }
+
+    return true;
+  }
 }
