@@ -1,0 +1,173 @@
+
+> Task :natives:connector-64-setup
+-- The C compiler identification is AppleClang 10.0.0.10001044
+-- The CXX compiler identification is AppleClang 10.0.0.10001044
+-- Check for working C compiler: /Library/Developer/CommandLineTools/usr/bin/cc
+-- Check for working C compiler: /Library/Developer/CommandLineTools/usr/bin/cc -- works
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- Check for working CXX compiler: /Library/Developer/CommandLineTools/usr/bin/c++
+-- Check for working CXX compiler: /Library/Developer/CommandLineTools/usr/bin/c++ -- works
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- /Users/shikhirarora/lavaplayer-2/natives/fdk-aac/libAACdec;/Users/shikhirarora/lavaplayer-2/natives/fdk-aac/libFDK;/Users/shikhirarora/lavaplayer-2/natives/fdk-aac/libSYS;/Users/shikhirarora/lavaplayer-2/natives/fdk-aac/libMpegTPDec;/Users/shikhirarora/lavaplayer-2/natives/fdk-aac/libSBRdec;/Users/shikhirarora/lavaplayer-2/natives/fdk-aac/libPCMutils;/Users/shikhirarora/lavaplayer-2/natives/fdk-aac/libArithCoding;/Users/shikhirarora/lavaplayer-2/natives/fdk-aac/libDRCdec;/Users/shikhirarora/lavaplayer-2/natives/fdk-aac/libSACdec
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /Users/shikhirarora/lavaplayer-2/natives/build/darwin
+
+> Task :natives:connector-64-build
+Scanning dependencies of target samplerate
+[  1%] Building C object samplerate/CMakeFiles/samplerate.dir/src/samplerate.c.o
+[  2%] Building C object samplerate/CMakeFiles/samplerate.dir/src/src_linear.c.o
+[  3%] Building C object samplerate/CMakeFiles/samplerate.dir/src/src_sinc.c.o
+[  3%] Building C object samplerate/CMakeFiles/samplerate.dir/src/src_zoh.c.o
+[  4%] Linking C static library libsamplerate.a
+[  4%] Built target samplerate
+Scanning dependencies of target fdk-aac
+[  4%] Building CXX object fdk-aac/CMakeFiles/fdk-aac.dir/libAACdec/src/FDK_delay.cpp.o
+[  5%] Building CXX object fdk-aac/CMakeFiles/fdk-aac.dir/libAACdec/src/aac_ram.cpp.o
+[  6%] Building CXX object fdk-aac/CMakeFiles/fdk-aac.dir/libAACdec/src/aac_rom.cpp.o
+[  6%] Building CXX object fdk-aac/CMakeFiles/fdk-aac.dir/libAACdec/src/aacdec_drc.cpp.o
+[  7%] Building CXX object fdk-aac/CMakeFiles/fdk-aac.dir/libAACdec/src/aacdec_hcr.cpp.o
+[  8%] Building CXX object fdk-aac/CMakeFiles/fdk-aac.dir/libAACdec/src/aacdec_hcr_bit.cpp.o
+[  9%] Building CXX object fdk-aac/CMakeFiles/fdk-aac.dir/libAACdec/src/aacdec_hcrs.cpp.o
+[  9%] Building CXX object fdk-aac/CMakeFiles/fdk-aac.dir/libAACdec/src/aacdec_pns.cpp.o
+[ 10%] Building CXX object fdk-aac/CMakeFiles/fdk-aac.dir/libAACdec/src/aacdec_tns.cpp.o
+[ 11%] Building CXX object fdk-aac/CMakeFiles/fdk-aac.dir/libAACdec/src/aacdecoder.cpp.o
+[ 11%] Building CXX object fdk-aac/CMakeFiles/fdk-aac.dir/libAACdec/src/aacdecoder_lib.cpp.o
+[ 12%] Building CXX object fdk-aac/CMakeFiles/fdk-aac.dir/libAACdec/src/block.cpp.o
+[ 13%] Building CXX object fdk-aac/CMakeFiles/fdk-aac.dir/libAACdec/src/channel.cpp.o
+[ 14%] Building CXX object fdk-aac/CMakeFiles/fdk-aac.dir/libAACdec/src/channelinfo.cpp.o
+[ 14%] Building CXX object fdk-aac/CMakeFiles/fdk-aac.dir/libAACdec/src/conceal.cpp.o
+[ 15%] Building CXX object fdk-aac/CMakeFiles/fdk-aac.dir/libAACdec/src/ldfiltbank.cpp.o
+[ 16%] Building CXX object fdk-aac/CMakeFiles/fdk-aac.dir/libAACdec/src/pulsedata.cpp.o
+[ 16%] Building CXX object fdk-aac/CMakeFiles/fdk-aac.dir/libAACdec/src/rvlc.cpp.o
+[ 17%] Building CXX object fdk-aac/CMakeFiles/fdk-aac.dir/libAACdec/src/rvlcbit.cpp.o
+[ 18%] Building CXX object fdk-aac/CMakeFiles/fdk-aac.dir/libAACdec/src/rvlcconceal.cpp.o
+[ 19%] Building CXX object fdk-aac/CMakeFiles/fdk-aac.dir/libAACdec/src/stereo.cpp.o
+[ 19%] Building CXX object fdk-aac/CMakeFiles/fdk-aac.dir/libAACdec/src/usacdec_ace_d4t64.cpp.o
+[ 20%] Building CXX object fdk-aac/CMakeFiles/fdk-aac.dir/libAACdec/src/usacdec_ace_ltp.cpp.o
+[ 21%] Building CXX object fdk-aac/CMakeFiles/fdk-aac.dir/libAACdec/src/usacdec_acelp.cpp.o
+[ 21%] Building CXX object fdk-aac/CMakeFiles/fdk-aac.dir/libAACdec/src/usacdec_fac.cpp.o
+[ 22%] Building CXX object fdk-aac/CMakeFiles/fdk-aac.dir/libAACdec/src/usacdec_lpc.cpp.o
+[ 23%] Building CXX object fdk-aac/CMakeFiles/fdk-aac.dir/libAACdec/src/usacdec_lpd.cpp.o
+[ 24%] Building CXX object fdk-aac/CMakeFiles/fdk-aac.dir/libAACdec/src/usacdec_rom.cpp.o
+[ 24%] Building CXX object fdk-aac/CMakeFiles/fdk-aac.dir/libFDK/src/FDK_bitbuffer.cpp.o
+[ 25%] Building CXX object fdk-aac/CMakeFiles/fdk-aac.dir/libFDK/src/FDK_core.cpp.o
+[ 26%] Building CXX object fdk-aac/CMakeFiles/fdk-aac.dir/libFDK/src/FDK_crc.cpp.o
+[ 26%] Building CXX object fdk-aac/CMakeFiles/fdk-aac.dir/libFDK/src/FDK_decorrelate.cpp.o
+[ 27%] Building CXX object fdk-aac/CMakeFiles/fdk-aac.dir/libFDK/src/FDK_hybrid.cpp.o
+[ 28%] Building CXX object fdk-aac/CMakeFiles/fdk-aac.dir/libFDK/src/FDK_lpc.cpp.o
+[ 29%] Building CXX object fdk-aac/CMakeFiles/fdk-aac.dir/libFDK/src/FDK_matrixCalloc.cpp.o
+[ 29%] Building CXX object fdk-aac/CMakeFiles/fdk-aac.dir/libFDK/src/FDK_qmf_domain.cpp.o
+[ 30%] Building CXX object fdk-aac/CMakeFiles/fdk-aac.dir/libFDK/src/FDK_tools_rom.cpp.o
+[ 31%] Building CXX object fdk-aac/CMakeFiles/fdk-aac.dir/libFDK/src/FDK_trigFcts.cpp.o
+[ 31%] Building CXX object fdk-aac/CMakeFiles/fdk-aac.dir/libFDK/src/autocorr2nd.cpp.o
+[ 32%] Building CXX object fdk-aac/CMakeFiles/fdk-aac.dir/libFDK/src/dct.cpp.o
+[ 33%] Building CXX object fdk-aac/CMakeFiles/fdk-aac.dir/libFDK/src/fft.cpp.o
+[ 34%] Building CXX object fdk-aac/CMakeFiles/fdk-aac.dir/libFDK/src/fft_rad2.cpp.o
+[ 34%] Building CXX object fdk-aac/CMakeFiles/fdk-aac.dir/libFDK/src/fixpoint_math.cpp.o
+[ 35%] Building CXX object fdk-aac/CMakeFiles/fdk-aac.dir/libFDK/src/huff_nodes.cpp.o
+[ 36%] Building CXX object fdk-aac/CMakeFiles/fdk-aac.dir/libFDK/src/mdct.cpp.o
+[ 36%] Building CXX object fdk-aac/CMakeFiles/fdk-aac.dir/libFDK/src/nlc_dec.cpp.o
+[ 37%] Building CXX object fdk-aac/CMakeFiles/fdk-aac.dir/libFDK/src/qmf.cpp.o
+[ 38%] Building CXX object fdk-aac/CMakeFiles/fdk-aac.dir/libFDK/src/scale.cpp.o
+[ 39%] Building CXX object fdk-aac/CMakeFiles/fdk-aac.dir/libSYS/src/genericStds.cpp.o
+[ 39%] Building CXX object fdk-aac/CMakeFiles/fdk-aac.dir/libSYS/src/syslib_channelMapDescr.cpp.o
+[ 40%] Building CXX object fdk-aac/CMakeFiles/fdk-aac.dir/libMpegTPDec/src/tpdec_adif.cpp.o
+[ 41%] Building CXX object fdk-aac/CMakeFiles/fdk-aac.dir/libMpegTPDec/src/tpdec_adts.cpp.o
+[ 41%] Building CXX object fdk-aac/CMakeFiles/fdk-aac.dir/libMpegTPDec/src/tpdec_asc.cpp.o
+[ 42%] Building CXX object fdk-aac/CMakeFiles/fdk-aac.dir/libMpegTPDec/src/tpdec_drm.cpp.o
+[ 43%] Building CXX object fdk-aac/CMakeFiles/fdk-aac.dir/libMpegTPDec/src/tpdec_latm.cpp.o
+[ 44%] Building CXX object fdk-aac/CMakeFiles/fdk-aac.dir/libMpegTPDec/src/tpdec_lib.cpp.o
+[ 44%] Building CXX object fdk-aac/CMakeFiles/fdk-aac.dir/libSBRdec/src/HFgen_preFlat.cpp.o
+[ 45%] Building CXX object fdk-aac/CMakeFiles/fdk-aac.dir/libSBRdec/src/env_calc.cpp.o
+[ 46%] Building CXX object fdk-aac/CMakeFiles/fdk-aac.dir/libSBRdec/src/env_dec.cpp.o
+[ 46%] Building CXX object fdk-aac/CMakeFiles/fdk-aac.dir/libSBRdec/src/env_extr.cpp.o
+[ 47%] Building CXX object fdk-aac/CMakeFiles/fdk-aac.dir/libSBRdec/src/hbe.cpp.o
+[ 48%] Building CXX object fdk-aac/CMakeFiles/fdk-aac.dir/libSBRdec/src/huff_dec.cpp.o
+[ 49%] Building CXX object fdk-aac/CMakeFiles/fdk-aac.dir/libSBRdec/src/lpp_tran.cpp.o
+[ 49%] Building CXX object fdk-aac/CMakeFiles/fdk-aac.dir/libSBRdec/src/psbitdec.cpp.o
+[ 50%] Building CXX object fdk-aac/CMakeFiles/fdk-aac.dir/libSBRdec/src/psdec.cpp.o
+[ 51%] Building CXX object fdk-aac/CMakeFiles/fdk-aac.dir/libSBRdec/src/psdec_drm.cpp.o
+[ 51%] Building CXX object fdk-aac/CMakeFiles/fdk-aac.dir/libSBRdec/src/psdecrom_drm.cpp.o
+[ 52%] Building CXX object fdk-aac/CMakeFiles/fdk-aac.dir/libSBRdec/src/pvc_dec.cpp.o
+[ 53%] Building CXX object fdk-aac/CMakeFiles/fdk-aac.dir/libSBRdec/src/sbr_crc.cpp.o
+[ 54%] Building CXX object fdk-aac/CMakeFiles/fdk-aac.dir/libSBRdec/src/sbr_deb.cpp.o
+[ 54%] Building CXX object fdk-aac/CMakeFiles/fdk-aac.dir/libSBRdec/src/sbr_dec.cpp.o
+[ 55%] Building CXX object fdk-aac/CMakeFiles/fdk-aac.dir/libSBRdec/src/sbr_ram.cpp.o
+[ 56%] Building CXX object fdk-aac/CMakeFiles/fdk-aac.dir/libSBRdec/src/sbr_rom.cpp.o
+[ 56%] Building CXX object fdk-aac/CMakeFiles/fdk-aac.dir/libSBRdec/src/sbrdec_drc.cpp.o
+[ 57%] Building CXX object fdk-aac/CMakeFiles/fdk-aac.dir/libSBRdec/src/sbrdec_freq_sca.cpp.o
+[ 58%] Building CXX object fdk-aac/CMakeFiles/fdk-aac.dir/libSBRdec/src/sbrdecoder.cpp.o
+[ 59%] Building CXX object fdk-aac/CMakeFiles/fdk-aac.dir/libPCMutils/src/limiter.cpp.o
+[ 59%] Building CXX object fdk-aac/CMakeFiles/fdk-aac.dir/libPCMutils/src/pcm_utils.cpp.o
+[ 60%] Building CXX object fdk-aac/CMakeFiles/fdk-aac.dir/libPCMutils/src/pcmdmx_lib.cpp.o
+[ 61%] Building CXX object fdk-aac/CMakeFiles/fdk-aac.dir/libArithCoding/src/ac_arith_coder.cpp.o
+[ 61%] Building CXX object fdk-aac/CMakeFiles/fdk-aac.dir/libDRCdec/src/FDK_drcDecLib.cpp.o
+[ 62%] Building CXX object fdk-aac/CMakeFiles/fdk-aac.dir/libDRCdec/src/drcDec_gainDecoder.cpp.o
+[ 63%] Building CXX object fdk-aac/CMakeFiles/fdk-aac.dir/libDRCdec/src/drcDec_reader.cpp.o
+[ 64%] Building CXX object fdk-aac/CMakeFiles/fdk-aac.dir/libDRCdec/src/drcDec_rom.cpp.o
+[ 64%] Building CXX object fdk-aac/CMakeFiles/fdk-aac.dir/libDRCdec/src/drcDec_selectionProcess.cpp.o
+[ 65%] Building CXX object fdk-aac/CMakeFiles/fdk-aac.dir/libDRCdec/src/drcDec_tools.cpp.o
+[ 66%] Building CXX object fdk-aac/CMakeFiles/fdk-aac.dir/libDRCdec/src/drcGainDec_init.cpp.o
+[ 66%] Building CXX object fdk-aac/CMakeFiles/fdk-aac.dir/libDRCdec/src/drcGainDec_preprocess.cpp.o
+[ 67%] Building CXX object fdk-aac/CMakeFiles/fdk-aac.dir/libDRCdec/src/drcGainDec_process.cpp.o
+[ 68%] Building CXX object fdk-aac/CMakeFiles/fdk-aac.dir/libSACdec/src/sac_bitdec.cpp.o
+[ 69%] Building CXX object fdk-aac/CMakeFiles/fdk-aac.dir/libSACdec/src/sac_calcM1andM2.cpp.o
+[ 69%] Building CXX object fdk-aac/CMakeFiles/fdk-aac.dir/libSACdec/src/sac_dec.cpp.o
+[ 70%] Building CXX object fdk-aac/CMakeFiles/fdk-aac.dir/libSACdec/src/sac_dec_conceal.cpp.o
+[ 71%] Building CXX object fdk-aac/CMakeFiles/fdk-aac.dir/libSACdec/src/sac_dec_lib.cpp.o
+[ 71%] Building CXX object fdk-aac/CMakeFiles/fdk-aac.dir/libSACdec/src/sac_process.cpp.o
+[ 72%] Building CXX object fdk-aac/CMakeFiles/fdk-aac.dir/libSACdec/src/sac_qmf.cpp.o
+[ 73%] Building CXX object fdk-aac/CMakeFiles/fdk-aac.dir/libSACdec/src/sac_reshapeBBEnv.cpp.o
+[ 74%] Building CXX object fdk-aac/CMakeFiles/fdk-aac.dir/libSACdec/src/sac_rom.cpp.o
+[ 74%] Building CXX object fdk-aac/CMakeFiles/fdk-aac.dir/libSACdec/src/sac_smoothing.cpp.o
+[ 75%] Building CXX object fdk-aac/CMakeFiles/fdk-aac.dir/libSACdec/src/sac_stp.cpp.o
+[ 76%] Building CXX object fdk-aac/CMakeFiles/fdk-aac.dir/libSACdec/src/sac_tsd.cpp.o
+[ 76%] Linking CXX static library libfdk-aac.a
+[ 76%] Built target fdk-aac
+Scanning dependencies of target vorbis
+[ 77%] Building C object vorbis/CMakeFiles/vorbis.dir/libogg-1.3.3/src/bitwise.c.o
+[ 77%] Building C object vorbis/CMakeFiles/vorbis.dir/libogg-1.3.3/src/framing.c.o
+[ 78%] Building C object vorbis/CMakeFiles/vorbis.dir/libvorbis-1.3.6/lib/analysis.c.o
+[ 79%] Building C object vorbis/CMakeFiles/vorbis.dir/libvorbis-1.3.6/lib/barkmel.c.o
+[ 80%] Building C object vorbis/CMakeFiles/vorbis.dir/libvorbis-1.3.6/lib/bitrate.c.o
+[ 80%] Building C object vorbis/CMakeFiles/vorbis.dir/libvorbis-1.3.6/lib/block.c.o
+[ 81%] Building C object vorbis/CMakeFiles/vorbis.dir/libvorbis-1.3.6/lib/codebook.c.o
+[ 82%] Building C object vorbis/CMakeFiles/vorbis.dir/libvorbis-1.3.6/lib/envelope.c.o
+[ 82%] Building C object vorbis/CMakeFiles/vorbis.dir/libvorbis-1.3.6/lib/floor0.c.o
+[ 83%] Building C object vorbis/CMakeFiles/vorbis.dir/libvorbis-1.3.6/lib/floor1.c.o
+[ 84%] Building C object vorbis/CMakeFiles/vorbis.dir/libvorbis-1.3.6/lib/info.c.o
+[ 85%] Building C object vorbis/CMakeFiles/vorbis.dir/libvorbis-1.3.6/lib/lookup.c.o
+[ 85%] Building C object vorbis/CMakeFiles/vorbis.dir/libvorbis-1.3.6/lib/lpc.c.o
+[ 86%] Building C object vorbis/CMakeFiles/vorbis.dir/libvorbis-1.3.6/lib/lsp.c.o
+[ 87%] Building C object vorbis/CMakeFiles/vorbis.dir/libvorbis-1.3.6/lib/mapping0.c.o
+[ 87%] Building C object vorbis/CMakeFiles/vorbis.dir/libvorbis-1.3.6/lib/mdct.c.o
+[ 88%] Building C object vorbis/CMakeFiles/vorbis.dir/libvorbis-1.3.6/lib/psy.c.o
+[ 89%] Building C object vorbis/CMakeFiles/vorbis.dir/libvorbis-1.3.6/lib/registry.c.o
+[ 90%] Building C object vorbis/CMakeFiles/vorbis.dir/libvorbis-1.3.6/lib/res0.c.o
+[ 90%] Building C object vorbis/CMakeFiles/vorbis.dir/libvorbis-1.3.6/lib/sharedbook.c.o
+[ 91%] Building C object vorbis/CMakeFiles/vorbis.dir/libvorbis-1.3.6/lib/smallft.c.o
+[ 92%] Building C object vorbis/CMakeFiles/vorbis.dir/libvorbis-1.3.6/lib/synthesis.c.o
+[ 92%] Building C object vorbis/CMakeFiles/vorbis.dir/libvorbis-1.3.6/lib/vorbisenc.c.o
+[ 93%] Building C object vorbis/CMakeFiles/vorbis.dir/libvorbis-1.3.6/lib/vorbisfile.c.o
+[ 94%] Building C object vorbis/CMakeFiles/vorbis.dir/libvorbis-1.3.6/lib/window.c.o
+[ 95%] Linking C static library libvorbis.a
+[ 95%] Built target vorbis
+Scanning dependencies of target connector
+[ 95%] Building C object connector/CMakeFiles/connector.dir/samplerate.c.o
+[ 96%] Building C object connector/CMakeFiles/connector.dir/fdk-aac.c.o
+[ 97%] Building C object connector/CMakeFiles/connector.dir/vorbis.c.o
+[ 97%] Building C object connector/CMakeFiles/connector.dir/opus.c.o
+[ 98%] Building C object connector/CMakeFiles/connector.dir/mpg123.c.o
+[ 99%] Building C object connector/CMakeFiles/connector.dir/darwin/statistics.c.o
+[100%] Linking CXX shared library ../../../dist/darwin/libconnector.dylib
+[100%] Built target connector
+
+BUILD SUCCESSFUL in 1m 3s
+4 actionable tasks: 4 executed
