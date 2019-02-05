@@ -30,7 +30,6 @@ else()
         set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--gc-sections -Wl,--exclude-libs,ALL")
 endif()
 
-
 set(CMAKE_C_FLAGS_DEBUG "${COMPILER_FLAGS} ${COMPILER_FLAGS_DEBUG}")
 set(CMAKE_C_FLAGS_RELEASE "${COMPILER_FLAGS} ${COMPILER_FLAGS_RELEASE}")
 set(CMAKE_CXX_FLAGS_DEBUG "${COMPILER_FLAGS} ${COMPILER_FLAGS_DEBUG}")
@@ -51,5 +50,10 @@ if (DEFINED ENV{DIST_DIR})
         set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE "$ENV{DIST_DIR}")
 endif()
 
-add_library(connector SHARED samplerate.c fdk-aac.c vorbis.c opus.c mpg123.c ${SYSNAME}/statistics.c)
+if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+        add_library(connector SHARED samplerate.c fdk-aac.c vorbis.c opus.c mpg123.c)
+else()
+        add_library(connector SHARED samplerate.c fdk-aac.c vorbis.c opus.c mpg123.c ${SYSNAME}/statistics.c)
+endif()
+
 target_link_libraries(connector samplerate fdk-aac vorbis opus mpg123)
