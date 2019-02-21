@@ -33,11 +33,15 @@ public class PlayerManagerTestTools {
     frame.setBuffer(buffer);
 
     CRC32 crc = new CRC32();
+    int count = 0;
 
     while (player.getPlayingTrack() != null && player.provide(frame, 10, TimeUnit.SECONDS)) {
       buffer.flip();
       crc.update(buffer.array(), buffer.position(), buffer.remaining());
+      count++;
     }
+
+    System.out.println("Consumed " + count + " samples");
 
     return crc.getValue();
   }
