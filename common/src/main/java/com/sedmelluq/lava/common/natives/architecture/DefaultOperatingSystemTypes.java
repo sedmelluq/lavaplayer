@@ -1,10 +1,10 @@
 package com.sedmelluq.lava.common.natives.architecture;
 
 public enum DefaultOperatingSystemTypes implements OperatingSystemType {
-  DARWIN("darwin", "lib", ".dylib"),
   LINUX("linux", "lib", ".so"),
-  SOLARIS("solaris", "lib", ".so"),
-  WINDOWS("win", "", ".dll");
+  WINDOWS("win", "", ".dll"),
+  DARWIN("darwin", "lib", ".dylib"),
+  SOLARIS("solaris", "lib", ".so");
 
   private final String identifier;
   private final String libraryFilePrefix;

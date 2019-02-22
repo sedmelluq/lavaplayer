@@ -1,12 +1,13 @@
 package com.sedmelluq.lava.common.natives.architecture;
 
-import com.sedmelluq.lava.common.natives.NativeProperties;
+import com.sedmelluq.lava.common.natives.NativeLibraryProperties;
+import java.util.Optional;
 
-public class Architecture {
+public class SystemType {
   public final ArchitectureType architectureType;
   public final OperatingSystemType osType;
 
-  public Architecture(ArchitectureType architectureType, OperatingSystemType osType) {
+  public SystemType(ArchitectureType architectureType, OperatingSystemType osType) {
     this.architectureType = architectureType;
     this.osType = osType;
   }
@@ -27,26 +28,26 @@ public class Architecture {
     return osType.libraryFilePrefix() + libraryName + osType.libraryFileSuffix();
   }
 
-  public static Architecture detect(String libraryName) {
-    String systemName = NativeProperties.get(libraryName, "system", null);
+  public static SystemType detect(NativeLibraryProperties properties) {
+    String systemName = properties.getSystemName();
 
     if (systemName != null) {
-      return new Architecture(
+      return new SystemType(
           () -> systemName,
           new UnknownOperatingSystem(
-              NativeProperties.get(libraryName, "libPrefix", "lib"),
-              NativeProperties.get(libraryName, "libSuffix", ".so")
+              Optional.ofNullable(properties.getLibraryFileNamePrefix()).orElse("lib"),
+              Optional.ofNullable(properties.getLibraryFileNameSuffix()).orElse(".so")
           )
       );
     }
 
     OperatingSystemType osType = DefaultOperatingSystemTypes.detect();
 
-    String explicitArchitecture = NativeProperties.get(libraryName, "arch", null);
+    String explicitArchitecture = properties.getArchitectureName();
     ArchitectureType architectureType = explicitArchitecture != null ? () -> explicitArchitecture :
         DefaultArchitectureTypes.detect();
 
-    return new Architecture(architectureType, osType);
+    return new SystemType(architectureType, osType);
   }
 
   private static class UnknownOperatingSystem implements OperatingSystemType {

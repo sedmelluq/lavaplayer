@@ -1,6 +1,7 @@
 package com.sedmelluq.lava.common.natives;
 
-import com.sedmelluq.lava.common.natives.architecture.Architecture;
+import com.sedmelluq.lava.common.natives.architecture.ResourceNativeLibraryBinaryProvider;
+import com.sedmelluq.lava.common.natives.architecture.SystemType;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -9,6 +10,7 @@ import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.function.Predicate;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,30 +24,40 @@ import static java.nio.file.attribute.PosixFilePermissions.fromString;
 public class NativeLibraryLoader {
   private static final Logger log = LoggerFactory.getLogger(NativeLibraryLoader.class);
 
-  private static final String NATIVE_RESOURCES_ROOT = "/natives/";
+  private static final String DEFAULT_PROPERTY_PREFIX = "lava.native.";
+  private static final String DEFAULT_RESOURCE_ROOT = "/natives/";
 
-  private final Class<?> classLoaderSample;
   private final String libraryName;
-  private final String systemNameFilter;
+  private final Predicate<SystemType> systemFilter;
+  private final NativeLibraryProperties properties;
+  private final NativeLibraryBinaryProvider binaryProvider;
   private final Object lock;
   private volatile RuntimeException previousFailure;
   private volatile Boolean previousResult;
 
-  private NativeLibraryLoader(Class<?> classLoaderSample, String libraryName, String systemNameFilter) {
-    this.classLoaderSample = classLoaderSample;
+  public NativeLibraryLoader(String libraryName, Predicate<SystemType> systemFilter, NativeLibraryProperties properties,
+                             NativeLibraryBinaryProvider binaryProvider) {
+
     this.libraryName = libraryName;
-    this.systemNameFilter = systemNameFilter;
+    this.systemFilter = systemFilter;
+    this.binaryProvider = binaryProvider;
+    this.properties = properties;
     this.lock = new Object();
   }
 
   public static NativeLibraryLoader create(Class<?> classLoaderSample, String libraryName) {
-    return new NativeLibraryLoader(classLoaderSample, libraryName, null);
+    return createFiltered(classLoaderSample, libraryName, null);
   }
 
-  public static NativeLibraryLoader createConditional(Class<?> classLoaderSample, String libraryName,
-                                                      String systemNameFilter) {
+  public static NativeLibraryLoader createFiltered(Class<?> classLoaderSample, String libraryName,
+                                                   Predicate<SystemType> systemFilter) {
 
-    return new NativeLibraryLoader(classLoaderSample, libraryName, systemNameFilter);
+    return new NativeLibraryLoader(
+        libraryName,
+        systemFilter,
+        new SystemNativeLibraryProperties(libraryName, DEFAULT_PROPERTY_PREFIX),
+        new ResourceNativeLibraryBinaryProvider(classLoaderSample, DEFAULT_RESOURCE_ROOT)
+    );
   }
 
   public void load() {
@@ -68,7 +80,7 @@ public class NativeLibraryLoader {
   }
 
   private void loadAndRemember() {
-    log.info("Native library {}: loading with filter {}", libraryName, systemNameFilter);
+    log.info("Native library {}: loading with filter {}", libraryName, systemFilter);
 
     try {
       loadInternal();
@@ -82,24 +94,24 @@ public class NativeLibraryLoader {
   }
 
   private void loadInternal() {
-    String explicitPath = NativeProperties.get(libraryName, "path", null);
+    String explicitPath = properties.getLibraryPath();
 
     if (explicitPath != null) {
       log.debug("Native library {}: explicit path provided {}", libraryName, explicitPath);
 
       loadFromFile(Paths.get(explicitPath).toAbsolutePath());
     } else {
-      Architecture architecture = detectMatchingArchitecture();
+      SystemType systemType = detectMatchingSystemType();
 
-      if (architecture != null) {
-        String explicitDirectory = NativeProperties.get(libraryName, "dir", null);
+      if (systemType != null) {
+        String explicitDirectory = properties.getLibraryDirectory();
 
         if (explicitDirectory != null) {
           log.debug("Native library {}: explicit directory provided {}", libraryName, explicitDirectory);
 
-          loadFromFile(Paths.get(explicitDirectory, architecture.formatLibraryName(libraryName)).toAbsolutePath());
+          loadFromFile(Paths.get(explicitDirectory, systemType.formatLibraryName(libraryName)).toAbsolutePath());
         } else {
-          loadFromFile(extractLibraryFromResources(architecture));
+          loadFromFile(extractLibraryFromResources(systemType));
         }
       }
     }
@@ -111,19 +123,13 @@ public class NativeLibraryLoader {
     log.info("Native library {}: successfully loaded.", libraryName);
   }
 
-  private Path extractLibraryFromResources(Architecture architecture) {
-    String resourcePath = NATIVE_RESOURCES_ROOT + architecture.formatSystemName() + "/" +
-        architecture.formatLibraryName(libraryName);
-
-    log.debug("Native library {}: trying to find from resources at {} with {} as classloader reference", libraryName,
-        resourcePath, classLoaderSample.getName());
-
-    try (InputStream libraryStream = classLoaderSample.getResourceAsStream(resourcePath)) {
+  private Path extractLibraryFromResources(SystemType systemType) {
+    try (InputStream libraryStream = binaryProvider.getLibraryStream(systemType, libraryName)) {
       if (libraryStream == null) {
-        throw new UnsatisfiedLinkError("Required library at " + resourcePath + " was not found");
+        throw new UnsatisfiedLinkError("Required library was not found");
       }
 
-      Path extractedLibraryPath = prepareExtractionDirectory().resolve(architecture.formatLibraryName(libraryName));
+      Path extractedLibraryPath = prepareExtractionDirectory().resolve(systemType.formatLibraryName(libraryName));
 
       try (FileOutputStream fileStream = new FileOutputStream(extractedLibraryPath.toFile())) {
         IOUtils.copy(libraryStream, fileStream);
@@ -157,7 +163,7 @@ public class NativeLibraryLoader {
   }
 
   private Path detectExtractionBaseDirectory() {
-    String explicitExtractionBase = NativeProperties.get(libraryName, "extractPath", null);
+    String explicitExtractionBase = properties.getExtractionPath();
 
     if (explicitExtractionBase != null) {
       log.debug("Native library {}: explicit extraction path provided - {}", libraryName, explicitExtractionBase);
@@ -171,15 +177,15 @@ public class NativeLibraryLoader {
     return path;
   }
 
-  private Architecture detectMatchingArchitecture() {
-    Architecture architecture;
+  private SystemType detectMatchingSystemType() {
+    SystemType systemType;
 
     try {
-      architecture = Architecture.detect(libraryName);
+      systemType = SystemType.detect(properties);
     } catch (IllegalArgumentException e) {
-      if (systemNameFilter != null) {
-        log.info("Native library {}: could not detect architecture, but system filter is {} - assuming it does " +
-            "not match and skipping library.", libraryName, systemNameFilter);
+      if (systemFilter != null) {
+        log.info("Native library {}: could not detect sytem type, but system filter is {} - assuming it does " +
+            "not match and skipping library.", libraryName, systemFilter);
 
         return null;
       } else {
@@ -187,13 +193,13 @@ public class NativeLibraryLoader {
       }
     }
 
-    if (systemNameFilter != null && !systemNameFilter.equals(architecture.formatSystemName())) {
-      log.debug("Native library {}: system filter {} does not match detected system {], skipping", libraryName,
-          systemNameFilter, architecture.formatSystemName());
+    if (systemFilter != null && !systemFilter.test(systemType)) {
+      log.debug("Native library {}: system filter does not match detected system {], skipping", libraryName,
+          systemType.formatSystemName());
       return null;
     }
 
-    return architecture;
+    return systemType;
   }
 
   private static void createDirectoriesWithFullPermissions(Path path) throws IOException {
