@@ -1,6 +1,5 @@
 package com.sedmelluq.lava.common.natives;
 
-import com.sedmelluq.lava.common.natives.architecture.ResourceNativeLibraryBinaryProvider;
 import com.sedmelluq.lava.common.natives.architecture.SystemType;
 import java.io.FileOutputStream;
 import java.io.IOException;
