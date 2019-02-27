@@ -1,7 +1,6 @@
 package com.sedmelluq.discord.lavaplayer.natives.opus;
 
-import com.sedmelluq.discord.lavaplayer.natives.NativeResourceHolder;
-
+import com.sedmelluq.lava.common.natives.NativeResourceHolder;
 import java.nio.ByteBuffer;
 import java.nio.ShortBuffer;
 

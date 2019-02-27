@@ -1,9 +1,8 @@
 package com.sedmelluq.discord.lavaplayer.natives.aac;
 
-import com.sedmelluq.discord.lavaplayer.natives.NativeResourceHolder;
 import com.sedmelluq.discord.lavaplayer.tools.io.BitStreamWriter;
 import com.sedmelluq.discord.lavaplayer.tools.io.ByteBufferOutputStream;
-
+import com.sedmelluq.lava.common.natives.NativeResourceHolder;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
