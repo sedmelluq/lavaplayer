@@ -4,7 +4,7 @@ plugins {
   id 'com.jfrog.bintray'
 }
 
-ext.moduleName = 'lavaplayer-common'
+ext.moduleName = 'lava-common'
 version = '1.1.0'
 
 dependencies {
