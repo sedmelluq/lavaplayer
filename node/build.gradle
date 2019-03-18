@@ -1,34 +1,20 @@
-buildscript {
-  repositories {
-    mavenCentral()
-  }
-
-  dependencies {
-    classpath("org.springframework.boot:spring-boot-gradle-plugin:1.5.17.RELEASE")
-  }
-}
-
 plugins {
   id 'java'
-  id 'org.sonarqube' version '2.6.2'
+  id 'org.sonarqube'
+  id 'org.springframework.boot' version '2.1.2.RELEASE'
 }
-
-apply plugin: 'spring-boot'
 
 version = '1.2.50'
 
 dependencies {
   compile project(':main')
 
-  compile 'org.springframework.boot:spring-boot-starter-web:1.5.17.RELEASE'
+  compile 'org.springframework.boot:spring-boot-starter-web:2.1.2.RELEASE'
 }
 
-springBoot {
+bootJar {
+  mainClassName = 'com.sedmelluq.discord.lavaplayer.node.NodeApplication'
   classifier = 'boot'
-}
-
-bootRepackage {
-  mainClass = 'com.sedmelluq.discord.lavaplayer.node.NodeApplication'
 }
 
 publish {

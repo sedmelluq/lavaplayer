@@ -1,8 +1,8 @@
 package com.sedmelluq.discord.lavaplayer.container.mp3;
 
 import com.sedmelluq.discord.lavaplayer.natives.mp3.Mp3Decoder;
+import com.sedmelluq.discord.lavaplayer.tools.DataFormatTools;
 import com.sedmelluq.discord.lavaplayer.tools.io.SeekableInputStream;
-
 import java.io.IOException;
 
 import static com.sedmelluq.discord.lavaplayer.natives.mp3.Mp3Decoder.MPEG1_SAMPLES_PER_FRAME;
@@ -12,6 +12,12 @@ import static com.sedmelluq.discord.lavaplayer.natives.mp3.Mp3Decoder.MPEG1_SAMP
  * supported. In case the file is not actually CBR, this being used as a fallback may cause inaccurate seeking.
  */
 public class Mp3ConstantRateSeeker implements Mp3Seeker {
+  private static final int META_TAG_OFFSET = 36;
+  private static final byte[][] META_TAGS = new byte[][] {
+      new byte[] {'I', 'n', 'f', 'o'},
+      new byte[] { 'L', 'A', 'M', 'E' }
+  };
+
   private final double averageFrameSize;
   private final int sampleRate;
   private final long firstFramePosition;
@@ -35,6 +41,16 @@ public class Mp3ConstantRateSeeker implements Mp3Seeker {
     double averageFrameSize = Mp3Decoder.getAverageFrameSize(frameBuffer, 0);
 
     return new Mp3ConstantRateSeeker(averageFrameSize, sampleRate, firstFramePosition, contentLength);
+  }
+
+  public static boolean isMetaFrame(byte[] frameBuffer) {
+    for (byte[] metaTag : META_TAGS) {
+      if (DataFormatTools.arrayRangeEquals(frameBuffer, META_TAG_OFFSET, metaTag)) {
+        return true;
+      }
+    }
+
+    return false;
   }
 
   @Override

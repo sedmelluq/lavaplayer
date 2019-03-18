@@ -21,7 +21,6 @@ import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.DecodedTrackHolder;
 import com.sedmelluq.discord.lavaplayer.track.TrackMarker;
-import com.sedmelluq.discord.lavaplayer.udpqueue.natives.UdpQueueManager;
 import net.dv8tion.jda.core.entities.Guild;
 import net.dv8tion.jda.core.entities.Message;
 import net.dv8tion.jda.core.entities.TextChannel;
@@ -159,11 +158,6 @@ public class MusicController implements BotController {
   @BotCommandHandler
   private void local(Message message) {
     manager.useRemoteNodes();
-  }
-
-  @BotCommandHandler
-  private void gc(Message message, int duration) {
-    UdpQueueManager.pauseDemo(duration);
   }
 
   @BotCommandHandler

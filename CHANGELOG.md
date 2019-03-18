@@ -1,5 +1,23 @@
 # Change Log
 
+## [1.3.11] -- 2019-02-28
+### Added
+- Support for playing MPEG-TS files directly, including metadata support.
+- Metadata for OGG vorbis files.
+
+### Changed
+- AAC and MP3 decoders updated to newer versions.
+- Linux native libraries have better compatibility with alternate libc implementations (musl on Alpine for example)
+- More flexibility for specifying which native libraries and from where to load.
+
+### Fixed
+- Fixed file format detected incorrectly due to check order when file extension is known.
+- Fixed exception when processing the last frame of some FLAC files.
+- Fixed YouTube video signature using wrong parameter name in some cases.
+- Fixed ImmutableAudioFrame#getData doing the wrong thing.
+- Fixed MP3 track length detected incorrectly if they contain certain type of metadata.
+- Fixed a race condition which could sometimes drop the last frame of a track.
+
 ## [1.3.10] -- 2018-10-24
 ### Added
 - Generic HLS stream support.

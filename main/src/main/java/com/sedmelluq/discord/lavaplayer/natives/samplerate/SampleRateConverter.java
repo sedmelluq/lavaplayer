@@ -1,6 +1,6 @@
 package com.sedmelluq.discord.lavaplayer.natives.samplerate;
 
-import com.sedmelluq.discord.lavaplayer.natives.NativeResourceHolder;
+import com.sedmelluq.lava.common.natives.NativeResourceHolder;
 
 /**
  * Sample rate converter backed by libsamplerate

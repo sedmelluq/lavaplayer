@@ -1,20 +1,16 @@
 plugins {
   id 'java'
-  id 'application'
-  id 'org.sonarqube' version '2.6.2'
+  id 'org.sonarqube'
+  id 'com.jfrog.bintray'
 }
 
-apply plugin: 'com.jfrog.bintray'
-
-ext.moduleName = 'lavaplayer-common'
-version = '1.0.6'
+ext.moduleName = 'lava-common'
+version = '1.1.0'
 
 dependencies {
   compile "org.slf4j:slf4j-api:$slf4jVersion"
   compile 'commons-io:commons-io:2.6'
 }
-
-compileJava.dependsOn(':natives:checkNatives')
 
 task sourceJar(type: Jar) {
   from sourceSets.main.allJava
