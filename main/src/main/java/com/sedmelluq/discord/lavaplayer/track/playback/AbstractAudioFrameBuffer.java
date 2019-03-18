@@ -44,6 +44,7 @@ public abstract class AbstractAudioFrameBuffer implements AudioFrameBuffer {
 
       if (!terminated) {
         terminateOnEmpty = true;
+        signalWaiters();
       }
     }
   }
@@ -70,4 +71,6 @@ public abstract class AbstractAudioFrameBuffer implements AudioFrameBuffer {
   public boolean hasReceivedFrames() {
     return receivedFrames;
   }
+
+  protected abstract void signalWaiters();
 }

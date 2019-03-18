@@ -61,10 +61,12 @@ public class MatroskaVorbisTrackConsumer implements MatroskaTrackConsumer {
       int firstHeaderSize = readLacingValue(directPrivateData);
       int secondHeaderSize = readLacingValue(directPrivateData);
 
-      decoder.parseHeader(directPrivateData, firstHeaderSize, true);
-      decoder.parseHeader(directPrivateData, secondHeaderSize, false);
-      decoder.parseHeader(directPrivateData, directPrivateData.remaining(), false);
-      decoder.initialise();
+      ByteBuffer infoBuffer = directPrivateData.duplicate();
+      infoBuffer.limit(infoBuffer.position() + firstHeaderSize);
+
+      directPrivateData.position(directPrivateData.position() + firstHeaderSize + secondHeaderSize);
+
+      decoder.initialise(infoBuffer, directPrivateData);
 
       channelPcmBuffers = new float[decoder.getChannelCount()][];
 

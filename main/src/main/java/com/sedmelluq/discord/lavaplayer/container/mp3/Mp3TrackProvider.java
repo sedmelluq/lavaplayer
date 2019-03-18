@@ -95,6 +95,14 @@ public class Mp3TrackProvider implements AudioTrackInfoProvider {
       if (inputStream.getContentLength() == Long.MAX_VALUE) {
         seeker = new Mp3StreamSeeker();
       } else {
+        if (context == null) {
+          // Skip meta frames if this provider is created only for reading metadata.
+          for (int i = 0; Mp3ConstantRateSeeker.isMetaFrame(frameBuffer) && i < 2; i++) {
+            frameReader.nextFrame();
+            frameReader.fillFrameBuffer();
+          }
+        }
+
         seeker = Mp3ConstantRateSeeker.createFromFrame(startPosition, inputStream.getContentLength(), frameBuffer);
       }
     }

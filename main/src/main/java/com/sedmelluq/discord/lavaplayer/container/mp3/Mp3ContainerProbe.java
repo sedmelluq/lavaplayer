@@ -33,7 +33,7 @@ public class Mp3ContainerProbe implements MediaContainerProbe {
   @Override
   public boolean matchesHints(MediaContainerHints hints) {
     boolean invalidMimeType = hints.mimeType != null && !"audio/mpeg".equalsIgnoreCase(hints.mimeType);
-    boolean invalidFileExtension = hints.fileExtension != null && !"mp3".equalsIgnoreCase(hints.mimeType);
+    boolean invalidFileExtension = hints.fileExtension != null && !"mp3".equalsIgnoreCase(hints.fileExtension);
     return hints.present() && !invalidMimeType && !invalidFileExtension;
   }
 

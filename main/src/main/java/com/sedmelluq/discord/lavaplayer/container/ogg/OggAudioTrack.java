@@ -32,7 +32,7 @@ public class OggAudioTrack extends BaseAudioTrack {
   }
 
   @Override
-  public void process(final LocalAudioTrackExecutor localExecutor) throws Exception {
+  public void process(final LocalAudioTrackExecutor localExecutor) {
     OggPacketInputStream packetInputStream = new OggPacketInputStream(inputStream);
 
     log.debug("Starting to play an OGG stream track {}", getIdentifier());
@@ -47,7 +47,7 @@ public class OggAudioTrack extends BaseAudioTrack {
   }
 
   private void processTrackLoop(OggPacketInputStream packetInputStream, AudioProcessingContext context) throws IOException, InterruptedException {
-    OggTrackProvider track = OggTrackLoader.loadTrack(packetInputStream);
+    OggTrackHandler track = OggTrackLoader.loadTrackHandler(packetInputStream);
 
     if (track == null) {
       throw new IOException("Stream terminated before the first packet.");
@@ -61,7 +61,7 @@ public class OggAudioTrack extends BaseAudioTrack {
         track.close();
       }
 
-      track = OggTrackLoader.loadTrack(packetInputStream);
+      track = OggTrackLoader.loadTrackHandler(packetInputStream);
     }
   }
 }

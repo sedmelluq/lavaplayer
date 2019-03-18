@@ -9,7 +9,7 @@ import java.util.Map;
  * Audio track info provider based on OGG metadata map.
  */
 public class OggMetadata implements AudioTrackInfoProvider {
-  public static final OggMetadata EMPTY = new OggMetadata(Collections.emptyMap());
+  public static final OggMetadata EMPTY = new OggMetadata(Collections.emptyMap(), Long.MAX_VALUE);
 
   private static final String TITLE_FIELD = "TITLE";
   private static final String ARTIST_FIELD = "ARTIST";
@@ -19,7 +19,7 @@ public class OggMetadata implements AudioTrackInfoProvider {
   /**
    * @param tags Map of OGG metadata with OGG-specific keys.
    */
-  public OggMetadata(Map<String, String> tags) {
+  public OggMetadata(Map<String, String> tags, Long length) {
     this.tags = tags;
   }
 

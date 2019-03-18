@@ -14,8 +14,21 @@ endif()
 
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
 	add_definitions(-Dinline=__inline)
-	set(CMAKE_CXX_FLAGS_RELEASE "/MT")
+
+	set(COMPILER_FLAGS "")
+	set(COMPILER_FLAGS_DEBUG "/MTd")
+	set(COMPILER_FLAGS_RELEASE "/Ox /MT")
+else()
+	set(COMPILER_FLAGS "-Wall -Wextra -Werror -Wno-unused-parameter -Wno-unused-function -fvisibility=hidden")
+	set(COMPILER_FLAGS_DEBUG "-g")
+	set(COMPILER_FLAGS_RELEASE "-O3 -DNDEBUG -s")
+	set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--gc-sections -Wl,--exclude-libs,ALL")
 endif()
+
+set(CMAKE_C_FLAGS_DEBUG "${COMPILER_FLAGS} ${COMPILER_FLAGS_DEBUG}")
+set(CMAKE_C_FLAGS_RELEASE "${COMPILER_FLAGS} ${COMPILER_FLAGS_RELEASE}")
+set(CMAKE_CXX_FLAGS_DEBUG "${COMPILER_FLAGS} ${COMPILER_FLAGS_DEBUG}")
+set(CMAKE_CXX_FLAGS_RELEASE "${COMPILER_FLAGS} ${COMPILER_FLAGS_RELEASE}")
 
 include_directories("$ENV{JAVA_HOME}/include/")
 
@@ -25,7 +38,7 @@ include_directories("../fdk-aac/libAACdec/include")
 include_directories("../fdk-aac/libSYS/include")
 include_directories("../vorbis/libvorbis-1.3.5/include")
 include_directories("../vorbis/libogg-1.3.3/include")
-link_directories("../libs/${BITZ}")
+link_directories("../libs/64")
 
 if (DEFINED ENV{DIST_DIR})
 	set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "$ENV{DIST_DIR}")

@@ -13,6 +13,7 @@ public class SavedHeadSeekableInputStream extends SeekableInputStream {
   private final SeekableInputStream delegate;
   private final byte[] savedHead;
   private boolean usingHead;
+  private boolean allowDirectReads;
   private long headPosition;
   private long savedUntilPosition;
 
@@ -24,6 +25,11 @@ public class SavedHeadSeekableInputStream extends SeekableInputStream {
     super(delegate.getContentLength(), delegate.getMaxSkipDistance());
     this.delegate = delegate;
     this.savedHead = new byte[savedSize];
+    this.allowDirectReads = true;
+  }
+
+  public void setAllowDirectReads(boolean allowDirectReads) {
+    this.allowDirectReads = allowDirectReads;
   }
 
   /**
@@ -49,8 +55,12 @@ public class SavedHeadSeekableInputStream extends SeekableInputStream {
   @Override
   protected void seekHard(long position) throws IOException {
     if (position >= savedUntilPosition) {
-      usingHead = false;
-      delegate.seekHard(position);
+      if (allowDirectReads) {
+        usingHead = false;
+        delegate.seekHard(position);
+      } else {
+        throw new IndexOutOfBoundsException("Reads beyond saved head are disabled.");
+      }
     } else {
       usingHead = true;
       headPosition = position;
@@ -78,8 +88,10 @@ public class SavedHeadSeekableInputStream extends SeekableInputStream {
       }
 
       return result & 0xFF;
-    } else {
+    } else if (allowDirectReads) {
       return delegate.read();
+    } else {
+      throw new IndexOutOfBoundsException("Reads beyond saved head are disabled.");
     }
   }
 
@@ -87,8 +99,10 @@ public class SavedHeadSeekableInputStream extends SeekableInputStream {
   public int read(byte[] b, int off, int len) throws IOException {
     if (usingHead) {
       return super.read(b, off, len);
-    } else {
+    } else if (allowDirectReads) {
       return delegate.read(b, off, len);
+    } else {
+      throw new IndexOutOfBoundsException("Reads beyond saved head are disabled.");
     }
   }
 
@@ -96,8 +110,10 @@ public class SavedHeadSeekableInputStream extends SeekableInputStream {
   public long skip(long n) throws IOException {
     if (usingHead) {
       return super.skip(n);
-    } else {
+    } else if (allowDirectReads) {
       return delegate.skip(n);
+    } else {
+      throw new IndexOutOfBoundsException("Reads beyond saved head are disabled.");
     }
   }
 
@@ -105,8 +121,10 @@ public class SavedHeadSeekableInputStream extends SeekableInputStream {
   public int available() throws IOException {
     if (usingHead) {
       return (int) (savedUntilPosition - headPosition);
-    } else {
+    } else if (allowDirectReads) {
       return delegate.available();
+    } else {
+      throw new IndexOutOfBoundsException("Reads beyond saved head are disabled.");
     }
   }
 
