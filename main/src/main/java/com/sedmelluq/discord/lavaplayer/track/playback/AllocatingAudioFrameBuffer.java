@@ -56,6 +56,9 @@ public class AllocatingAudioFrameBuffer extends AbstractAudioFrameBuffer {
 
     if (frame == null) {
       return fetchPendingTerminator();
+    } else if (frame.isTerminator()) {
+      fetchPendingTerminator();
+      return frame;
     }
 
     return filterFrame(frame);

@@ -1,5 +1,10 @@
 # Change Log
 
+## [1.3.12] -- 2019-03-20
+### Fixed
+- Fixed natives crashing due to libc conflict.
+- Fixed exception when calling provide on an ending track.
+
 ## [1.3.11] -- 2019-02-28
 ### Added
 - Support for playing MPEG-TS files directly, including metadata support.
