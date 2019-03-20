@@ -22,11 +22,10 @@ import java.util.Map;
 
 public class Main extends ListenerAdapter {
   public static void main(String[] args) throws Exception {
-    JDA jda = new JDABuilder(AccountType.BOT)
+    new JDABuilder(AccountType.BOT)
         .setToken(System.getProperty("botToken"))
-        .buildBlocking();
-
-    jda.addEventListener(new Main());
+        .addEventListener(new Main())
+        .build();
   }
 
   private final AudioPlayerManager playerManager;
