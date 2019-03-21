@@ -6,7 +6,7 @@ plugins {
 }
 
 ext.moduleName = 'lavaplayer'
-version = '1.3.12'
+version = '1.3.13'
 
 repositories {
   maven {
@@ -35,6 +35,10 @@ dependencies {
   testCompile 'org.spockframework:spock-core:1.2-groovy-2.5'
   testCompile 'ch.qos.logback:logback-classic:1.2.3'
   testCompile 'com.sedmelluq:lavaplayer-test-samples:1.3.11'
+}
+
+jar {
+  exclude("natives")
 }
 
 task updateVersion {
