@@ -1,5 +1,13 @@
 # Change Log
 
+## [1.3.14] -- 2019-03-28
+### Fixed
+- Fixed MKV frame size parsing which caused some MKV/WEBM files to fail in the middle of playback.
+
+## [1.3.13] -- 2019-03-21
+### Fixed
+- Fixed an old x86 Linux native being bundled with main LP artifact, causing previous libc conflict to still manifest.
+
 ## [1.3.12] -- 2019-03-20
 ### Fixed
 - Fixed natives crashing due to libc conflict.
