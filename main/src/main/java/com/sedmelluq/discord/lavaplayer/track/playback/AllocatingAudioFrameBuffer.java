@@ -103,7 +103,7 @@ public class AllocatingAudioFrameBuffer extends AbstractAudioFrameBuffer {
   }
 
   private boolean passToMutable(AudioFrame frame, MutableAudioFrame targetFrame) {
-    if (targetFrame != null) {
+    if (targetFrame != null && frame != null) {
       if (frame.isTerminator()) {
         targetFrame.setTerminator(true);
       } else {
