@@ -1,5 +1,13 @@
 # Change Log
 
+## [1.3.16] -- 2019-04-02
+### Fixed
+- Fixed probe hint matching logic for aac/ts causing HTTP source to not resolve tracks when mime type was present.  
+
+## [1.3.15] -- 2019-04-01
+### Fixed
+- Fixed no automatic reconnect on connection reset for some JDK versions.
+
 ## [1.3.14] -- 2019-03-28
 ### Fixed
 - Fixed MKV frame size parsing which caused some MKV/WEBM files to fail in the middle of playback.
