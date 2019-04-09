@@ -16,12 +16,10 @@ import discord4j.core.object.entity.Message;
 import discord4j.core.object.entity.MessageChannel;
 import discord4j.core.object.entity.TextChannel;
 import discord4j.core.object.entity.VoiceChannel;
-import discord4j.voice.VoiceConnection;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import reactor.core.publisher.Flux;
 
 public class Main {
   private static final Logger log = LoggerFactory.getLogger(Main.class);
@@ -36,7 +34,7 @@ public class Main {
   private final Map<Long, GuildMusicManager> musicManagers;
 
   private Main() {
-    this.musicManagers = new HashMap<>();
+    this.musicManagers = new ConcurrentHashMap<>();
 
     this.playerManager = new DefaultAudioPlayerManager();
     AudioSourceManagers.registerRemoteSources(playerManager);
@@ -128,16 +126,20 @@ public class Main {
 
   private void sendMessageToChannel(TextChannel channel, String message) {
     try {
-      channel.createMessage(message).subscribe();
+      channel.createMessage(message).block();
     } catch (Exception e) {
       log.warn("Failed to send message {} to {}", message, channel.getName(), e);
     }
   }
 
   private static void attachToFirstVoiceChannel(Guild guild, D4jAudioProvider provider) {
-    Flux.first(guild.getChannels()
-        .ofType(VoiceChannel.class))
-        .toIterable().forEach( it -> it.join(spec -> spec.setProvider(provider))
-            .subscribe(VoiceConnection::disconnect));
+    VoiceChannel voiceChannel = guild.getChannels().ofType(VoiceChannel.class).blockFirst();
+    boolean inVoiceChannel = guild.getVoiceStates() // Check if any VoiceState for this guild relates to bot
+        .any(voiceState -> guild.getClient().getSelfId().map(voiceState.getUserId()::equals).orElse(false))
+        .block();
+
+    if (!inVoiceChannel) {
+      voiceChannel.join(spec -> spec.setProvider(provider)).block();
+    }
   }
 }
