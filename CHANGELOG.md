@@ -1,5 +1,9 @@
 # Change Log
 
+## [1.3.17] -- 2019-04-26
+### Fixed
+- Fixed age-restricted videos not being playable (PR 172 by Devoxin).
+
 ## [1.3.16] -- 2019-04-02
 ### Fixed
 - Fixed probe hint matching logic for aac/ts causing HTTP source to not resolve tracks when mime type was present.  
