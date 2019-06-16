@@ -548,7 +548,7 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
       URIBuilder builder = new URIBuilder(url);
       return new UrlInfo(builder.getPath(), builder.getQueryParams().stream()
           .filter(it -> it.getValue() != null)
-          .collect(Collectors.toMap(NameValuePair::getName, NameValuePair::getValue, (a, b) -> b)));
+          .collect(Collectors.toMap(NameValuePair::getName, NameValuePair::getValue, (a, b) -> a)));
     } catch (URISyntaxException e) {
       if (retryValidPart) {
         return getUrlInfo(url.substring(0, e.getIndex() - 1), false);
