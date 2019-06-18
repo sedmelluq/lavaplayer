@@ -7,15 +7,14 @@ import com.sedmelluq.discord.lavaplayer.source.AudioSourceManagers;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
-import net.dv8tion.jda.core.AccountType;
-import net.dv8tion.jda.core.JDA;
-import net.dv8tion.jda.core.JDABuilder;
-import net.dv8tion.jda.core.entities.Guild;
-import net.dv8tion.jda.core.entities.TextChannel;
-import net.dv8tion.jda.core.entities.VoiceChannel;
-import net.dv8tion.jda.core.events.message.MessageReceivedEvent;
-import net.dv8tion.jda.core.hooks.ListenerAdapter;
-import net.dv8tion.jda.core.managers.AudioManager;
+import net.dv8tion.jda.api.AccountType;
+import net.dv8tion.jda.api.JDABuilder;
+import net.dv8tion.jda.api.entities.Guild;
+import net.dv8tion.jda.api.entities.TextChannel;
+import net.dv8tion.jda.api.entities.VoiceChannel;
+import net.dv8tion.jda.api.events.message.guild.GuildMessageReceivedEvent;
+import net.dv8tion.jda.api.hooks.ListenerAdapter;
+import net.dv8tion.jda.api.managers.AudioManager;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -24,7 +23,7 @@ public class Main extends ListenerAdapter {
   public static void main(String[] args) throws Exception {
     new JDABuilder(AccountType.BOT)
         .setToken(System.getProperty("botToken"))
-        .addEventListener(new Main())
+        .addEventListeners(new Main())
         .build();
   }
 
@@ -54,19 +53,16 @@ public class Main extends ListenerAdapter {
   }
 
   @Override
-  public void onMessageReceived(MessageReceivedEvent event) {
+  public void onGuildMessageReceived(GuildMessageReceivedEvent event) {
     String[] command = event.getMessage().getContentRaw().split(" ", 2);
-    Guild guild = event.getGuild();
 
-    if (guild != null) {
-      if ("~play".equals(command[0]) && command.length == 2) {
-        loadAndPlay(event.getTextChannel(), command[1]);
-      } else if ("~skip".equals(command[0])) {
-        skipTrack(event.getTextChannel());
-      }
+    if ("~play".equals(command[0]) && command.length == 2) {
+      loadAndPlay(event.getChannel(), command[1]);
+    } else if ("~skip".equals(command[0])) {
+      skipTrack(event.getChannel());
     }
 
-    super.onMessageReceived(event);
+    super.onGuildMessageReceived(event);
   }
 
   private void loadAndPlay(final TextChannel channel, final String trackUrl) {
