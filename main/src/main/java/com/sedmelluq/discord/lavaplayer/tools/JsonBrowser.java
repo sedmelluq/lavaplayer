@@ -2,13 +2,14 @@ package com.sedmelluq.discord.lavaplayer.tools;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Allows to easily navigate in decoded JSON data
@@ -16,24 +17,24 @@ import java.util.Map;
 public class JsonBrowser {
   private static final ObjectMapper mapper = setupMapper();
 
-  private final Object value;
+  private final JsonNode node;
 
-  private JsonBrowser(Object value) {
-    this.value = value;
+  private JsonBrowser(JsonNode node) {
+    this.node = node;
   }
 
   /**
    * @return True if the value represents a list.
    */
   public boolean isList() {
-    return value instanceof List;
+    return node instanceof ArrayNode;
   }
 
   /**
    * @return True if the value represents a map.
    */
   public boolean isMap() {
-    return value instanceof Map;
+    return node instanceof ObjectNode;
   }
 
   /**
@@ -42,8 +43,8 @@ public class JsonBrowser {
    * @return JsonBrowser instance which wraps the value at the specified index
    */
   public JsonBrowser index(int index) {
-    if (value instanceof List) {
-      return new JsonBrowser(((List) value).get(index));
+    if (isList()) {
+      return new JsonBrowser(node.get(index));
     } else {
       throw new IllegalStateException("Index only works on a list");
     }
@@ -54,9 +55,9 @@ public class JsonBrowser {
    * @param key Map key
    * @return JsonBrowser instance which wraps the value with the specified key
    */
-  public JsonBrowser get(Object key) {
-    if (value instanceof Map) {
-      return new JsonBrowser(((Map) value).get(key));
+  public JsonBrowser get(String key) {
+    if (isMap()) {
+      return new JsonBrowser(node.get(key));
     } else {
       throw new IllegalStateException("Get only works on a map");
     }
@@ -67,9 +68,9 @@ public class JsonBrowser {
    * @param key Map key
    * @return JsonBrowser instance which wraps the value with the specified key
    */
-  public JsonBrowser safeGet(Object key) {
-    if (value instanceof Map) {
-      return new JsonBrowser(((Map) value).get(key));
+  public JsonBrowser safeGet(String key) {
+    if (isMap()) {
+      return new JsonBrowser(node.get(key));
     } else {
       return new JsonBrowser(null);
     }
@@ -80,10 +81,9 @@ public class JsonBrowser {
    * @param key The map entry key
    * @param item The map entry value
    */
-  @SuppressWarnings("unchecked")
   public void put(String key, Object item) {
-    if (value instanceof Map) {
-      ((Map<String, Object>) value).put(key, item);
+    if (node instanceof ObjectNode) {
+      ((ObjectNode) node).set(key, mapper.valueToTree(item));
     } else {
       throw new IllegalStateException("Put only works on a map");
     }
@@ -95,15 +95,9 @@ public class JsonBrowser {
    */
   public List<JsonBrowser> values() {
     List<JsonBrowser> values = new ArrayList<>();
-    if (value instanceof Map) {
-      for (Object object : ((Map) value).values()) {
-        values.add(new JsonBrowser(object));
-      }
-    } else if (value instanceof List) {
-      for (Object object : (List) value) {
-        values.add(new JsonBrowser(object));
-      }
-    }
+
+    node.elements().forEachRemaining(child -> values.add(new JsonBrowser(child)));
+
     return values;
   }
 
@@ -114,21 +108,49 @@ public class JsonBrowser {
    * @throws IllegalArgumentException If conversion is impossible
    */
   public <T> T as(Class<T> klass) {
-    return mapper.convertValue(value, klass);
+    try {
+      return mapper.treeToValue(node, klass);
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
   }
 
   /**
    * @return The value of the element as text
    */
   public String text() {
-    return value != null ? value.toString() : null;
+    if (node != null) {
+      if (node.isNull()) {
+        return null;
+      } else if (node.isTextual()) {
+        return node.textValue();
+      } else if (node.isIntegralNumber()) {
+        return String.valueOf(node.longValue());
+      } else if (node.isNumber()) {
+        return node.numberValue().toString();
+      } else if (node.isBoolean()) {
+        return String.valueOf(node.booleanValue());
+      } else {
+        return node.toString();
+      }
+    }
+
+    return null;
+  }
+
+  public String format() {
+    try {
+      return node != null ? mapper.writeValueAsString(node) : null;
+    } catch (Exception e) {
+      return null;
+    }
   }
 
   /**
    * @return The value of the element as text
    */
   public boolean isNull() {
-    return value == null;
+    return node == null || node.isNull();
   }
 
   /**
@@ -138,7 +160,7 @@ public class JsonBrowser {
    * @throws IOException When parsing the JSON failed
    */
   public static JsonBrowser parse(String json) throws IOException {
-    return new JsonBrowser(mapper.readValue(json, Object.class));
+    return new JsonBrowser(mapper.readTree(json));
   }
 
   /**
@@ -148,7 +170,7 @@ public class JsonBrowser {
    * @throws IOException When parsing the JSON failed
    */
   public static JsonBrowser parse(InputStream stream) throws IOException {
-    return new JsonBrowser(mapper.readValue(stream, Object.class));
+    return new JsonBrowser(mapper.readTree(stream));
   }
 
   private static ObjectMapper setupMapper() {

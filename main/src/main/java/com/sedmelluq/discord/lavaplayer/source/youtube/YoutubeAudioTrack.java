@@ -135,6 +135,8 @@ public class YoutubeAudioTrack extends DelegatedAudioTrack {
       return loadTrackFormatsFromFormatStreamMap(formatStreamMap);
     }
 
+    log.warn("Video {} with no detected format field, arguments are: {}", getIdentifier(), args.format());
+
     throw new FriendlyException("Unable to play this YouTube track.", SUSPICIOUS,
         new IllegalStateException("No adaptive formats, no dash, no stream map."));
   }
