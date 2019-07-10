@@ -37,6 +37,7 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URLEncoder;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
@@ -352,6 +353,12 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
 
       if (configJson != null) {
         return JsonBrowser.parse(configJson);
+      } else {
+        if (html.contains("player-age-gate-content\">")) {
+          // In case main page does not give player configuration, but info page indicates an OK result, it is probably an
+          // age-restricted video for which the complete track info can be combined from the embed page and the info page.
+          return getTrackInfoFromEmbedPage(httpInterface, videoId);
+        }
       }
     }
 
@@ -359,8 +366,6 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
       return null;
     }
 
-    // In case main page does not give player configuration, but info page indicates an OK result, it is probably an
-    // age-restricted video for which the complete track info can be combined from the embed page and the info page.
     return getTrackInfoFromEmbedPage(httpInterface, videoId);
   }
 
@@ -417,7 +422,10 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
   }
 
   private Map<String, String> loadTrackArgsFromVideoInfoPage(HttpInterface httpInterface, String videoId, String sts) throws IOException {
-    String url = "https://www.youtube.com/get_video_info?hl=en_GB&video_id=" + videoId + "&sts=" + sts;
+    String videoApiUrl = "https://youtube.googleapis.com/v/" + videoId;
+    String encodedApiUrl = URLEncoder.encode(videoApiUrl, CHARSET);
+    String url = "https://www.youtube.com/get_video_info?sts=" + sts + "&video_id=" + videoId + "&eurl=" + encodedApiUrl +
+            "hl=en_GB";
 
     try (CloseableHttpResponse response = httpInterface.execute(new HttpGet(url))) {
       int statusCode = response.getStatusLine().getStatusCode();

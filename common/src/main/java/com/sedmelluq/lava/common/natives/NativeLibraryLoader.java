@@ -193,7 +193,7 @@ public class NativeLibraryLoader {
     }
 
     if (systemFilter != null && !systemFilter.test(systemType)) {
-      log.debug("Native library {}: system filter does not match detected system {], skipping", libraryName,
+      log.debug("Native library {}: system filter does not match detected system {}, skipping", libraryName,
           systemType.formatSystemName());
       return null;
     }
