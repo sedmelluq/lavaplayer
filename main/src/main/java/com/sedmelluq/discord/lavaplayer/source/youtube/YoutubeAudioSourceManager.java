@@ -424,8 +424,12 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
   private Map<String, String> loadTrackArgsFromVideoInfoPage(HttpInterface httpInterface, String videoId, String sts) throws IOException {
     String videoApiUrl = "https://youtube.googleapis.com/v/" + videoId;
     String encodedApiUrl = URLEncoder.encode(videoApiUrl, CHARSET);
-    String url = "https://www.youtube.com/get_video_info?sts=" + sts + "&video_id=" + videoId + "&eurl=" + encodedApiUrl +
+    String url = "https://www.youtube.com/get_video_info?video_id=" + videoId + "&eurl=" + encodedApiUrl +
             "hl=en_GB";
+
+    if (sts != null) {
+      url += "&sts=" + sts;
+    }
 
     try (CloseableHttpResponse response = httpInterface.execute(new HttpGet(url))) {
       int statusCode = response.getStatusLine().getStatusCode();
