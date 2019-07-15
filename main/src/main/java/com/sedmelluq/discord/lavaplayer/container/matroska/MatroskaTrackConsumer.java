@@ -7,7 +7,7 @@ import java.nio.ByteBuffer;
 /**
  * Consumer for the file frames of a specific matroska file track
  */
-public interface MatroskaTrackConsumer {
+public interface MatroskaTrackConsumer extends AutoCloseable {
   /**
    * @return The associated matroska file track
    */
@@ -42,7 +42,8 @@ public interface MatroskaTrackConsumer {
   void consume(ByteBuffer data) throws InterruptedException;
 
   /**
-   * Already flushed, no more input coming. Free all resources
+   * Already flushed, no more input coming. Free all resources.
    */
-  void close();
+  @Override
+  void close() throws Exception;
 }
