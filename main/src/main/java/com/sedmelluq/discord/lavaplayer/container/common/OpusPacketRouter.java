@@ -102,9 +102,7 @@ public class OpusPacketRouter {
    * Free all resources.
    */
   public void close() {
-    if (opusDecoder != null) {
-      destroyDecoder();
-    }
+    destroyDecoder();
   }
 
   private int processFrameSize(ByteBuffer buffer) {
@@ -188,15 +186,29 @@ public class OpusPacketRouter {
 
   private void initialiseDecoder() {
     opusDecoder = new OpusDecoder(inputFrequency, inputChannels);
-    downstream = AudioPipelineFactory.create(context, new PcmFormat(inputChannels, inputFrequency));
-    downstream.seekPerformed(currentTimecode, currentTimecode);
+
+    try {
+      downstream = AudioPipelineFactory.create(context, new PcmFormat(inputChannels, inputFrequency));
+      downstream.seekPerformed(currentTimecode, currentTimecode);
+    } finally {
+      // When an exception is thrown, do not leave the router in a limbo state with decoder but no downstream.
+      if (downstream == null) {
+        destroyDecoder();
+      }
+    }
   }
 
   private void destroyDecoder() {
-    opusDecoder.close();
-    opusDecoder = null;
-    downstream.close();
-    downstream = null;
+    if (opusDecoder != null) {
+      opusDecoder.close();
+      opusDecoder = null;
+    }
+
+    if (downstream != null) {
+      downstream.close();
+      downstream = null;
+    }
+
     directInput = null;
     frameBuffer = null;
   }
