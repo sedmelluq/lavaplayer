@@ -1,5 +1,14 @@
 # Change Log
 
+## [1.3.18] -- 2019-07-19
+### Changed
+- YouTube track info JSON now gets logged if it does not contain any expected fields.
+
+### Fixed
+- Fixed closing MKV Opus track throwing an exception if playback initialization had thrown an exception earlier.
+- Fixed exception from track close reported instead of playback exception on MKV close.
+- Fixed passing an invalid parameter to YouTube embed page URL.
+
 ## [1.3.17] -- 2019-04-26
 ### Fixed
 - Fixed age-restricted videos not being playable (PR 172 by Devoxin).
