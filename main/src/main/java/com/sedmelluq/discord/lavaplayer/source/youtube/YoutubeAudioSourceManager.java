@@ -40,6 +40,7 @@ import java.net.URISyntaxException;
 import java.net.URLEncoder;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
@@ -537,11 +538,15 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
    */
   public YoutubeAudioTrack buildTrackObject(String videoId, String title, String uploader, boolean isStream, long duration) {
     return new YoutubeAudioTrack(new AudioTrackInfo(title, uploader, duration, videoId, isStream, getWatchUrl(videoId),
-            String.format("https://img.youtube.com/vi/%s/0.jpg", videoId)), this);
+        Collections.singletonMap("artworkUrl", getArtworkUrl(videoId))), this);
   }
 
   private static String getWatchUrl(String videoId) {
     return "https://www.youtube.com/watch?v=" + videoId;
+  }
+
+  private static String getArtworkUrl(String videoId) {
+    return String.format("https://img.youtube.com/vi/%s/0.jpg", videoId);
   }
 
   private static UrlInfo getUrlInfo(String url, boolean retryValidPart) {
