@@ -70,8 +70,6 @@ public class MediaContainerDetection {
   private MediaContainerDetectionResult detectContainer(SeekableInputStream innerStream, boolean matchHints)
       throws IOException {
 
-    boolean checked = false;
-
     for (MediaContainerProbe probe : containerRegistry.getAll()) {
       if (matchHints == probe.matchesHints(hints)) {
         innerStream.seek(0);
@@ -80,12 +78,10 @@ public class MediaContainerDetection {
         if (result != null) {
           return result;
         }
-
-        checked = true;
       }
     }
 
-    return checked ? unknownFormat() : null;
+    return null;
   }
 
   private static MediaContainerDetectionResult checkContainer(MediaContainerProbe probe, AudioReference reference,

@@ -28,8 +28,7 @@ public class MpegAdtsContainerProbe implements MediaContainerProbe {
 
   @Override
   public boolean matchesHints(MediaContainerHints hints) {
-    boolean invalidFileExtension = hints.fileExtension != null && !"ts".equalsIgnoreCase(hints.fileExtension);
-    return hints.present() && !invalidFileExtension;
+    return "ts".equalsIgnoreCase(hints.fileExtension);
   }
 
   @Override

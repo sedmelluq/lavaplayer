@@ -56,6 +56,9 @@ public class AllocatingAudioFrameBuffer extends AbstractAudioFrameBuffer {
 
     if (frame == null) {
       return fetchPendingTerminator();
+    } else if (frame.isTerminator()) {
+      fetchPendingTerminator();
+      return frame;
     }
 
     return filterFrame(frame);
@@ -100,7 +103,7 @@ public class AllocatingAudioFrameBuffer extends AbstractAudioFrameBuffer {
   }
 
   private boolean passToMutable(AudioFrame frame, MutableAudioFrame targetFrame) {
-    if (targetFrame != null) {
+    if (targetFrame != null && frame != null) {
       if (frame.isTerminator()) {
         targetFrame.setTerminator(true);
       } else {

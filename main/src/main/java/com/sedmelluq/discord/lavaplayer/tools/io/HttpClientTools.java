@@ -296,11 +296,13 @@ public class HttpClientTools {
   }
 
   private static boolean isConnectionResetException(Throwable exception) {
-    return exception instanceof SocketException && "Connection reset".equals(exception.getMessage());
+    return (exception instanceof SocketException || exception instanceof SSLException)
+        && "Connection reset".equals(exception.getMessage());
   }
 
   private static boolean isSocketTimeoutException(Throwable exception) {
-    return exception instanceof SocketTimeoutException && "Read timed out".equals(exception.getMessage());
+    return (exception instanceof SocketTimeoutException || exception instanceof SSLException)
+        && "Read timed out".equals(exception.getMessage());
   }
 
   private static boolean isIncorrectSslShutdownException(Throwable exception) {

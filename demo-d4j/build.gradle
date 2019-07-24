@@ -10,9 +10,12 @@ repositories {
   }
 }
 
+ext.d4jVersion = '3.0.0'
+
 dependencies {
-  compile 'com.github.austinv11:Discord4j:2.10.1'
-  compile 'com.sedmelluq:lavaplayer:1.3.10'
+  compile "com.discord4j:discord4j-core:$d4jVersion"
+  compile "com.discord4j:discord4j-voice:$d4jVersion"
+  compile 'com.sedmelluq:lavaplayer:1.3.12'
   runtime 'ch.qos.logback:logback-classic:1.2.3'
 }
 
