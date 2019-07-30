@@ -1,5 +1,9 @@
 # Change Log
 
+## [1.3.19] -- 2019-07-30
+### Fixed
+- Fixed broken YouTube track loading due to changes the site (PR 199 by Frederikam).
+
 ## [1.3.18] -- 2019-07-19
 ### Changed
 - YouTube track info JSON now gets logged if it does not contain any expected fields.
