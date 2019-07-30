@@ -209,10 +209,11 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
         throw new FriendlyException(args.get("reason").text(), COMMON, null);
       }
 
-      boolean isStream = "1".equals(args.get("live_playback").text());
-      long duration = isStream ? Long.MAX_VALUE : args.get("length_seconds").as(Long.class) * 1000;
+      JsonBrowser videoDetails = JsonBrowser.parse(args.get("player_response").text()).get("videoDetails");
+      boolean isStream = videoDetails.get("isLiveContent").as(Boolean.class);
+      long duration = isStream ? Long.MAX_VALUE : videoDetails.get("lengthSeconds").as(Long.class) * 1000;
 
-      return buildTrackObject(videoId, args.get("title").text(), args.get("author").text(), isStream, duration);
+      return buildTrackObject(videoId, videoDetails.get("title").text(), videoDetails.get("author").text(), isStream, duration);
     } catch (Exception e) {
       throw ExceptionTools.wrapUnfriendlyExceptions("Loading information for a YouTube track failed.", FAULT, e);
     }
