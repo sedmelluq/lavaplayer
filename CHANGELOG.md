@@ -1,5 +1,9 @@
 # Change Log
 
+## [1.3.20] -- 2019-08-08
+### Fixed
+- Fixed playback for YouTube when format list is only provided through player_response.
+
 ## [1.3.19] -- 2019-07-30
 ### Fixed
 - Fixed broken YouTube track loading due to changes the site (PR 199 by Frederikam).

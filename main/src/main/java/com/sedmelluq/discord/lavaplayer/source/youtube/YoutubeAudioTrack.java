@@ -11,6 +11,7 @@ import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo;
 import com.sedmelluq.discord.lavaplayer.track.DelegatedAudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.playback.LocalAudioTrackExecutor;
+import java.nio.charset.StandardCharsets;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.utils.URLEncodedUtils;
@@ -24,7 +25,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.URI;
-import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -125,6 +125,22 @@ public class YoutubeAudioTrack extends DelegatedAudioTrack {
       return loadTrackFormatsFromAdaptive(adaptiveFormats);
     }
 
+    String playerResponse = args.safeGet("player_response").text();
+
+    if (playerResponse != null) {
+      JsonBrowser streamingData = JsonBrowser.parse(playerResponse)
+          .safeGet("streamingData");
+
+      if (!streamingData.isNull()) {
+        List<YoutubeTrackFormat> formats = loadTrackFormatsFromStreamingData(streamingData.safeGet("formats"));
+        formats.addAll(loadTrackFormatsFromStreamingData(streamingData.safeGet("adaptiveFormats")));
+
+        if (!formats.isEmpty()) {
+          return formats;
+        }
+      }
+    }
+
     String dashUrl = args.safeGet("dashmpd").text();
     if (dashUrl != null) {
       return loadTrackFormatsFromDash(dashUrl, httpInterface, playerScript);
@@ -145,7 +161,7 @@ public class YoutubeAudioTrack extends DelegatedAudioTrack {
     List<YoutubeTrackFormat> tracks = new ArrayList<>();
 
     for (String formatString : adaptiveFormats.split(",")) {
-      Map<String, String> format = convertToMapLayout(URLEncodedUtils.parse(formatString, Charset.forName(CHARSET)));
+      Map<String, String> format = decodeUrlEncodedItems(formatString, false);
 
       tracks.add(new YoutubeTrackFormat(
           ContentType.parse(format.get("type")),
@@ -164,7 +180,7 @@ public class YoutubeAudioTrack extends DelegatedAudioTrack {
     List<YoutubeTrackFormat> tracks = new ArrayList<>();
 
     for (String formatString : adaptiveFormats.split(",")) {
-      Map<String, String> format = convertToMapLayout(URLEncodedUtils.parse(formatString, Charset.forName(CHARSET)));
+      Map<String, String> format = decodeUrlEncodedItems(formatString, false);
       String url = format.get("url");
       String contentLength = DataFormatTools.extractBetween(url, "clen=", "&");
 
@@ -181,6 +197,27 @@ public class YoutubeAudioTrack extends DelegatedAudioTrack {
           format.get("s"),
           format.getOrDefault("sp", DEFAULT_SIGNATURE_KEY)
       ));
+    }
+
+    return tracks;
+  }
+
+  private List<YoutubeTrackFormat> loadTrackFormatsFromStreamingData(JsonBrowser formats) {
+    List<YoutubeTrackFormat> tracks = new ArrayList<>();
+
+    if (!formats.isNull() && formats.isList()) {
+      for (JsonBrowser formatJson : formats.values()) {
+        Map<String, String> cipherInfo = decodeUrlEncodedItems(formatJson.safeGet("cipher").text(), true);
+
+        tracks.add(new YoutubeTrackFormat(
+            ContentType.parse(formatJson.safeGet("mimeType").text()),
+            formatJson.safeGet("bitrate").as(Long.class),
+            formatJson.safeGet("contentLength").as(Long.class),
+            cipherInfo.get("url"),
+            cipherInfo.get("s"),
+            cipherInfo.get("sp")
+        ));
+      }
     }
 
     return tracks;
@@ -277,6 +314,14 @@ public class YoutubeAudioTrack extends DelegatedAudioTrack {
     }
 
     return bestFormat;
+  }
+
+  private static Map<String, String> decodeUrlEncodedItems(String input, boolean escapedSeparator) {
+    if (escapedSeparator) {
+      input = input.replace("\\\\u0026", "&");
+    }
+
+    return convertToMapLayout(URLEncodedUtils.parse(input, StandardCharsets.UTF_8));
   }
 
   private static class FormatWithUrl {
