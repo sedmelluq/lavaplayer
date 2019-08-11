@@ -368,7 +368,16 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
       String configJson = DataFormatTools.extractBetween(html, "ytplayer.config = ", ";ytplayer.load");
 
       if (configJson != null) {
-        return JsonBrowser.parse(configJson);
+        JsonBrowser json = JsonBrowser.parse(configJson);
+        JsonBrowser playabilityStatus = json.get("playabilityStatus");
+
+        if (!playabilityStatus.isNull() && "ERROR".equals(playabilityStatus.get("status").text())) {
+          if (determineFailureReason(httpInterface, videoId, mustExist)) {
+            return null;
+          }
+        }
+
+        return json;
       } else {
         if (html.contains("player-age-gate-content\">")) {
           // In case main page does not give player configuration, but info page indicates an OK result, it is probably an
@@ -393,12 +402,21 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
       }
 
       Map<String, String> format = convertToMapLayout(URLEncodedUtils.parse(response.getEntity()));
-      return determineFailureReasonFromStatus(format.get("status"), format.get("reason"), mustExist);
+
+      if (format.containsKey("player_response")) { // new format
+        JsonBrowser playerResponse = JsonBrowser.parse(format.get("player_response"));
+        JsonBrowser playabilityStatus = playerResponse.get("playabilityStatus");
+        String status = playabilityStatus.get("status").text();
+        String reason = playabilityStatus.get("reason").text();
+        return determineFailureReasonFromStatus(status, reason, mustExist);
+      } else {
+        return determineFailureReasonFromStatus(format.get("status"), format.get("reason"), mustExist);
+      }
     }
   }
 
   private boolean determineFailureReasonFromStatus(String status, String reason, boolean mustExist) {
-    if ("fail".equals(status)) {
+    if ("fail".equals(status) || "ERROR".equals(status)) {
       if (("This video does not exist.".equals(reason) || "This video is unavailable.".equals(reason)) && !mustExist) {
         return true;
       } else if (reason != null) {
