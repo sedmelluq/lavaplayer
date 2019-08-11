@@ -204,25 +204,26 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
       }
 
       JsonBrowser args = info.get("args");
-
-      if ("fail".equals(args.get("status").text())) {
-        throw new FriendlyException(args.get("reason").text(), COMMON, null);
-      }
-
       boolean useOldFormat = args.get("player_response").isNull();
 
       if (useOldFormat) {
+        if ("fail".equals(args.get("status").text())) {
+          throw new FriendlyException(args.get("reason").text(), COMMON, null);
+        }
+
         boolean isStream = "1".equals(args.get("live_playback").text());
         long duration = isStream ? Long.MAX_VALUE : args.get("length_seconds").as(Long.class) * 1000;
         return buildTrackObject(videoId, args.get("title").text(), args.get("author").text(), isStream, duration);
       }
 
-      JsonBrowser videoDetails = JsonBrowser.parse(args.get("player_response").text()).get("videoDetails");
+      JsonBrowser playerResponse = JsonBrowser.parse(args.get("player_response").text());
+      JsonBrowser playabilityStatus = playerResponse.get("playabilityStatus");
 
-      if (!videoDetails.isMap()) {
-        // IllegalStateException: Get only works on a map
-        log.debug("videoDetails: {}", videoDetails.format());
+      if ("ERROR".equals(playabilityStatus.get("status").text())) {
+        throw new FriendlyException(playabilityStatus.get("reason").text(), COMMON, null);
       }
+
+      JsonBrowser videoDetails = playerResponse.get("videoDetails");
 
       boolean isStream = videoDetails.get("isLiveContent").as(Boolean.class);
       long duration = isStream ? Long.MAX_VALUE : videoDetails.get("lengthSeconds").as(Long.class) * 1000;
