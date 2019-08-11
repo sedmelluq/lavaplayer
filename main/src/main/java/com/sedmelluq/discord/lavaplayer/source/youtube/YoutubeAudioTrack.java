@@ -212,7 +212,6 @@ public class YoutubeAudioTrack extends DelegatedAudioTrack {
 
     if (!formats.isNull() && formats.isList()) {
       for (JsonBrowser formatJson : formats.values()) {
-        log.debug("formatJson: {}", formatJson.format());
         String cipher = formatJson.safeGet("cipher").text();
         Map<String, String> cipherInfo = cipher != null
             ? decodeUrlEncodedItems(cipher, true)
