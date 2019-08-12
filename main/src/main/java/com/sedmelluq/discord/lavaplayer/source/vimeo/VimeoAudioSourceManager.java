@@ -24,6 +24,7 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Collections;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.regex.Pattern;
@@ -139,7 +140,8 @@ public class VimeoAudioSourceManager implements AudioSourceManager, HttpConfigur
         (long) (config.get("clip").get("duration").get("raw").as(Double.class) * 1000.0),
         trackUrl,
         false,
-        trackUrl
+        trackUrl,
+        Collections.singletonMap("artworkUrl", config.get("thumbnail").get("src").text())
     ), this);
   }
 }
