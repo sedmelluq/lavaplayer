@@ -1,6 +1,7 @@
 package com.sedmelluq.discord.lavaplayer.container.matroska;
 
 import com.sedmelluq.discord.lavaplayer.container.matroska.format.MatroskaFileTrack;
+import com.sedmelluq.discord.lavaplayer.tools.ExceptionTools;
 import com.sedmelluq.discord.lavaplayer.tools.io.SeekableInputStream;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo;
 import com.sedmelluq.discord.lavaplayer.track.BaseAudioTrack;
@@ -41,7 +42,7 @@ public class MatroskaAudioTrack extends BaseAudioTrack {
         file.seekToTimecode(trackConsumer.getTrack().index, position);
       });
     } finally {
-      trackConsumer.close();
+      ExceptionTools.closeWithWarnings(trackConsumer);
     }
   }
 
@@ -74,7 +75,7 @@ public class MatroskaAudioTrack extends BaseAudioTrack {
       success = true;
     } finally {
       if (!success && trackConsumer != null) {
-        trackConsumer.close();
+        ExceptionTools.closeWithWarnings(trackConsumer);
       }
     }
 

@@ -209,10 +209,19 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
         throw new FriendlyException(args.get("reason").text(), COMMON, null);
       }
 
-      boolean isStream = "1".equals(args.get("live_playback").text());
-      long duration = isStream ? Long.MAX_VALUE : args.get("length_seconds").as(Long.class) * 1000;
+      boolean useOldFormat = args.get("player_response").isNull();
 
-      return buildTrackObject(videoId, args.get("title").text(), args.get("author").text(), isStream, duration);
+      if (useOldFormat) {
+        boolean isStream = "1".equals(args.get("live_playback").text());
+        long duration = isStream ? Long.MAX_VALUE : args.get("length_seconds").as(Long.class) * 1000;
+        return buildTrackObject(videoId, args.get("title").text(), args.get("author").text(), isStream, duration);
+      }
+
+      JsonBrowser videoDetails = JsonBrowser.parse(args.get("player_response").text()).get("videoDetails");
+      boolean isStream = videoDetails.get("isLiveContent").as(Boolean.class);
+      long duration = isStream ? Long.MAX_VALUE : videoDetails.get("lengthSeconds").as(Long.class) * 1000;
+
+      return buildTrackObject(videoId, videoDetails.get("title").text(), videoDetails.get("author").text(), isStream, duration);
     } catch (Exception e) {
       throw ExceptionTools.wrapUnfriendlyExceptions("Loading information for a YouTube track failed.", FAULT, e);
     }
@@ -424,8 +433,12 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
   private Map<String, String> loadTrackArgsFromVideoInfoPage(HttpInterface httpInterface, String videoId, String sts) throws IOException {
     String videoApiUrl = "https://youtube.googleapis.com/v/" + videoId;
     String encodedApiUrl = URLEncoder.encode(videoApiUrl, CHARSET);
-    String url = "https://www.youtube.com/get_video_info?sts=" + sts + "&video_id=" + videoId + "&eurl=" + encodedApiUrl +
+    String url = "https://www.youtube.com/get_video_info?video_id=" + videoId + "&eurl=" + encodedApiUrl +
             "hl=en_GB";
+
+    if (sts != null) {
+      url += "&sts=" + sts;
+    }
 
     try (CloseableHttpResponse response = httpInterface.execute(new HttpGet(url))) {
       int statusCode = response.getStatusLine().getStatusCode();
