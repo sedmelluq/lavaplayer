@@ -416,13 +416,13 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
   }
 
   private boolean determineFailureReasonFromStatus(String status, String reason, boolean mustExist) {
-    if ("fail".equals(status) || "ERROR".equals(status)) {
+    if ("fail".equals(status) || "ERROR".equals(status) || "UNPLAYABLE".equals(status)) {
       if (("This video does not exist.".equals(reason) || "This video is unavailable.".equals(reason)) && !mustExist) {
         return true;
       } else if (reason != null) {
         throw new FriendlyException(reason, COMMON, null);
       }
-    } else if ("ok".equals(status)) {
+    } else if ("ok".equals(status) || "OK".equals(status)) {
       return false;
     }
 
