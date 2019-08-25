@@ -422,7 +422,7 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
       } else if (reason != null) {
         throw new FriendlyException(reason, COMMON, null);
       }
-    } else if ("ok".equals(status) || "OK".equals(status)) {
+    } else if (status.equalsIgnoreCase("ok")) {
       return false;
     }
 
