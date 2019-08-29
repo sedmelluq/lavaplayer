@@ -233,7 +233,7 @@ public class TrackScheduler extends AudioEventAdapter {
 
 #### JDA integration
 
-To use it with JDA 3, you would need an instance of `AudioSendHandler`. There is only the slight difference of no separate `canProvide` and `provide` methods in `AudioPlayer`, so the wrapper for this is simple:
+To use it with JDA 4, you would need an instance of `AudioSendHandler`. There is only the slight difference of no separate `canProvide` and `provide` methods in `AudioPlayer`, so the wrapper for this is simple:
 
 ```java
 public class AudioPlayerSendHandler implements AudioSendHandler {
@@ -251,8 +251,8 @@ public class AudioPlayerSendHandler implements AudioSendHandler {
   }
 
   @Override
-  public byte[] provide20MsAudio() {
-    return lastFrame.getData();
+  public ByteBuffer provide20MsAudio() {
+    return ByteBuffer.wrap(lastFrame.getData());
   }
 
   @Override
