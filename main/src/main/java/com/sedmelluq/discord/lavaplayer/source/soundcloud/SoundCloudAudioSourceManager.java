@@ -321,7 +321,7 @@ public class SoundCloudAudioSourceManager implements AudioSourceManager, HttpCon
       }
 
       String html = IOUtils.toString(response.getEntity().getContent(), Charset.forName(CHARSET));
-      String configJson = DataFormatTools.extractBetween(html, "e}var c=", ",o=Date.now()");
+      String configJson = DataFormatTools.extractBetween(html, "e}var c=", ",r=Date.now()");
 
       if (configJson == null) {
         throw new FriendlyException("This url does not appear to be a playable track.", SUSPICIOUS, null);
