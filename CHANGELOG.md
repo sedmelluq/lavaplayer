@@ -1,5 +1,11 @@
 # Change Log
 
+## [1.3.21] -- 2019-09-09
+### Fixed
+- Fixed playing direct SoundCloud tracks which broke due to site change (PR 208 by Devoxin).
+- Fixed some cases where YouTube tracks broke because of duplicate parameters (PR 180 by Joakim).
+- Fixed new format YouTube pages where no cipher was used (PR 205 by Devoxin).
+
 ## [1.3.20] -- 2019-08-08
 ### Fixed
 - Fixed playback for YouTube when format list is only provided through player_response.
