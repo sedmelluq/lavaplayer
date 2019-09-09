@@ -26,6 +26,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.StringJoiner;
@@ -182,6 +183,11 @@ public class YoutubeAudioTrack extends DelegatedAudioTrack {
     for (String formatString : adaptiveFormats.split(",")) {
       Map<String, String> format = decodeUrlEncodedItems(formatString, false);
       String url = format.get("url");
+
+      if (url == null) {
+        continue;
+      }
+
       String contentLength = DataFormatTools.extractBetween(url, "clen=", "&");
 
       if (contentLength == null) {
@@ -207,15 +213,18 @@ public class YoutubeAudioTrack extends DelegatedAudioTrack {
 
     if (!formats.isNull() && formats.isList()) {
       for (JsonBrowser formatJson : formats.values()) {
-        Map<String, String> cipherInfo = decodeUrlEncodedItems(formatJson.safeGet("cipher").text(), true);
+        String cipher = formatJson.safeGet("cipher").text();
+        Map<String, String> cipherInfo = cipher != null
+            ? decodeUrlEncodedItems(cipher, true)
+            : Collections.emptyMap();
 
         tracks.add(new YoutubeTrackFormat(
             ContentType.parse(formatJson.safeGet("mimeType").text()),
             formatJson.safeGet("bitrate").as(Long.class),
             formatJson.safeGet("contentLength").as(Long.class),
-            cipherInfo.get("url"),
+            cipherInfo.getOrDefault("url", formatJson.get("url").text()),
             cipherInfo.get("s"),
-            cipherInfo.get("sp")
+            cipherInfo.getOrDefault("sp", DEFAULT_SIGNATURE_KEY)
         ));
       }
     }

@@ -204,20 +204,27 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
       }
 
       JsonBrowser args = info.get("args");
-
-      if ("fail".equals(args.get("status").text())) {
-        throw new FriendlyException(args.get("reason").text(), COMMON, null);
-      }
-
       boolean useOldFormat = args.get("player_response").isNull();
 
       if (useOldFormat) {
+        if ("fail".equals(args.get("status").text())) {
+          throw new FriendlyException(args.get("reason").text(), COMMON, null);
+        }
+
         boolean isStream = "1".equals(args.get("live_playback").text());
         long duration = isStream ? Long.MAX_VALUE : args.get("length_seconds").as(Long.class) * 1000;
         return buildTrackObject(videoId, args.get("title").text(), args.get("author").text(), isStream, duration);
       }
 
-      JsonBrowser videoDetails = JsonBrowser.parse(args.get("player_response").text()).get("videoDetails");
+      JsonBrowser playerResponse = JsonBrowser.parse(args.get("player_response").text());
+      JsonBrowser playabilityStatus = playerResponse.get("playabilityStatus");
+
+      if ("ERROR".equals(playabilityStatus.get("status").text())) {
+        throw new FriendlyException(playabilityStatus.get("reason").text(), COMMON, null);
+      }
+
+      JsonBrowser videoDetails = playerResponse.get("videoDetails");
+
       boolean isStream = videoDetails.get("isLiveContent").as(Boolean.class);
       long duration = isStream ? Long.MAX_VALUE : videoDetails.get("lengthSeconds").as(Long.class) * 1000;
 
@@ -361,7 +368,16 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
       String configJson = DataFormatTools.extractBetween(html, "ytplayer.config = ", ";ytplayer.load");
 
       if (configJson != null) {
-        return JsonBrowser.parse(configJson);
+        JsonBrowser json = JsonBrowser.parse(configJson);
+        JsonBrowser playabilityStatus = json.get("playabilityStatus");
+
+        if (!playabilityStatus.isNull() && "ERROR".equals(playabilityStatus.get("status").text())) {
+          if (determineFailureReason(httpInterface, videoId, mustExist)) {
+            return null;
+          }
+        }
+
+        return json;
       } else {
         if (html.contains("player-age-gate-content\">")) {
           // In case main page does not give player configuration, but info page indicates an OK result, it is probably an
@@ -386,18 +402,27 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
       }
 
       Map<String, String> format = convertToMapLayout(URLEncodedUtils.parse(response.getEntity()));
-      return determineFailureReasonFromStatus(format.get("status"), format.get("reason"), mustExist);
+
+      if (format.containsKey("player_response")) { // new format
+        JsonBrowser playerResponse = JsonBrowser.parse(format.get("player_response"));
+        JsonBrowser playabilityStatus = playerResponse.get("playabilityStatus");
+        String status = playabilityStatus.get("status").text();
+        String reason = playabilityStatus.get("reason").text();
+        return determineFailureReasonFromStatus(status, reason, mustExist);
+      } else {
+        return determineFailureReasonFromStatus(format.get("status"), format.get("reason"), mustExist);
+      }
     }
   }
 
   private boolean determineFailureReasonFromStatus(String status, String reason, boolean mustExist) {
-    if ("fail".equals(status)) {
+    if ("fail".equals(status) || "ERROR".equals(status) || "UNPLAYABLE".equals(status)) {
       if (("This video does not exist.".equals(reason) || "This video is unavailable.".equals(reason)) && !mustExist) {
         return true;
       } else if (reason != null) {
         throw new FriendlyException(reason, COMMON, null);
       }
-    } else if ("ok".equals(status)) {
+    } else if ("ok".equalsIgnoreCase(status)) {
       return false;
     }
 
