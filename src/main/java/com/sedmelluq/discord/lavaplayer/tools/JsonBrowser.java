@@ -2,6 +2,7 @@ package com.sedmelluq.discord.lavaplayer.tools;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -110,6 +111,14 @@ public class JsonBrowser {
   public <T> T as(Class<T> klass) {
     try {
       return mapper.treeToValue(node, klass);
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  public <T> T as(TypeReference<T> type) {
+    try {
+      return mapper.readValue(mapper.treeAsTokens(node), type);
     } catch (Exception e) {
       throw new RuntimeException(e);
     }

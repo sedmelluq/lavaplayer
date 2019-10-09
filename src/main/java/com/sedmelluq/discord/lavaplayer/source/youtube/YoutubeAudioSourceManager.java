@@ -1,11 +1,13 @@
 package com.sedmelluq.discord.lavaplayer.source.youtube;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.sedmelluq.discord.lavaplayer.player.DefaultAudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.source.AudioSourceManager;
 import com.sedmelluq.discord.lavaplayer.tools.DataFormatTools;
 import com.sedmelluq.discord.lavaplayer.tools.ExceptionTools;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.tools.JsonBrowser;
+import com.sedmelluq.discord.lavaplayer.tools.http.HttpRequestModifier;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpClientTools;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpConfigurable;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterface;
@@ -16,15 +18,26 @@ import com.sedmelluq.discord.lavaplayer.track.AudioReference;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo;
 import com.sedmelluq.discord.lavaplayer.track.BasicAudioPlaylist;
-import org.apache.commons.io.IOUtils;
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.client.utils.URIBuilder;
-import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.util.EntityUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -32,26 +45,10 @@ import org.jsoup.select.Elements;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URLEncoder;
-import java.nio.charset.Charset;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-
-import static com.sedmelluq.discord.lavaplayer.tools.DataFormatTools.convertToMapLayout;
 import static com.sedmelluq.discord.lavaplayer.tools.FriendlyException.Severity.COMMON;
 import static com.sedmelluq.discord.lavaplayer.tools.FriendlyException.Severity.FAULT;
 import static com.sedmelluq.discord.lavaplayer.tools.FriendlyException.Severity.SUSPICIOUS;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Audio source manager that implements finding Youtube videos or playlists based on an URL or ID.
@@ -67,6 +64,7 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
   private static final String PLAYLIST_ID_REGEX = "(?<list>(PL|LL|FL|UU)[a-zA-Z0-9_-]+)";
 
   private static final String SEARCH_PREFIX = "ytsearch:";
+  private static final TypeReference<Map<String, String>> STRING_MAP_TYPE = new TypeReference<Map<String, String>>() {};
 
   private static final Pattern directVideoIdPattern = Pattern.compile("^" + VIDEO_ID_REGEX + "$");
 
@@ -97,7 +95,12 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
    */
   public YoutubeAudioSourceManager(boolean allowSearch) {
     signatureCipherManager = new YoutubeSignatureCipherManager();
-    httpInterfaceManager = HttpClientTools.createDefaultThreadLocalManager();
+
+    httpInterfaceManager = HttpClientTools.createDefaultThreadLocalManager(request -> {
+      request.setHeader("x-youtube-client-name", "1");
+      request.setHeader("x-youtube-client-version", "2.20191008.04.01");
+    });
+
     this.allowSearch = allowSearch;
     playlistPageCount = 6;
     searchProvider = new YoutubeSearchProvider(this);
@@ -182,6 +185,10 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
     searchProvider.configureBuilder(configurator);
   }
 
+  public void setHttpRequestModifier(HttpRequestModifier modifier) {
+    httpInterfaceManager.setRequestModifier(modifier);
+  }
+
   private AudioItem loadItemOnce(AudioReference reference) {
     if (allowSearch && reference.identifier.startsWith(SEARCH_PREFIX)) {
       return searchProvider.loadSearchResult(reference.identifier.substring(SEARCH_PREFIX.length()).trim());
@@ -199,6 +206,8 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
    */
   public AudioItem loadTrackWithVideoId(String videoId, boolean mustExist) {
     try (HttpInterface httpInterface = getHttpInterface()) {
+      HttpGet request = new HttpGet("https://www.youtube.com/watch?v=" + videoId + "&pbj=1");
+
       JsonBrowser info = getTrackInfoFromMainPage(httpInterface, videoId, mustExist);
       if (info == null) {
         return AudioReference.NO_TRACK;
@@ -359,124 +368,67 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
    * @throws IOException On network error.
    */
   public JsonBrowser getTrackInfoFromMainPage(HttpInterface httpInterface, String videoId, boolean mustExist) throws IOException {
-    String watchUrl = getWatchUrl(videoId);
-    watchUrl += "&gl=US&hl=en&has_verified=1&bpctr=9999999999&disable_polymer=true";
-    log.debug("Requesting page for {}", watchUrl);
+    String url = getWatchUrl(videoId) + "&pbj=1&hl=en";
 
-    try (CloseableHttpResponse response = httpInterface.execute(new HttpGet(watchUrl))) {
+    try (CloseableHttpResponse response = httpInterface.execute(new HttpGet(url))) {
       int statusCode = response.getStatusLine().getStatusCode();
+
       if (statusCode != 200) {
         throw new IOException("Invalid status code for video page response: " + statusCode);
       }
 
-      String html = IOUtils.toString(response.getEntity().getContent(), Charset.forName(CHARSET));
-      String configJson = DataFormatTools.extractBetween(html, "ytplayer.config = ", ";ytplayer.load");
+      String responseText = EntityUtils.toString(response.getEntity(), UTF_8);
 
-      if (configJson != null) {
-        JsonBrowser json = JsonBrowser.parse(configJson);
-        JsonBrowser playabilityStatus = json.get("playabilityStatus");
+      try {
+        JsonBrowser json = JsonBrowser.parse(responseText);
+        JsonBrowser playerInfo = null;
+        JsonBrowser statusBlock = null;
 
-        if (!playabilityStatus.isNull() && "ERROR".equals(playabilityStatus.get("status").text())) {
-          if (determineFailureReason(httpInterface, videoId, mustExist)) {
-            return null;
+        for (JsonBrowser child : json.values()) {
+          if (child.isMap()) {
+            if (!child.get("player").isNull()) {
+              playerInfo = child.get("player");
+            } else if (!child.get("playerResponse").isNull()) {
+              statusBlock = child.get("playerResponse").safeGet("playabilityStatus");
+            }
           }
         }
 
-        return json;
-      } else {
-        if (html.contains("player-age-gate-content\">")) {
-          // In case main page does not give player configuration, but info page indicates an OK result, it is probably an
-          // age-restricted video for which the complete track info can be combined from the embed page and the info page.
-          return getTrackInfoFromEmbedPage(httpInterface, videoId);
+        if (!checkStatusBlock(statusBlock, mustExist)) {
+          return null;
+        } else if (playerInfo == null || playerInfo.isNull()) {
+          throw new RuntimeException("No player info block.");
         }
+
+        return playerInfo;
+      } catch (Exception e) {
+        throw new FriendlyException("Received unexpected response from YouTube.", SUSPICIOUS,
+            new RuntimeException("Failed to parse: " + responseText, e));
       }
     }
-
-    if (determineFailureReason(httpInterface, videoId, mustExist)) {
-      return null;
-    }
-
-    return getTrackInfoFromEmbedPage(httpInterface, videoId);
   }
 
-  private boolean determineFailureReason(HttpInterface httpInterface, String videoId, boolean mustExist) throws IOException {
-    try (CloseableHttpResponse response = httpInterface.execute(new HttpGet("https://www.youtube.com/get_video_info?hl=en_GB&video_id=" + videoId))) {
-      int statusCode = response.getStatusLine().getStatusCode();
-      if (statusCode != 200) {
-        throw new IOException("Invalid status code for video info response: " + statusCode);
-      }
+  private boolean checkStatusBlock(JsonBrowser statusBlock, boolean mustExist) {
+    if (statusBlock == null || statusBlock.isNull()) {
+      throw new RuntimeException("No playability status block.");
+    }
 
-      Map<String, String> format = convertToMapLayout(URLEncodedUtils.parse(response.getEntity()));
+    String status = statusBlock.safeGet("status").text();
 
-      if (format.containsKey("player_response")) { // new format
-        JsonBrowser playerResponse = JsonBrowser.parse(format.get("player_response"));
-        JsonBrowser playabilityStatus = playerResponse.get("playabilityStatus");
-        String status = playabilityStatus.get("status").text();
-        String reason = playabilityStatus.get("reason").text();
-        return determineFailureReasonFromStatus(status, reason, mustExist);
+    if (status == null) {
+      throw new RuntimeException("No playability status field.");
+    } else if ("OK".equals(status)) {
+      return true;
+    } else if ("ERROR".equals(status)) {
+      String reason = statusBlock.safeGet("reason").text();
+
+      if (!mustExist && "Video unavailable".equals(reason)) {
+        return false;
       } else {
-        return determineFailureReasonFromStatus(format.get("status"), format.get("reason"), mustExist);
-      }
-    }
-  }
-
-  private boolean determineFailureReasonFromStatus(String status, String reason, boolean mustExist) {
-    if ("fail".equals(status) || "ERROR".equals(status) || "UNPLAYABLE".equals(status)) {
-      if (("This video does not exist.".equals(reason) || "This video is unavailable.".equals(reason)) && !mustExist) {
-        return true;
-      } else if (reason != null) {
         throw new FriendlyException(reason, COMMON, null);
       }
-    } else if ("ok".equalsIgnoreCase(status)) {
-      return false;
-    }
-
-    throw new FriendlyException("Track is unavailable for an unknown reason.", SUSPICIOUS,
-        new IllegalStateException("Main page had no video, but video info has no error."));
-  }
-
-  private JsonBrowser getTrackInfoFromEmbedPage(HttpInterface httpInterface, String videoId) throws IOException {
-    JsonBrowser basicInfo = loadTrackBaseInfoFromEmbedPage(httpInterface, videoId);
-    basicInfo.put("args", loadTrackArgsFromVideoInfoPage(httpInterface, videoId, basicInfo.get("sts").text()));
-    return basicInfo;
-  }
-
-  private JsonBrowser loadTrackBaseInfoFromEmbedPage(HttpInterface httpInterface, String videoId) throws IOException {
-    try (CloseableHttpResponse response = httpInterface.execute(new HttpGet("https://www.youtube.com/embed/" + videoId))) {
-      int statusCode = response.getStatusLine().getStatusCode();
-      if (statusCode != 200) {
-        throw new IOException("Invalid status code for embed video page response: " + statusCode);
-      }
-
-      String html = IOUtils.toString(response.getEntity().getContent(), Charset.forName(CHARSET));
-      String configJson = DataFormatTools.extractBetween(html, "'PLAYER_CONFIG': ", "});writeEmbed();");
-
-      if (configJson != null) {
-        return JsonBrowser.parse(configJson);
-      }
-    }
-
-    throw new FriendlyException("Track information is unavailable.", SUSPICIOUS,
-        new IllegalStateException("Expected player config is not present in embed page."));
-  }
-
-  private Map<String, String> loadTrackArgsFromVideoInfoPage(HttpInterface httpInterface, String videoId, String sts) throws IOException {
-    String videoApiUrl = "https://youtube.googleapis.com/v/" + videoId;
-    String encodedApiUrl = URLEncoder.encode(videoApiUrl, CHARSET);
-    String url = "https://www.youtube.com/get_video_info?video_id=" + videoId + "&eurl=" + encodedApiUrl +
-            "hl=en_GB";
-
-    if (sts != null) {
-      url += "&sts=" + sts;
-    }
-
-    try (CloseableHttpResponse response = httpInterface.execute(new HttpGet(url))) {
-      int statusCode = response.getStatusLine().getStatusCode();
-      if (statusCode != 200) {
-        throw new IOException("Invalid status code for video info response: " + statusCode);
-      }
-
-      return convertToMapLayout(URLEncodedUtils.parse(response.getEntity()));
+    } else {
+      throw new FriendlyException("This video cannot be viewed anonymously.", COMMON, null);
     }
   }
 

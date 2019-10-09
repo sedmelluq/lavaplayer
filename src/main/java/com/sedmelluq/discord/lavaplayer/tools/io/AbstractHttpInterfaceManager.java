@@ -1,14 +1,13 @@
 package com.sedmelluq.discord.lavaplayer.tools.io;
 
+import java.io.IOException;
+import java.util.function.Consumer;
+import java.util.function.Function;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.IOException;
-import java.util.function.Consumer;
-import java.util.function.Function;
 
 /**
  * Base class for an HTTP interface manager with lazily initialized http client instance.

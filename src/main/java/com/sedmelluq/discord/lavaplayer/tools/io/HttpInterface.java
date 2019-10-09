@@ -1,5 +1,6 @@
 package com.sedmelluq.discord.lavaplayer.tools.io;
 
+import com.sedmelluq.discord.lavaplayer.tools.http.HttpRequestModifier;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.protocol.HttpClientContext;
@@ -19,6 +20,7 @@ public class HttpInterface implements Closeable {
   private final CloseableHttpClient client;
   private final HttpClientContext context;
   private final boolean ownedClient;
+  private final HttpRequestModifier requestModifier;
   private HttpUriRequest lastRequest;
   private boolean available;
 
@@ -26,11 +28,15 @@ public class HttpInterface implements Closeable {
    * @param client The http client instance used.
    * @param context The http context instance used.
    * @param ownedClient True if the client should be closed when this instance is closed.
+   * @param requestModifier
    */
-  public HttpInterface(CloseableHttpClient client, HttpClientContext context, boolean ownedClient) {
+  public HttpInterface(CloseableHttpClient client, HttpClientContext context, boolean ownedClient,
+                       HttpRequestModifier requestModifier) {
+
     this.client = client;
     this.context = context;
     this.ownedClient = ownedClient;
+    this.requestModifier = requestModifier;
     this.available = true;
   }
 
@@ -56,6 +62,10 @@ public class HttpInterface implements Closeable {
    * @throws IOException On network error.
    */
   public CloseableHttpResponse execute(HttpUriRequest request) throws IOException {
+    if (requestModifier != null) {
+      requestModifier.modify(request);
+    }
+
     lastRequest = request;
     return client.execute(request, context);
   }
