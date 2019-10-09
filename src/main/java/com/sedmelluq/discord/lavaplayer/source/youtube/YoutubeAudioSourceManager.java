@@ -360,7 +360,7 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
    */
   public JsonBrowser getTrackInfoFromMainPage(HttpInterface httpInterface, String videoId, boolean mustExist) throws IOException {
     String watchUrl = getWatchUrl(videoId);
-    watchUrl += "&gl=US&hl=en&has_verified=1&bpctr=9999999999";
+    watchUrl += "&gl=US&hl=en&has_verified=1&bpctr=9999999999&disable_polymer=true";
     log.debug("Requesting page for {}", watchUrl);
 
     try (CloseableHttpResponse response = httpInterface.execute(new HttpGet(watchUrl))) {
