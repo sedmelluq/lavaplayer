@@ -41,7 +41,8 @@ public class M3uPlaylistContainerProbe implements MediaContainerProbe {
       HttpClientTools
           .createSharedCookiesHttpBuilder()
           .setRedirectStrategy(new HttpClientTools.NoRedirectsStrategy()),
-      HttpClientTools.DEFAULT_REQUEST_CONFIG
+      HttpClientTools.DEFAULT_REQUEST_CONFIG,
+      null
   );
 
   @Override

@@ -1,5 +1,7 @@
 package com.sedmelluq.discord.lavaplayer.tools.io;
 
+import com.sedmelluq.discord.lavaplayer.tools.http.DualHttpRequestModifier;
+import com.sedmelluq.discord.lavaplayer.tools.http.HttpRequestModifier;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -12,16 +14,20 @@ import org.apache.http.impl.client.HttpClientBuilder;
  */
 public class ThreadLocalHttpInterfaceManager extends AbstractHttpInterfaceManager {
   private final ThreadLocal<HttpInterface> httpInterfaces;
+  private final DualHttpRequestModifier requestModifier;
 
   /**
    * @param clientBuilder HTTP client builder to use for creating the client instance.
    * @param requestConfig Request config used by the client builder
    */
-  public ThreadLocalHttpInterfaceManager(HttpClientBuilder clientBuilder, RequestConfig requestConfig) {
+  public ThreadLocalHttpInterfaceManager(HttpClientBuilder clientBuilder, RequestConfig requestConfig,
+                                         HttpRequestModifier requestModifier) {
+
     super(clientBuilder, requestConfig);
 
+    this.requestModifier = new DualHttpRequestModifier(requestModifier);
     this.httpInterfaces = ThreadLocal.withInitial(() ->
-        new HttpInterface(getSharedClient(), HttpClientContext.create(), false)
+        new HttpInterface(getSharedClient(), HttpClientContext.create(), false, this.requestModifier)
     );
   }
 
@@ -39,8 +45,13 @@ public class ThreadLocalHttpInterfaceManager extends AbstractHttpInterfaceManage
       return httpInterface;
     }
 
-    httpInterface = new HttpInterface(client, HttpClientContext.create(), false);
+    httpInterface = new HttpInterface(client, HttpClientContext.create(), false, requestModifier);
     httpInterface.acquire();
     return httpInterface;
+  }
+
+  @Override
+  public void setRequestModifier(HttpRequestModifier modifier) {
+    requestModifier.setCustomModifier(modifier);
   }
 }
