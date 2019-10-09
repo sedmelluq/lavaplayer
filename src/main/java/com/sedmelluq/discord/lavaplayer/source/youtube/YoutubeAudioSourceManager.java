@@ -359,7 +359,11 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
    * @throws IOException On network error.
    */
   public JsonBrowser getTrackInfoFromMainPage(HttpInterface httpInterface, String videoId, boolean mustExist) throws IOException {
-    try (CloseableHttpResponse response = httpInterface.execute(new HttpGet(getWatchUrl(videoId)))) {
+    String watchUrl = getWatchUrl(videoId);
+    watchUrl += "&gl=US&hl=en&has_verified=1&bpctr=9999999999";
+    log.debug("Requesting page for {}", watchUrl);
+
+    try (CloseableHttpResponse response = httpInterface.execute(new HttpGet(watchUrl))) {
       int statusCode = response.getStatusLine().getStatusCode();
       if (statusCode != 200) {
         throw new IOException("Invalid status code for video page response: " + statusCode);
@@ -423,7 +427,7 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
       } else if (reason != null) {
         throw new FriendlyException(reason, COMMON, null);
       }
-    } else if ("ok".equals(status) || "OK".equals(status)) {
+    } else if ("ok".equalsIgnoreCase(status)) {
       return false;
     }
 

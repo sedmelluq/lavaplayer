@@ -1,0 +1,9 @@
+bintray {
+  user = project.findProperty('bintray.user')
+  key = project.findProperty('bintray.apiKey')
+  publications = ['mavenJava']
+  pkg {
+    repo = rootProject.group
+    name = moduleName
+  }
+}
