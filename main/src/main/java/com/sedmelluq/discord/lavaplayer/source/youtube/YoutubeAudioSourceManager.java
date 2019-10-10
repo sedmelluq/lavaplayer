@@ -456,7 +456,8 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
 
     JsonBrowser alerts = jsonResponse.safeGet("alerts");
 
-    if (alerts != null) {
+    if (!alerts.isNull()) {
+      log.debug("Found alert property, playlist is private");
       throw new FriendlyException(alerts.index(0).safeGet("alertRenderer").safeGet("text").safeGet("simpleText").text(), COMMON, null);
     }
 
@@ -474,8 +475,7 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
             .safeGet("text")
             .text();
 
-    JsonBrowser playlistVideoList = json.index(1)
-            .safeGet("response")
+    JsonBrowser playlistVideoList = jsonResponse
             .safeGet("contents")
             .safeGet("twoColumnBrowseResultsRenderer")
             .safeGet("tabs")
@@ -483,6 +483,9 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
             .safeGet("tabRenderer")
             .safeGet("content")
             .safeGet("sectionListRenderer")
+            .safeGet("contents")
+            .index(0)
+            .safeGet("itemSectionRenderer")
             .safeGet("contents")
             .index(0)
             .safeGet("playlistVideoListRenderer");
@@ -517,13 +520,16 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
   private String extractPlaylistTracks(JsonBrowser playlistVideoList, List<AudioTrack> tracks) {
     JsonBrowser trackArray = playlistVideoList.safeGet("contents");
 
-    if (trackArray == null) return null;
+    if (trackArray.isNull()) {
+      log.debug("Track array is null");
+      return null;
+    }
 
     for (JsonBrowser track : trackArray.values()) {
       JsonBrowser item = track.safeGet("playlistVideoRenderer");
 
       // If the isPlayable property does not exist, it means the video is removed or private
-      if (item.safeGet("isPlayable") != null) {
+      if (!item.safeGet("isPlayable").isNull()) {
         String videoId = item.safeGet("videoId").text();
         String title = item.safeGet("title").safeGet("simpleText").text();
         String author = item.safeGet("shortBylineText").safeGet("runs").index(0).safeGet("text").text();
@@ -532,9 +538,12 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
       }
     }
 
-    String continuationsToken = playlistVideoList.safeGet("continuations").index(0).safeGet("nextContinuationData").safeGet("continuation").text();
+    JsonBrowser continuations = playlistVideoList.safeGet("continuations");
 
-    if (continuationsToken != null) return "/browse_ajax" + "?continuation=" + continuationsToken + "&ctoken=" + continuationsToken + "&hl=en";
+    if (!continuations.isNull()) {
+      String continuationsToken = continuations.index(0).safeGet("nextContinuationData").safeGet("continuation").text();
+      return "/browse_ajax" + "?continuation=" + continuationsToken + "&ctoken=" + continuationsToken + "&hl=en";
+    }
 
     return null;
   }
