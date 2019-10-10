@@ -206,8 +206,6 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
    */
   public AudioItem loadTrackWithVideoId(String videoId, boolean mustExist) {
     try (HttpInterface httpInterface = getHttpInterface()) {
-      HttpGet request = new HttpGet("https://www.youtube.com/watch?v=" + videoId + "&pbj=1");
-
       JsonBrowser info = getTrackInfoFromMainPage(httpInterface, videoId, mustExist);
       if (info == null) {
         return AudioReference.NO_TRACK;
@@ -427,9 +425,33 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
       } else {
         throw new FriendlyException(reason, COMMON, null);
       }
+    } else if ("UNPLAYABLE".equals(status)) {
+      String unplayableReason = getUnplayableReason(statusBlock);
+      throw new FriendlyException(unplayableReason, COMMON, null);
     } else {
       throw new FriendlyException("This video cannot be viewed anonymously.", COMMON, null);
     }
+  }
+
+  private String getUnplayableReason(JsonBrowser statusBlock) {
+    JsonBrowser playerErrorMessage = statusBlock.get("errorScreen").get("playerErrorMessageRenderer");
+    String unplayableReason = statusBlock.safeGet("reason").text();
+
+    if (!playerErrorMessage.safeGet("subreason").isNull()) {
+      JsonBrowser subreason = playerErrorMessage.safeGet("subreason");
+
+      if (!subreason.safeGet("simpleText").isNull()) {
+        unplayableReason = subreason.safeGet("simpleText").text();
+      } else if (!subreason.safeGet("runs").isNull() && subreason.safeGet("runs").isList()) {
+        StringBuilder reasonBuilder = new StringBuilder();
+        subreason.safeGet("runs").values().forEach(
+                item -> reasonBuilder.append(item.safeGet("text").text()).append('\n')
+        );
+        unplayableReason = reasonBuilder.toString();
+      }
+    }
+
+    return unplayableReason;
   }
 
   private AudioPlaylist loadPlaylistWithId(String playlistId, String selectedVideoId) {
