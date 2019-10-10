@@ -534,7 +534,7 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
 
     String continuationsToken = playlistVideoList.safeGet("continuations").index(0).safeGet("nextContinuationData").safeGet("continuation").text();
 
-    if (continuationsToken != null) return "/browse_ajax" + "?continuation" + continuationsToken + "&ctoken=" + continuationsToken + "hl=en";
+    if (continuationsToken != null) return "/browse_ajax" + "?continuation=" + continuationsToken + "&ctoken=" + continuationsToken + "hl=en";
 
     return null;
   }
