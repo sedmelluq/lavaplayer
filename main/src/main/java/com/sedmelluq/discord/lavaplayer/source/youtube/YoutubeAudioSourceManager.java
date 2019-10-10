@@ -425,7 +425,7 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
       } else {
         throw new FriendlyException(reason, COMMON, null);
       }
-    } else if ("UNPLAYABLE".equals(status)) {
+    } else if ("UNPLAYABLE".equals(status) || "LOGIN_REQUIRED".equals(status)) {
       String unplayableReason = getUnplayableReason(statusBlock);
       throw new FriendlyException(unplayableReason, COMMON, null);
     } else {
