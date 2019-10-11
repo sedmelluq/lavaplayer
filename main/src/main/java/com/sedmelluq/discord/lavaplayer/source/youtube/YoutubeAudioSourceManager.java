@@ -533,7 +533,7 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
         String videoId = item.safeGet("videoId").text();
         String title = item.safeGet("title").safeGet("simpleText").text();
         String author = item.safeGet("shortBylineText").safeGet("runs").index(0).safeGet("text").text();
-        long duration = Long.parseLong(item.safeGet("lengthSeconds").text());
+        long duration = Long.parseLong(item.safeGet("lengthSeconds").text()) * 1000;
         tracks.add(buildTrackObject(videoId, title, author, false, duration));
       }
     }
