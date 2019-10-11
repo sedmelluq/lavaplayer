@@ -28,6 +28,5 @@ natives/opus/opus*
 natives/samplerate/src
 natives/vorbis/*/
 udpqueue-natives/dist
-version.txt
 
 *.log
