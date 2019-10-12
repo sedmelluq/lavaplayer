@@ -30,6 +30,10 @@ public class Ipv6Subnet {
       throw new IllegalArgumentException("Invalid IPv6 address", e);
     }
     maskBits = Integer.parseInt(matcher.group(2));
+
+    if (maskBits > 64 || maskBits < 1) {
+      throw new IllegalArgumentException("This class only handles with /1-64 subnets. Got /" + maskBits);
+    }
   }
 
   private static InetAddress longToAddress(long l) {
