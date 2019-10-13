@@ -1,5 +1,8 @@
 package com.sedmelluq.discord.lavaplayer.tools;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -20,6 +23,7 @@ public class Ipv6Subnet {
   private final String cidr;
   private final int maskBits; // 1-128
   private final long prefix;
+  private static final Logger log = LoggerFactory.getLogger(Ipv6Subnet.class);
 
   public Ipv6Subnet(String cidr) {
     this.cidr = cidr.toLowerCase();
@@ -42,9 +46,10 @@ public class Ipv6Subnet {
     }
 
     // Truncate all bits after $maskBits$ number of bits in the prefix
-    @SuppressWarnings("ShiftOutOfRange")
-    long prefixMask = Long.MAX_VALUE << (IPV6_BIT_SIZE - maskBits);
+    long prefixMask = Long.MAX_VALUE >> (IPV6_BIT_SIZE - maskBits - 1);
     prefix = unboundedPrefix & prefixMask;
+
+    log.info("\n{}\n{}\n{}", Long.toBinaryString(unboundedPrefix), Long.toBinaryString(prefixMask), Long.toBinaryString(prefix));
   }
 
   /**
@@ -52,12 +57,14 @@ public class Ipv6Subnet {
    */
   public InetAddress getRandomSlash64() {
     // Create a mask of variable length to be AND'ed with a random value
-    int prefixBits = IPV6_BIT_SIZE - maskBits;
-    long randMask = Long.MAX_VALUE >> prefixBits;
+    long randMask = Long.MAX_VALUE << maskBits;
     long maskedRandom = random.nextLong() & randMask;
 
     // Combine prefix and match
-    return longToAddress(prefix | maskedRandom);
+    InetAddress inetAddress = longToAddress(prefix + maskedRandom);
+    log.info(inetAddress.toString());
+    //log.info("\nPref:{}\nMask:{}\nRand:{}\nRslt:{}", Long.toBinaryString(prefix), Long.toBinaryString(randMask), Long.toBinaryString(maskedRandom), Long.toBinaryString(prefix + maskedRandom));
+    return inetAddress;
   }
 
   @Override
