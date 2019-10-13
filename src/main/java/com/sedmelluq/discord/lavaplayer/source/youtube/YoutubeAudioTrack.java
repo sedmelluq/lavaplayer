@@ -70,22 +70,30 @@ public class YoutubeAudioTrack extends DelegatedAudioTrack {
     try (HttpInterface httpInterface = sourceManager.getHttpInterface()) {
       Tuple<FormatWithUrl, Boolean> bestFormat = loadBestFormatWithUrl(httpInterface);
       FormatWithUrl format = bestFormat.l;
-      Boolean cacheHit = bestFormat.r;
-
-      log.debug("Starting track from URL: {}", format.signedUrl);
+      boolean cacheHit = bestFormat.r;
 
       try {
-        if (trackInfo.isStream) {
-          processStream(localExecutor, format);
-        } else {
-          processStatic(localExecutor, httpInterface, format);
-        }
-      } catch (Exception ignored) {
+        processInternal(localExecutor, httpInterface, format);
+      } catch (Exception ex) {
         if (cacheHit) {
           playbackFormatCache.invalidate(getIdentifier());
-          process(localExecutor);
+          Tuple<FormatWithUrl, Boolean> newFormat = loadBestFormatWithUrl(httpInterface);
+          processInternal(localExecutor, httpInterface, newFormat.l);
+        } else {
+          throw ex;
         }
       }
+    }
+  }
+
+  private void processInternal(LocalAudioTrackExecutor localExecutor, HttpInterface httpInterface,
+                               FormatWithUrl format) throws Exception {
+    log.debug("Starting track from URL: {}", format.signedUrl);
+
+    if (trackInfo.isStream) {
+      processStream(localExecutor, format);
+    } else {
+      processStatic(localExecutor, httpInterface, format);
     }
   }
 
