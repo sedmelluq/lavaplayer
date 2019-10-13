@@ -456,10 +456,7 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
 
     JsonBrowser alerts = jsonResponse.safeGet("alerts");
 
-    if (!alerts.isNull()) {
-      log.debug("Found alert property, playlist is private");
-      throw new FriendlyException(alerts.index(0).safeGet("alertRenderer").safeGet("text").safeGet("simpleText").text(), COMMON, null);
-    }
+    if (!alerts.isNull()) throw new FriendlyException(alerts.index(0).safeGet("alertRenderer").safeGet("text").safeGet("simpleText").text(), COMMON, null);
 
     JsonBrowser info = jsonResponse
             .safeGet("sidebar")
@@ -520,19 +517,19 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
   private String extractPlaylistTracks(JsonBrowser playlistVideoList, List<AudioTrack> tracks) {
     JsonBrowser trackArray = playlistVideoList.safeGet("contents");
 
-    if (trackArray.isNull()) {
-      log.debug("Track array is null");
-      return null;
-    }
+    if (trackArray.isNull()) return null;
 
     for (JsonBrowser track : trackArray.values()) {
       JsonBrowser item = track.safeGet("playlistVideoRenderer");
 
+      JsonBrowser shortBylineText = item.safeGet("shortBylineText");
+
       // If the isPlayable property does not exist, it means the video is removed or private
-      if (!item.safeGet("isPlayable").isNull()) {
+      // If the shortBylineText property does not exist, it means the Track is Region blocked
+      if (!item.safeGet("isPlayable").isNull() && !shortBylineText.isNull()) {
         String videoId = item.safeGet("videoId").text();
         String title = item.safeGet("title").safeGet("simpleText").text();
-        String author = item.safeGet("shortBylineText").safeGet("runs").index(0).safeGet("text").text();
+        String author = shortBylineText.safeGet("runs").index(0).safeGet("text").text();
         long duration = Long.parseLong(item.safeGet("lengthSeconds").text()) * 1000;
         tracks.add(buildTrackObject(videoId, title, author, false, duration));
       }
