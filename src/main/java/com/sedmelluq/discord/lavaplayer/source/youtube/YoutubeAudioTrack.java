@@ -8,6 +8,7 @@ import com.sedmelluq.discord.lavaplayer.source.AudioSourceManager;
 import com.sedmelluq.discord.lavaplayer.tools.DataFormatTools;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.tools.JsonBrowser;
+import com.sedmelluq.discord.lavaplayer.tools.Tuple;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterface;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo;
@@ -48,7 +49,7 @@ public class YoutubeAudioTrack extends DelegatedAudioTrack {
 
   private static final String DEFAULT_SIGNATURE_KEY = "signature";
 
-  private static final Cache<String, FormatWithUrl> playbackUrlCache = CacheBuilder.newBuilder()
+  private static final Cache<String, FormatWithUrl> playbackFormatCache = CacheBuilder.newBuilder()
           .expireAfterWrite(4, TimeUnit.HOURS)
           .build();
 
@@ -67,14 +68,23 @@ public class YoutubeAudioTrack extends DelegatedAudioTrack {
   @Override
   public void process(LocalAudioTrackExecutor localExecutor) throws Exception {
     try (HttpInterface httpInterface = sourceManager.getHttpInterface()) {
-      FormatWithUrl format = loadBestFormatWithUrl(httpInterface);
+      Tuple<FormatWithUrl, Boolean> bestFormat = loadBestFormatWithUrl(httpInterface);
+      FormatWithUrl format = bestFormat.l;
+      Boolean cacheHit = bestFormat.r;
 
       log.debug("Starting track from URL: {}", format.signedUrl);
 
-      if (trackInfo.isStream) {
-        processStream(localExecutor, format);
-      } else {
-        processStatic(localExecutor, httpInterface, format);
+      try {
+        if (trackInfo.isStream) {
+          processStream(localExecutor, format);
+        } else {
+          processStatic(localExecutor, httpInterface, format);
+        }
+      } catch (Exception ignored) {
+        if (cacheHit) {
+          playbackFormatCache.invalidate(getIdentifier());
+          process(localExecutor);
+        }
       }
     }
   }
@@ -99,13 +109,13 @@ public class YoutubeAudioTrack extends DelegatedAudioTrack {
     }
   }
 
-  private FormatWithUrl loadBestFormatWithUrl(HttpInterface httpInterface) throws Exception {
+  private Tuple<FormatWithUrl, Boolean> loadBestFormatWithUrl(HttpInterface httpInterface) throws Exception {
     String videoId = getIdentifier();
-    FormatWithUrl cachedPlaybackUrl = playbackUrlCache.getIfPresent(videoId);
+    FormatWithUrl cachedPlaybackFormat = playbackFormatCache.getIfPresent(videoId);
 
-    if (cachedPlaybackUrl != null) {
+    if (cachedPlaybackFormat != null) {
       log.debug("Using cached playback URL for video {}", videoId);
-      return cachedPlaybackUrl;
+      return new Tuple<>(cachedPlaybackFormat, true);
     }
 
     JsonBrowser info = getTrackInfo(httpInterface);
@@ -117,8 +127,8 @@ public class YoutubeAudioTrack extends DelegatedAudioTrack {
     URI signedUrl = sourceManager.getCipherManager().getValidUrl(httpInterface, playerScript, format);
     FormatWithUrl bestFormat = new FormatWithUrl(format, signedUrl);
 
-    playbackUrlCache.put(videoId, bestFormat);
-    return bestFormat;
+    playbackFormatCache.put(videoId, bestFormat);
+    return new Tuple<>(bestFormat, false);
   }
 
   @Override
