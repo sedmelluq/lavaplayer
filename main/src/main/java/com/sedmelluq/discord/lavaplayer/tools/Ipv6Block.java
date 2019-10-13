@@ -13,7 +13,7 @@ import java.util.regex.Pattern;
 /**
  * @author Fre_d
  */
-public class Ipv6Subnet {
+public class Ipv6Block {
 
   private static final int IPV6_BIT_SIZE = 128;
   private static final int TRUNCATED_BITS = 64;
@@ -23,9 +23,9 @@ public class Ipv6Subnet {
   private final String cidr;
   private final int maskBits; // 1-128
   private final long prefix;
-  private static final Logger log = LoggerFactory.getLogger(Ipv6Subnet.class);
+  private static final Logger log = LoggerFactory.getLogger(Ipv6Block.class);
 
-  public Ipv6Subnet(String cidr) {
+  public Ipv6Block(String cidr) {
     this.cidr = cidr.toLowerCase();
     Matcher matcher = CIDR_REGEX.matcher(this.cidr);
     if (!matcher.find()) {
@@ -41,15 +41,15 @@ public class Ipv6Subnet {
     }
     maskBits = Integer.parseInt(matcher.group(2));
 
-    if (maskBits > TRUNCATED_BITS || maskBits < 1) {
-      throw new IllegalArgumentException("This class only handles /1-64 subnets. Got /" + maskBits);
+    if (maskBits > TRUNCATED_BITS - 1 || maskBits < 1) {
+      throw new IllegalArgumentException("This class only handles /1-63 subnets. Got /" + maskBits);
     }
 
     // Truncate all bits after $maskBits$ number of bits in the prefix
-    long prefixMask = Long.MAX_VALUE >> (IPV6_BIT_SIZE - maskBits - 1);
+    long prefixMask = Long.MAX_VALUE << (IPV6_BIT_SIZE - maskBits - 1);
     prefix = unboundedPrefix & prefixMask;
 
-    log.info("\n{}\n{}\n{}", Long.toBinaryString(unboundedPrefix), Long.toBinaryString(prefixMask), Long.toBinaryString(prefix));
+    //log.info("\n{}\n{}\n{}", Long.toBinaryString(unboundedPrefix), Long.toBinaryString(prefixMask), Long.toBinaryString(prefix));
   }
 
   /**
@@ -57,11 +57,12 @@ public class Ipv6Subnet {
    */
   public InetAddress getRandomSlash64() {
     // Create a mask of variable length to be AND'ed with a random value
-    long randMask = Long.MAX_VALUE << maskBits;
+    long randMask = Long.MAX_VALUE >> maskBits - 1;
     long maskedRandom = random.nextLong() & randMask;
 
     // Combine prefix and match
     InetAddress inetAddress = longToAddress(prefix + maskedRandom);
+    //log.info(Long.toBinaryString(prefix + maskedRandom));
     log.info(inetAddress.toString());
     //log.info("\nPref:{}\nMask:{}\nRand:{}\nRslt:{}", Long.toBinaryString(prefix), Long.toBinaryString(randMask), Long.toBinaryString(maskedRandom), Long.toBinaryString(prefix + maskedRandom));
     return inetAddress;
@@ -74,14 +75,14 @@ public class Ipv6Subnet {
 
   private static InetAddress longToAddress(long l) {
     byte[] b = new byte[]{
-        (byte) l,
-        (byte) (l >> 8),
-        (byte) (l >> 16),
-        (byte) (l >> 24),
-        (byte) (l >> 32),
-        (byte) (l >> 40),
-        (byte) (l >> 48),
         (byte) (l >> 56),
+        (byte) (l >> 48),
+        (byte) (l >> 40),
+        (byte) (l >> 32),
+        (byte) (l >> 24),
+        (byte) (l >> 16),
+        (byte) (l >> 8),
+        (byte) l,
         0, 0, 0, 0,
         0, 0, 0, 0
     };
@@ -98,14 +99,14 @@ public class Ipv6Subnet {
    */
   private static long addressToLong(Inet6Address address) {
     byte[] b = address.getAddress();
-    return ((long) b[7] << 56)
-        | ((long) b[6] & 0xff) << 48
-        | ((long) b[5] & 0xff) << 40
-        | ((long) b[4] & 0xff) << 32
-        | ((long) b[3] & 0xff) << 24
-        | ((long) b[2] & 0xff) << 16
-        | ((long) b[1] & 0xff) << 8
-        | ((long) b[0] & 0xff);
+    return ((long) b[0] << 56)
+        | ((long) b[1] & 0xff) << 48
+        | ((long) b[2] & 0xff) << 40
+        | ((long) b[3] & 0xff) << 32
+        | ((long) b[4] & 0xff) << 24
+        | ((long) b[5] & 0xff) << 16
+        | ((long) b[6] & 0xff) << 8
+        | ((long) b[7] & 0xff);
   }
 
 }
