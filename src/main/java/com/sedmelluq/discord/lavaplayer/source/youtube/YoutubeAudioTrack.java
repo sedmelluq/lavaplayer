@@ -1,5 +1,7 @@
 package com.sedmelluq.discord.lavaplayer.source.youtube;
 
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import com.sedmelluq.discord.lavaplayer.container.matroska.MatroskaAudioTrack;
 import com.sedmelluq.discord.lavaplayer.container.mpeg.MpegAudioTrack;
 import com.sedmelluq.discord.lavaplayer.source.AudioSourceManager;
@@ -30,6 +32,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.StringJoiner;
+import java.util.concurrent.TimeUnit;
 
 import static com.sedmelluq.discord.lavaplayer.container.Formats.MIME_AUDIO_WEBM;
 import static com.sedmelluq.discord.lavaplayer.source.youtube.YoutubeAudioSourceManager.CHARSET;
@@ -44,6 +47,10 @@ public class YoutubeAudioTrack extends DelegatedAudioTrack {
   private static final Logger log = LoggerFactory.getLogger(YoutubeAudioTrack.class);
 
   private static final String DEFAULT_SIGNATURE_KEY = "signature";
+
+  private static final Cache<String, FormatWithUrl> playbackUrlCache = CacheBuilder.newBuilder()
+          .expireAfterWrite(4, TimeUnit.HOURS)
+          .build();
 
   private final YoutubeAudioSourceManager sourceManager;
 
@@ -93,6 +100,14 @@ public class YoutubeAudioTrack extends DelegatedAudioTrack {
   }
 
   private FormatWithUrl loadBestFormatWithUrl(HttpInterface httpInterface) throws Exception {
+    String videoId = getIdentifier();
+    FormatWithUrl cachedPlaybackUrl = playbackUrlCache.getIfPresent(videoId);
+
+    if (cachedPlaybackUrl != null) {
+      log.debug("Using cached playback URL for video {}", videoId);
+      return cachedPlaybackUrl;
+    }
+
     JsonBrowser info = getTrackInfo(httpInterface);
 
     String playerScript = extractPlayerScriptFromInfo(info);
@@ -100,8 +115,10 @@ public class YoutubeAudioTrack extends DelegatedAudioTrack {
     YoutubeTrackFormat format = findBestSupportedFormat(formats);
 
     URI signedUrl = sourceManager.getCipherManager().getValidUrl(httpInterface, playerScript, format);
+    FormatWithUrl bestFormat = new FormatWithUrl(format, signedUrl);
 
-    return new FormatWithUrl(format, signedUrl);
+    playbackUrlCache.put(videoId, bestFormat);
+    return bestFormat;
   }
 
   @Override
