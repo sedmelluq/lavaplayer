@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.sedmelluq.discord.lavaplayer.player.DefaultAudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.source.AudioSourceManager;
 import com.sedmelluq.discord.lavaplayer.tools.*;
+import com.sedmelluq.discord.lavaplayer.tools.http.BalancingIpv6RoutePlanner;
 import com.sedmelluq.discord.lavaplayer.tools.http.HttpRequestModifier;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpClientTools;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpConfigurable;
@@ -31,10 +32,9 @@ import org.apache.http.NameValuePair;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpRequestBase;
-import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.client.utils.URIBuilder;
+import org.apache.http.conn.routing.HttpRoutePlanner;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.util.EntityUtils;
 import org.jsoup.Jsoup;
@@ -80,7 +80,6 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
   private final YoutubeMixProvider mixProvider;
   private final boolean allowSearch;
   private volatile int playlistPageCount;
-  private final Ipv6Block ipv6Block;
 
   /**
    * Create an instance with default settings.
@@ -100,15 +99,23 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
   /**
    * Create an instance.
    * @param allowSearch Whether to allow search queries as identifiers
-   * @param ipv6Block An IPv6 subnet to balance requests over
+   * @param routePlanner An IPv6 subnet to balance requests over
    */
-  public YoutubeAudioSourceManager(boolean allowSearch, Ipv6Block ipv6Block) {
+  public YoutubeAudioSourceManager(boolean allowSearch, HttpRoutePlanner routePlanner) {
     signatureCipherManager = new YoutubeSignatureCipherManager();
 
-    httpInterfaceManager = HttpClientTools.createDefaultThreadLocalManager(this::beforeRequest);
+    HttpRequestModifier requestModifier = request -> {
+      request.setHeader("x-youtube-client-name", "1");
+      request.setHeader("x-youtube-client-version", "2.20191008.04.01");
+    };
+
+    if (routePlanner == null) {
+      httpInterfaceManager = HttpClientTools.createDefaultThreadLocalManager(requestModifier);
+    } else {
+      httpInterfaceManager = HttpClientTools.createDefaultThreadLocalManager(requestModifier, routePlanner);
+    }
 
     this.allowSearch = allowSearch;
-    this.ipv6Block = ipv6Block;
     playlistPageCount = 6;
     searchProvider = new YoutubeSearchProvider(this);
     mixProvider = new YoutubeMixProvider(this);
@@ -535,26 +542,6 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
    */
   public YoutubeAudioTrack buildTrackObject(String videoId, String title, String uploader, boolean isStream, long duration) {
     return new YoutubeAudioTrack(new AudioTrackInfo(title, uploader, duration, videoId, isStream, getWatchUrl(videoId)), this);
-  }
-
-  private void beforeRequest(HttpUriRequest request) {
-    request.setHeader("x-youtube-client-name", "1");
-    request.setHeader("x-youtube-client-version", "2.20191008.04.01");
-
-    if (ipv6Block != null && request instanceof HttpRequestBase) {
-      HttpRequestBase hrb = (HttpRequestBase) request;
-
-      // Skip if a local address is already explicitly configured
-      if (hrb.getConfig() != null && hrb.getConfig().getLocalAddress() != null) return;
-
-      RequestConfig.Builder builder = hrb.getConfig() == null
-          ? RequestConfig.custom()
-          : RequestConfig.copy(hrb.getConfig());
-
-      hrb.setConfig(
-          builder.setLocalAddress(ipv6Block.getRandomSlash64()).build()
-      );
-    }
   }
 
   private static String getWatchUrl(String videoId) {
