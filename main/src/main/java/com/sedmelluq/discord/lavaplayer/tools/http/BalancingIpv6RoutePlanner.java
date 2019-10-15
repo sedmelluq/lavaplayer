@@ -22,8 +22,8 @@ import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Arrays;
-import java.util.Optional;
-import java.util.stream.Stream;
+import java.util.Collections;
+import java.util.List;
 
 public class BalancingIpv6RoutePlanner implements HttpRoutePlanner {
 
@@ -35,6 +35,7 @@ public class BalancingIpv6RoutePlanner implements HttpRoutePlanner {
     this(ipBlock, DefaultSchemePortResolver.INSTANCE);
   }
 
+  @SuppressWarnings("WeakerAccess")
   public BalancingIpv6RoutePlanner(Ipv6Block ipBlock, SchemePortResolver schemePortResolver) {
     this.ipBlock = ipBlock;
     this.schemePortResolver = schemePortResolver;
@@ -57,24 +58,33 @@ public class BalancingIpv6RoutePlanner implements HttpRoutePlanner {
       }
     } else remotePort = host.getPort();
 
-    Stream<InetAddress> ipStream;
+    List<InetAddress> ipList;
     try {
-      ipStream = Arrays.stream(InetAddress.getAllByName(host.getHostName()));
+      ipList = Arrays.asList(InetAddress.getAllByName(host.getHostName()));
     } catch (UnknownHostException e) {
       throw new HttpException("Could not resolve " + host.getHostName(), e);
     }
 
     InetAddress remoteAddress;
     InetAddress localAddress;
-    Optional<InetAddress> ip6 = ipStream.filter(Inet6Address.class::isInstance).findAny();
-    if (ip6.isPresent()) {
+    Inet6Address ip6 = null;
+    Inet4Address ip4 = null;
+
+    Collections.reverse(ipList);
+    for (InetAddress ip : ipList) {
+      if (ip instanceof Inet6Address) ip6 = (Inet6Address) ip;
+      else if (ip instanceof Inet4Address) ip4 = (Inet4Address) ip;
+    }
+
+    if (ip6 != null) {
       localAddress = ipBlock.getRandomSlash64();
-      remoteAddress = ip6.get();
-    } else {
-      Optional<InetAddress> ip4 = ipStream.filter(Inet4Address.class::isInstance).findAny();
+      remoteAddress = ip6;
+    } else if (ip4 != null) {
       localAddress = null;
-      remoteAddress = ip4.orElseThrow(() -> new HttpException("Could not resolve " + host.getHostName()));
+      remoteAddress = ip4;
       log.warn("Could not look up AAAA record for {}. Falling back to unbalanced IPv4.", host.getHostName());
+    } else {
+      throw new HttpException("Could not resolve " + host.getHostName();
     }
 
     HttpHost target = new HttpHost(remoteAddress, host.getHostName(), remotePort, host.getSchemeName());
