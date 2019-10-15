@@ -48,7 +48,7 @@ public class BalancingIpv6RoutePlanner implements HttpRoutePlanner {
    * @param ipBlock the block to perform balancing over.
    * @param ipFilter function to filter out certain IP addresses picked from the IP block, causing another random to be chosen.
    */
-  public BalancingIpv6RoutePlanner(Ipv6Block ipBlock, Predicate<InetAddress> ipFilter) {
+  public BalancingIpv6RoutePlanner(Ipv6Block ipBlock, Predicate<Inet6Address> ipFilter) {
     this(ipBlock, ipFilter, DefaultSchemePortResolver.INSTANCE);
   }
 
@@ -57,7 +57,7 @@ public class BalancingIpv6RoutePlanner implements HttpRoutePlanner {
    * @param ipFilter function to filter out certain IP addresses picked from the IP block, causing another random to be chosen.
    * @param schemePortResolver for resolving ports for schemes where the port is not explicitly stated.
    */
-  public BalancingIpv6RoutePlanner(Ipv6Block ipBlock, Predicate<InetAddress> ipFilter, SchemePortResolver schemePortResolver) {
+  public BalancingIpv6RoutePlanner(Ipv6Block ipBlock, Predicate<Inet6Address> ipFilter, SchemePortResolver schemePortResolver) {
     this.ipBlock = ipBlock;
     this.ipFilter = ipFilter;
     this.schemePortResolver = schemePortResolver;
@@ -88,7 +88,7 @@ public class BalancingIpv6RoutePlanner implements HttpRoutePlanner {
     }
 
     InetAddress remoteAddress;
-    InetAddress localAddress;
+    Inet6Address localAddress;
     Inet6Address ip6 = null;
     Inet4Address ip4 = null;
 
