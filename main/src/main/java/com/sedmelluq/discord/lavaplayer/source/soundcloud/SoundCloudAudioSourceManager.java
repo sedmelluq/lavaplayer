@@ -232,7 +232,7 @@ public class SoundCloudAudioSourceManager implements AudioSourceManager, HttpCon
 
       String page = EntityUtils.toString(response.getEntity());
       Matcher scriptMatcher = pageAppScriptPattern.matcher(page);
-      MatchResult result = getMatchIndex(scriptMatcher, 5);
+      MatchResult result = getMatchIndex(scriptMatcher, 6);
 
       if (result != null) {
         return result.group(0);
@@ -245,7 +245,7 @@ public class SoundCloudAudioSourceManager implements AudioSourceManager, HttpCon
   private MatchResult getMatchIndex(Matcher m, int index) {
     int currentIndex = 0;
 
-    while (currentIndex < index + 1) {
+    while (currentIndex < index) {
       if (!m.find()) {
         return null;
       }
