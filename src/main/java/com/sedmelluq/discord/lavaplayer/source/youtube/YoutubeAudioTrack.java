@@ -407,8 +407,8 @@ public class YoutubeAudioTrack extends DelegatedAudioTrack {
   }
 
   public static class FormatWithUrl {
-    private final YoutubeTrackFormat details;
-    private final URI signedUrl;
+    public final YoutubeTrackFormat details;
+    public final URI signedUrl;
 
     public FormatWithUrl(YoutubeTrackFormat details, URI signedUrl) {
       this.details = details;
