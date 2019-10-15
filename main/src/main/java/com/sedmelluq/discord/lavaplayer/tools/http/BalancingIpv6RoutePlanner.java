@@ -24,20 +24,42 @@ import java.net.UnknownHostException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Predicate;
 
+/**
+ * @author Frederik Arbjerg Mikkelsen
+ */
+@SuppressWarnings("WeakerAccess")
 public class BalancingIpv6RoutePlanner implements HttpRoutePlanner {
 
   private static final Logger log = LoggerFactory.getLogger(BalancingIpv6RoutePlanner.class);
   private final Ipv6Block ipBlock;
+  private final Predicate<Inet6Address> ipFilter;
   private final SchemePortResolver schemePortResolver;
 
+  /**
+   * @param ipBlock the block to perform balancing over.
+   */
   public BalancingIpv6RoutePlanner(Ipv6Block ipBlock) {
-    this(ipBlock, DefaultSchemePortResolver.INSTANCE);
+    this(ipBlock, i ->  { return true; }, DefaultSchemePortResolver.INSTANCE);
   }
 
-  @SuppressWarnings("WeakerAccess")
-  public BalancingIpv6RoutePlanner(Ipv6Block ipBlock, SchemePortResolver schemePortResolver) {
+  /**
+   * @param ipBlock the block to perform balancing over.
+   * @param ipFilter function to filter out certain IP addresses picked from the IP block, causing another random to be chosen.
+   */
+  public BalancingIpv6RoutePlanner(Ipv6Block ipBlock, Predicate<InetAddress> ipFilter) {
+    this(ipBlock, ipFilter, DefaultSchemePortResolver.INSTANCE);
+  }
+
+  /**
+   * @param ipBlock the block to perform balancing over.
+   * @param ipFilter function to filter out certain IP addresses picked from the IP block, causing another random to be chosen.
+   * @param schemePortResolver for resolving ports for schemes where the port is not explicitly stated.
+   */
+  public BalancingIpv6RoutePlanner(Ipv6Block ipBlock, Predicate<InetAddress> ipFilter, SchemePortResolver schemePortResolver) {
     this.ipBlock = ipBlock;
+    this.ipFilter = ipFilter;
     this.schemePortResolver = schemePortResolver;
   }
 
@@ -77,7 +99,9 @@ public class BalancingIpv6RoutePlanner implements HttpRoutePlanner {
     }
 
     if (ip6 != null) {
-      localAddress = ipBlock.getRandomSlash64();
+      do {
+        localAddress = ipBlock.getRandomSlash64();
+      } while (!ipFilter.test(localAddress));
       remoteAddress = ip6;
     } else if (ip4 != null) {
       localAddress = null;

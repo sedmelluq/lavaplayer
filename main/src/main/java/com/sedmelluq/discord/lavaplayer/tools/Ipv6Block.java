@@ -11,7 +11,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * @author Fre_d
+ * @author Frederik Arbjerg Mikkelsen
  */
 public class Ipv6Block {
 
@@ -46,6 +46,7 @@ public class Ipv6Block {
     }
 
     // Truncate all bits after $maskBits$ number of bits in the prefix
+    //noinspection ShiftOutOfRange
     long prefixMask = Long.MAX_VALUE << (IPV6_BIT_SIZE - maskBits - 1);
     prefix = unboundedPrefix & prefixMask;
 
@@ -55,13 +56,13 @@ public class Ipv6Block {
   /**
    * @return a random /64 member subnet of this subnet.
    */
-  public InetAddress getRandomSlash64() {
+  public Inet6Address getRandomSlash64() {
     // Create a mask of variable length to be AND'ed with a random value
     long randMask = Long.MAX_VALUE >> maskBits - 1;
     long maskedRandom = random.nextLong() & randMask;
 
     // Combine prefix and match
-    InetAddress inetAddress = longToAddress(prefix + maskedRandom);
+    Inet6Address inetAddress = longToAddress(prefix + maskedRandom);
     //log.info(Long.toBinaryString(prefix + maskedRandom));
     log.info(inetAddress.toString());
     //log.info("\nPref:{}\nMask:{}\nRand:{}\nRslt:{}", Long.toBinaryString(prefix), Long.toBinaryString(randMask), Long.toBinaryString(maskedRandom), Long.toBinaryString(prefix + maskedRandom));
@@ -73,7 +74,7 @@ public class Ipv6Block {
     return cidr;
   }
 
-  private static InetAddress longToAddress(long l) {
+  private static Inet6Address longToAddress(long l) {
     byte[] b = new byte[]{
         (byte) (l >> 56),
         (byte) (l >> 48),
@@ -88,7 +89,7 @@ public class Ipv6Block {
     };
 
     try {
-      return Inet6Address.getByAddress(b);
+      return (Inet6Address) Inet6Address.getByAddress(b);
     } catch (UnknownHostException e) {
       throw new RuntimeException(e); // This should not happen, as we do not do a DNS lookup
     }
