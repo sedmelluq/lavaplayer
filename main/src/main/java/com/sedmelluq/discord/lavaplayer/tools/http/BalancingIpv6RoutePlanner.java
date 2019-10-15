@@ -84,7 +84,7 @@ public class BalancingIpv6RoutePlanner implements HttpRoutePlanner {
       remoteAddress = ip4;
       log.warn("Could not look up AAAA record for {}. Falling back to unbalanced IPv4.", host.getHostName());
     } else {
-      throw new HttpException("Could not resolve " + host.getHostName();
+      throw new HttpException("Could not resolve " + host.getHostName());
     }
 
     HttpHost target = new HttpHost(remoteAddress, host.getHostName(), remotePort, host.getSchemeName());
