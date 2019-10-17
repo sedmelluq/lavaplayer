@@ -41,8 +41,8 @@ public class Ipv6Block {
     }
     maskBits = Integer.parseInt(matcher.group(2));
 
-    if (maskBits > TRUNCATED_BITS - 1 || maskBits < 1) {
-      throw new IllegalArgumentException("This class only handles /1-63 subnets. Got /" + maskBits);
+    if (maskBits > TRUNCATED_BITS || maskBits < 1) {
+      throw new IllegalArgumentException("This class only handles /1-64 subnets. Got /" + maskBits);
     }
 
     // Truncate all bits after $maskBits$ number of bits in the prefix
@@ -57,6 +57,9 @@ public class Ipv6Block {
    * @return a random /64 member subnet of this subnet.
    */
   public Inet6Address getRandomSlash64() {
+    // /64 blocks acts as a singleton
+    if (maskBits == 64) return longToAddress(prefix);
+
     // Create a mask of variable length to be AND'ed with a random value
     long randMask = Long.MAX_VALUE >> maskBits - 1;
     long maskedRandom = random.nextLong() & randMask;
