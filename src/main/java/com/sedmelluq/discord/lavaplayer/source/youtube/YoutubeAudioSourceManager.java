@@ -36,6 +36,7 @@ import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.client.utils.URIBuilder;
+import org.apache.http.conn.routing.HttpRoutePlanner;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.util.EntityUtils;
 import org.slf4j.Logger;
@@ -83,7 +84,7 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
    * Create an instance with default settings.
    */
   public YoutubeAudioSourceManager() {
-    this(true);
+    this(true, null);
   }
 
   /**
@@ -91,14 +92,29 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
    * @param allowSearch Whether to allow search queries as identifiers
    */
   public YoutubeAudioSourceManager(boolean allowSearch) {
+    this(allowSearch, null);
+  }
+
+  /**
+   * Create an instance.
+   * @param allowSearch Whether to allow search queries as identifiers
+   * @param routePlanner An IPv6 subnet to balance requests over
+   */
+  public YoutubeAudioSourceManager(boolean allowSearch, HttpRoutePlanner routePlanner) {
     signatureCipherManager = new YoutubeSignatureCipherManager();
 
-    httpInterfaceManager = HttpClientTools.createDefaultThreadLocalManager(request -> {
+    HttpRequestModifier requestModifier = request -> {
       if(request.getURI().toString().contains("generate_204"))
         return;
       request.setHeader("x-youtube-client-name", "1");
       request.setHeader("x-youtube-client-version", "2.20191008.04.01");
-    });
+    };
+
+    if (routePlanner == null) {
+      httpInterfaceManager = HttpClientTools.createDefaultThreadLocalManager(requestModifier);
+    } else {
+      httpInterfaceManager = HttpClientTools.createDefaultThreadLocalManager(requestModifier, routePlanner);
+    }
 
     this.allowSearch = allowSearch;
     playlistPageCount = 6;
