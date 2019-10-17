@@ -25,4 +25,6 @@ dependencies {
   compile 'org.jsoup:jsoup:1.11.3'
 
   compile 'net.iharder:base64:2.3.9'
+
+  compile 'com.google.guava:guava:23.5-jre'
 }

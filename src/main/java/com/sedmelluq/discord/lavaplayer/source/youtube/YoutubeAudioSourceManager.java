@@ -102,6 +102,7 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
 
     this.allowSearch = allowSearch;
     playlistPageCount = 6;
+    cacheProvider = new CacheProviderImpl();
     searchProvider = new YoutubeSearchProvider(this);
     mixProvider = new YoutubeMixProvider(this);
   }
