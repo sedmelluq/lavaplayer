@@ -94,6 +94,8 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
     signatureCipherManager = new YoutubeSignatureCipherManager();
 
     httpInterfaceManager = HttpClientTools.createDefaultThreadLocalManager(request -> {
+      if(request.getURI().toString().contains("generate_204"))
+        return;
       request.setHeader("x-youtube-client-name", "1");
       request.setHeader("x-youtube-client-version", "2.20191008.04.01");
     });
@@ -211,12 +213,12 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
    */
   public AudioItem loadTrackWithVideoId(String videoId, boolean mustExist) {
     try (HttpInterface httpInterface = getHttpInterface()) {
-      JsonBrowser info = getTrackInfoFromMainPage(httpInterface, videoId, mustExist);
-      if (info == null) {
+      final YoutubeJsonResponse jsonResponse = getTrackInfoFromMainPage(httpInterface, videoId, mustExist);
+      if (jsonResponse.getPlayerInfo() == null) {
         return AudioReference.NO_TRACK;
       }
 
-      JsonBrowser args = info.get("args");
+      JsonBrowser args = jsonResponse.getPlayerInfo().get("args");
       boolean useOldFormat = args.get("player_response").isNull();
 
       if (useOldFormat) {
@@ -370,7 +372,7 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
    *         <code>false</code>.
    * @throws IOException On network error.
    */
-  public JsonBrowser getTrackInfoFromMainPage(HttpInterface httpInterface, String videoId, boolean mustExist) throws IOException {
+  public YoutubeJsonResponse getTrackInfoFromMainPage(HttpInterface httpInterface, String videoId, boolean mustExist) throws IOException {
     checkVideoAvailability(videoId);
     String url = getWatchUrl(videoId) + "&pbj=1&hl=en";
 
@@ -387,10 +389,13 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
         JsonBrowser json = JsonBrowser.parse(responseText);
         JsonBrowser playerInfo = null;
         JsonBrowser statusBlock = null;
+        JsonBrowser preConnectUrls = null;
 
         for (JsonBrowser child : json.values()) {
           if (child.isMap()) {
-            if (!child.get("player").isNull()) {
+            if(!child.get("preconnect").isNull()) {
+              preConnectUrls = child.get("preconnect");
+            } else if (!child.get("player").isNull()) {
               playerInfo = child.get("player");
             } else if (!child.get("playerResponse").isNull()) {
               statusBlock = child.get("playerResponse").safeGet("playabilityStatus");
@@ -404,7 +409,7 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
           throw new RuntimeException("No player info block.");
         }
 
-        return playerInfo;
+        return new YoutubeJsonResponse(playerInfo, preConnectUrls);
       } catch (Exception e) {
         throw new FriendlyException("Received unexpected response from YouTube.", SUSPICIOUS,
             new RuntimeException("Failed to parse: " + responseText, e));
@@ -634,6 +639,32 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
       } else {
         throw new FriendlyException("Not a valid URL: " + url, COMMON, e);
       }
+    }
+  }
+
+  static class YoutubeJsonResponse {
+    private final JsonBrowser playerInfo;
+    private final String[] preConnectUrls;
+
+    private YoutubeJsonResponse(final JsonBrowser player, final JsonBrowser preConnectUrls) {
+      this.playerInfo = player;
+      if(preConnectUrls == null) {
+        this.preConnectUrls = new String[0];
+        return;
+      }
+      final List<JsonBrowser> entries = preConnectUrls.values();
+      this.preConnectUrls = new String[entries.size()];
+      for (int i = 0; i < entries.size(); i++) {
+        this.preConnectUrls[i] = entries.get(i).as(String.class);
+      }
+    }
+
+    public JsonBrowser getPlayerInfo() {
+      return playerInfo;
+    }
+
+    public String[] getPreConnectUrls() {
+      return preConnectUrls;
     }
   }
 
