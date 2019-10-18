@@ -73,7 +73,7 @@ public class Ipv6Block {
 
     public Inet6Address getSlash64AtIndex(final int index) {
         if (index > Math.pow(2, 64 - maskBits))
-            throw new IllegalArgumentException("Index out of bounds for provided cidr");
+            throw new IllegalArgumentException("Index out of bounds for provided CIDR Block");
         return longToAddress(prefix + index);
     }
 

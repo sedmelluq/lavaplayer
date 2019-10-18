@@ -431,6 +431,7 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
                 if (e.getCause() instanceof JsonParseException) {
                     final RotatingIpv6RoutePlanner rotatingIpv6RoutePlanner = RotatingIpv6RoutePlanner.getInstance();
                     if (rotatingIpv6RoutePlanner != null) {
+                        log.warn("Youtube RateLimit reached, RotatingIpv6RoutePlanner enabled -> using next ip and retry");
                         rotatingIpv6RoutePlanner.next();
                         return getTrackInfoFromMainPage(httpInterface, videoId, mustExist);
                     }
