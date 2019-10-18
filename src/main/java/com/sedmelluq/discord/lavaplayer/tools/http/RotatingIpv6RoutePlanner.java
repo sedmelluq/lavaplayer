@@ -118,7 +118,7 @@ public final class RotatingIpv6RoutePlanner implements HttpRoutePlanner {
                 }
             } while (localAddress == null || !ipFilter.test(localAddress));
             remoteAddress = remoteAddresses.r;
-            log.info("Selected " + remoteAddress.toString() + " as new outgoing ip");
+            log.info("Selected " + localAddress.toString() + " as new outgoing ip");
             this.currentAddress = localAddress;
             this.remoteAddress = remoteAddresses.r;
         } else if (remoteAddresses.l != null) {
