@@ -6,7 +6,12 @@ import com.google.common.cache.CacheBuilder;
 import java.util.concurrent.TimeUnit;
 
 public class CacheProviderImpl implements CacheProvider {
+
     private static final Cache<String, YoutubeAudioTrack.FormatWithUrl> playbackFormatCache = CacheBuilder.newBuilder()
+            .expireAfterWrite(4, TimeUnit.HOURS)
+            .build();
+
+    private static final Cache<String, String> unavailableCache = CacheBuilder.newBuilder()
             .expireAfterWrite(4, TimeUnit.HOURS)
             .build();
 
@@ -17,7 +22,7 @@ public class CacheProviderImpl implements CacheProvider {
 
     @Override
     public void cacheUnavailableVideo(String identifier, String unavailableReason) {
-
+        unavailableCache.put(identifier, unavailableReason);
     }
 
     @Override
@@ -32,6 +37,6 @@ public class CacheProviderImpl implements CacheProvider {
 
     @Override
     public String checkUnavailable(String identifier) {
-        return null;
+        return unavailableCache.getIfPresent(identifier);
     }
 }
