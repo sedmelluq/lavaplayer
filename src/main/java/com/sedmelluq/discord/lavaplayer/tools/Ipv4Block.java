@@ -11,6 +11,10 @@ import java.util.regex.Pattern;
 
 public final class Ipv4Block extends IpBlock<Inet4Address> {
 
+  public static boolean isIpv4CidrBlock(final String cidr) {
+    return CIDR_REGEX.matcher(cidr).matches();
+  }
+
   private static final Pattern CIDR_REGEX = Pattern.compile("(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})/(\\d{1,2})");
   private static final int NBITS = 32;
   private static final Logger log = LoggerFactory.getLogger(Ipv4Block.class);

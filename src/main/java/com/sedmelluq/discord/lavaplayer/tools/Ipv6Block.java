@@ -15,6 +15,10 @@ import java.util.regex.Pattern;
  */
 public class Ipv6Block extends IpBlock<Inet6Address> {
 
+  public static boolean isIpv6CidrBlock(final String cidr) {
+    return CIDR_REGEX.matcher(cidr).matches();
+  }
+
   private static final int IPV6_BIT_SIZE = 128;
   private static final int TRUNCATED_BITS = 64;
   private static final Random random = new Random();
