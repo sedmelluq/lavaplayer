@@ -12,8 +12,6 @@ import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo;
 import com.sedmelluq.discord.lavaplayer.track.DelegatedAudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.playback.LocalAudioTrackExecutor;
-import java.nio.charset.StandardCharsets;
-
 import org.apache.http.NameValuePair;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
@@ -28,6 +26,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 import static com.sedmelluq.discord.lavaplayer.container.Formats.MIME_AUDIO_WEBM;
@@ -48,7 +47,7 @@ public class YoutubeAudioTrack extends DelegatedAudioTrack {
   private final String refererUrl;
 
   /**
-   * @param trackInfo Track info
+   * @param trackInfo     Track info
    * @param sourceManager Source manager which was used to find this track
    */
   public YoutubeAudioTrack(AudioTrackInfo trackInfo, YoutubeAudioSourceManager sourceManager) {
@@ -256,12 +255,12 @@ public class YoutubeAudioTrack extends DelegatedAudioTrack {
         }
 
         tracks.add(new YoutubeTrackFormat(
-                ContentType.parse(format.get("type")),
-                qualityToBitrateValue(format.get("quality")),
-                Long.parseLong(contentLength),
-                url,
-                format.get("s"),
-                format.getOrDefault("sp", DEFAULT_SIGNATURE_KEY)
+            ContentType.parse(format.get("type")),
+            qualityToBitrateValue(format.get("quality")),
+            Long.parseLong(contentLength),
+            url,
+            format.get("s"),
+            format.getOrDefault("sp", DEFAULT_SIGNATURE_KEY)
         ));
       } catch (RuntimeException e) {
         anyFailures = true;
@@ -271,7 +270,7 @@ public class YoutubeAudioTrack extends DelegatedAudioTrack {
 
     if (tracks.isEmpty() && anyFailures) {
       log.warn("In adaptive format map {}, all formats either failed to load or were skipped due to missing fields",
-              adaptiveFormats);
+          adaptiveFormats);
     }
 
     return tracks;
@@ -285,8 +284,8 @@ public class YoutubeAudioTrack extends DelegatedAudioTrack {
       for (JsonBrowser formatJson : formats.values()) {
         String cipher = formatJson.safeGet("cipher").text();
         Map<String, String> cipherInfo = cipher != null
-                ? decodeUrlEncodedItems(cipher, true)
-                : Collections.emptyMap();
+            ? decodeUrlEncodedItems(cipher, true)
+            : Collections.emptyMap();
 
         try {
           JsonBrowser contentLength = formatJson.safeGet("contentLength");
@@ -297,12 +296,12 @@ public class YoutubeAudioTrack extends DelegatedAudioTrack {
           }
 
           tracks.add(new YoutubeTrackFormat(
-                  ContentType.parse(formatJson.safeGet("mimeType").text()),
-                  formatJson.safeGet("bitrate").as(Long.class),
-                  contentLength.as(Long.class),
-                  cipherInfo.getOrDefault("url", formatJson.get("url").text()),
-                  cipherInfo.get("s"),
-                  cipherInfo.getOrDefault("sp", DEFAULT_SIGNATURE_KEY)
+              ContentType.parse(formatJson.safeGet("mimeType").text()),
+              formatJson.safeGet("bitrate").as(Long.class),
+              contentLength.as(Long.class),
+              cipherInfo.getOrDefault("url", formatJson.get("url").text()),
+              cipherInfo.get("s"),
+              cipherInfo.getOrDefault("sp", DEFAULT_SIGNATURE_KEY)
           ));
         } catch (RuntimeException e) {
           anyFailures = true;
@@ -313,7 +312,7 @@ public class YoutubeAudioTrack extends DelegatedAudioTrack {
 
     if (tracks.isEmpty() && anyFailures) {
       log.warn("In streamingData adaptive formats {}, all formats either failed to load or were skipped due to missing " +
-              "fields", formats.format());
+          "fields", formats.format());
     }
 
     return tracks;

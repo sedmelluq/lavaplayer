@@ -27,134 +27,134 @@ import java.util.function.Predicate;
 
 public final class RotatingIpRoutePlanner implements HttpRoutePlanner {
 
-    private static RotatingIpRoutePlanner instance = null;
-    private static final Logger log = LoggerFactory.getLogger(BalancingIpRoutePlanner.class);
-    private final IpBlock ipBlock;
-    private final Predicate<InetAddress> ipFilter;
-    private final SchemePortResolver schemePortResolver;
-    private InetAddress currentAddress;
-    private InetAddress remoteAddress;
-    private boolean next;
-    private int index = 0;
+  private static RotatingIpRoutePlanner instance = null;
+  private static final Logger log = LoggerFactory.getLogger(BalancingIpRoutePlanner.class);
+  private final IpBlock ipBlock;
+  private final Predicate<InetAddress> ipFilter;
+  private final SchemePortResolver schemePortResolver;
+  private InetAddress currentAddress;
+  private InetAddress remoteAddress;
+  private boolean next;
+  private int index = 0;
 
-    @Nullable
-    public static RotatingIpRoutePlanner getInstance() {
-        return instance;
+  @Nullable
+  public static RotatingIpRoutePlanner getInstance() {
+    return instance;
+  }
+
+  /**
+   * @param ipBlock the block to perform balancing over.
+   */
+  public RotatingIpRoutePlanner(final IpBlock ipBlock) {
+    this(ipBlock, i -> true, DefaultSchemePortResolver.INSTANCE);
+  }
+
+  /**
+   * @param ipBlock  the block to perform balancing over.
+   * @param ipFilter function to filter out certain IP addresses picked from the IP block, causing another random to be chosen.
+   */
+  public RotatingIpRoutePlanner(final IpBlock ipBlock, final Predicate<InetAddress> ipFilter) {
+    this(ipBlock, ipFilter, DefaultSchemePortResolver.INSTANCE);
+  }
+
+  /**
+   * @param ipBlock            the block to perform balancing over.
+   * @param ipFilter           function to filter out certain IP addresses picked from the IP block, causing another random to be chosen.
+   * @param schemePortResolver for resolving ports for schemes where the port is not explicitly stated.
+   */
+  public RotatingIpRoutePlanner(final IpBlock ipBlock, final Predicate<InetAddress> ipFilter, final SchemePortResolver schemePortResolver) {
+    this.ipBlock = ipBlock;
+    this.ipFilter = ipFilter;
+    this.schemePortResolver = schemePortResolver;
+    instance = this;
+  }
+
+  public void next() {
+    this.next = true;
+  }
+
+  @Override
+  public HttpRoute determineRoute(final HttpHost host, final HttpRequest request, final HttpContext context) throws HttpException {
+    Args.notNull(request, "Request");
+    if (host == null) {
+      throw new ProtocolException("Target host is not specified");
+    }
+    final HttpClientContext clientContext = HttpClientContext.adapt(context);
+    final RequestConfig config = clientContext.getRequestConfig();
+    int remotePort;
+    if (host.getPort() <= 0) {
+      try {
+        remotePort = schemePortResolver.resolve(host);
+      } catch (final UnsupportedSchemeException e) {
+        throw new HttpException(e.getMessage());
+      }
+    } else
+      remotePort = host.getPort();
+    if (currentAddress != null && !next) {
+      final HttpHost target = new HttpHost(remoteAddress, host.getHostName(), remotePort, host.getSchemeName());
+      final HttpHost proxy = config.getProxy();
+      final boolean secure = target.getSchemeName().equalsIgnoreCase("https");
+      if (proxy == null) {
+        return new HttpRoute(target, currentAddress, secure);
+      } else {
+        return new HttpRoute(target, currentAddress, proxy, secure);
+      }
     }
 
-    /**
-     * @param ipBlock the block to perform balancing over.
-     */
-    public RotatingIpRoutePlanner(final IpBlock ipBlock) {
-        this(ipBlock, i -> true, DefaultSchemePortResolver.INSTANCE);
+    final InetAddress remoteAddress;
+    InetAddress localAddress;
+    final Tuple<Inet4Address, Inet6Address> remoteAddresses = IpAddressTools.getRandomAddressesFromHost(host);
+
+    if (ipBlock.getType() == Inet4Address.class) {
+      if (remoteAddresses.l != null) {
+        localAddress = extractLocalAddress();
+        remoteAddress = remoteAddresses.l;
+        log.info("Selected " + localAddress.toString() + " as new outgoing ip");
+        this.currentAddress = localAddress;
+        this.remoteAddress = remoteAddresses.l;
+      } else {
+        throw new HttpException("Could not resolve " + host.getHostName());
+      }
+    } else if (ipBlock.getType() == Inet6Address.class) {
+      if (remoteAddresses.r != null) {
+        localAddress = extractLocalAddress();
+        remoteAddress = remoteAddresses.r;
+        log.info("Selected " + localAddress.toString() + " as new outgoing ip");
+        this.currentAddress = localAddress;
+        this.remoteAddress = remoteAddresses.r;
+      } else if (remoteAddresses.l != null) {
+        localAddress = null;
+        remoteAddress = remoteAddresses.l;
+        log.warn("Could not look up AAAA record for {}. Falling back to unbalanced IPv4.", host.getHostName());
+      } else {
+        throw new HttpException("Could not resolve " + host.getHostName());
+      }
+    } else {
+      throw new HttpException("Unknown IpBlock type: " + ipBlock.getType().getCanonicalName());
     }
 
-    /**
-     * @param ipBlock  the block to perform balancing over.
-     * @param ipFilter function to filter out certain IP addresses picked from the IP block, causing another random to be chosen.
-     */
-    public RotatingIpRoutePlanner(final IpBlock ipBlock, final Predicate<InetAddress> ipFilter) {
-        this(ipBlock, ipFilter, DefaultSchemePortResolver.INSTANCE);
+    final HttpHost target = new HttpHost(remoteAddress, host.getHostName(), remotePort, host.getSchemeName());
+    final HttpHost proxy = config.getProxy();
+    final boolean secure = target.getSchemeName().equalsIgnoreCase("https");
+    this.next = false;
+    if (proxy == null) {
+      return new HttpRoute(target, localAddress, secure);
+    } else {
+      return new HttpRoute(target, localAddress, proxy, secure);
     }
+  }
 
-    /**
-     * @param ipBlock            the block to perform balancing over.
-     * @param ipFilter           function to filter out certain IP addresses picked from the IP block, causing another random to be chosen.
-     * @param schemePortResolver for resolving ports for schemes where the port is not explicitly stated.
-     */
-    public RotatingIpRoutePlanner(final IpBlock ipBlock, final Predicate<InetAddress> ipFilter, final SchemePortResolver schemePortResolver) {
-        this.ipBlock = ipBlock;
-        this.ipFilter = ipFilter;
-        this.schemePortResolver = schemePortResolver;
-        instance = this;
-    }
-
-    public void next() {
-        this.next = true;
-    }
-
-    @Override
-    public HttpRoute determineRoute(final HttpHost host, final HttpRequest request, final HttpContext context) throws HttpException {
-        Args.notNull(request, "Request");
-        if (host == null) {
-            throw new ProtocolException("Target host is not specified");
-        }
-        final HttpClientContext clientContext = HttpClientContext.adapt(context);
-        final RequestConfig config = clientContext.getRequestConfig();
-        int remotePort;
-        if (host.getPort() <= 0) {
-            try {
-                remotePort = schemePortResolver.resolve(host);
-            } catch (final UnsupportedSchemeException e) {
-                throw new HttpException(e.getMessage());
-            }
-        } else
-            remotePort = host.getPort();
-        if (currentAddress != null && !next) {
-            final HttpHost target = new HttpHost(remoteAddress, host.getHostName(), remotePort, host.getSchemeName());
-            final HttpHost proxy = config.getProxy();
-            final boolean secure = target.getSchemeName().equalsIgnoreCase("https");
-            if (proxy == null) {
-                return new HttpRoute(target, currentAddress, secure);
-            } else {
-                return new HttpRoute(target, currentAddress, proxy, secure);
-            }
-        }
-
-        final InetAddress remoteAddress;
-        InetAddress localAddress;
-        final Tuple<Inet4Address, Inet6Address> remoteAddresses = IpAddressTools.getRandomAddressesFromHost(host);
-
-        if (ipBlock.getType() == Inet4Address.class) {
-            if (remoteAddresses.l != null) {
-                localAddress = extractLocalAddress();
-                remoteAddress = remoteAddresses.l;
-                log.info("Selected " + localAddress.toString() + " as new outgoing ip");
-                this.currentAddress = localAddress;
-                this.remoteAddress = remoteAddresses.l;
-            } else {
-                throw new HttpException("Could not resolve " + host.getHostName());
-            }
-        } else if (ipBlock.getType() == Inet6Address.class) {
-            if (remoteAddresses.r != null) {
-                localAddress = extractLocalAddress();
-                remoteAddress = remoteAddresses.r;
-                log.info("Selected " + localAddress.toString() + " as new outgoing ip");
-                this.currentAddress = localAddress;
-                this.remoteAddress = remoteAddresses.r;
-            } else if (remoteAddresses.l != null) {
-                localAddress = null;
-                remoteAddress = remoteAddresses.l;
-                log.warn("Could not look up AAAA record for {}. Falling back to unbalanced IPv4.", host.getHostName());
-            } else {
-                throw new HttpException("Could not resolve " + host.getHostName());
-            }
-        } else {
-            throw new HttpException("Unknown IpBlock type: " + ipBlock.getType().getCanonicalName());
-        }
-
-        final HttpHost target = new HttpHost(remoteAddress, host.getHostName(), remotePort, host.getSchemeName());
-        final HttpHost proxy = config.getProxy();
-        final boolean secure = target.getSchemeName().equalsIgnoreCase("https");
-        this.next = false;
-        if (proxy == null) {
-            return new HttpRoute(target, localAddress, secure);
-        } else {
-            return new HttpRoute(target, localAddress, proxy, secure);
-        }
-    }
-
-    private InetAddress extractLocalAddress() {
-        InetAddress localAddress;
-        do {
-            try {
-                localAddress = ipBlock.getAddressAtIndex(index++);
-            } catch (final IllegalArgumentException ex) {
-                log.warn("Reached end of CIDR block, starting from start again");
-                index = 0;
-                localAddress = null;
-            }
-        } while (localAddress == null || !ipFilter.test(localAddress));
-        return localAddress;
-    }
+  private InetAddress extractLocalAddress() {
+    InetAddress localAddress;
+    do {
+      try {
+        localAddress = ipBlock.getAddressAtIndex(index++);
+      } catch (final IllegalArgumentException ex) {
+        log.warn("Reached end of CIDR block, starting from start again");
+        index = 0;
+        localAddress = null;
+      }
+    } while (localAddress == null || !ipFilter.test(localAddress));
+    return localAddress;
+  }
 }
