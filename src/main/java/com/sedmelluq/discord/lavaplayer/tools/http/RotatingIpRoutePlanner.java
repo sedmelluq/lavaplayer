@@ -1,6 +1,7 @@
 package com.sedmelluq.discord.lavaplayer.tools.http;
 
-import com.sedmelluq.discord.lavaplayer.tools.Ipv6Block;
+import com.sedmelluq.discord.lavaplayer.tools.IpAddressTools;
+import com.sedmelluq.discord.lavaplayer.tools.IpBlock;
 import com.sedmelluq.discord.lavaplayer.tools.Tuple;
 import org.apache.http.HttpException;
 import org.apache.http.HttpHost;
@@ -22,32 +23,29 @@ import javax.annotation.Nullable;
 import java.net.Inet4Address;
 import java.net.Inet6Address;
 import java.net.InetAddress;
-import java.net.UnknownHostException;
-import java.util.*;
 import java.util.function.Predicate;
 
-public final class RotatingIpv6RoutePlanner implements HttpRoutePlanner {
+public final class RotatingIpRoutePlanner implements HttpRoutePlanner {
 
-    private static RotatingIpv6RoutePlanner instance = null;
-    private static final Logger log = LoggerFactory.getLogger(BalancingIpv6RoutePlanner.class);
-    private static final Random random = new Random();
-    private final Ipv6Block ipBlock;
-    private final Predicate<Inet6Address> ipFilter;
+    private static RotatingIpRoutePlanner instance = null;
+    private static final Logger log = LoggerFactory.getLogger(BalancingIpRoutePlanner.class);
+    private final IpBlock ipBlock;
+    private final Predicate<InetAddress> ipFilter;
     private final SchemePortResolver schemePortResolver;
-    private Inet6Address currentAddress;
-    private Inet6Address remoteAddress;
+    private InetAddress currentAddress;
+    private InetAddress remoteAddress;
     private boolean next;
     private int index = 0;
 
     @Nullable
-    public static RotatingIpv6RoutePlanner getInstance() {
+    public static RotatingIpRoutePlanner getInstance() {
         return instance;
     }
 
     /**
      * @param ipBlock the block to perform balancing over.
      */
-    public RotatingIpv6RoutePlanner(final Ipv6Block ipBlock) {
+    public RotatingIpRoutePlanner(final IpBlock ipBlock) {
         this(ipBlock, i -> true, DefaultSchemePortResolver.INSTANCE);
     }
 
@@ -55,7 +53,7 @@ public final class RotatingIpv6RoutePlanner implements HttpRoutePlanner {
      * @param ipBlock  the block to perform balancing over.
      * @param ipFilter function to filter out certain IP addresses picked from the IP block, causing another random to be chosen.
      */
-    public RotatingIpv6RoutePlanner(final Ipv6Block ipBlock, final Predicate<Inet6Address> ipFilter) {
+    public RotatingIpRoutePlanner(final IpBlock ipBlock, final Predicate<InetAddress> ipFilter) {
         this(ipBlock, ipFilter, DefaultSchemePortResolver.INSTANCE);
     }
 
@@ -64,7 +62,7 @@ public final class RotatingIpv6RoutePlanner implements HttpRoutePlanner {
      * @param ipFilter           function to filter out certain IP addresses picked from the IP block, causing another random to be chosen.
      * @param schemePortResolver for resolving ports for schemes where the port is not explicitly stated.
      */
-    public RotatingIpv6RoutePlanner(final Ipv6Block ipBlock, final Predicate<Inet6Address> ipFilter, final SchemePortResolver schemePortResolver) {
+    public RotatingIpRoutePlanner(final IpBlock ipBlock, final Predicate<InetAddress> ipFilter, final SchemePortResolver schemePortResolver) {
         this.ipBlock = ipBlock;
         this.ipFilter = ipFilter;
         this.schemePortResolver = schemePortResolver;
@@ -104,29 +102,35 @@ public final class RotatingIpv6RoutePlanner implements HttpRoutePlanner {
         }
 
         final InetAddress remoteAddress;
-        Inet6Address localAddress;
-        final Tuple<Inet4Address, Inet6Address> remoteAddresses = getRandomAdressesFromHost(host);
+        InetAddress localAddress;
+        final Tuple<Inet4Address, Inet6Address> remoteAddresses = IpAddressTools.getRandomAddressesFromHost(host);
 
-        if (remoteAddresses.r != null) {
-            do {
-                try {
-                    localAddress = ipBlock.getSlash64AtIndex(index++);
-                } catch (final IllegalArgumentException ex) {
-                    log.warn("Reached end of CIDR block, starting from start again");
-                    index = 0;
-                    localAddress = null;
-                }
-            } while (localAddress == null || !ipFilter.test(localAddress));
-            remoteAddress = remoteAddresses.r;
-            log.info("Selected " + localAddress.toString() + " as new outgoing ip");
-            this.currentAddress = localAddress;
-            this.remoteAddress = remoteAddresses.r;
-        } else if (remoteAddresses.l != null) {
-            localAddress = null;
-            remoteAddress = remoteAddresses.l;
-            log.warn("Could not look up AAAA record for {}. Falling back to unbalanced IPv4.", host.getHostName());
+        if (ipBlock.getType() == Inet4Address.class) {
+            if (remoteAddresses.l != null) {
+                localAddress = extractLocalAddress();
+                remoteAddress = remoteAddresses.l;
+                log.info("Selected " + localAddress.toString() + " as new outgoing ip");
+                this.currentAddress = localAddress;
+                this.remoteAddress = remoteAddresses.l;
+            } else {
+                throw new HttpException("Could not resolve " + host.getHostName());
+            }
+        } else if (ipBlock.getType() == Inet6Address.class) {
+            if (remoteAddresses.r != null) {
+                localAddress = extractLocalAddress();
+                remoteAddress = remoteAddresses.r;
+                log.info("Selected " + localAddress.toString() + " as new outgoing ip");
+                this.currentAddress = localAddress;
+                this.remoteAddress = remoteAddresses.r;
+            } else if (remoteAddresses.l != null) {
+                localAddress = null;
+                remoteAddress = remoteAddresses.l;
+                log.warn("Could not look up AAAA record for {}. Falling back to unbalanced IPv4.", host.getHostName());
+            } else {
+                throw new HttpException("Could not resolve " + host.getHostName());
+            }
         } else {
-            throw new HttpException("Could not resolve " + host.getHostName());
+            throw new HttpException("Unknown IpBlock type: " + ipBlock.getType().getCanonicalName());
         }
 
         final HttpHost target = new HttpHost(remoteAddress, host.getHostName(), remotePort, host.getSchemeName());
@@ -139,31 +143,17 @@ public final class RotatingIpv6RoutePlanner implements HttpRoutePlanner {
         }
     }
 
-    private Tuple<Inet4Address, Inet6Address> getRandomAdressesFromHost(final HttpHost host) throws HttpException {
-        final List<InetAddress> ipList;
-        try {
-            ipList = Arrays.asList(InetAddress.getAllByName(host.getHostName()));
-        } catch (final UnknownHostException e) {
-            throw new HttpException("Could not resolve " + host.getHostName(), e);
-        }
-        final List<Inet6Address> ip6 = new ArrayList<>();
-        final List<Inet4Address> ip4 = new ArrayList<>();
-
-        Collections.reverse(ipList);
-        for (final InetAddress ip : ipList) {
-            if (ip instanceof Inet6Address)
-                ip6.add((Inet6Address) ip);
-            else if (ip instanceof Inet4Address)
-                ip4.add((Inet4Address) ip);
-        }
-        return new Tuple<>(getRandomFromList(ip4), getRandomFromList(ip6));
-    }
-
-    private <T> T getRandomFromList(final List<T> list) {
-        if (list.isEmpty())
-            return null;
-        if (list.size() == 1)
-            return list.get(0);
-        return list.get(random.nextInt(list.size()));
+    private InetAddress extractLocalAddress() {
+        InetAddress localAddress;
+        do {
+            try {
+                localAddress = ipBlock.getAddressAtIndex(index++);
+            } catch (final IllegalArgumentException ex) {
+                log.warn("Reached end of CIDR block, starting from start again");
+                index = 0;
+                localAddress = null;
+            }
+        } while (localAddress == null || !ipFilter.test(localAddress));
+        return localAddress;
     }
 }

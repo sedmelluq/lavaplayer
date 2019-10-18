@@ -9,7 +9,7 @@ import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.tools.JsonBrowser;
 import com.sedmelluq.discord.lavaplayer.tools.RateLimitException;
 import com.sedmelluq.discord.lavaplayer.tools.http.HttpRequestModifier;
-import com.sedmelluq.discord.lavaplayer.tools.http.RotatingIpv6RoutePlanner;
+import com.sedmelluq.discord.lavaplayer.tools.http.RotatingIpRoutePlanner;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpClientTools;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpConfigurable;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterface;
@@ -436,10 +436,10 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
                 return new YoutubeJsonResponse(playerInfo, preConnectUrls);
             } catch (Exception e) {
                 if (e instanceof JsonParseException || e instanceof RateLimitException) {
-                    final RotatingIpv6RoutePlanner rotatingIpv6RoutePlanner = RotatingIpv6RoutePlanner.getInstance();
-                    if (rotatingIpv6RoutePlanner != null) {
-                        log.warn("Youtube RateLimit reached, RotatingIpv6RoutePlanner enabled -> using next ip and retry");
-                        rotatingIpv6RoutePlanner.next();
+                    final RotatingIpRoutePlanner rotatingIpRoutePlanner = RotatingIpRoutePlanner.getInstance();
+                    if (rotatingIpRoutePlanner != null) {
+                        log.warn("Youtube RateLimit reached, RotatingIpRoutePlanner enabled -> using next ip and retry");
+                        rotatingIpRoutePlanner.next();
                         return getTrackInfoFromMainPage(httpInterface, videoId, mustExist);
                     }
                     throw new RateLimitException("YouTube RateLimit reached", e);

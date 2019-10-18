@@ -13,7 +13,7 @@ import java.util.regex.Pattern;
 /**
  * @author Frederik Arbjerg Mikkelsen
  */
-public class Ipv6Block {
+public class Ipv6Block extends IpBlock<Inet6Address> {
 
     private static final int IPV6_BIT_SIZE = 128;
     private static final int TRUNCATED_BITS = 64;
@@ -55,7 +55,8 @@ public class Ipv6Block {
     /**
      * @return a random /64 member subnet of this subnet.
      */
-    public Inet6Address getRandomSlash64() {
+    @Override
+    public Inet6Address getRandomAddress() {
         // /64 blocks acts as a singleton
         if (maskBits == 64) return longToAddress(prefix);
 
@@ -71,10 +72,16 @@ public class Ipv6Block {
         return inetAddress;
     }
 
-    public Inet6Address getSlash64AtIndex(final int index) {
+    @Override
+    public Inet6Address getAddressAtIndex(final int index) {
         if (index > Math.pow(2, 64 - maskBits))
             throw new IllegalArgumentException("Index out of bounds for provided CIDR Block");
         return longToAddress(prefix + index);
+    }
+
+    @Override
+    public Class<Inet6Address> getType() {
+        return Inet6Address.class;
     }
 
     @Override
