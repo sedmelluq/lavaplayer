@@ -74,7 +74,7 @@ public class SoundCloudAudioSourceManager implements AudioSourceManager, HttpCon
   private static final String SEARCH_PREFIX_DEFAULT = "scsearch:";
   private static final String SEARCH_REGEX = SEARCH_PREFIX + "\\[([0-9]{1,9}),([0-9]{1,9})\\]:\\s*(.*)\\s*";
   private static final String PAGE_APP_SCRIPT_REGEX = "https://[A-Za-z0-9-.]+/assets/[a-f0-9-]+\\.js";
-  private static final String APP_SCRIPT_CLIENT_ID_REGEX = ",client_id:\"([a-zA-Z0-9-_]+)\"";
+  private static final String APP_SCRIPT_CLIENT_ID_REGEX = ",client_id:\"[a-zA-Z0-9-_]+\"";
 
   private static final Pattern trackUrlPattern = Pattern.compile(TRACK_URL_REGEX);
   private static final Pattern unlistedUrlPattern = Pattern.compile(UNLISTED_URL_REGEX);
