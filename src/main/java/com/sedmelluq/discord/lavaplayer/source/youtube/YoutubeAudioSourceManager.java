@@ -32,10 +32,7 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.regex.Pattern;
@@ -426,12 +423,12 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
                     throw new RuntimeException("No player info block.");
                 }
 
-                /*
+
                 // TESTING
-                if(new Random().nextBoolean()) {
+                if (new Random().nextBoolean()) {
                     throw new RateLimitException();
                 }
-                */
+
 
                 return new YoutubeJsonResponse(playerInfo, preConnectUrls);
             } catch (Exception e) {
