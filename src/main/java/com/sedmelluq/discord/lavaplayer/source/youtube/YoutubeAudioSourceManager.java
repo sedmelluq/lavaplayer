@@ -9,6 +9,7 @@ import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.tools.JsonBrowser;
 import com.sedmelluq.discord.lavaplayer.tools.RateLimitException;
 import com.sedmelluq.discord.lavaplayer.tools.http.HttpRequestModifier;
+import com.sedmelluq.discord.lavaplayer.tools.http.RotatingIpv6RoutePlanner;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpClientTools;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpConfigurable;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterface;
@@ -428,6 +429,11 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
                 return new YoutubeJsonResponse(playerInfo, preConnectUrls);
             } catch (Exception e) {
                 if (e.getCause() instanceof JsonParseException) {
+                    final RotatingIpv6RoutePlanner rotatingIpv6RoutePlanner = RotatingIpv6RoutePlanner.getInstance();
+                    if (rotatingIpv6RoutePlanner != null) {
+                        rotatingIpv6RoutePlanner.next();
+                        return getTrackInfoFromMainPage(httpInterface, videoId, mustExist);
+                    }
                     throw new RateLimitException("YouTube RateLimit reached", e);
                 }
                 throw new FriendlyException("Received unexpected response from YouTube.", SUSPICIOUS,
