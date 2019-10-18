@@ -424,10 +424,12 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
                 }
 
 
+                /*
                 // TESTING
                 if (new Random().nextBoolean()) {
                     throw new RateLimitException();
                 }
+                 */
 
 
                 return new YoutubeJsonResponse(playerInfo, preConnectUrls);

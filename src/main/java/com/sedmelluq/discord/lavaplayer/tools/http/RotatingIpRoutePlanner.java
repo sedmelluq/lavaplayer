@@ -136,6 +136,7 @@ public final class RotatingIpRoutePlanner implements HttpRoutePlanner {
         final HttpHost target = new HttpHost(remoteAddress, host.getHostName(), remotePort, host.getSchemeName());
         final HttpHost proxy = config.getProxy();
         final boolean secure = target.getSchemeName().equalsIgnoreCase("https");
+        this.next = false;
         if (proxy == null) {
             return new HttpRoute(target, localAddress, secure);
         } else {
