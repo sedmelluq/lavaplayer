@@ -232,7 +232,7 @@ public class SoundCloudAudioSourceManager implements AudioSourceManager, HttpCon
 
       String page = EntityUtils.toString(response.getEntity());
       Matcher scriptMatcher = pageAppScriptPattern.matcher(page);
-      MatchResult result = getMatchIndex(scriptMatcher, 6);
+      MatchResult result = getMatchIndex(scriptMatcher, 7);
 
       if (result != null) {
         return result.group(0);
