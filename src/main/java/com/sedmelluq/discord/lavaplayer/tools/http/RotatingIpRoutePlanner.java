@@ -28,7 +28,7 @@ import java.util.function.Predicate;
 public final class RotatingIpRoutePlanner implements HttpRoutePlanner {
 
   private static RotatingIpRoutePlanner instance = null;
-  private static final Logger log = LoggerFactory.getLogger(BalancingIpRoutePlanner.class);
+  private static final Logger log = LoggerFactory.getLogger(RotatingIpRoutePlanner.class);
   private final IpBlock ipBlock;
   private final Predicate<InetAddress> ipFilter;
   private final SchemePortResolver schemePortResolver;
