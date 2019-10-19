@@ -86,16 +86,14 @@ public class BalancingIpRoutePlanner implements HttpRoutePlanner {
     final InetAddress remoteAddress;
     if (ipBlock.getType() == Inet4Address.class) {
       if (remoteAddresses.l != null) {
-        do {
-          localAddress = ipBlock.getRandomAddress();
-        } while (!ipFilter.test(localAddress));
+        localAddress = getRandomAddress(ipBlock);
         remoteAddress = remoteAddresses.l;
       } else {
         throw new HttpException("Could not resolve " + host.getHostName());
       }
     } else if (ipBlock.getType() == Inet6Address.class) {
       if (remoteAddresses.r != null) {
-        localAddress = ipBlock.getRandomAddress();
+        localAddress = getRandomAddress(ipBlock);
         remoteAddress = remoteAddresses.r;
       } else if (remoteAddresses.l != null) {
         localAddress = null;
@@ -117,5 +115,13 @@ public class BalancingIpRoutePlanner implements HttpRoutePlanner {
     } else {
       return new HttpRoute(target, localAddress, proxy, secure);
     }
+  }
+
+  private InetAddress getRandomAddress(final IpBlock ipBlock) {
+    InetAddress localAddress;
+    do {
+      localAddress = ipBlock.getRandomAddress();
+    } while (!ipFilter.test(localAddress));
+    return localAddress;
   }
 }

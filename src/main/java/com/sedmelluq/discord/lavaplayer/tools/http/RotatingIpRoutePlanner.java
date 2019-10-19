@@ -101,7 +101,6 @@ public final class RotatingIpRoutePlanner implements HttpRoutePlanner {
       }
     }
 
-    final InetAddress remoteAddress;
     InetAddress localAddress;
     final Tuple<Inet4Address, Inet6Address> remoteAddresses = IpAddressTools.getRandomAddressesFromHost(host);
 
@@ -124,7 +123,7 @@ public final class RotatingIpRoutePlanner implements HttpRoutePlanner {
         this.remoteAddress = remoteAddresses.r;
       } else if (remoteAddresses.l != null) {
         localAddress = null;
-        remoteAddress = remoteAddresses.l;
+        this.remoteAddress = remoteAddresses.l;
         log.warn("Could not look up AAAA record for {}. Falling back to unbalanced IPv4.", host.getHostName());
       } else {
         throw new HttpException("Could not resolve " + host.getHostName());
@@ -133,10 +132,11 @@ public final class RotatingIpRoutePlanner implements HttpRoutePlanner {
       throw new HttpException("Unknown IpBlock type: " + ipBlock.getType().getCanonicalName());
     }
 
+    this.next = false;
+    log.info("Calculated new route for RotateOnBan strategy: SrcIp: {}, DstIp: {}, DstPort: {}", localAddress, remoteAddress, remotePort);
     final HttpHost target = new HttpHost(remoteAddress, host.getHostName(), remotePort, host.getSchemeName());
     final HttpHost proxy = config.getProxy();
     final boolean secure = target.getSchemeName().equalsIgnoreCase("https");
-    this.next = false;
     if (proxy == null) {
       return new HttpRoute(target, localAddress, secure);
     } else {
