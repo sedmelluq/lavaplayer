@@ -96,19 +96,21 @@ public final class RotatingIpRoutePlanner implements HttpRoutePlanner {
 
     if (ipBlock.getType() == Inet4Address.class) {
       if (remoteAddresses.l != null) {
-        if (currentAddress == null || next)
+        if (currentAddress == null || next) {
           currentAddress = extractLocalAddress();
+          log.info("Selected " + currentAddress.toString() + " as new outgoing ip");
+        }
         remoteAddress = remoteAddresses.l;
-        log.info("Selected " + currentAddress.toString() + " as new outgoing ip");
       } else {
         throw new HttpException("Could not resolve " + host.getHostName());
       }
     } else if (ipBlock.getType() == Inet6Address.class) {
       if (remoteAddresses.r != null) {
-        if (currentAddress == null || next)
+        if (currentAddress == null || next) {
           currentAddress = extractLocalAddress();
+          log.info("Selected " + currentAddress.toString() + " as new outgoing ip");
+        }
         remoteAddress = remoteAddresses.r;
-        log.info("Selected " + currentAddress.toString() + " as new outgoing ip");
       } else if (remoteAddresses.l != null) {
         currentAddress = null;
         remoteAddress = remoteAddresses.l;
@@ -121,7 +123,6 @@ public final class RotatingIpRoutePlanner implements HttpRoutePlanner {
     }
 
     this.next = false;
-    log.info("Calculated new route for RotateOnBan strategy: SrcIp: {}, DstIp: {}, DstPort: {}", currentAddress, remoteAddress, remotePort);
     final HttpHost target = new HttpHost(remoteAddress, host.getHostName(), remotePort, host.getSchemeName());
     final HttpHost proxy = config.getProxy();
     final boolean secure = target.getSchemeName().equalsIgnoreCase("https");
