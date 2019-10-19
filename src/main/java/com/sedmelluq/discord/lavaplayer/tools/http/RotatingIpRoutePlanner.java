@@ -33,7 +33,6 @@ public final class RotatingIpRoutePlanner implements HttpRoutePlanner {
   private final Predicate<InetAddress> ipFilter;
   private final SchemePortResolver schemePortResolver;
   private InetAddress currentAddress;
-  private InetAddress remoteAddress;
   private boolean next;
   private int index = 0;
 
@@ -90,40 +89,29 @@ public final class RotatingIpRoutePlanner implements HttpRoutePlanner {
       }
     } else
       remotePort = host.getPort();
-    if (currentAddress != null && !next) {
-      final HttpHost target = new HttpHost(remoteAddress, host.getHostName(), remotePort, host.getSchemeName());
-      final HttpHost proxy = config.getProxy();
-      final boolean secure = target.getSchemeName().equalsIgnoreCase("https");
-      if (proxy == null) {
-        return new HttpRoute(target, currentAddress, secure);
-      } else {
-        return new HttpRoute(target, currentAddress, proxy, secure);
-      }
-    }
 
-    InetAddress localAddress;
     final Tuple<Inet4Address, Inet6Address> remoteAddresses = IpAddressTools.getRandomAddressesFromHost(host);
+
+    InetAddress remoteAddress;
 
     if (ipBlock.getType() == Inet4Address.class) {
       if (remoteAddresses.l != null) {
-        localAddress = extractLocalAddress();
+        if (currentAddress == null || next)
+          currentAddress = extractLocalAddress();
         remoteAddress = remoteAddresses.l;
-        log.info("Selected " + localAddress.toString() + " as new outgoing ip");
-        this.currentAddress = localAddress;
-        this.remoteAddress = remoteAddresses.l;
+        log.info("Selected " + currentAddress.toString() + " as new outgoing ip");
       } else {
         throw new HttpException("Could not resolve " + host.getHostName());
       }
     } else if (ipBlock.getType() == Inet6Address.class) {
       if (remoteAddresses.r != null) {
-        localAddress = extractLocalAddress();
+        if (currentAddress == null || next)
+          currentAddress = extractLocalAddress();
         remoteAddress = remoteAddresses.r;
-        log.info("Selected " + localAddress.toString() + " as new outgoing ip");
-        this.currentAddress = localAddress;
-        this.remoteAddress = remoteAddresses.r;
+        log.info("Selected " + currentAddress.toString() + " as new outgoing ip");
       } else if (remoteAddresses.l != null) {
-        localAddress = null;
-        this.remoteAddress = remoteAddresses.l;
+        currentAddress = null;
+        remoteAddress = remoteAddresses.l;
         log.warn("Could not look up AAAA record for {}. Falling back to unbalanced IPv4.", host.getHostName());
       } else {
         throw new HttpException("Could not resolve " + host.getHostName());
@@ -133,14 +121,14 @@ public final class RotatingIpRoutePlanner implements HttpRoutePlanner {
     }
 
     this.next = false;
-    log.info("Calculated new route for RotateOnBan strategy: SrcIp: {}, DstIp: {}, DstPort: {}", localAddress, remoteAddress, remotePort);
+    log.info("Calculated new route for RotateOnBan strategy: SrcIp: {}, DstIp: {}, DstPort: {}", currentAddress, remoteAddress, remotePort);
     final HttpHost target = new HttpHost(remoteAddress, host.getHostName(), remotePort, host.getSchemeName());
     final HttpHost proxy = config.getProxy();
     final boolean secure = target.getSchemeName().equalsIgnoreCase("https");
     if (proxy == null) {
-      return new HttpRoute(target, localAddress, secure);
+      return new HttpRoute(target, currentAddress, secure);
     } else {
-      return new HttpRoute(target, localAddress, proxy, secure);
+      return new HttpRoute(target, currentAddress, proxy, secure);
     }
   }
 
