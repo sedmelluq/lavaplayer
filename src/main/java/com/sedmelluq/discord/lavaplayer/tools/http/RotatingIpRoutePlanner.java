@@ -9,11 +9,13 @@ import org.slf4j.LoggerFactory;
 import java.net.Inet4Address;
 import java.net.Inet6Address;
 import java.net.InetAddress;
+import java.util.Random;
 import java.util.function.Predicate;
 
 public final class RotatingIpRoutePlanner extends AbstractRoutePlanner {
 
   private static final Logger log = LoggerFactory.getLogger(RotatingIpRoutePlanner.class);
+  private static final Random random = new Random();
   private final Predicate<InetAddress> ipFilter;
   private InetAddress currentAddress;
   private boolean next;
@@ -82,10 +84,11 @@ public final class RotatingIpRoutePlanner extends AbstractRoutePlanner {
     InetAddress localAddress;
     int it = 0;
     do {
-      if(it++ > ipBlock.getSize() * 2) {
+      if (it++ > ipBlock.getSize() * 1.5) {
         throw new RuntimeException("Can't find a free ip");
       }
-      localAddress = ipBlock.getRandomAddress();
+      index += random.nextInt(10);
+      localAddress = ipBlock.getAddressAtIndex(index);
     } while (localAddress == null || !ipFilter.test(localAddress) || !isValidAddress(localAddress));
     return localAddress;
   }
