@@ -80,7 +80,7 @@ public abstract class AbstractRoutePlanner implements HttpRoutePlanner {
       log.debug("Removing expired failing entry for {}", address);
       return true;
     }
-    log.info("{} was chosen, but is marked as failing");
+    log.warn("{} was chosen, but is marked as failing, retrying...", address);
     return false;
   }
 
@@ -109,7 +109,7 @@ public abstract class AbstractRoutePlanner implements HttpRoutePlanner {
     final HttpHost proxy = config.getProxy();
     final boolean secure = target.getSchemeName().equalsIgnoreCase("https");
     this.lastAddress = addresses.l;
-    log.info("Setting last address to {}", lastAddress);
+    log.debug("Setting last address to {}", lastAddress);
     if (proxy == null) {
       return new HttpRoute(target, addresses.l, secure);
     } else {
