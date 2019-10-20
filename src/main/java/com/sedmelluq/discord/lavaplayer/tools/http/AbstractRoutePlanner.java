@@ -37,7 +37,7 @@ public abstract class AbstractRoutePlanner implements HttpRoutePlanner {
   }
 
   protected final IpBlock ipBlock;
-  protected final Map<InetAddress, Long> failingAddresses;
+  protected final Map<byte[], Long> failingAddresses;
   private final SchemePortResolver schemePortResolver;
   private InetAddress lastAddress;
 
@@ -48,8 +48,12 @@ public abstract class AbstractRoutePlanner implements HttpRoutePlanner {
     activePlanner = this;
   }
 
+  public final InetAddress getLastAddress() {
+    return this.lastAddress;
+  }
+
   public final void markAddressFailing() {
-    this.failingAddresses.put(this.lastAddress, System.currentTimeMillis());
+    this.failingAddresses.put(this.lastAddress.getAddress(), System.currentTimeMillis());
     onAddressFailure(this.lastAddress);
   }
 
@@ -62,11 +66,11 @@ public abstract class AbstractRoutePlanner implements HttpRoutePlanner {
   }
 
   protected final boolean isValidAddress(final InetAddress address) {
-    final Long failedTimestamp = failingAddresses.get(address);
+    final Long failedTimestamp = failingAddresses.get(address.getAddress());
     if (failedTimestamp == null)
       return true;
     if (failedTimestamp + FAILING_TIME < System.currentTimeMillis()) {
-      failingAddresses.remove(address);
+      failingAddresses.remove(address.getAddress());
       return true;
     }
     return false;

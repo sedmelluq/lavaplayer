@@ -266,7 +266,7 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
       if (e instanceof BindException) {
         final AbstractRoutePlanner routePlanner = AbstractRoutePlanner.getActivePlanner();
         if (routePlanner != null) {
-          log.warn("Cannot assign requested address {}, marking address as failing and retry!");
+          log.warn("Cannot assign requested address {}, marking address as failing and retry!", routePlanner.getLastAddress());
           routePlanner.markAddressFailing();
           return loadTrackWithVideoId(videoId, mustExist);
         }
