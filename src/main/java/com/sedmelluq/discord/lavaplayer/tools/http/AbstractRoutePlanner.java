@@ -21,10 +21,13 @@ import javax.annotation.Nullable;
 import java.net.Inet4Address;
 import java.net.Inet6Address;
 import java.net.InetAddress;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 public abstract class AbstractRoutePlanner implements HttpRoutePlanner {
+
+  private static final long FAILING_TIME = TimeUnit.HOURS.toMillis(1);
 
   private static AbstractRoutePlanner activePlanner;
 
@@ -34,18 +37,19 @@ public abstract class AbstractRoutePlanner implements HttpRoutePlanner {
   }
 
   protected final IpBlock ipBlock;
-  protected final List<InetAddress> failingAddresses;
+  protected final Map<InetAddress, Long> failingAddresses;
   private final SchemePortResolver schemePortResolver;
   private InetAddress lastAddress;
 
   protected AbstractRoutePlanner(final IpBlock ipBlock) {
     this.ipBlock = ipBlock;
-    this.failingAddresses = new ArrayList<>();
+    this.failingAddresses = new HashMap<>();
     this.schemePortResolver = DefaultSchemePortResolver.INSTANCE;
+    activePlanner = this;
   }
 
   public final void markAddressFailing() {
-    this.failingAddresses.add(this.lastAddress);
+    this.failingAddresses.put(this.lastAddress, System.currentTimeMillis());
     onAddressFailure(this.lastAddress);
   }
 
@@ -58,7 +62,14 @@ public abstract class AbstractRoutePlanner implements HttpRoutePlanner {
   }
 
   protected final boolean isValidAddress(final InetAddress address) {
-    return !failingAddresses.contains(address);
+    final Long failedTimestamp = failingAddresses.get(address);
+    if (failedTimestamp == null)
+      return true;
+    if (failedTimestamp + FAILING_TIME < System.currentTimeMillis()) {
+      failingAddresses.remove(address);
+      return true;
+    }
+    return false;
   }
 
   @Override
