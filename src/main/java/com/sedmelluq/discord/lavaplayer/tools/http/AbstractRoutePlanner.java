@@ -16,6 +16,8 @@ import org.apache.http.conn.routing.HttpRoutePlanner;
 import org.apache.http.impl.conn.DefaultSchemePortResolver;
 import org.apache.http.protocol.HttpContext;
 import org.apache.http.util.Args;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.net.Inet4Address;
@@ -28,6 +30,7 @@ import java.util.concurrent.TimeUnit;
 public abstract class AbstractRoutePlanner implements HttpRoutePlanner {
 
   private static final long FAILING_TIME = TimeUnit.HOURS.toMillis(1);
+  private static final Logger log = LoggerFactory.getLogger(AbstractRoutePlanner.class);
 
   private static AbstractRoutePlanner activePlanner;
 
@@ -58,7 +61,7 @@ public abstract class AbstractRoutePlanner implements HttpRoutePlanner {
   }
 
   public void freeAddress(final InetAddress address) {
-    this.failingAddresses.remove(address);
+    this.failingAddresses.remove(address.getAddress());
   }
 
   public void freeAllAddresses() {
@@ -67,12 +70,16 @@ public abstract class AbstractRoutePlanner implements HttpRoutePlanner {
 
   protected final boolean isValidAddress(final InetAddress address) {
     final Long failedTimestamp = failingAddresses.get(address.getAddress());
-    if (failedTimestamp == null)
-      return true;
-    if (failedTimestamp + FAILING_TIME < System.currentTimeMillis()) {
-      failingAddresses.remove(address.getAddress());
+    if (failedTimestamp == null) {
+      log.debug("No failing entry for {}", address);
       return true;
     }
+    if (failedTimestamp + FAILING_TIME < System.currentTimeMillis()) {
+      failingAddresses.remove(address.getAddress());
+      log.debug("Removing expired failing entry for {}", address);
+      return true;
+    }
+    log.info("{} was chosen, but is marked as failing");
     return false;
   }
 
@@ -101,6 +108,7 @@ public abstract class AbstractRoutePlanner implements HttpRoutePlanner {
     final HttpHost proxy = config.getProxy();
     final boolean secure = target.getSchemeName().equalsIgnoreCase("https");
     this.lastAddress = addresses.l;
+    log.info("Setting last address to {}", lastAddress);
     if (proxy == null) {
       return new HttpRoute(target, addresses.l, secure);
     } else {
