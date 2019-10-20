@@ -9,4 +9,6 @@ public abstract class IpBlock<I extends InetAddress> {
   public abstract I getAddressAtIndex(int index);
 
   public abstract Class<I> getType();
+
+  public abstract long getSize();
 }

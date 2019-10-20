@@ -89,6 +89,11 @@ public class Ipv6Block extends IpBlock<Inet6Address> {
   }
 
   @Override
+  public long getSize() {
+    return (long) Math.pow(2, 64 - maskBits);
+  }
+
+  @Override
   public String toString() {
     return cidr;
   }
