@@ -87,7 +87,10 @@ public final class RotatingIpRoutePlanner extends AbstractRoutePlanner {
       if (it++ > ipBlock.getSize() * 1.5) {
         throw new RuntimeException("Can't find a free ip");
       }
-      index += random.nextInt(10);
+      if (ipBlock.getSize() >= 128)
+        index += random.nextInt(10);
+      else
+        index++;
       localAddress = ipBlock.getAddressAtIndex(index);
     } while (localAddress == null || !ipFilter.test(localAddress) || !isValidAddress(localAddress));
     return localAddress;
