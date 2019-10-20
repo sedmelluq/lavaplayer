@@ -91,7 +91,12 @@ public final class RotatingIpRoutePlanner extends AbstractRoutePlanner {
         index += random.nextInt(10);
       else
         index++;
-      localAddress = ipBlock.getAddressAtIndex(index);
+      try {
+        localAddress = ipBlock.getAddressAtIndex(index);
+      } catch (final Exception ex) {
+        index = 0;
+        localAddress = null;
+      }
     } while (localAddress == null || !ipFilter.test(localAddress) || !isValidAddress(localAddress));
     return localAddress;
   }
