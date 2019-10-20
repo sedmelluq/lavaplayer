@@ -82,16 +82,10 @@ public final class RotatingIpRoutePlanner extends AbstractRoutePlanner {
     InetAddress localAddress;
     int it = 0;
     do {
-      try {
-        if (it++ > ipBlock.getSize()) {
-          throw new RuntimeException("Can't find a free ip");
-        }
-        localAddress = ipBlock.getAddressAtIndex(index++);
-      } catch (final IllegalArgumentException ex) {
-        log.warn("Reached end of CIDR block, starting from start again");
-        index = 0;
-        localAddress = null;
+      if(it++ > ipBlock.getSize() * 2) {
+        throw new RuntimeException("Can't find a free ip");
       }
+      localAddress = ipBlock.getRandomAddress();
     } while (localAddress == null || !ipFilter.test(localAddress) || !isValidAddress(localAddress));
     return localAddress;
   }

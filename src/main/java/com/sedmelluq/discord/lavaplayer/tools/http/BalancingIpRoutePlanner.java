@@ -72,7 +72,7 @@ public class BalancingIpRoutePlanner extends AbstractRoutePlanner {
         throw new RuntimeException("Can't find a free ip");
       }
       localAddress = ipBlock.getRandomAddress();
-    } while (!ipFilter.test(localAddress) || !isValidAddress(localAddress));
+    } while (localAddress == null || !ipFilter.test(localAddress) || !isValidAddress(localAddress));
     return localAddress;
   }
 }
