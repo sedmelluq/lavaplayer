@@ -29,7 +29,7 @@ import java.util.concurrent.TimeUnit;
 
 public abstract class AbstractRoutePlanner implements HttpRoutePlanner {
 
-  private static final long FAILING_TIME = TimeUnit.HOURS.toMillis(1);
+  private static final long FAILING_TIME = TimeUnit.DAYS.toMillis(7);
   private static final Logger log = LoggerFactory.getLogger(AbstractRoutePlanner.class);
 
   private static AbstractRoutePlanner activePlanner;
@@ -61,11 +61,11 @@ public abstract class AbstractRoutePlanner implements HttpRoutePlanner {
     onAddressFailure(this.lastAddress);
   }
 
-  public void freeAddress(final InetAddress address) {
+  public final void freeAddress(final InetAddress address) {
     this.failingAddresses.remove(address.toString());
   }
 
-  public void freeAllAddresses() {
+  public final void freeAllAddresses() {
     this.failingAddresses.clear();
   }
 
@@ -75,7 +75,7 @@ public abstract class AbstractRoutePlanner implements HttpRoutePlanner {
       log.debug("No failing entry for {}", address);
       return true;
     }
-    if (failedTimestamp + FAILING_TIME < System.currentTimeMillis()) {
+    if (failedTimestamp + getFailingIpsCacheDuration() < System.currentTimeMillis()) {
       failingAddresses.remove(address.toString());
       log.debug("Removing expired failing entry for {}", address);
       return true;
@@ -124,6 +124,15 @@ public abstract class AbstractRoutePlanner implements HttpRoutePlanner {
    */
   protected void onAddressFailure(final InetAddress address) {
 
+  }
+
+  /**
+   * How long a failing address should not be reused in milliseconds
+   *
+   * @return duration in milliseconds
+   */
+  protected long getFailingIpsCacheDuration() {
+    return FAILING_TIME;
   }
 
   /**
