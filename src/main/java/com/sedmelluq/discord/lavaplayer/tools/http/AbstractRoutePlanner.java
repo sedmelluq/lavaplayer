@@ -49,7 +49,7 @@ public abstract class AbstractRoutePlanner implements HttpRoutePlanner {
     this.failingAddresses = new HashMap<>();
     this.schemePortResolver = DefaultSchemePortResolver.INSTANCE;
     activePlanner = this;
-    log.info("Active RoutePlanner: {}", getClass().getCanonicalName(), new RuntimeException());
+    log.info("Active RoutePlanner: {}", getClass().getCanonicalName());
   }
 
   public final InetAddress getLastAddress() {
