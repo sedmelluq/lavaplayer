@@ -444,6 +444,8 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
 
         return new YoutubeJsonResponse(playerInfo, preConnectUrls);
       } catch (Exception e) {
+        if (e instanceof FriendlyException)
+          throw e;
         if (e instanceof JsonParseException || e instanceof RateLimitException) {
           final AbstractRoutePlanner routePlanner = AbstractRoutePlanner.getActivePlanner();
           if (routePlanner != null) {
