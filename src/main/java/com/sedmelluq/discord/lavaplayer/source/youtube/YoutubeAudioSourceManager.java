@@ -8,8 +8,8 @@ import com.sedmelluq.discord.lavaplayer.tools.ExceptionTools;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.tools.JsonBrowser;
 import com.sedmelluq.discord.lavaplayer.tools.RateLimitException;
+import com.sedmelluq.discord.lavaplayer.tools.http.AbstractRoutePlanner;
 import com.sedmelluq.discord.lavaplayer.tools.http.HttpRequestModifier;
-import com.sedmelluq.discord.lavaplayer.tools.http.RotatingIpRoutePlanner;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpClientTools;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpConfigurable;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterface;
@@ -30,6 +30,7 @@ import org.slf4j.LoggerFactory;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.net.BindException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
@@ -262,6 +263,14 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
 
       return buildTrackObject(videoId, videoDetails.get("title").text(), videoDetails.get("author").text(), isStream, duration);
     } catch (Exception e) {
+      if (e instanceof BindException) {
+        final AbstractRoutePlanner routePlanner = AbstractRoutePlanner.getActivePlanner();
+        if (routePlanner != null) {
+          log.warn("Cannot assign requested address {}, marking address as failing and retry!");
+          routePlanner.markAddressFailing();
+          return loadTrackWithVideoId(videoId, mustExist);
+        }
+      }
       throw ExceptionTools.wrapUnfriendlyExceptions("Loading information for a YouTube track failed.", FAULT, e);
     }
   }
@@ -436,10 +445,10 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
         return new YoutubeJsonResponse(playerInfo, preConnectUrls);
       } catch (Exception e) {
         if (e instanceof JsonParseException || e instanceof RateLimitException) {
-          final RotatingIpRoutePlanner rotatingIpRoutePlanner = RotatingIpRoutePlanner.getInstance();
-          if (rotatingIpRoutePlanner != null) {
-            log.warn("Youtube RateLimit reached, RotatingIpRoutePlanner enabled -> using next ip and retry");
-            rotatingIpRoutePlanner.next();
+          final AbstractRoutePlanner routePlanner = AbstractRoutePlanner.getActivePlanner();
+          if (routePlanner != null) {
+            log.warn("Youtube RateLimit reached, marking address as failing and retry");
+            routePlanner.markAddressFailing();
             return getTrackInfoFromMainPage(httpInterface, videoId, mustExist);
           }
           throw new RateLimitException("YouTube RateLimit reached", e);
