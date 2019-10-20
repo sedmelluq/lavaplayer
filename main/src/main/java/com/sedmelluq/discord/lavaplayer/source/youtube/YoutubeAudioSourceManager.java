@@ -458,37 +458,59 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
     log.debug("Starting to load playlist with ID {}", playlistId);
 
     try (HttpInterface httpInterface = getHttpInterface()) {
-      try (CloseableHttpResponse response = httpInterface.execute(new HttpGet("https://www.youtube.com/playlist?list=" + playlistId))) {
+      try (CloseableHttpResponse response = httpInterface.execute(new HttpGet(getPlaylistUrl(playlistId) + "&pbj=1&hl=en"))) {
         int statusCode = response.getStatusLine().getStatusCode();
         if (statusCode != 200) {
           throw new IOException("Invalid status code for playlist response: " + statusCode);
         }
 
-        Document document = Jsoup.parse(response.getEntity().getContent(), CHARSET, "");
-        return buildPlaylist(httpInterface, document, selectedVideoId);
+        JsonBrowser json = JsonBrowser.parse(response.getEntity().getContent());
+
+        return buildPlaylist(httpInterface, json, selectedVideoId);
       }
     } catch (Exception e) {
       throw ExceptionTools.wrapUnfriendlyExceptions(e);
     }
   }
 
-  private AudioPlaylist buildPlaylist(HttpInterface httpInterface, Document document, String selectedVideoId) throws IOException {
-    boolean isAccessible = !document.select("#pl-header").isEmpty();
+  private AudioPlaylist buildPlaylist(HttpInterface httpInterface, JsonBrowser json, String selectedVideoId) throws IOException {
+    JsonBrowser jsonResponse = json.index(1).safeGet("response");
 
-    if (!isAccessible) {
-      if (selectedVideoId != null) {
-        return null;
-      } else {
-        throw new FriendlyException("The playlist is private.", COMMON, null);
-      }
-    }
+    JsonBrowser alerts = jsonResponse.safeGet("alerts");
 
-    Element container = document.select("#pl-header").first().parent();
+    if (!alerts.isNull()) throw new FriendlyException(alerts.index(0).safeGet("alertRenderer").safeGet("text").safeGet("simpleText").text(), COMMON, null);
 
-    String playlistName = container.select(".pl-header-title").first().text();
+    JsonBrowser info = jsonResponse
+            .safeGet("sidebar")
+            .safeGet("playlistSidebarRenderer")
+            .safeGet("items")
+            .index(0)
+            .safeGet("playlistSidebarPrimaryInfoRenderer");
+
+    String playlistName = info
+            .safeGet("title")
+            .safeGet("runs")
+            .index(0)
+            .safeGet("text")
+            .text();
+
+    JsonBrowser playlistVideoList = jsonResponse
+            .safeGet("contents")
+            .safeGet("twoColumnBrowseResultsRenderer")
+            .safeGet("tabs")
+            .index(0)
+            .safeGet("tabRenderer")
+            .safeGet("content")
+            .safeGet("sectionListRenderer")
+            .safeGet("contents")
+            .index(0)
+            .safeGet("itemSectionRenderer")
+            .safeGet("contents")
+            .index(0)
+            .safeGet("playlistVideoListRenderer");
 
     List<AudioTrack> tracks = new ArrayList<>();
-    String loadMoreUrl = extractPlaylistTracks(container, container, tracks);
+    String loadMoreUrl = extractPlaylistTracks(playlistVideoList, tracks);
     int loadCount = 0;
     int pageCount = playlistPageCount;
 
@@ -500,41 +522,46 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
           throw new IOException("Invalid status code for playlist response: " + statusCode);
         }
 
-        JsonBrowser json = JsonBrowser.parse(response.getEntity().getContent());
+        JsonBrowser continuationJson = JsonBrowser.parse(response.getEntity().getContent());
 
-        String html = json.get("content_html").text();
-        Element videoContainer = Jsoup.parse("<table>" + html + "</table>", "");
+        JsonBrowser playlistVideoListPage = continuationJson.index(1)
+                .safeGet("response")
+                .safeGet("continuationContents")
+                .safeGet("playlistVideoListContinuation");
 
-        String moreHtml = json.get("load_more_widget_html").text();
-        Element moreContainer = moreHtml != null ? Jsoup.parse(moreHtml) : null;
-
-        loadMoreUrl = extractPlaylistTracks(videoContainer, moreContainer, tracks);
+        loadMoreUrl = extractPlaylistTracks(playlistVideoListPage, tracks);
       }
     }
 
     return new BasicAudioPlaylist(playlistName, tracks, findSelectedTrack(tracks, selectedVideoId), false);
   }
 
-  private String extractPlaylistTracks(Element videoContainer, Element loadMoreContainer, List<AudioTrack> tracks) {
-    for (Element video : videoContainer.select(".pl-video")) {
-      Elements lengthElements = video.select(".timestamp span");
+  private String extractPlaylistTracks(JsonBrowser playlistVideoList, List<AudioTrack> tracks) {
+    JsonBrowser trackArray = playlistVideoList.safeGet("contents");
 
-      // If the timestamp element does not exist, it means the video is private
-      if (!lengthElements.isEmpty()) {
-        String videoId = video.attr("data-video-id").trim();
-        String title = video.attr("data-title").trim();
-        String author = video.select(".pl-video-owner a").text().trim();
-        long duration = DataFormatTools.durationTextToMillis(lengthElements.first().text());
+    if (trackArray.isNull()) return null;
 
+    for (JsonBrowser track : trackArray.values()) {
+      JsonBrowser item = track.safeGet("playlistVideoRenderer");
+
+      JsonBrowser shortBylineText = item.safeGet("shortBylineText");
+
+      // If the isPlayable property does not exist, it means the video is removed or private
+      // If the shortBylineText property does not exist, it means the Track is Region blocked
+      if (!item.safeGet("isPlayable").isNull() && !shortBylineText.isNull()) {
+        String videoId = item.safeGet("videoId").text();
+        String title = item.safeGet("title").safeGet("simpleText").text();
+        String author = shortBylineText.safeGet("runs").index(0).safeGet("text").text();
+        long duration = Long.parseLong(item.safeGet("lengthSeconds").text()) * 1000;
         tracks.add(buildTrackObject(videoId, title, author, false, duration));
       }
     }
 
-    if (loadMoreContainer != null) {
-      Elements more = loadMoreContainer.select(".load-more-button");
-      if (!more.isEmpty()) {
-        return more.first().attr("data-uix-load-more-href");
-      }
+    JsonBrowser continuations = playlistVideoList.safeGet("continuations");
+
+    if (!continuations.isNull()) {
+      String continuationsToken = continuations.index(0).safeGet("nextContinuationData").safeGet("continuation").text();
+      return "/browse_ajax" + "?continuation=" + continuationsToken + "&ctoken=" + continuationsToken + "&hl=en";
     }
 
     return null;
@@ -554,6 +581,10 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
 
   private static String getWatchUrl(String videoId) {
     return "https://www.youtube.com/watch?v=" + videoId;
+  }
+
+  private static String getPlaylistUrl(String playlistId) {
+    return "https://www.youtube.com/playlist?list=" + playlistId;
   }
 
   private static UrlInfo getUrlInfo(String url, boolean retryValidPart) {
