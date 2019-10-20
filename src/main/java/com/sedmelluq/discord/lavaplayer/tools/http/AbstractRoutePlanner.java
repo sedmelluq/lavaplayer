@@ -40,7 +40,7 @@ public abstract class AbstractRoutePlanner implements HttpRoutePlanner {
   }
 
   protected final IpBlock ipBlock;
-  protected final Map<byte[], Long> failingAddresses;
+  protected final Map<String, Long> failingAddresses;
   private final SchemePortResolver schemePortResolver;
   private InetAddress lastAddress;
 
@@ -57,12 +57,12 @@ public abstract class AbstractRoutePlanner implements HttpRoutePlanner {
   }
 
   public final void markAddressFailing() {
-    this.failingAddresses.put(this.lastAddress.getAddress(), System.currentTimeMillis());
+    this.failingAddresses.put(this.lastAddress.toString(), System.currentTimeMillis());
     onAddressFailure(this.lastAddress);
   }
 
   public void freeAddress(final InetAddress address) {
-    this.failingAddresses.remove(address.getAddress());
+    this.failingAddresses.remove(address.toString());
   }
 
   public void freeAllAddresses() {
@@ -70,13 +70,13 @@ public abstract class AbstractRoutePlanner implements HttpRoutePlanner {
   }
 
   protected final boolean isValidAddress(final InetAddress address) {
-    final Long failedTimestamp = failingAddresses.get(address.getAddress());
+    final Long failedTimestamp = failingAddresses.get(address.toString());
     if (failedTimestamp == null) {
       log.debug("No failing entry for {}", address);
       return true;
     }
     if (failedTimestamp + FAILING_TIME < System.currentTimeMillis()) {
-      failingAddresses.remove(address.getAddress());
+      failingAddresses.remove(address.toString());
       log.debug("Removing expired failing entry for {}", address);
       return true;
     }
