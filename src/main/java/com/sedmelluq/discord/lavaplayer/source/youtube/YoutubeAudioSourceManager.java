@@ -113,14 +113,15 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
 
     if (routePlanner == null) {
       httpInterfaceManager = HttpClientTools.createDefaultThreadLocalManager(requestModifier);
+      searchProvider = new YoutubeSearchProvider(this);
     } else {
       httpInterfaceManager = HttpClientTools.createDefaultThreadLocalManager(requestModifier, routePlanner);
+      searchProvider = new YoutubeSearchProvider(this, routePlanner);
     }
 
     this.allowSearch = allowSearch;
     playlistPageCount = 6;
     cacheProvider = new CacheProviderImpl();
-    searchProvider = new YoutubeSearchProvider(this);
     mixProvider = new YoutubeMixProvider(this);
   }
 

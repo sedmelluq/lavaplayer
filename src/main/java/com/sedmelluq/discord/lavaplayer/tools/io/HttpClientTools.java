@@ -121,6 +121,16 @@ public class HttpClientTools {
         null);
   }
 
+  /**
+   * @return HTTP interface manager with thread-local context, ignores cookies
+   */
+  public static HttpInterfaceManager createCookielessThreadLocalManager(final HttpRoutePlanner routePlanner) {
+    return new ThreadLocalHttpInterfaceManager(
+        createHttpBuilder(NO_COOKIES_REQUEST_CONFIG).setRoutePlanner(routePlanner),
+        NO_COOKIES_REQUEST_CONFIG,
+        null);
+  }
+
   private static HttpClientBuilder createHttpBuilder(RequestConfig requestConfig) {
     CookieStore cookieStore = new BasicCookieStore();
 

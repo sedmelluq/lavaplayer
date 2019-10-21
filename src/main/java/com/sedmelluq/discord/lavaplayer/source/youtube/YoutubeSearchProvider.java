@@ -2,7 +2,6 @@ package com.sedmelluq.discord.lavaplayer.source.youtube;
 
 import com.sedmelluq.discord.lavaplayer.tools.DataFormatTools;
 import com.sedmelluq.discord.lavaplayer.tools.ExceptionTools;
-import com.sedmelluq.discord.lavaplayer.tools.http.HttpRequestModifier;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpClientTools;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpConfigurable;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterface;
@@ -15,6 +14,7 @@ import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.utils.URIBuilder;
+import org.apache.http.conn.routing.HttpRoutePlanner;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -45,6 +45,15 @@ public class YoutubeSearchProvider implements HttpConfigurable {
   public YoutubeSearchProvider(YoutubeAudioSourceManager sourceManager) {
     this.sourceManager = sourceManager;
     this.httpInterfaceManager = HttpClientTools.createCookielessThreadLocalManager();
+  }
+
+  /**
+   * @param sourceManager Youtube source manager used for created tracks
+   * @param routePlanner  RoutePlanner to avoid getting 429's
+   */
+  public YoutubeSearchProvider(YoutubeAudioSourceManager sourceManager, HttpRoutePlanner routePlanner) {
+    this.sourceManager = sourceManager;
+    this.httpInterfaceManager = HttpClientTools.createCookielessThreadLocalManager(routePlanner);
   }
 
   /**
