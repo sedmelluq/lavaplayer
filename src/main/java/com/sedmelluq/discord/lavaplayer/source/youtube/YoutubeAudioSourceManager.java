@@ -233,7 +233,7 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
   public AudioItem loadTrackWithVideoId(String videoId, boolean mustExist) {
     try (HttpInterface httpInterface = getHttpInterface()) {
       final YoutubeJsonResponse jsonResponse = getTrackInfoFromMainPage(httpInterface, videoId, mustExist);
-      if (jsonResponse.getPlayerInfo() == null) {
+      if (jsonResponse == null || jsonResponse.getPlayerInfo() == null) {
         return AudioReference.NO_TRACK;
       }
 
