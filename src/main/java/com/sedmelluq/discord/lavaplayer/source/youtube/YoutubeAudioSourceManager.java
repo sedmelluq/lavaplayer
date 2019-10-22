@@ -21,13 +21,11 @@ import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.client.utils.URIBuilder;
-import org.apache.http.conn.routing.HttpRoutePlanner;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.util.EntityUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.Nullable;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
@@ -146,7 +144,6 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
     mixProvider.setLoaderMaximumPoolSize(maximumPoolSize);
   }
 
-  @Nullable
   public AbstractRoutePlanner getRoutePlanner() {
     return routePlanner;
   }
