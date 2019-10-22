@@ -27,6 +27,7 @@ import org.apache.http.util.EntityUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nullable;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
@@ -71,6 +72,7 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
       new Extractor(Pattern.compile("^" + PROTOCOL_REGEX + SHORT_DOMAIN_REGEX + "/.*"), this::loadFromShortDomain)
   };
 
+  private final AbstractRoutePlanner routePlanner;
   private final YoutubeSignatureCipherManager signatureCipherManager;
   private final HttpInterfaceManager httpInterfaceManager;
   private final YoutubeSearchProvider searchProvider;
@@ -101,7 +103,8 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
    * @param allowSearch  Whether to allow search queries as identifiers
    * @param routePlanner An IPv6 subnet to balance requests over
    */
-  public YoutubeAudioSourceManager(boolean allowSearch, HttpRoutePlanner routePlanner) {
+  public YoutubeAudioSourceManager(boolean allowSearch, AbstractRoutePlanner routePlanner) {
+    this.routePlanner = routePlanner;
     signatureCipherManager = new YoutubeSignatureCipherManager();
 
     HttpRequestModifier requestModifier = request -> {
@@ -141,6 +144,11 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
    */
   public void setMixLoaderMaximumPoolSize(int maximumPoolSize) {
     mixProvider.setLoaderMaximumPoolSize(maximumPoolSize);
+  }
+
+  @Nullable
+  public AbstractRoutePlanner getRoutePlanner() {
+    return routePlanner;
   }
 
   @Override
@@ -265,7 +273,7 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
       return buildTrackObject(videoId, videoDetails.get("title").text(), videoDetails.get("author").text(), isStream, duration);
     } catch (Exception e) {
       if (e instanceof BindException) {
-        final AbstractRoutePlanner routePlanner = AbstractRoutePlanner.getActivePlanner();
+        final AbstractRoutePlanner routePlanner = getRoutePlanner();
         if (routePlanner != null) {
           log.warn("Cannot assign requested address {}, marking address as failing and retry!", routePlanner.getLastAddress());
           routePlanner.markAddressFailing();
@@ -448,7 +456,7 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
         if (e instanceof FriendlyException)
           throw e;
         if (e instanceof JsonParseException || e instanceof RateLimitException) {
-          final AbstractRoutePlanner routePlanner = AbstractRoutePlanner.getActivePlanner();
+          final AbstractRoutePlanner routePlanner = getRoutePlanner();
           if (routePlanner != null) {
             log.warn("Youtube RateLimit reached, marking address as failing and retry");
             routePlanner.markAddressFailing();

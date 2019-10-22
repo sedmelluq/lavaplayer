@@ -19,7 +19,6 @@ import org.apache.http.util.Args;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.Nullable;
 import java.net.Inet4Address;
 import java.net.Inet6Address;
 import java.net.InetAddress;
@@ -32,13 +31,6 @@ public abstract class AbstractRoutePlanner implements HttpRoutePlanner {
   private static final long FAILING_TIME = TimeUnit.DAYS.toMillis(7);
   private static final Logger log = LoggerFactory.getLogger(AbstractRoutePlanner.class);
 
-  private static AbstractRoutePlanner activePlanner;
-
-  @Nullable
-  public static AbstractRoutePlanner getActivePlanner() {
-    return activePlanner;
-  }
-
   protected final IpBlock ipBlock;
   protected final Map<String, Long> failingAddresses;
   private final SchemePortResolver schemePortResolver;
@@ -48,7 +40,6 @@ public abstract class AbstractRoutePlanner implements HttpRoutePlanner {
     this.ipBlock = ipBlock;
     this.failingAddresses = new HashMap<>();
     this.schemePortResolver = DefaultSchemePortResolver.INSTANCE;
-    activePlanner = this;
     log.info("Active RoutePlanner: {}", getClass().getCanonicalName());
   }
 
