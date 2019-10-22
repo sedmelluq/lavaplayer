@@ -47,6 +47,14 @@ public abstract class AbstractRoutePlanner implements HttpRoutePlanner {
     return this.lastAddress;
   }
 
+  public IpBlock getIpBlock() {
+    return ipBlock;
+  }
+
+  public Map<String, Long> getFailingAddresses() {
+    return failingAddresses;
+  }
+
   public final void markAddressFailing() {
     this.failingAddresses.put(this.lastAddress.toString(), System.currentTimeMillis());
     onAddressFailure(this.lastAddress);

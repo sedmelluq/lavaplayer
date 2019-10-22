@@ -20,6 +20,7 @@ public final class RotatingIpRoutePlanner extends AbstractRoutePlanner {
   private InetAddress currentAddress;
   private boolean next;
   private int index = 0;
+  private int rotateIndex;
 
   /**
    * @param ipBlock the block to perform balancing over.
@@ -38,7 +39,20 @@ public final class RotatingIpRoutePlanner extends AbstractRoutePlanner {
   }
 
   public void next() {
+    rotateIndex++;
     this.next = true;
+  }
+
+  public InetAddress getCurrentAddress() {
+    return currentAddress;
+  }
+
+  public int getIndex() {
+    return index;
+  }
+
+  public int getRotateIndex() {
+    return rotateIndex;
   }
 
   @Override
