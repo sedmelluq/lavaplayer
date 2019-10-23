@@ -25,6 +25,7 @@ import java.net.InetAddress;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 public abstract class AbstractRoutePlanner implements HttpRoutePlanner {
 
@@ -32,19 +33,20 @@ public abstract class AbstractRoutePlanner implements HttpRoutePlanner {
   private static final Logger log = LoggerFactory.getLogger(AbstractRoutePlanner.class);
 
   protected final IpBlock ipBlock;
+  private final AtomicReference<InetAddress> lastAddress;
   protected final Map<String, Long> failingAddresses;
   private final SchemePortResolver schemePortResolver;
-  private InetAddress lastAddress;
 
   protected AbstractRoutePlanner(final IpBlock ipBlock) {
     this.ipBlock = ipBlock;
+    this.lastAddress = new AtomicReference<>(null);
     this.failingAddresses = new HashMap<>();
     this.schemePortResolver = DefaultSchemePortResolver.INSTANCE;
     log.info("Active RoutePlanner: {}", getClass().getCanonicalName());
   }
 
   public final InetAddress getLastAddress() {
-    return this.lastAddress;
+    return this.lastAddress.get();
   }
 
   public IpBlock getIpBlock() {
@@ -56,8 +58,13 @@ public abstract class AbstractRoutePlanner implements HttpRoutePlanner {
   }
 
   public final void markAddressFailing() {
-    this.failingAddresses.put(this.lastAddress.toString(), System.currentTimeMillis());
-    onAddressFailure(this.lastAddress);
+    final InetAddress address = this.lastAddress.get();
+    if(address == null) {
+      log.warn("Call to markAddressFailing() before lastAddress was set", new RuntimeException("Report this to the devs: address is null"));
+      return;
+    }
+    this.failingAddresses.put(address.toString(), System.currentTimeMillis());
+    onAddressFailure(address);
   }
 
   public final void freeAddress(final InetAddress address) {
@@ -107,7 +114,7 @@ public abstract class AbstractRoutePlanner implements HttpRoutePlanner {
     final HttpHost target = new HttpHost(addresses.r, host.getHostName(), remotePort, host.getSchemeName());
     final HttpHost proxy = config.getProxy();
     final boolean secure = target.getSchemeName().equalsIgnoreCase("https");
-    this.lastAddress = addresses.l;
+    this.lastAddress.set(addresses.l);
     log.debug("Setting last address to {}", lastAddress);
     if (proxy == null) {
       return new HttpRoute(target, addresses.l, secure);
