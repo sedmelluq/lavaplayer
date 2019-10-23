@@ -32,7 +32,16 @@ public class BalancingIpRoutePlanner extends AbstractRoutePlanner {
    * @param ipFilter function to filter out certain IP addresses picked from the IP block, causing another random to be chosen.
    */
   public BalancingIpRoutePlanner(IpBlock ipBlock, Predicate<InetAddress> ipFilter) {
-    super(ipBlock);
+    this(ipBlock, ipFilter, true);
+  }
+
+  /**
+   * @param ipBlock             the block to perform balancing over.
+   * @param ipFilter            function to filter out certain IP addresses picked from the IP block, causing another random to be chosen.
+   * @param handleSearchFailure whether a search 429 should trigger the ip as failing
+   */
+  public BalancingIpRoutePlanner(IpBlock ipBlock, Predicate<InetAddress> ipFilter, boolean handleSearchFailure) {
+    super(ipBlock, handleSearchFailure);
     this.ipFilter = ipFilter;
   }
 
@@ -68,7 +77,7 @@ public class BalancingIpRoutePlanner extends AbstractRoutePlanner {
     InetAddress localAddress;
     int it = 0;
     do {
-      if(it++ > ipBlock.getSize() * 2) {
+      if (it++ > ipBlock.getSize() * 2) {
         throw new RuntimeException("Can't find a free ip");
       }
       localAddress = ipBlock.getRandomAddress();

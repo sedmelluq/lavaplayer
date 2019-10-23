@@ -30,11 +30,20 @@ public final class RotatingIpRoutePlanner extends AbstractRoutePlanner {
   }
 
   /**
-   * @param ipBlock  the block to perform balancing over.
-   * @param ipFilter function to filter out certain IP addresses picked from the IP block, causing another random to be chosen.
+   * @param ipBlock             the block to perform balancing over.
+   * @param ipFilter            function to filter out certain IP addresses picked from the IP block, causing another random to be chosen.
    */
   public RotatingIpRoutePlanner(final IpBlock ipBlock, final Predicate<InetAddress> ipFilter) {
-    super(ipBlock);
+    this(ipBlock, ipFilter, true);
+  }
+
+  /**
+   * @param ipBlock             the block to perform balancing over.
+   * @param ipFilter            function to filter out certain IP addresses picked from the IP block, causing another random to be chosen.
+   * @param handleSearchFailure whether a search 429 should trigger the ip as failing
+   */
+  public RotatingIpRoutePlanner(final IpBlock ipBlock, final Predicate<InetAddress> ipFilter, final boolean handleSearchFailure) {
+    super(ipBlock, handleSearchFailure);
     this.ipFilter = ipFilter;
   }
 

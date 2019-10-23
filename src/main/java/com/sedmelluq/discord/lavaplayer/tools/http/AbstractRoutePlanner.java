@@ -35,13 +35,19 @@ public abstract class AbstractRoutePlanner implements HttpRoutePlanner {
   private final ThreadLocal<InetAddress> lastAddresses;
   protected final Map<String, Long> failingAddresses;
   private final SchemePortResolver schemePortResolver;
+  private final boolean handleSearchFailure;
 
-  protected AbstractRoutePlanner(final IpBlock ipBlock) {
+  protected AbstractRoutePlanner(final IpBlock ipBlock, final boolean handleSearchFailure) {
     this.ipBlock = ipBlock;
     this.lastAddresses = new ThreadLocal<>();
     this.failingAddresses = new HashMap<>();
     this.schemePortResolver = DefaultSchemePortResolver.INSTANCE;
+    this.handleSearchFailure = handleSearchFailure;
     log.info("Active RoutePlanner: {}", getClass().getCanonicalName());
+  }
+
+  public boolean shouldHandleSearchFailure() {
+    return this.handleSearchFailure;
   }
 
   public final InetAddress getLastAddress() {
@@ -58,7 +64,7 @@ public abstract class AbstractRoutePlanner implements HttpRoutePlanner {
 
   public final void markAddressFailing() {
     final InetAddress address = this.lastAddresses.get();
-    if(address == null) {
+    if (address == null) {
       log.warn("Call to markAddressFailing() before lastAddresses was set", new RuntimeException("Report this to the devs: address is null"));
       return;
     }
