@@ -102,9 +102,7 @@ public final class RotatingIpRoutePlanner extends AbstractRoutePlanner {
     } else {
       throw new HttpException("Unknown IpBlock type: " + ipBlock.getType().getCanonicalName());
     }
-    if (next.get() && !this.next.compareAndSet(true, false)) {
-      log.warn("Trying to set next = false failed, cause next is already false! (Concurrency?)");
-    }
+    next.set(false);
     return new Tuple<>(currentAddress, remoteAddress);
   }
 
