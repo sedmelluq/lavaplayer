@@ -237,10 +237,8 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
    * @return Loaded YouTube track.
    */
   public AudioItem loadTrackWithVideoId(String videoId, boolean mustExist) {
-    InetAddress localAddress = null;
     try (HttpInterface httpInterface = getHttpInterface()) {
-      localAddress = httpInterface.getContext().getHttpRoute().getLocalAddress();
-      log.info("AbstractRoutePlanner last address: {}, used query address: {}", getRoutePlanner().getLastAddress(), localAddress);
+      //log.info("AbstractRoutePlanner last address: {}, used query address: {}", getRoutePlanner().getLastAddress(), httpInterface.getContext().getHttpRoute().getLocalAddress());
       final YoutubeJsonResponse jsonResponse = getTrackInfoFromMainPage(httpInterface, videoId, mustExist);
       if (jsonResponse == null || jsonResponse.getPlayerInfo() == null) {
         return AudioReference.NO_TRACK;
