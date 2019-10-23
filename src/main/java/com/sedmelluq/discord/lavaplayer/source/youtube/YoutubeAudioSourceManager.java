@@ -30,7 +30,6 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.net.BindException;
-import java.net.InetAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
@@ -491,6 +490,8 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
       }
     } else if ("UNPLAYABLE".equals(status) || "LOGIN_REQUIRED".equals(status)) {
       String unplayableReason = getUnplayableReason(statusBlock);
+      if (unplayableReason.equals("This video may be inappropriate for some users."))
+        unplayableReason = "Unable to load age restricted video."; // The original reason may be misleading
       cacheUnavailableVideo(videoId, unplayableReason);
       throw new FriendlyException(unplayableReason, COMMON, null);
     } else {
