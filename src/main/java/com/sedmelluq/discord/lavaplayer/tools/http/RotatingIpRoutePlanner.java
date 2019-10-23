@@ -10,6 +10,8 @@ import java.net.Inet4Address;
 import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.util.Random;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
 
 public final class RotatingIpRoutePlanner extends AbstractRoutePlanner {
@@ -17,10 +19,11 @@ public final class RotatingIpRoutePlanner extends AbstractRoutePlanner {
   private static final Logger log = LoggerFactory.getLogger(RotatingIpRoutePlanner.class);
   private static final Random random = new Random();
   private final Predicate<InetAddress> ipFilter;
-  private InetAddress currentAddress;
-  private boolean next;
+  private final AtomicBoolean next;
+  private final AtomicInteger rotateIndex;
+  private volatile InetAddress currentAddress;
+  private volatile InetAddress lastFailingAddress;
   private int index = 0;
-  private int rotateIndex;
 
   /**
    * @param ipBlock the block to perform balancing over.
@@ -30,8 +33,8 @@ public final class RotatingIpRoutePlanner extends AbstractRoutePlanner {
   }
 
   /**
-   * @param ipBlock             the block to perform balancing over.
-   * @param ipFilter            function to filter out certain IP addresses picked from the IP block, causing another random to be chosen.
+   * @param ipBlock  the block to perform balancing over.
+   * @param ipFilter function to filter out certain IP addresses picked from the IP block, causing another random to be chosen.
    */
   public RotatingIpRoutePlanner(final IpBlock ipBlock, final Predicate<InetAddress> ipFilter) {
     this(ipBlock, ipFilter, true);
@@ -45,11 +48,16 @@ public final class RotatingIpRoutePlanner extends AbstractRoutePlanner {
   public RotatingIpRoutePlanner(final IpBlock ipBlock, final Predicate<InetAddress> ipFilter, final boolean handleSearchFailure) {
     super(ipBlock, handleSearchFailure);
     this.ipFilter = ipFilter;
+    this.next = new AtomicBoolean(false);
+    this.rotateIndex = new AtomicInteger(0);
+    this.lastFailingAddress = null;
   }
 
   public void next() {
-    rotateIndex++;
-    this.next = true;
+    rotateIndex.getAndIncrement();
+    if (!this.next.compareAndSet(false, true)) {
+      log.warn("Call to next() even when previous next() hasn't completed yet");
+    }
   }
 
   public InetAddress getCurrentAddress() {
@@ -61,7 +69,7 @@ public final class RotatingIpRoutePlanner extends AbstractRoutePlanner {
   }
 
   public int getRotateIndex() {
-    return rotateIndex;
+    return rotateIndex.get();
   }
 
   @Override
@@ -69,7 +77,7 @@ public final class RotatingIpRoutePlanner extends AbstractRoutePlanner {
     InetAddress remoteAddress;
     if (ipBlock.getType() == Inet4Address.class) {
       if (remoteAddresses.l != null) {
-        if (currentAddress == null || next) {
+        if (currentAddress == null || next.get()) {
           currentAddress = extractLocalAddress();
           log.info("Selected " + currentAddress.toString() + " as new outgoing ip");
         }
@@ -79,7 +87,7 @@ public final class RotatingIpRoutePlanner extends AbstractRoutePlanner {
       }
     } else if (ipBlock.getType() == Inet6Address.class) {
       if (remoteAddresses.r != null) {
-        if (currentAddress == null || next) {
+        if (currentAddress == null || next.get()) {
           currentAddress = extractLocalAddress();
           log.info("Selected " + currentAddress.toString() + " as new outgoing ip");
         }
@@ -94,12 +102,19 @@ public final class RotatingIpRoutePlanner extends AbstractRoutePlanner {
     } else {
       throw new HttpException("Unknown IpBlock type: " + ipBlock.getType().getCanonicalName());
     }
-    this.next = false;
+    if (!this.next.compareAndSet(true, false)) {
+      log.warn("Trying to set next = false failed, cause next is already false! (Concurrency?)");
+    }
     return new Tuple<>(currentAddress, remoteAddress);
   }
 
   @Override
   protected void onAddressFailure(final InetAddress address) {
+    if (lastFailingAddress != null && lastFailingAddress.toString().equals(address.toString())) {
+      log.warn("Address {} was already failing, not triggering next()", address.toString());
+      return;
+    }
+    lastFailingAddress = address;
     next();
   }
 
