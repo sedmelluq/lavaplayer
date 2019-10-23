@@ -30,6 +30,7 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.net.BindException;
+import java.net.InetAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
@@ -236,7 +237,10 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
    * @return Loaded YouTube track.
    */
   public AudioItem loadTrackWithVideoId(String videoId, boolean mustExist) {
+    InetAddress localAddress = null;
     try (HttpInterface httpInterface = getHttpInterface()) {
+      localAddress = httpInterface.getContext().getHttpRoute().getLocalAddress();
+      log.info("AbstractRoutePlanner last address: {}, used query address: {}", getRoutePlanner().getLastAddress(), localAddress);
       final YoutubeJsonResponse jsonResponse = getTrackInfoFromMainPage(httpInterface, videoId, mustExist);
       if (jsonResponse == null || jsonResponse.getPlayerInfo() == null) {
         return AudioReference.NO_TRACK;
