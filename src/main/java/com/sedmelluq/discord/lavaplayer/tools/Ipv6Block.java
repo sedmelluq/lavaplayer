@@ -99,7 +99,8 @@ public class Ipv6Block extends IpBlock<Inet6Address> {
   }
 
   private static Inet6Address longToAddress(long l) {
-    final long t = random.nextLong();
+    final byte[] least = new byte[8];
+    random.nextBytes(least);
     byte[] b = new byte[]{
         (byte) (l >> 56),
         (byte) (l >> 48),
@@ -109,14 +110,14 @@ public class Ipv6Block extends IpBlock<Inet6Address> {
         (byte) (l >> 16),
         (byte) (l >> 8),
         (byte) l,
-        (byte) (t >> 56),
-        (byte) (t >> 48),
-        (byte) (t >> 40),
-        (byte) (t >> 32),
-        (byte) (t >> 24),
-        (byte) (t >> 16),
-        (byte) (t >> 8),
-        (byte) t
+        least[0],
+        least[1],
+        least[2],
+        least[3],
+        least[4],
+        least[5],
+        least[6],
+        least[7]
     };
 
     try {
