@@ -84,14 +84,6 @@ public final class RotatingIpRoutePlanner extends AbstractRoutePlanner {
     return rotateIndex.get();
   }
 
-
-  private final ThreadLocal<String> host = new ThreadLocal<>();
-  @Override
-  public HttpRoute determineRoute(HttpHost host, HttpRequest request, HttpContext context) throws HttpException {
-    this.host.set(request.getRequestLine().getUri());
-    return super.determineRoute(host, request, context);
-  }
-
   @Override
   protected Tuple<InetAddress, InetAddress> determineAddressPair(final Tuple<Inet4Address, Inet6Address> remoteAddresses) throws HttpException {
     InetAddress currentAddress = null;
@@ -128,7 +120,6 @@ public final class RotatingIpRoutePlanner extends AbstractRoutePlanner {
     if (currentAddress == null && index.get() > 0)
       currentAddress = ipBlock.getAddressAtIndex(index.get() - 1);
     next.set(false);
-    log.info("Using {} for request to {}", currentAddress, host.get());
     if(threadAddress != null && threadAddress.get() == null)
       threadAddress.set((Inet6Address) currentAddress);
     return new Tuple<>(currentAddress, remoteAddress);
