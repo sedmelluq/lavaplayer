@@ -3,6 +3,10 @@ package com.sedmelluq.discord.lavaplayer.tools.http;
 import com.sedmelluq.discord.lavaplayer.tools.IpBlock;
 import com.sedmelluq.discord.lavaplayer.tools.Tuple;
 import org.apache.http.HttpException;
+import org.apache.http.HttpHost;
+import org.apache.http.HttpRequest;
+import org.apache.http.conn.routing.HttpRoute;
+import org.apache.http.protocol.HttpContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -80,6 +84,14 @@ public final class RotatingIpRoutePlanner extends AbstractRoutePlanner {
     return rotateIndex.get();
   }
 
+
+  private final ThreadLocal<String> host = new ThreadLocal<>();
+  @Override
+  public HttpRoute determineRoute(HttpHost host, HttpRequest request, HttpContext context) throws HttpException {
+    this.host.set(request.getRequestLine().getUri());
+    return super.determineRoute(host, request, context);
+  }
+
   @Override
   protected Tuple<InetAddress, InetAddress> determineAddressPair(final Tuple<Inet4Address, Inet6Address> remoteAddresses) throws HttpException {
     InetAddress currentAddress = null;
@@ -116,6 +128,7 @@ public final class RotatingIpRoutePlanner extends AbstractRoutePlanner {
     if (currentAddress == null && index.get() > 0)
       currentAddress = ipBlock.getAddressAtIndex(index.get() - 1);
     next.set(false);
+    log.info("Using {} for request to {}", currentAddress, host.get());
     return new Tuple<>(currentAddress, remoteAddress);
   }
 
