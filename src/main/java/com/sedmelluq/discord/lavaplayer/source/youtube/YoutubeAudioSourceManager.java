@@ -109,7 +109,7 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
       if (request.getURI().toString().contains("generate_204"))
         return;
       request.setHeader("x-youtube-client-name", "1");
-      request.setHeader("x-youtube-client-version", "2.20191008.04.01");
+      request.setHeader("x-youtube-client-version", "2.20191022.04.00");
     };
 
     if (routePlanner == null) {
