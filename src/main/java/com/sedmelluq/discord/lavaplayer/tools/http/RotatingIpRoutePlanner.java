@@ -27,7 +27,6 @@ public final class RotatingIpRoutePlanner extends AbstractRoutePlanner {
   private final AtomicBoolean next;
   private final AtomicInteger rotateIndex;
   private final AtomicLong index;
-  private final ThreadLocal<Inet6Address> threadAddress;
   private volatile InetAddress lastFailingAddress;
 
   /**
@@ -57,10 +56,6 @@ public final class RotatingIpRoutePlanner extends AbstractRoutePlanner {
     this.rotateIndex = new AtomicInteger(0);
     this.index = new AtomicLong(0);
     this.lastFailingAddress = null;
-    if (ipBlock.getType() == Inet6Address.class)
-      threadAddress = new ThreadLocal<>();
-    else
-      threadAddress = null;
   }
 
   public void next() {
@@ -115,13 +110,9 @@ public final class RotatingIpRoutePlanner extends AbstractRoutePlanner {
       throw new HttpException("Unknown IpBlock type: " + ipBlock.getType().getCanonicalName());
     }
 
-    if (threadAddress != null && threadAddress.get() != null)
-      currentAddress = threadAddress.get();
     if (currentAddress == null && index.get() > 0)
       currentAddress = ipBlock.getAddressAtIndex(index.get() - 1);
     next.set(false);
-    if(threadAddress != null && threadAddress.get() == null)
-      threadAddress.set((Inet6Address) currentAddress);
     return new Tuple<>(currentAddress, remoteAddress);
   }
 
