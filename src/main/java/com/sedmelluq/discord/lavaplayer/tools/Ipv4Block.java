@@ -61,10 +61,10 @@ public final class Ipv4Block extends IpBlock<Inet4Address> {
   }
 
   @Override
-  public Inet4Address getAddressAtIndex(final int index) {
+  public Inet4Address getAddressAtIndex(final long index) {
     if (index > Math.pow(2, NBITS - maskBits))
       throw new IllegalArgumentException("Index out of bounds for provided CIDR Block");
-    return intToAddress(address + index);
+    return intToAddress(address + (int) index);
   }
 
   @Override

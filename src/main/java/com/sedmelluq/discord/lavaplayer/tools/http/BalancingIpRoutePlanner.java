@@ -19,6 +19,7 @@ public class BalancingIpRoutePlanner extends AbstractRoutePlanner {
 
   private static final Logger log = LoggerFactory.getLogger(BalancingIpRoutePlanner.class);
   private final Predicate<InetAddress> ipFilter;
+  private final ThreadLocal<InetAddress> threadAddress;
 
   /**
    * @param ipBlock the block to perform balancing over.
@@ -43,6 +44,7 @@ public class BalancingIpRoutePlanner extends AbstractRoutePlanner {
   public BalancingIpRoutePlanner(IpBlock ipBlock, Predicate<InetAddress> ipFilter, boolean handleSearchFailure) {
     super(ipBlock, handleSearchFailure);
     this.ipFilter = ipFilter;
+    this.threadAddress = new ThreadLocal<>();
   }
 
   @Override
@@ -70,10 +72,13 @@ public class BalancingIpRoutePlanner extends AbstractRoutePlanner {
     } else {
       throw new HttpException("Unknown IpBlock type: " + ipBlock.getType().getCanonicalName());
     }
+    threadAddress.set(localAddress);
     return new Tuple<>(localAddress, remoteAddress);
   }
 
   private InetAddress getRandomAddress(final IpBlock ipBlock) {
+    if(threadAddress.get() != null)
+      return threadAddress.get();
     InetAddress localAddress;
     int it = 0;
     do {

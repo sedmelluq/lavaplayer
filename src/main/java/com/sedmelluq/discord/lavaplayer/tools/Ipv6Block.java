@@ -77,7 +77,7 @@ public class Ipv6Block extends IpBlock<Inet6Address> {
   }
 
   @Override
-  public Inet6Address getAddressAtIndex(final int index) {
+  public Inet6Address getAddressAtIndex(final long index) {
     if (index > Math.pow(2, 64 - maskBits))
       throw new IllegalArgumentException("Index out of bounds for provided CIDR Block");
     return longToAddress(prefix + index);
@@ -99,6 +99,7 @@ public class Ipv6Block extends IpBlock<Inet6Address> {
   }
 
   private static Inet6Address longToAddress(long l) {
+    final long t = random.nextLong();
     byte[] b = new byte[]{
         (byte) (l >> 56),
         (byte) (l >> 48),
@@ -108,8 +109,14 @@ public class Ipv6Block extends IpBlock<Inet6Address> {
         (byte) (l >> 16),
         (byte) (l >> 8),
         (byte) l,
-        0, 0, 0, 0,
-        0, 0, 0, 0
+        (byte) (t >> 56),
+        (byte) (t >> 48),
+        (byte) (t >> 40),
+        (byte) (t >> 32),
+        (byte) (t >> 24),
+        (byte) (t >> 16),
+        (byte) (t >> 8),
+        (byte) t
     };
 
     try {

@@ -12,6 +12,7 @@ import java.net.InetAddress;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Predicate;
 
 public final class RotatingIpRoutePlanner extends AbstractRoutePlanner {
@@ -21,9 +22,9 @@ public final class RotatingIpRoutePlanner extends AbstractRoutePlanner {
   private final Predicate<InetAddress> ipFilter;
   private final AtomicBoolean next;
   private final AtomicInteger rotateIndex;
-  private volatile InetAddress currentAddress;
+  private final AtomicLong index;
+  private final ThreadLocal<Inet6Address> threadAddress;
   private volatile InetAddress lastFailingAddress;
-  private int index = 0;
 
   /**
    * @param ipBlock the block to perform balancing over.
@@ -50,7 +51,12 @@ public final class RotatingIpRoutePlanner extends AbstractRoutePlanner {
     this.ipFilter = ipFilter;
     this.next = new AtomicBoolean(false);
     this.rotateIndex = new AtomicInteger(0);
+    this.index = new AtomicLong(0);
     this.lastFailingAddress = null;
+    if (ipBlock.getType() == Inet6Address.class)
+      threadAddress = new ThreadLocal<>();
+    else
+      threadAddress = null;
   }
 
   public void next() {
@@ -61,11 +67,13 @@ public final class RotatingIpRoutePlanner extends AbstractRoutePlanner {
   }
 
   public InetAddress getCurrentAddress() {
-    return currentAddress;
+    if (index.get() == 0)
+      return null;
+    return ipBlock.getAddressAtIndex(index.get() - 1);
   }
 
-  public int getIndex() {
-    return index;
+  public long getIndex() {
+    return index.get();
   }
 
   public int getRotateIndex() {
@@ -74,10 +82,11 @@ public final class RotatingIpRoutePlanner extends AbstractRoutePlanner {
 
   @Override
   protected Tuple<InetAddress, InetAddress> determineAddressPair(final Tuple<Inet4Address, Inet6Address> remoteAddresses) throws HttpException {
+    InetAddress currentAddress = null;
     InetAddress remoteAddress;
     if (ipBlock.getType() == Inet4Address.class) {
       if (remoteAddresses.l != null) {
-        if (currentAddress == null || next.get()) {
+        if (index.get() == 0 || next.get()) {
           currentAddress = extractLocalAddress();
           log.info("Selected " + currentAddress.toString() + " as new outgoing ip");
         }
@@ -87,13 +96,12 @@ public final class RotatingIpRoutePlanner extends AbstractRoutePlanner {
       }
     } else if (ipBlock.getType() == Inet6Address.class) {
       if (remoteAddresses.r != null) {
-        if (currentAddress == null || next.get()) {
+        if (index.get() == 0 || next.get()) {
           currentAddress = extractLocalAddress();
           log.info("Selected " + currentAddress.toString() + " as new outgoing ip");
         }
         remoteAddress = remoteAddresses.r;
       } else if (remoteAddresses.l != null) {
-        currentAddress = null;
         remoteAddress = remoteAddresses.l;
         log.warn("Could not look up AAAA record for host. Falling back to unbalanced IPv4.");
       } else {
@@ -102,6 +110,11 @@ public final class RotatingIpRoutePlanner extends AbstractRoutePlanner {
     } else {
       throw new HttpException("Unknown IpBlock type: " + ipBlock.getType().getCanonicalName());
     }
+
+    if (threadAddress != null && threadAddress.get() != null)
+      currentAddress = threadAddress.get();
+    if (currentAddress == null && index.get() > 0)
+      currentAddress = ipBlock.getAddressAtIndex(index.get() - 1);
     next.set(false);
     return new Tuple<>(currentAddress, remoteAddress);
   }
@@ -124,13 +137,13 @@ public final class RotatingIpRoutePlanner extends AbstractRoutePlanner {
         throw new RuntimeException("Can't find a free ip");
       }
       if (ipBlock.getSize() >= 128)
-        index += random.nextInt(10) + 1;
+        index.getAndAdd(random.nextInt(10) + 1);
       else
-        ++index;
+        index.incrementAndGet();
       try {
-        localAddress = ipBlock.getAddressAtIndex(index - 1);
+        localAddress = ipBlock.getAddressAtIndex(index.get() - 1);
       } catch (final Exception ex) {
-        index = 0;
+        index.set(0);
         localAddress = null;
       }
     } while (localAddress == null || !ipFilter.test(localAddress) || !isValidAddress(localAddress));
