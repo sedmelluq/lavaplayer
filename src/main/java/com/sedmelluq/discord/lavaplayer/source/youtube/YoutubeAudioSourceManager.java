@@ -456,7 +456,7 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
         if (e instanceof JsonParseException || e instanceof RateLimitException) {
           final AbstractRoutePlanner routePlanner = getRoutePlanner();
           if (routePlanner != null) {
-            log.warn("YouTube rate limit reached, marking address as failing and retry");
+            log.warn("YouTube rate limit reached, marking address {} as failing and retry", routePlanner.getLastAddress());
             routePlanner.markAddressFailing();
             return getTrackInfoFromMainPage(httpInterface, videoId, mustExist);
           }
