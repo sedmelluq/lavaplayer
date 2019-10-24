@@ -129,6 +129,8 @@ public final class RotatingIpRoutePlanner extends AbstractRoutePlanner {
       currentAddress = ipBlock.getAddressAtIndex(index.get() - 1);
     next.set(false);
     log.info("Using {} for request to {}", currentAddress, host.get());
+    if(threadAddress != null && threadAddress.get() == null)
+      threadAddress.set((Inet6Address) currentAddress);
     return new Tuple<>(currentAddress, remoteAddress);
   }
 
