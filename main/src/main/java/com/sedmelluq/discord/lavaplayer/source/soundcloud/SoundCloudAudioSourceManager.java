@@ -35,16 +35,15 @@ import java.net.URISyntaxException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.StringJoiner;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.regex.MatchResult;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -134,12 +133,12 @@ public class SoundCloudAudioSourceManager implements AudioSourceManager, HttpCon
   }
 
   @Override
-  public void encodeTrack(AudioTrack track, DataOutput output) throws IOException {
+  public void encodeTrack(AudioTrack track, DataOutput output) {
     // No extra information to save
   }
 
   @Override
-  public AudioTrack decodeTrack(AudioTrackInfo trackInfo, DataInput input) throws IOException {
+  public AudioTrack decodeTrack(AudioTrackInfo trackInfo, DataInput input) {
     return new SoundCloudAudioTrack(trackInfo, this);
   }
 
@@ -336,7 +335,7 @@ public class SoundCloudAudioSourceManager implements AudioSourceManager, HttpCon
     throw new IllegalStateException("Could not find track information block.");
   }
 
-  private static String nonMobileUrl(String url) {
+  private String nonMobileUrl(String url) {
     if (url.startsWith("https://m.")) {
       return "https://" + url.substring("https://m.".length());
     } else {
@@ -388,17 +387,17 @@ public class SoundCloudAudioSourceManager implements AudioSourceManager, HttpCon
     }
 
     JsonBrowser trackList = JsonBrowser.parse(response.getEntity().getContent());
-    int blockedCount = 0;
+    AtomicInteger blockedCount = new AtomicInteger();
 
     for (JsonBrowser trackInfoJson : trackList.values()) {
       if ("BLOCK".equals(trackInfoJson.get("policy").text())) {
-        blockedCount++;
+        blockedCount.getAndIncrement();
       } else {
         tracks.add(buildAudioTrack(trackInfoJson, null));
       }
     }
 
-    if (blockedCount > 0) {
+    if (blockedCount.get() > 0) {
       log.debug("In soundcloud playlist {}, {} tracks were omitted because they are blocked.", playlistWebUrl, blockedCount);
     }
 
@@ -433,11 +432,9 @@ public class SoundCloudAudioSourceManager implements AudioSourceManager, HttpCon
 
   private static void sortPlaylistTracks(List<AudioTrack> tracks, List<String> trackIds) {
     final Map<String, Integer> positions = new HashMap<>();
-    for (int i = 0; i < trackIds.size(); i++) {
-      positions.put(trackIds.get(i), i);
-    }
+    for (int i = 0; i < trackIds.size(); i++) positions.put(trackIds.get(i), i);
 
-    Collections.sort(tracks, Comparator.comparingInt(o -> getSortPosition(positions, o)));
+    tracks.sort(Comparator.comparingInt(o -> getSortPosition(positions, o)));
   }
 
   private static int getSortPosition(Map<String, Integer> positions, AudioTrack track) {
