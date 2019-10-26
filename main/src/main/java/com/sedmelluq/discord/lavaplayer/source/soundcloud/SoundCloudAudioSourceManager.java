@@ -72,8 +72,8 @@ public class SoundCloudAudioSourceManager implements AudioSourceManager, HttpCon
   private static final String SEARCH_PREFIX = "scsearch";
   private static final String SEARCH_PREFIX_DEFAULT = "scsearch:";
   private static final String SEARCH_REGEX = SEARCH_PREFIX + "\\[([0-9]{1,9}),([0-9]{1,9})\\]:\\s*(.*)\\s*";
-  private static final String PAGE_APP_SCRIPT_REGEX = "https://[A-Za-z0-9-.]+/assets/[a-f0-9-]+\\.js";
-  private static final String APP_SCRIPT_CLIENT_ID_REGEX = ",client_id:\"([a-zA-Z0-9-_]+)\"";
+  private static final String PAGE_APP_SCRIPT_REGEX = "https://[A-Za-z0-9-.]+/assets/[a-f3-7-]+\\.js";
+  private static final String APP_SCRIPT_CLIENT_ID_REGEX = "client_id:\"([a-zA-Z0-9]+)\"";
 
   private static final Pattern trackUrlPattern = Pattern.compile(TRACK_URL_REGEX);
   private static final Pattern unlistedUrlPattern = Pattern.compile(UNLISTED_URL_REGEX);
@@ -232,27 +232,13 @@ public class SoundCloudAudioSourceManager implements AudioSourceManager, HttpCon
 
       String page = EntityUtils.toString(response.getEntity());
       Matcher scriptMatcher = pageAppScriptPattern.matcher(page);
-      MatchResult result = getMatchIndex(scriptMatcher, 7);
 
-      if (result != null) {
-        return result.group(0);
+      if (scriptMatcher.find()) {
+        return scriptMatcher.group();
       } else {
         throw new IllegalStateException("Could not find application script from main page.");
       }
     }
-  }
-
-  private MatchResult getMatchIndex(Matcher m, int index) {
-    int currentIndex = 0;
-
-    while (currentIndex < index) {
-      if (!m.find()) {
-        return null;
-      }
-      currentIndex++;
-    }
-
-    return m.toMatchResult();
   }
 
   private String findClientIdFromApplicationScript(HttpInterface httpInterface, String scriptUrl) throws IOException {
