@@ -63,7 +63,6 @@ public class SoundCloudAudioSourceManager implements AudioSourceManager, HttpCon
   private static final long CLIENT_ID_REFRESH_INTERVAL = TimeUnit.HOURS.toMillis(1);
 
   private static final String CHARSET = "UTF-8";
-  private static final String LATEST_CLIENT_ID = "2t9loNQH90kzJcsFCODdigxfp325aq4z";
   private static final String TRACK_URL_REGEX = "^(?:http://|https://|)(?:www\\.|)(?:m\\.|)soundcloud\\.com/([a-zA-Z0-9-_]+)/([a-zA-Z0-9-_]+)(?:\\?.*|)$";
   private static final String UNLISTED_URL_REGEX = "^(?:http://|https://|)(?:www\\.|)(?:m\\.|)soundcloud\\.com/([a-zA-Z0-9-_]+)/([a-zA-Z0-9-_]+)/s-([a-zA-Z0-9-_]+)(?:\\?.*|)$";
   private static final String PLAYLIST_URL_REGEX = "^(?:http://|https://|)(?:www\\.|)(?:m\\.|)soundcloud\\.com/([a-zA-Z0-9-_]+)/sets/([a-zA-Z0-9-_]+)(?:\\?.*|)$";
@@ -106,8 +105,7 @@ public class SoundCloudAudioSourceManager implements AudioSourceManager, HttpCon
     this.allowSearch = allowSearch;
     this.clientIdLock = new Object();
     this.lastClientIdUpdate = 0;
-
-    setClientId(LATEST_CLIENT_ID);
+    updateClientId();
   }
 
   @Override
@@ -158,9 +156,9 @@ public class SoundCloudAudioSourceManager implements AudioSourceManager, HttpCon
     String[] parts = trackId.split("\\|");
 
     if (parts.length < 2) {
-      return "https://api.soundcloud.com/tracks/" + trackId + "/stream?client_id=" + getClientId();
+      return "https://api.soundcloud.com/tracks/" + trackId + "/stream?client_id=" + this.clientId;
     } else {
-      return "https://api.soundcloud.com/tracks/" + parts[0] + "/stream?client_id=" + getClientId() + "&secret_token=" + parts[1];
+      return "https://api.soundcloud.com/tracks/" + parts[0] + "/stream?client_id=" + this.clientId + "&secret_token=" + parts[1];
     }
   }
 
@@ -193,20 +191,14 @@ public class SoundCloudAudioSourceManager implements AudioSourceManager, HttpCon
       }
 
       lastClientIdUpdate = now;
-      log.info("Updating SoundCloud client ID (current is {}).", clientId);
+      log.info("Requesting SoundCloud client ID.");
 
       try {
-        clientId = findClientIdFromSite();
-        log.info("Updating SoundCloud client ID succeeded, new ID is {}.", clientId);
+        this.clientId = findClientIdFromSite();
+        log.info("Requesting SoundCloud client ID succeeded, new ID is {}.", clientId);
       } catch (Exception e) {
-        log.error("SoundCloud client ID update failed.", e);
+        log.error("SoundCloud client ID request failed.", e);
       }
-    }
-  }
-
-  public void setClientId(String clientId) {
-    synchronized (clientIdLock) {
-      this.clientId = clientId;
     }
   }
 
