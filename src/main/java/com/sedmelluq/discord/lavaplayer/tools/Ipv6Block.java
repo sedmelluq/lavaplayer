@@ -16,13 +16,6 @@ import java.util.regex.Pattern;
  */
 public class Ipv6Block extends IpBlock<Inet6Address> {
 
-  public static void main(final String[] args) {
-    final Ipv6Block block = new Ipv6Block("cafe:eaea:beef::/48");
-    for (int i = 0; i < 100; i++) {
-      System.out.println(block.getRandomAddress());
-    }
-  }
-
   public static boolean isIpv6CidrBlock(final String cidr) {
     return CIDR_REGEX.matcher(cidr).matches();
   }
