@@ -1,5 +1,6 @@
 package com.sedmelluq.discord.lavaplayer.tools;
 
+import java.math.BigInteger;
 import java.net.InetAddress;
 
 public abstract class IpBlock<I extends InetAddress> {
@@ -8,7 +9,11 @@ public abstract class IpBlock<I extends InetAddress> {
 
   public abstract I getAddressAtIndex(long index);
 
+  public I getAddressAtIndex(BigInteger index) {
+    return getAddressAtIndex(index.longValue());
+  }
+
   public abstract Class<I> getType();
 
-  public abstract long getSize();
+  public abstract BigInteger getSize();
 }

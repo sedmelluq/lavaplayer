@@ -6,6 +6,7 @@ import org.apache.http.HttpException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.math.BigInteger;
 import java.net.Inet4Address;
 import java.net.Inet6Address;
 import java.net.InetAddress;
@@ -75,11 +76,12 @@ public class BalancingIpRoutePlanner extends AbstractRoutePlanner {
 
   private InetAddress getRandomAddress(final IpBlock ipBlock) {
     InetAddress localAddress;
-    int it = 0;
+    BigInteger it = BigInteger.valueOf(0);
     do {
-      if (it++ > ipBlock.getSize() * 2) {
+      if (ipBlock.getSize().multiply(BigInteger.valueOf(2)).compareTo(it) < 0) {
         throw new RuntimeException("Can't find a free ip");
       }
+      it = it.add(BigInteger.ONE);
       localAddress = ipBlock.getRandomAddress();
     } while (localAddress == null || !ipFilter.test(localAddress) || !isValidAddress(localAddress));
     return localAddress;

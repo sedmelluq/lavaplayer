@@ -3,6 +3,7 @@ package com.sedmelluq.discord.lavaplayer.tools;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.math.BigInteger;
 import java.net.Inet4Address;
 import java.net.UnknownHostException;
 import java.util.Random;
@@ -46,6 +47,7 @@ public final class Ipv4Block extends IpBlock<Inet4Address> {
       this.maskBits = Integer.parseInt(matcher.group(5));
     } else
       throw new IllegalArgumentException("Could not parse [" + cidr + "]");
+    log.info("Using Ipv4Block with {} addresses", getSize());
   }
 
   @Override
@@ -73,8 +75,8 @@ public final class Ipv4Block extends IpBlock<Inet4Address> {
   }
 
   @Override
-  public long getSize() {
-    return (long) Math.pow(2, NBITS - maskBits);
+  public BigInteger getSize() {
+    return BigInteger.valueOf(2).pow(NBITS - maskBits);
   }
 
   private Inet4Address intToAddress(final int val) {
