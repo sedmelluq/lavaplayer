@@ -59,8 +59,7 @@ public class HttpAudioSourceManager extends ProbingAudioSourceManager implements
         HttpClientTools
             .createSharedCookiesHttpBuilder()
             .setRedirectStrategy(new HttpClientTools.NoRedirectsStrategy()),
-        HttpClientTools.DEFAULT_REQUEST_CONFIG,
-        null
+        HttpClientTools.DEFAULT_REQUEST_CONFIG
     );
   }
 

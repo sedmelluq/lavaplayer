@@ -29,7 +29,7 @@ import java.util.stream.Stream;
 /**
  * Handles parsing and caching of signature ciphers
  */
-public class YoutubeSignatureCipherManager {
+public class YoutubeSignatureCipherManager implements YoutubeSignatureResolver {
   private static final Logger log = LoggerFactory.getLogger(YoutubeSignatureCipherManager.class);
 
   private static final String VARIABLE_PART = "[a-zA-Z_\\$][a-zA-Z_0-9]*";
@@ -90,7 +90,8 @@ public class YoutubeSignatureCipherManager {
    * @return Valid playback URL
    * @throws IOException On network IO error
    */
-  public URI getValidUrl(HttpInterface httpInterface, String playerScript, YoutubeTrackFormat format) throws IOException {
+  @Override
+  public URI resolveFormatUrl(HttpInterface httpInterface, String playerScript, YoutubeTrackFormat format) throws IOException {
     String signature = format.getSignature();
     URI initialUrl = format.getUrl();
 
@@ -118,7 +119,8 @@ public class YoutubeSignatureCipherManager {
    * @return Valid dash XML URL
    * @throws IOException On network IO error
    */
-  public String getValidDashUrl(HttpInterface httpInterface, String playerScript, String dashUrl) throws IOException {
+  @Override
+  public String resolveDashUrl(HttpInterface httpInterface, String playerScript, String dashUrl) throws IOException {
     Matcher matcher = signatureExtraction.matcher(dashUrl);
 
     if (!matcher.find()) {
