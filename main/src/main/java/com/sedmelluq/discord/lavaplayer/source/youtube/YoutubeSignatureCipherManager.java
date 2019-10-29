@@ -139,7 +139,7 @@ public class YoutubeSignatureCipherManager {
         try (CloseableHttpResponse response = httpInterface.execute(new HttpGet(parseTokenScriptUrl(cipherScriptUrl)))) {
           validateResponseCode(response);
 
-          cipherKey = extractTokensFromScript(IOUtils.toString(response.getEntity().getContent(), "UTF-8"), cipherScriptUrl);
+          cipherKey = extractTokensFromScript(IOUtils.toString(response.getEntity().getContent(), StandardCharsets.UTF_8), cipherScriptUrl);
           cipherCache.put(cipherScriptUrl, cipherKey);
         }
       }

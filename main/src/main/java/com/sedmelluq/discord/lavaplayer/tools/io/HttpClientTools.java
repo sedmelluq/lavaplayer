@@ -23,6 +23,7 @@ import org.apache.http.config.MessageConstraints;
 import org.apache.http.config.Registry;
 import org.apache.http.config.RegistryBuilder;
 import org.apache.http.conn.HttpClientConnectionManager;
+import org.apache.http.conn.routing.HttpRoutePlanner;
 import org.apache.http.conn.socket.ConnectionSocketFactory;
 import org.apache.http.conn.socket.PlainConnectionSocketFactory;
 import org.apache.http.conn.ssl.DefaultHostnameVerifier;
@@ -102,10 +103,31 @@ public class HttpClientTools {
   }
 
   /**
+   * @return Default HTTP interface manager with a custom HttpRoutePlanner and thread-local context
+   */
+  public static HttpInterfaceManager createDefaultThreadLocalManager(HttpRequestModifier requestModifier, HttpRoutePlanner routePlanner) {
+    return new ThreadLocalHttpInterfaceManager(
+            createSharedCookiesHttpBuilder().setRoutePlanner(routePlanner),
+            DEFAULT_REQUEST_CONFIG,
+            requestModifier
+    );
+  }
+
+  /**
    * @return HTTP interface manager with thread-local context, ignores cookies
    */
   public static HttpInterfaceManager createCookielessThreadLocalManager() {
     return new ThreadLocalHttpInterfaceManager(createHttpBuilder(NO_COOKIES_REQUEST_CONFIG), NO_COOKIES_REQUEST_CONFIG,
+        null);
+  }
+
+  /**
+   * @return HTTP interface manager with thread-local context, ignores cookies
+   */
+  public static HttpInterfaceManager createCookielessThreadLocalManager(final HttpRoutePlanner routePlanner) {
+    return new ThreadLocalHttpInterfaceManager(
+        createHttpBuilder(NO_COOKIES_REQUEST_CONFIG).setRoutePlanner(routePlanner),
+        NO_COOKIES_REQUEST_CONFIG,
         null);
   }
 

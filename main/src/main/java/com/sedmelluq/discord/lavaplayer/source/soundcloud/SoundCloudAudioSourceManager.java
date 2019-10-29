@@ -9,12 +9,7 @@ import com.sedmelluq.discord.lavaplayer.tools.io.HttpClientTools;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpConfigurable;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterface;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterfaceManager;
-import com.sedmelluq.discord.lavaplayer.track.AudioItem;
-import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
-import com.sedmelluq.discord.lavaplayer.track.AudioReference;
-import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
-import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo;
-import com.sedmelluq.discord.lavaplayer.track.BasicAudioPlaylist;
+import com.sedmelluq.discord.lavaplayer.track.*;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
@@ -34,13 +29,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.StringJoiner;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -99,6 +88,7 @@ public class SoundCloudAudioSourceManager implements AudioSourceManager, HttpCon
 
   /**
    * Create an instance.
+   *
    * @param allowSearch Whether to allow search queries as identifiers
    */
   public SoundCloudAudioSourceManager(boolean allowSearch) {
@@ -319,7 +309,8 @@ public class SoundCloudAudioSourceManager implements AudioSourceManager, HttpCon
         trackInfoJson.get("duration").as(Integer.class),
         secretToken != null ? trackId + "|" + secretToken : trackId,
         false,
-        trackInfoJson.get("permalink_url").text()
+        trackInfoJson.get("permalink_url").text(),
+        Collections.singletonMap("artworkUrl", trackInfoJson.get("artwork_url").text())
     );
 
     return new SoundCloudAudioTrack(trackInfo, this);
@@ -496,15 +487,15 @@ public class SoundCloudAudioSourceManager implements AudioSourceManager, HttpCon
 
   private JsonBrowser loadLikedListForUserId(HttpInterface httpInterface, UserInfo userInfo) throws IOException {
     return withClientIdRetry(httpInterface, response -> {
-      int statusCode = response.getStatusLine().getStatusCode();
+          int statusCode = response.getStatusLine().getStatusCode();
 
-      if (statusCode != 200) {
-        throw new IOException("Invalid status code for liked tracks response: " + statusCode);
-      }
+          if (statusCode != 200) {
+            throw new IOException("Invalid status code for liked tracks response: " + statusCode);
+          }
 
-      return JsonBrowser.parse(response.getEntity().getContent());
-    }, () ->
-        new URI("https://api-v2.soundcloud.com/users/" + userInfo.id + "/likes?client_id=" + getClientId() + "&limit=200&offset=0")
+          return JsonBrowser.parse(response.getEntity().getContent());
+        }, () ->
+            new URI("https://api-v2.soundcloud.com/users/" + userInfo.id + "/likes?client_id=" + getClientId() + "&limit=200&offset=0")
     );
   }
 

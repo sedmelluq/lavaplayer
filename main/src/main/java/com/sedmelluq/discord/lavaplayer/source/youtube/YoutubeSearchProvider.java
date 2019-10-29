@@ -2,7 +2,8 @@ package com.sedmelluq.discord.lavaplayer.source.youtube;
 
 import com.sedmelluq.discord.lavaplayer.tools.DataFormatTools;
 import com.sedmelluq.discord.lavaplayer.tools.ExceptionTools;
-import com.sedmelluq.discord.lavaplayer.tools.http.HttpRequestModifier;
+import com.sedmelluq.discord.lavaplayer.tools.RateLimitException;
+import com.sedmelluq.discord.lavaplayer.tools.http.AbstractRoutePlanner;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpClientTools;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpConfigurable;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterface;
@@ -15,6 +16,7 @@ import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.utils.URIBuilder;
+import org.apache.http.conn.routing.HttpRoutePlanner;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -23,6 +25,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.net.BindException;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -48,6 +51,15 @@ public class YoutubeSearchProvider implements HttpConfigurable {
   }
 
   /**
+   * @param sourceManager Youtube source manager used for created tracks
+   * @param routePlanner  RoutePlanner to avoid getting 429's
+   */
+  public YoutubeSearchProvider(YoutubeAudioSourceManager sourceManager, HttpRoutePlanner routePlanner) {
+    this.sourceManager = sourceManager;
+    this.httpInterfaceManager = HttpClientTools.createCookielessThreadLocalManager(routePlanner);
+  }
+
+  /**
    * @param query Search query.
    * @return Playlist of the first page of results.
    */
@@ -60,6 +72,14 @@ public class YoutubeSearchProvider implements HttpConfigurable {
       try (CloseableHttpResponse response = httpInterface.execute(new HttpGet(url))) {
         int statusCode = response.getStatusLine().getStatusCode();
         if (statusCode != 200) {
+          if (statusCode == 429) {
+            final AbstractRoutePlanner routePlanner = sourceManager.getRoutePlanner();
+            if (routePlanner != null && routePlanner.shouldHandleSearchFailure()) {
+              log.warn("YouTube search rate limit reached, marking address as failing and retry");
+              routePlanner.markAddressFailing();
+            }
+            throw new RateLimitException("YouTube search rate limit reached");
+          }
           throw new IOException("Invalid status code for search response: " + statusCode);
         }
 
@@ -67,6 +87,14 @@ public class YoutubeSearchProvider implements HttpConfigurable {
         return extractSearchResults(document, query);
       }
     } catch (Exception e) {
+      if (e instanceof BindException) {
+        final AbstractRoutePlanner routePlanner = sourceManager.getRoutePlanner();
+        if (routePlanner != null) { // this one should be handled even when routePlanner.shouldHandleSearchFailure() is false, as this is a network error
+          log.warn("Cannot assign requested address {}, marking address as failing and retry!", routePlanner.getLastAddress());
+          routePlanner.markAddressFailing();
+          return loadSearchResult(query);
+        }
+      }
       throw ExceptionTools.wrapUnfriendlyExceptions(e);
     }
   }

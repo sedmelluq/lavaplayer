@@ -30,6 +30,7 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -101,9 +102,16 @@ public class NicoAudioSourceManager implements AudioSourceManager, HttpConfigura
     for (Element element : document.select(":root > thumb")) {
       String uploader = element.select("user_nickname").first().text();
       String title = element.select("title").first().text();
+      String thumbnailUrl = element.select("thumbnail_url").first().text();
       long duration = DataFormatTools.durationTextToMillis(element.select("length").first().text());
 
-      return new NicoAudioTrack(new AudioTrackInfo(title, uploader, duration, videoId, false, getWatchUrl(videoId)), this);
+      return new NicoAudioTrack(new AudioTrackInfo(title,
+          uploader,
+          duration,
+          videoId,
+          false,
+          getWatchUrl(videoId),
+          Collections.singletonMap("artworkUrl", thumbnailUrl)), this);
     }
 
     return null;
