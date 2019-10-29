@@ -3,7 +3,7 @@ package com.sedmelluq.discord.lavaplayer.tools.io;
 import com.sedmelluq.discord.lavaplayer.tools.DataFormatTools;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.tools.JsonBrowser;
-import com.sedmelluq.discord.lavaplayer.tools.http.HttpRequestModifier;
+import com.sedmelluq.discord.lavaplayer.tools.http.HttpContextFilter;
 import org.apache.http.ConnectionClosedException;
 import org.apache.http.Header;
 import org.apache.http.HttpRequest;
@@ -90,23 +90,14 @@ public class HttpClientTools {
    * @return Default HTTP interface manager with thread-local context
    */
   public static HttpInterfaceManager createDefaultThreadLocalManager() {
-    return new ThreadLocalHttpInterfaceManager(createSharedCookiesHttpBuilder(), DEFAULT_REQUEST_CONFIG, null);
-  }
-
-  /**
-   * @return Default HTTP interface manager with thread-local context
-   */
-  public static HttpInterfaceManager createDefaultThreadLocalManager(HttpRequestModifier requestModifier) {
-    return new ThreadLocalHttpInterfaceManager(createSharedCookiesHttpBuilder(), DEFAULT_REQUEST_CONFIG,
-        requestModifier);
+    return new ThreadLocalHttpInterfaceManager(createSharedCookiesHttpBuilder(), DEFAULT_REQUEST_CONFIG);
   }
 
   /**
    * @return HTTP interface manager with thread-local context, ignores cookies
    */
   public static HttpInterfaceManager createCookielessThreadLocalManager() {
-    return new ThreadLocalHttpInterfaceManager(createHttpBuilder(NO_COOKIES_REQUEST_CONFIG), NO_COOKIES_REQUEST_CONFIG,
-        null);
+    return new ThreadLocalHttpInterfaceManager(createHttpBuilder(NO_COOKIES_REQUEST_CONFIG), NO_COOKIES_REQUEST_CONFIG);
   }
 
   private static HttpClientBuilder createHttpBuilder(RequestConfig requestConfig) {

@@ -3,11 +3,10 @@ package com.sedmelluq.discord.lavaplayer.source.youtube;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.sedmelluq.discord.lavaplayer.player.DefaultAudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.source.AudioSourceManager;
-import com.sedmelluq.discord.lavaplayer.tools.DataFormatTools;
 import com.sedmelluq.discord.lavaplayer.tools.ExceptionTools;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.tools.JsonBrowser;
-import com.sedmelluq.discord.lavaplayer.tools.http.HttpRequestModifier;
+import com.sedmelluq.discord.lavaplayer.tools.http.HttpContextFilter;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpClientTools;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpConfigurable;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterface;
@@ -38,10 +37,6 @@ import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.util.EntityUtils;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -96,10 +91,8 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
   public YoutubeAudioSourceManager(boolean allowSearch) {
     signatureCipherManager = new YoutubeSignatureCipherManager();
 
-    httpInterfaceManager = HttpClientTools.createDefaultThreadLocalManager(request -> {
-      request.setHeader("x-youtube-client-name", "1");
-      request.setHeader("x-youtube-client-version", "2.20191008.04.01");
-    });
+    httpInterfaceManager = HttpClientTools.createDefaultThreadLocalManager();
+    httpInterfaceManager.setHttpContextFilter(new YoutubeHttpContextFilter());
 
     this.allowSearch = allowSearch;
     playlistPageCount = 6;
@@ -185,8 +178,8 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
     searchProvider.configureBuilder(configurator);
   }
 
-  public void setHttpRequestModifier(HttpRequestModifier modifier) {
-    httpInterfaceManager.setRequestModifier(modifier);
+  public void setHttpContextFilter(HttpContextFilter filter) {
+    httpInterfaceManager.setHttpContextFilter(filter);
   }
 
   private AudioItem loadItemOnce(AudioReference reference) {

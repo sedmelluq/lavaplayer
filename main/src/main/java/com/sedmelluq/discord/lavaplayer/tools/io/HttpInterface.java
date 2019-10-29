@@ -1,15 +1,15 @@
 package com.sedmelluq.discord.lavaplayer.tools.io;
 
-import com.sedmelluq.discord.lavaplayer.tools.http.HttpRequestModifier;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpUriRequest;
-import org.apache.http.client.protocol.HttpClientContext;
-import org.apache.http.impl.client.CloseableHttpClient;
-
+import com.sedmelluq.discord.lavaplayer.tools.ExceptionTools;
+import com.sedmelluq.discord.lavaplayer.tools.http.HttpContextFilter;
 import java.io.Closeable;
 import java.io.IOException;
 import java.net.URI;
 import java.util.List;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpUriRequest;
+import org.apache.http.client.protocol.HttpClientContext;
+import org.apache.http.impl.client.CloseableHttpClient;
 
 /**
  * An HTTP interface for performing HTTP requests in one specific thread. This also means it is not thread safe and should
@@ -20,7 +20,7 @@ public class HttpInterface implements Closeable {
   private final CloseableHttpClient client;
   private final HttpClientContext context;
   private final boolean ownedClient;
-  private final HttpRequestModifier requestModifier;
+  private final HttpContextFilter filter;
   private HttpUriRequest lastRequest;
   private boolean available;
 
@@ -28,15 +28,15 @@ public class HttpInterface implements Closeable {
    * @param client The http client instance used.
    * @param context The http context instance used.
    * @param ownedClient True if the client should be closed when this instance is closed.
-   * @param requestModifier
+   * @param filter
    */
   public HttpInterface(CloseableHttpClient client, HttpClientContext context, boolean ownedClient,
-                       HttpRequestModifier requestModifier) {
+                       HttpContextFilter filter) {
 
     this.client = client;
     this.context = context;
     this.ownedClient = ownedClient;
-    this.requestModifier = requestModifier;
+    this.filter = filter;
     this.available = true;
   }
 
@@ -50,6 +50,7 @@ public class HttpInterface implements Closeable {
       return false;
     }
 
+    filter.onContextOpen(context);
     available = false;
     return true;
   }
@@ -62,12 +63,37 @@ public class HttpInterface implements Closeable {
    * @throws IOException On network error.
    */
   public CloseableHttpResponse execute(HttpUriRequest request) throws IOException {
-    if (requestModifier != null) {
-      requestModifier.modify(request);
-    }
+    boolean isRepeated = false;
 
-    lastRequest = request;
-    return client.execute(request, context);
+    while (true) {
+      filter.onRequest(context, request, isRepeated);
+
+      try {
+        CloseableHttpResponse response = client.execute(request, context);
+        lastRequest = request;
+
+        if (!filter.onRequestResponse(context, request, response)) {
+          return response;
+        }
+      } catch (Throwable e) {
+        if (!filter.onRequestException(context, request, e)) {
+          if (e instanceof Error) {
+            throw (Error) e;
+          } else if (e instanceof RuntimeException) {
+            throw (RuntimeException) e;
+          } else //noinspection ConstantConditions
+            if (e instanceof IOException) {
+            throw (IOException) e;
+          } else {
+            throw new RuntimeException(e);
+          }
+        } else {
+          ExceptionTools.rethrowErrors(e);
+        }
+      }
+
+      isRepeated = true;
+    }
   }
 
   /**
@@ -101,6 +127,7 @@ public class HttpInterface implements Closeable {
   @Override
   public void close() throws IOException {
     available = true;
+    filter.onContextClose(context);
 
     if (ownedClient) {
       client.close();

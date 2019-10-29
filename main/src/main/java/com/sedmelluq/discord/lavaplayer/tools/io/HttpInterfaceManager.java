@@ -1,6 +1,6 @@
 package com.sedmelluq.discord.lavaplayer.tools.io;
 
-import com.sedmelluq.discord.lavaplayer.tools.http.HttpRequestModifier;
+import com.sedmelluq.discord.lavaplayer.tools.http.HttpContextFilter;
 import java.io.Closeable;
 
 /**
@@ -12,5 +12,5 @@ public interface HttpInterfaceManager extends HttpConfigurable, Closeable {
    */
   HttpInterface getInterface();
 
-  void setRequestModifier(HttpRequestModifier modifier);
+  void setHttpContextFilter(HttpContextFilter modifier);
 }

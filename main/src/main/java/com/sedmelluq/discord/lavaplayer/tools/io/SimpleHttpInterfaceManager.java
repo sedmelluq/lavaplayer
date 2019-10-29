@@ -1,7 +1,7 @@
 package com.sedmelluq.discord.lavaplayer.tools.io;
 
-import com.sedmelluq.discord.lavaplayer.tools.http.DualHttpRequestModifier;
-import com.sedmelluq.discord.lavaplayer.tools.http.HttpRequestModifier;
+import com.sedmelluq.discord.lavaplayer.tools.http.HttpContextFilter;
+import com.sedmelluq.discord.lavaplayer.tools.http.SettableHttpRequestFilter;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.impl.client.HttpClientBuilder;
@@ -10,27 +10,26 @@ import org.apache.http.impl.client.HttpClientBuilder;
  * HTTP interface manager which creates a new HTTP context for each interface.
  */
 public class SimpleHttpInterfaceManager extends AbstractHttpInterfaceManager {
-  private final DualHttpRequestModifier requestModifier;
+  private final SettableHttpRequestFilter filterHolder;
 
   /**
    * @param clientBuilder HTTP client builder to use for creating the client instance.
    * @param requestConfig Request config used by the client builder
-   * @param requestModifier
    */
-  public SimpleHttpInterfaceManager(HttpClientBuilder clientBuilder, RequestConfig requestConfig,
-                                    HttpRequestModifier requestModifier) {
-
+  public SimpleHttpInterfaceManager(HttpClientBuilder clientBuilder, RequestConfig requestConfig) {
     super(clientBuilder, requestConfig);
-    this.requestModifier = new DualHttpRequestModifier(requestModifier);
+    this.filterHolder = new SettableHttpRequestFilter();
   }
 
   @Override
   public HttpInterface getInterface() {
-    return new HttpInterface(getSharedClient(), HttpClientContext.create(), false, requestModifier);
+    HttpInterface httpInterface = new HttpInterface(getSharedClient(), HttpClientContext.create(), false, filterHolder);
+    httpInterface.acquire();
+    return httpInterface;
   }
 
   @Override
-  public void setRequestModifier(HttpRequestModifier modifier) {
-    requestModifier.setCustomModifier(modifier);
+  public void setHttpContextFilter(HttpContextFilter filter) {
+    filterHolder.set(filter);
   }
 }
