@@ -3,11 +3,11 @@ package com.sedmelluq.discord.lavaplayer.source.youtube;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.sedmelluq.discord.lavaplayer.player.DefaultAudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.source.AudioSourceManager;
-import com.sedmelluq.discord.lavaplayer.tools.DataFormatTools;
 import com.sedmelluq.discord.lavaplayer.tools.ExceptionTools;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.tools.JsonBrowser;
-import com.sedmelluq.discord.lavaplayer.tools.http.HttpRequestModifier;
+import com.sedmelluq.discord.lavaplayer.tools.http.ExtendedHttpConfigurable;
+import com.sedmelluq.discord.lavaplayer.tools.http.MultiHttpConfigurable;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpClientTools;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpConfigurable;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterface;
@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
@@ -37,18 +38,12 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.http.util.EntityUtils;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static com.sedmelluq.discord.lavaplayer.tools.FriendlyException.Severity.COMMON;
 import static com.sedmelluq.discord.lavaplayer.tools.FriendlyException.Severity.FAULT;
 import static com.sedmelluq.discord.lavaplayer.tools.FriendlyException.Severity.SUSPICIOUS;
-import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Audio source manager that implements finding Youtube videos or playlists based on an URL or ID.
@@ -75,11 +70,13 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
       new Extractor(Pattern.compile("^" + PROTOCOL_REGEX + SHORT_DOMAIN_REGEX + "/.*"), this::loadFromShortDomain)
   };
 
-  private final YoutubeSignatureCipherManager signatureCipherManager;
+  private final YoutubeSignatureResolver signatureResolver;
   private final HttpInterfaceManager httpInterfaceManager;
-  private final YoutubeSearchProvider searchProvider;
+  private final ExtendedHttpConfigurable combinedHttpConfiguration;
   private final YoutubeMixProvider mixProvider;
   private final boolean allowSearch;
+  private final YoutubeTrackDetailsLoader trackDetailsLoader;
+  private final YoutubeSearchResultLoader searchResultLoader;
   private volatile int playlistPageCount;
 
   /**
@@ -94,17 +91,43 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
    * @param allowSearch Whether to allow search queries as identifiers
    */
   public YoutubeAudioSourceManager(boolean allowSearch) {
-    signatureCipherManager = new YoutubeSignatureCipherManager();
+    this(
+        allowSearch,
+        new DefaultYoutubeTrackDetailsLoader(),
+        new YoutubeSearchProvider(),
+        new YoutubeSignatureCipherManager()
+    );
+  }
 
-    httpInterfaceManager = HttpClientTools.createDefaultThreadLocalManager(request -> {
-      request.setHeader("x-youtube-client-name", "1");
-      request.setHeader("x-youtube-client-version", "2.20191008.04.01");
-    });
+  public YoutubeAudioSourceManager(
+      boolean allowSearch,
+      YoutubeTrackDetailsLoader trackDetailsLoader,
+      YoutubeSearchResultLoader searchResultLoader,
+      YoutubeSignatureResolver signatureResolver
+  ) {
+    httpInterfaceManager = HttpClientTools.createDefaultThreadLocalManager();
+    httpInterfaceManager.setHttpContextFilter(new YoutubeHttpContextFilter());
 
     this.allowSearch = allowSearch;
     playlistPageCount = 6;
-    searchProvider = new YoutubeSearchProvider(this);
     mixProvider = new YoutubeMixProvider(this);
+
+    this.trackDetailsLoader = trackDetailsLoader;
+    this.signatureResolver = signatureResolver;
+    this.searchResultLoader = searchResultLoader;
+
+    combinedHttpConfiguration = new MultiHttpConfigurable(Arrays.asList(
+        httpInterfaceManager,
+        searchResultLoader.getHttpConfiguration()
+    ));
+  }
+
+  public YoutubeTrackDetailsLoader getTrackDetailsLoader() {
+    return trackDetailsLoader;
+  }
+
+  public YoutubeSignatureResolver getSignatureResolver() {
+    return signatureResolver;
   }
 
   /**
@@ -162,10 +185,6 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
     mixProvider.shutdown();
   }
 
-  public YoutubeSignatureCipherManager getCipherManager() {
-    return signatureCipherManager;
-  }
-
   /**
    * @return Get an HTTP interface for a playing track.
    */
@@ -175,23 +194,32 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
 
   @Override
   public void configureRequests(Function<RequestConfig, RequestConfig> configurator) {
-    httpInterfaceManager.configureRequests(configurator);
-    searchProvider.configureRequests(configurator);
+    combinedHttpConfiguration.configureRequests(configurator);
   }
 
   @Override
   public void configureBuilder(Consumer<HttpClientBuilder> configurator) {
-    httpInterfaceManager.configureBuilder(configurator);
-    searchProvider.configureBuilder(configurator);
+    combinedHttpConfiguration.configureBuilder(configurator);
   }
 
-  public void setHttpRequestModifier(HttpRequestModifier modifier) {
-    httpInterfaceManager.setRequestModifier(modifier);
+  public ExtendedHttpConfigurable getHttpConfiguration() {
+    return combinedHttpConfiguration;
+  }
+
+  public ExtendedHttpConfigurable getMainHttpConfiguration() {
+    return httpInterfaceManager;
+  }
+
+  public ExtendedHttpConfigurable getSearchHttpConfiguration() {
+    return searchResultLoader.getHttpConfiguration();
   }
 
   private AudioItem loadItemOnce(AudioReference reference) {
     if (allowSearch && reference.identifier.startsWith(SEARCH_PREFIX)) {
-      return searchProvider.loadSearchResult(reference.identifier.substring(SEARCH_PREFIX.length()).trim());
+      return searchResultLoader.loadSearchResult(
+          reference.identifier.substring(SEARCH_PREFIX.length()).trim(),
+          this::buildTrackFromInfo
+      );
     }
 
     return loadNonSearch(reference.identifier);
@@ -206,37 +234,17 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
    */
   public AudioItem loadTrackWithVideoId(String videoId, boolean mustExist) {
     try (HttpInterface httpInterface = getHttpInterface()) {
-      JsonBrowser info = getTrackInfoFromMainPage(httpInterface, videoId, mustExist);
-      if (info == null) {
-        return AudioReference.NO_TRACK;
-      }
+      YoutubeTrackDetails details = trackDetailsLoader.loadDetails(httpInterface, videoId);
 
-      JsonBrowser args = info.get("args");
-      boolean useOldFormat = args.get("player_response").isNull();
-
-      if (useOldFormat) {
-        if ("fail".equals(args.get("status").text())) {
-          throw new FriendlyException(args.get("reason").text(), COMMON, null);
+      if (details == null) {
+        if (mustExist) {
+          throw new FriendlyException("Video unavailable", COMMON, null);
+        } else {
+          return AudioReference.NO_TRACK;
         }
-
-        boolean isStream = "1".equals(args.get("live_playback").text());
-        long duration = isStream ? Long.MAX_VALUE : args.get("length_seconds").as(Long.class) * 1000;
-        return buildTrackObject(videoId, args.get("title").text(), args.get("author").text(), isStream, duration);
       }
 
-      JsonBrowser playerResponse = JsonBrowser.parse(args.get("player_response").text());
-      JsonBrowser playabilityStatus = playerResponse.get("playabilityStatus");
-
-      if ("ERROR".equals(playabilityStatus.get("status").text())) {
-        throw new FriendlyException(playabilityStatus.get("reason").text(), COMMON, null);
-      }
-
-      JsonBrowser videoDetails = playerResponse.get("videoDetails");
-
-      boolean isStream = videoDetails.get("isLiveContent").as(Boolean.class);
-      long duration = isStream ? Long.MAX_VALUE : videoDetails.get("lengthSeconds").as(Long.class) * 1000;
-
-      return buildTrackObject(videoId, videoDetails.get("title").text(), videoDetails.get("author").text(), isStream, duration);
+      return new YoutubeAudioTrack(details.getTrackInfo(), this);
     } catch (Exception e) {
       throw ExceptionTools.wrapUnfriendlyExceptions("Loading information for a YouTube track failed.", FAULT, e);
     }
@@ -354,104 +362,6 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
     } else {
       return playlist;
     }
-  }
-
-  /**
-   * @param httpInterface HTTP interface to use for performing any necessary request.
-   * @param videoId ID of the video.
-   * @param mustExist If <code>true</code>, throws an exception instead of returning <code>null</code> if the track does
-   *                  not exist.
-   * @return JSON information about the track if it exists. <code>null</code> if it does not and mustExist is
-   *         <code>false</code>.
-   * @throws IOException On network error.
-   */
-  public JsonBrowser getTrackInfoFromMainPage(HttpInterface httpInterface, String videoId, boolean mustExist) throws IOException {
-    String url = getWatchUrl(videoId) + "&pbj=1&hl=en";
-
-    try (CloseableHttpResponse response = httpInterface.execute(new HttpGet(url))) {
-      int statusCode = response.getStatusLine().getStatusCode();
-
-      if (statusCode != 200) {
-        throw new IOException("Invalid status code for video page response: " + statusCode);
-      }
-
-      String responseText = EntityUtils.toString(response.getEntity(), UTF_8);
-
-      try {
-        JsonBrowser json = JsonBrowser.parse(responseText);
-        JsonBrowser playerInfo = null;
-        JsonBrowser statusBlock = null;
-
-        for (JsonBrowser child : json.values()) {
-          if (child.isMap()) {
-            if (!child.get("player").isNull()) {
-              playerInfo = child.get("player");
-            } else if (!child.get("playerResponse").isNull()) {
-              statusBlock = child.get("playerResponse").safeGet("playabilityStatus");
-            }
-          }
-        }
-
-        if (!checkStatusBlock(statusBlock, mustExist)) {
-          return null;
-        } else if (playerInfo == null || playerInfo.isNull()) {
-          throw new RuntimeException("No player info block.");
-        }
-
-        return playerInfo;
-      } catch (Exception e) {
-        throw new FriendlyException("Received unexpected response from YouTube.", SUSPICIOUS,
-            new RuntimeException("Failed to parse: " + responseText, e));
-      }
-    }
-  }
-
-  private boolean checkStatusBlock(JsonBrowser statusBlock, boolean mustExist) {
-    if (statusBlock == null || statusBlock.isNull()) {
-      throw new RuntimeException("No playability status block.");
-    }
-
-    String status = statusBlock.safeGet("status").text();
-
-    if (status == null) {
-      throw new RuntimeException("No playability status field.");
-    } else if ("OK".equals(status)) {
-      return true;
-    } else if ("ERROR".equals(status)) {
-      String reason = statusBlock.safeGet("reason").text();
-
-      if (!mustExist && "Video unavailable".equals(reason)) {
-        return false;
-      } else {
-        throw new FriendlyException(reason, COMMON, null);
-      }
-    } else if ("UNPLAYABLE".equals(status) || "LOGIN_REQUIRED".equals(status)) {
-      String unplayableReason = getUnplayableReason(statusBlock);
-      throw new FriendlyException(unplayableReason, COMMON, null);
-    } else {
-      throw new FriendlyException("This video cannot be viewed anonymously.", COMMON, null);
-    }
-  }
-
-  private String getUnplayableReason(JsonBrowser statusBlock) {
-    JsonBrowser playerErrorMessage = statusBlock.get("errorScreen").get("playerErrorMessageRenderer");
-    String unplayableReason = statusBlock.safeGet("reason").text();
-
-    if (!playerErrorMessage.safeGet("subreason").isNull()) {
-      JsonBrowser subreason = playerErrorMessage.safeGet("subreason");
-
-      if (!subreason.safeGet("simpleText").isNull()) {
-        unplayableReason = subreason.safeGet("simpleText").text();
-      } else if (!subreason.safeGet("runs").isNull() && subreason.safeGet("runs").isList()) {
-        StringBuilder reasonBuilder = new StringBuilder();
-        subreason.safeGet("runs").values().forEach(
-                item -> reasonBuilder.append(item.safeGet("text").text()).append('\n')
-        );
-        unplayableReason = reasonBuilder.toString();
-      }
-    }
-
-    return unplayableReason;
   }
 
   private AudioPlaylist loadPlaylistWithId(String playlistId, String selectedVideoId) {
@@ -577,6 +487,10 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
    */
   public YoutubeAudioTrack buildTrackObject(String videoId, String title, String uploader, boolean isStream, long duration) {
     return new YoutubeAudioTrack(new AudioTrackInfo(title, uploader, duration, videoId, isStream, getWatchUrl(videoId)), this);
+  }
+
+  private YoutubeAudioTrack buildTrackFromInfo(AudioTrackInfo info) {
+    return new YoutubeAudioTrack(info, this);
   }
 
   private static String getWatchUrl(String videoId) {
