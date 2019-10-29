@@ -23,8 +23,7 @@ public class Ipv6Block extends IpBlock<Inet6Address> {
   private static final BigInteger TWO = BigInteger.valueOf(2);
   private static final BigInteger BITS1 = BigInteger.valueOf(-1);
   public static final BigInteger BLOCK64_IPS = TWO.pow(64);
-
-  private static final int IPV6_BIT_SIZE = 128;
+  public static final int IPV6_BIT_SIZE = 128;
 
   private static final Random random = new Random();
 
@@ -97,6 +96,10 @@ public class Ipv6Block extends IpBlock<Inet6Address> {
   @Override
   public String toString() {
     return cidr;
+  }
+
+  public int getMaskBits() {
+    return maskBits;
   }
 
   private static Inet6Address longToAddress(final BigInteger l) {
