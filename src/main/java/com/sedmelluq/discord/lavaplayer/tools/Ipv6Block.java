@@ -7,7 +7,6 @@ import java.math.BigInteger;
 import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.util.Random;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -25,7 +24,7 @@ public class Ipv6Block extends IpBlock<Inet6Address> {
   public static final BigInteger BLOCK64_IPS = TWO.pow(64);
   public static final int IPV6_BIT_SIZE = 128;
 
-  private static final Random random = new Random();
+  private static final BigRandom random = new BigRandom();
 
   private static final Pattern CIDR_REGEX = Pattern.compile("([\\da-f:]+)/(\\d{1,3})");
   private final String cidr;
@@ -61,11 +60,7 @@ public class Ipv6Block extends IpBlock<Inet6Address> {
   public Inet6Address getRandomAddress() {
     if (maskBits == IPV6_BIT_SIZE) return longToAddress(prefix);
 
-    final byte[] randomBytes = new byte[(IPV6_BIT_SIZE - maskBits) / 8];
-    random.nextBytes(randomBytes);
-
-    final BigInteger randomAddressOffset = bytesToLong(randomBytes).abs();
-
+    final BigInteger randomAddressOffset = random.nextBigInt(IPV6_BIT_SIZE - maskBits);
     Inet6Address inetAddress = longToAddress(prefix.add(randomAddressOffset));
     log.info(inetAddress.toString());
     return inetAddress;

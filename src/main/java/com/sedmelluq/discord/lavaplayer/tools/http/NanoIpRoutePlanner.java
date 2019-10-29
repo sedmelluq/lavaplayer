@@ -1,5 +1,6 @@
 package com.sedmelluq.discord.lavaplayer.tools.http;
 
+import com.sedmelluq.discord.lavaplayer.tools.BigRandom;
 import com.sedmelluq.discord.lavaplayer.tools.IpBlock;
 import com.sedmelluq.discord.lavaplayer.tools.Ipv6Block;
 import com.sedmelluq.discord.lavaplayer.tools.Tuple;
@@ -11,12 +12,11 @@ import java.math.BigInteger;
 import java.net.Inet4Address;
 import java.net.Inet6Address;
 import java.net.InetAddress;
-import java.util.Random;
 
 public final class NanoIpRoutePlanner extends AbstractRoutePlanner {
 
   private static final Logger log = LoggerFactory.getLogger(NanoIpRoutePlanner.class);
-  private static final Random random = new Random();
+  private static final BigRandom random = new BigRandom();
 
   private final BigInteger startTime;
   private final int maskBits;
@@ -64,7 +64,7 @@ public final class NanoIpRoutePlanner extends AbstractRoutePlanner {
     if(maskBits == 64) {
       return ipBlock.getAddressAtIndex(nanoOffset);
     }
-    final BigInteger randomOffset = BigInteger.valueOf(random.nextLong()).shiftLeft(Ipv6Block.IPV6_BIT_SIZE - maskBits); // most {{maskBits}}-64 bit
+    final BigInteger randomOffset = random.nextBigInt(Ipv6Block.IPV6_BIT_SIZE - maskBits).shiftLeft(Ipv6Block.IPV6_BIT_SIZE - maskBits); // most {{maskBits}}-64 bit
     return ipBlock.getAddressAtIndex(randomOffset.add(nanoOffset));
   }
 
