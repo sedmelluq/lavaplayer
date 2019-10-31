@@ -60,7 +60,7 @@ public class Ipv6Block extends IpBlock<Inet6Address> {
   public Inet6Address getRandomAddress() {
     if (maskBits == IPV6_BIT_SIZE) return longToAddress(prefix);
 
-    final BigInteger randomAddressOffset = random.nextBigInt(IPV6_BIT_SIZE - maskBits);
+    final BigInteger randomAddressOffset = random.nextBigInt(IPV6_BIT_SIZE - (maskBits + 1));
     Inet6Address inetAddress = longToAddress(prefix.add(randomAddressOffset));
     log.info(inetAddress.toString());
     return inetAddress;
