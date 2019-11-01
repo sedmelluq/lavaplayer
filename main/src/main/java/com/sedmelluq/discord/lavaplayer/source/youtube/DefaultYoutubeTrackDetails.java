@@ -22,7 +22,6 @@ import org.jsoup.parser.Parser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static com.sedmelluq.discord.lavaplayer.source.youtube.YoutubeAudioSourceManager.CHARSET;
 import static com.sedmelluq.discord.lavaplayer.tools.DataFormatTools.convertToMapLayout;
 import static com.sedmelluq.discord.lavaplayer.tools.FriendlyException.Severity.COMMON;
 import static com.sedmelluq.discord.lavaplayer.tools.FriendlyException.Severity.SUSPICIOUS;
@@ -235,7 +234,8 @@ public class DefaultYoutubeTrackDetails implements YoutubeTrackDetails {
         throw new IOException("Invalid status code for track info page response: " + statusCode);
       }
 
-      Document document = Jsoup.parse(response.getEntity().getContent(), CHARSET, "", Parser.xmlParser());
+      Document document = Jsoup.parse(response.getEntity().getContent(), StandardCharsets.UTF_8.name(), "",
+          Parser.xmlParser());
       return loadTrackFormatsFromDashDocument(document);
     }
   }

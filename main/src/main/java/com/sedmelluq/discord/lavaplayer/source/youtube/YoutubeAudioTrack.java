@@ -3,47 +3,26 @@ package com.sedmelluq.discord.lavaplayer.source.youtube;
 import com.sedmelluq.discord.lavaplayer.container.matroska.MatroskaAudioTrack;
 import com.sedmelluq.discord.lavaplayer.container.mpeg.MpegAudioTrack;
 import com.sedmelluq.discord.lavaplayer.source.AudioSourceManager;
-import com.sedmelluq.discord.lavaplayer.tools.DataFormatTools;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
-import com.sedmelluq.discord.lavaplayer.tools.JsonBrowser;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterface;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo;
 import com.sedmelluq.discord.lavaplayer.track.DelegatedAudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.playback.LocalAudioTrackExecutor;
-import java.nio.charset.StandardCharsets;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.utils.URLEncodedUtils;
-import org.apache.http.entity.ContentType;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.parser.Parser;
+import java.net.URI;
+import java.util.List;
+import java.util.StringJoiner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.net.URI;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.StringJoiner;
-
 import static com.sedmelluq.discord.lavaplayer.container.Formats.MIME_AUDIO_WEBM;
-import static com.sedmelluq.discord.lavaplayer.source.youtube.YoutubeAudioSourceManager.CHARSET;
-import static com.sedmelluq.discord.lavaplayer.tools.DataFormatTools.convertToMapLayout;
 import static com.sedmelluq.discord.lavaplayer.tools.FriendlyException.Severity.COMMON;
-import static com.sedmelluq.discord.lavaplayer.tools.FriendlyException.Severity.SUSPICIOUS;
 
 /**
  * Audio track that handles processing Youtube videos as audio tracks.
  */
 public class YoutubeAudioTrack extends DelegatedAudioTrack {
   private static final Logger log = LoggerFactory.getLogger(YoutubeAudioTrack.class);
-
-  private static final String DEFAULT_SIGNATURE_KEY = "signature";
 
   private final YoutubeAudioSourceManager sourceManager;
 
