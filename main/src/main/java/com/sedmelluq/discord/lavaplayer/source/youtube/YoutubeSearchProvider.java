@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -109,7 +110,8 @@ public class YoutubeSearchProvider implements YoutubeSearchResultLoader {
     String author = contentElement.select(".yt-lockup-byline > a").text();
 
     AudioTrackInfo info = new AudioTrackInfo(title, author, duration, videoId, false,
-        "https://www.youtube.com/watch?v=" + videoId);
+        "https://www.youtube.com/watch?v=" + videoId,
+        Collections.singletonMap("artworkUrl", String.format("https://img.youtube.com/vi/%s/0.jpg", videoId)));
 
     tracks.add(trackFactory.apply(info));
   }

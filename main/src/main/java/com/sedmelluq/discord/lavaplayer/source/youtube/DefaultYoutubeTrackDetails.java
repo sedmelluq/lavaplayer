@@ -305,7 +305,8 @@ public class DefaultYoutubeTrackDetails implements YoutubeTrackDetails {
 
   private AudioTrackInfo buildTrackInfo(String videoId, String title, String uploader, boolean isStream, long duration) {
     return new AudioTrackInfo(title, uploader, duration, videoId, isStream,
-        "https://www.youtube.com/watch?v=" + videoId);
+        "https://www.youtube.com/watch?v=" + videoId,
+        Collections.singletonMap("artworkUrl", String.format("https://img.youtube.com/vi/%s/0.jpg", videoId)));
   }
 
   private static Map<String, String> decodeUrlEncodedItems(String input, boolean escapedSeparator) {
