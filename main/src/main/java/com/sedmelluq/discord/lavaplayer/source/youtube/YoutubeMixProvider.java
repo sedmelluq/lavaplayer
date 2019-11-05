@@ -123,7 +123,7 @@ public class YoutubeMixProvider {
       Thread.currentThread().interrupt();
     }
 
-    AudioTrack selectedTrack = sourceManager.findSelectedTrack(tracks, selectedVideoId);
+    AudioTrack selectedTrack = findSelectedTrack(tracks, selectedVideoId);
 
     if (tracks.isEmpty()) {
       throw new FriendlyException("No tracks from the mix loaded succesfully.", SUSPICIOUS, null);
@@ -132,6 +132,18 @@ public class YoutubeMixProvider {
     }
 
     return new BasicAudioPlaylist("YouTube mix", tracks, selectedTrack, false);
+  }
+
+  private AudioTrack findSelectedTrack(List<AudioTrack> tracks, String selectedVideoId) {
+    if (selectedVideoId != null) {
+      for (AudioTrack track : tracks) {
+        if (selectedVideoId.equals(track.getIdentifier())) {
+          return track;
+        }
+      }
+    }
+
+    return null;
   }
 
   private void fetchTrackResultsFromExecutor(ExecutorCompletionService<AudioItem> completion, List<AudioTrack> tracks, int size) throws InterruptedException {

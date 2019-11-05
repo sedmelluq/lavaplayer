@@ -1,5 +1,23 @@
 # Change Log
 
+## [1.3.22] -- 2019-09-11
+### Fixed
+- Fixed new track formats breaking YouTube track loading (PR 210 by Ferderikam) 
+
+## [1.3.21] -- 2019-09-09
+### Fixed
+- Fixed playing direct SoundCloud tracks which broke due to site change (PR 208 by Devoxin).
+- Fixed some cases where YouTube tracks broke because of duplicate parameters (PR 180 by Joakim).
+- Fixed new format YouTube pages where no cipher was used (PR 205 by Devoxin).
+
+## [1.3.20] -- 2019-08-08
+### Fixed
+- Fixed playback for YouTube when format list is only provided through player_response.
+
+## [1.3.19] -- 2019-07-30
+### Fixed
+- Fixed broken YouTube track loading due to changes the site (PR 199 by Frederikam).
+
 ## [1.3.18] -- 2019-07-19
 ### Changed
 - YouTube track info JSON now gets logged if it does not contain any expected fields.

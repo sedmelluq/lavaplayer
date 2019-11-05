@@ -1,5 +1,7 @@
 package com.sedmelluq.discord.lavaplayer.tools.io;
 
+import com.sedmelluq.discord.lavaplayer.tools.http.HttpContextFilter;
+import com.sedmelluq.discord.lavaplayer.tools.http.SettableHttpRequestFilter;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -12,6 +14,7 @@ import org.apache.http.impl.client.HttpClientBuilder;
  */
 public class ThreadLocalHttpInterfaceManager extends AbstractHttpInterfaceManager {
   private final ThreadLocal<HttpInterface> httpInterfaces;
+  private final SettableHttpRequestFilter filter;
 
   /**
    * @param clientBuilder HTTP client builder to use for creating the client instance.
@@ -20,8 +23,9 @@ public class ThreadLocalHttpInterfaceManager extends AbstractHttpInterfaceManage
   public ThreadLocalHttpInterfaceManager(HttpClientBuilder clientBuilder, RequestConfig requestConfig) {
     super(clientBuilder, requestConfig);
 
+    this.filter = new SettableHttpRequestFilter();
     this.httpInterfaces = ThreadLocal.withInitial(() ->
-        new HttpInterface(getSharedClient(), HttpClientContext.create(), false)
+        new HttpInterface(getSharedClient(), HttpClientContext.create(), false, filter)
     );
   }
 
@@ -39,8 +43,13 @@ public class ThreadLocalHttpInterfaceManager extends AbstractHttpInterfaceManage
       return httpInterface;
     }
 
-    httpInterface = new HttpInterface(client, HttpClientContext.create(), false);
+    httpInterface = new HttpInterface(client, HttpClientContext.create(), false, filter);
     httpInterface.acquire();
     return httpInterface;
+  }
+
+  @Override
+  public void setHttpContextFilter(HttpContextFilter modifier) {
+    filter.set(modifier);
   }
 }

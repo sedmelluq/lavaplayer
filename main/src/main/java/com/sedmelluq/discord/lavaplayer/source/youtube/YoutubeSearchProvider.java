@@ -2,6 +2,7 @@ package com.sedmelluq.discord.lavaplayer.source.youtube;
 
 import com.sedmelluq.discord.lavaplayer.tools.DataFormatTools;
 import com.sedmelluq.discord.lavaplayer.tools.ExceptionTools;
+import com.sedmelluq.discord.lavaplayer.tools.http.ExtendedHttpConfigurable;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpClientTools;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpConfigurable;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterface;
@@ -9,6 +10,7 @@ import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterfaceManager;
 import com.sedmelluq.discord.lavaplayer.track.AudioItem;
 import com.sedmelluq.discord.lavaplayer.track.AudioReference;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
+import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo;
 import com.sedmelluq.discord.lavaplayer.track.BasicAudioPlaylist;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -32,25 +34,25 @@ import java.util.function.Function;
 /**
  * Handles processing YouTube searches.
  */
-public class YoutubeSearchProvider implements HttpConfigurable {
+public class YoutubeSearchProvider implements YoutubeSearchResultLoader {
   private static final Logger log = LoggerFactory.getLogger(YoutubeSearchProvider.class);
 
-  private final YoutubeAudioSourceManager sourceManager;
   private final HttpInterfaceManager httpInterfaceManager;
 
-  /**
-   * @param sourceManager YouTube source manager used for created tracks.
-   */
-  public YoutubeSearchProvider(YoutubeAudioSourceManager sourceManager) {
-    this.sourceManager = sourceManager;
+  public YoutubeSearchProvider() {
     this.httpInterfaceManager = HttpClientTools.createCookielessThreadLocalManager();
+  }
+
+  public ExtendedHttpConfigurable getHttpConfiguration() {
+    return httpInterfaceManager;
   }
 
   /**
    * @param query Search query.
    * @return Playlist of the first page of results.
    */
-  public AudioItem loadSearchResult(String query) {
+  @Override
+  public AudioItem loadSearchResult(String query, Function<AudioTrackInfo, AudioTrack> trackFactory) {
     log.debug("Performing a search with query {}", query);
 
     try (HttpInterface httpInterface = httpInterfaceManager.getInterface()) {
@@ -63,20 +65,22 @@ public class YoutubeSearchProvider implements HttpConfigurable {
         }
 
         Document document = Jsoup.parse(response.getEntity().getContent(), StandardCharsets.UTF_8.name(), "");
-        return extractSearchResults(document, query);
+        return extractSearchResults(document, query, trackFactory);
       }
     } catch (Exception e) {
       throw ExceptionTools.wrapUnfriendlyExceptions(e);
     }
   }
 
-  private AudioItem extractSearchResults(Document document, String query) {
+  private AudioItem extractSearchResults(Document document, String query,
+                                         Function<AudioTrackInfo, AudioTrack> trackFactory) {
+
     List<AudioTrack> tracks = new ArrayList<>();
 
     for (Element results : document.select("#page > #content #results")) {
       for (Element result : results.select(".yt-lockup-video")) {
         if (!result.hasAttr("data-ad-impressions") && result.select(".standalone-ypc-badge-renderer-label").isEmpty()) {
-          extractTrackFromResultEntry(tracks, result);
+          extractTrackFromResultEntry(tracks, result, trackFactory);
         }
       }
     }
@@ -88,7 +92,9 @@ public class YoutubeSearchProvider implements HttpConfigurable {
     }
   }
 
-  private void extractTrackFromResultEntry(List<AudioTrack> tracks, Element element) {
+  private void extractTrackFromResultEntry(List<AudioTrack> tracks, Element element,
+                                           Function<AudioTrackInfo, AudioTrack> trackFactory) {
+
     Element durationElement = element.select("[class^=video-time]").first();
     Element contentElement = element.select(".yt-lockup-content").first();
     String videoId = element.attr("data-context-item-id");
@@ -102,16 +108,9 @@ public class YoutubeSearchProvider implements HttpConfigurable {
     String title = contentElement.select(".yt-lockup-title > a").text();
     String author = contentElement.select(".yt-lockup-byline > a").text();
 
-    tracks.add(sourceManager.buildTrackObject(videoId, title, author, false, duration));
-  }
+    AudioTrackInfo info = new AudioTrackInfo(title, author, duration, videoId, false,
+        "https://www.youtube.com/watch?v=" + videoId);
 
-  @Override
-  public void configureRequests(Function<RequestConfig, RequestConfig> configurator) {
-    httpInterfaceManager.configureRequests(configurator);
-  }
-
-  @Override
-  public void configureBuilder(Consumer<HttpClientBuilder> configurator) {
-    httpInterfaceManager.configureBuilder(configurator);
+    tracks.add(trackFactory.apply(info));
   }
 }
