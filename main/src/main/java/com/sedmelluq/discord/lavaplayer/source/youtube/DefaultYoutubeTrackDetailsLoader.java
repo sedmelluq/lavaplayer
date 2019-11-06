@@ -57,6 +57,8 @@ public class DefaultYoutubeTrackDetailsLoader implements YoutubeTrackDetailsLoad
         }
 
         return new DefaultYoutubeTrackDetails(videoId, playerInfo);
+      } catch (FriendlyException e) {
+        throw e;
       } catch (Exception e) {
         throw new FriendlyException("Received unexpected response from YouTube.", SUSPICIOUS,
             new RuntimeException("Failed to parse: " + responseText, e));
