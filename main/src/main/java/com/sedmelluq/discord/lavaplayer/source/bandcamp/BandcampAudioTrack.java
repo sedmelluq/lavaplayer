@@ -66,7 +66,7 @@ public class BandcampAudioTrack extends DelegatedAudioTrack {
   }
 
   @Override
-  public AudioTrack makeClone() {
+  protected AudioTrack makeShallowClone() {
     return new BandcampAudioTrack(trackInfo, sourceManager);
   }
 

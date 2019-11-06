@@ -127,7 +127,9 @@ public abstract class BaseAudioTrack implements InternalAudioTrack {
 
   @Override
   public AudioTrack makeClone() {
-    throw new UnsupportedOperationException();
+    AudioTrack track = makeShallowClone();
+    track.setUserData(userData);
+    return track;
   }
 
   @Override
@@ -160,5 +162,9 @@ public abstract class BaseAudioTrack implements InternalAudioTrack {
     } else {
       return null;
     }
+  }
+
+  protected AudioTrack makeShallowClone() {
+    throw new UnsupportedOperationException();
   }
 }
