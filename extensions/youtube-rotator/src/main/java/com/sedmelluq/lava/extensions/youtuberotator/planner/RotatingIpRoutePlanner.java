@@ -11,6 +11,7 @@ import java.math.BigInteger;
 import java.net.Inet4Address;
 import java.net.Inet6Address;
 import java.net.InetAddress;
+import java.util.List;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
@@ -27,27 +28,27 @@ public final class RotatingIpRoutePlanner extends AbstractRoutePlanner {
   private volatile InetAddress lastFailingAddress;
 
   /**
-   * @param ipBlock the block to perform balancing over.
+   * @param ipBlocks the block to perform balancing over.
    */
-  public RotatingIpRoutePlanner(final IpBlock ipBlock) {
-    this(ipBlock, i -> true);
+  public RotatingIpRoutePlanner(final List<IpBlock> ipBlocks) {
+    this(ipBlocks, i -> true);
   }
 
   /**
-   * @param ipBlock  the block to perform balancing over.
+   * @param ipBlocks the block to perform balancing over.
    * @param ipFilter function to filter out certain IP addresses picked from the IP block, causing another random to be chosen.
    */
-  public RotatingIpRoutePlanner(final IpBlock ipBlock, final Predicate<InetAddress> ipFilter) {
-    this(ipBlock, ipFilter, true);
+  public RotatingIpRoutePlanner(final List<IpBlock> ipBlocks, final Predicate<InetAddress> ipFilter) {
+    this(ipBlocks, ipFilter, true);
   }
 
   /**
-   * @param ipBlock             the block to perform balancing over.
+   * @param ipBlocks            the block to perform balancing over.
    * @param ipFilter            function to filter out certain IP addresses picked from the IP block, causing another random to be chosen.
    * @param handleSearchFailure whether a search 429 should trigger the ip as failing
    */
-  public RotatingIpRoutePlanner(final IpBlock ipBlock, final Predicate<InetAddress> ipFilter, final boolean handleSearchFailure) {
-    super(ipBlock, handleSearchFailure);
+  public RotatingIpRoutePlanner(final List<IpBlock> ipBlocks, final Predicate<InetAddress> ipFilter, final boolean handleSearchFailure) {
+    super(ipBlocks, handleSearchFailure);
     this.ipFilter = ipFilter;
     this.next = new AtomicBoolean(false);
     this.rotateIndex = new AtomicReference<>(BigInteger.valueOf(0));
@@ -65,7 +66,7 @@ public final class RotatingIpRoutePlanner extends AbstractRoutePlanner {
   public InetAddress getCurrentAddress() {
     if (index.get().compareTo(BigInteger.ZERO) == 0)
       return null;
-    return ipBlock.getAddressAtIndex(index.get().subtract(BigInteger.ONE));
+    return getCurrentIpBlock().getAddressAtIndex(index.get().subtract(BigInteger.ONE));
   }
 
   public BigInteger getIndex() {
@@ -80,10 +81,11 @@ public final class RotatingIpRoutePlanner extends AbstractRoutePlanner {
   protected Tuple<InetAddress, InetAddress> determineAddressPair(final Tuple<Inet4Address, Inet6Address> remoteAddresses) throws HttpException {
     InetAddress currentAddress = null;
     InetAddress remoteAddress;
+    final IpBlock ipBlock = getCurrentIpBlock();
     if (ipBlock.getType() == Inet4Address.class) {
       if (remoteAddresses.l != null) {
         if (index.get().compareTo(BigInteger.ZERO) == 0 || next.get()) {
-          currentAddress = extractLocalAddress();
+          currentAddress = extractLocalAddress(ipBlock);
           log.info("Selected " + currentAddress.toString() + " as new outgoing ip");
         }
         remoteAddress = remoteAddresses.l;
@@ -93,7 +95,7 @@ public final class RotatingIpRoutePlanner extends AbstractRoutePlanner {
     } else if (ipBlock.getType() == Inet6Address.class) {
       if (remoteAddresses.r != null) {
         if (index.get().compareTo(BigInteger.ZERO) == 0 || next.get()) {
-          currentAddress = extractLocalAddress();
+          currentAddress = extractLocalAddress(ipBlock);
           log.info("Selected " + currentAddress.toString() + " as new outgoing ip");
         }
         remoteAddress = remoteAddresses.r;
@@ -123,12 +125,21 @@ public final class RotatingIpRoutePlanner extends AbstractRoutePlanner {
     next();
   }
 
-  private InetAddress extractLocalAddress() {
+  @Override
+  protected void onBlockSwitch(IpBlock newBlock) {
+    this.next.set(false);
+    this.rotateIndex.set(BigInteger.ZERO);
+    this.index.set(BigInteger.ZERO);
+    this.lastFailingAddress = null;
+  }
+
+  private InetAddress extractLocalAddress(final IpBlock ipBlock) {
     InetAddress localAddress;
     long triesSinceBlockSkip = 0;
     BigInteger it = BigInteger.valueOf(0);
     do {
       if (ipBlock.getSize().multiply(BigInteger.valueOf(2)).compareTo(it) < 0) {
+        nextBlock();
         throw new RuntimeException("Can't find a free ip");
       }
       if (ipBlock.getSize().compareTo(BigInteger.valueOf(128)) > 0)

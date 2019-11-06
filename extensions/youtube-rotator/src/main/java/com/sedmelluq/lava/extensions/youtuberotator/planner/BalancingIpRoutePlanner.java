@@ -10,6 +10,7 @@ import java.math.BigInteger;
 import java.net.Inet4Address;
 import java.net.Inet6Address;
 import java.net.InetAddress;
+import java.util.List;
 import java.util.function.Predicate;
 
 /**
@@ -22,34 +23,36 @@ public class BalancingIpRoutePlanner extends AbstractRoutePlanner {
   private final Predicate<InetAddress> ipFilter;
 
   /**
-   * @param ipBlock the block to perform balancing over.
+   * @param ipBlocks the blocks to perform balancing over.
    */
-  public BalancingIpRoutePlanner(IpBlock ipBlock) {
-    this(ipBlock, i -> true);
+  public BalancingIpRoutePlanner(List<IpBlock> ipBlocks) {
+    this(ipBlocks, i -> true);
   }
 
   /**
-   * @param ipBlock  the block to perform balancing over.
+   * @param ipBlocks the blocks to perform balancing over.
    * @param ipFilter function to filter out certain IP addresses picked from the IP block, causing another random to be chosen.
    */
-  public BalancingIpRoutePlanner(IpBlock ipBlock, Predicate<InetAddress> ipFilter) {
-    this(ipBlock, ipFilter, true);
+  public BalancingIpRoutePlanner(List<IpBlock> ipBlocks, Predicate<InetAddress> ipFilter) {
+    this(ipBlocks, ipFilter, true);
   }
 
   /**
-   * @param ipBlock             the block to perform balancing over.
+   * @param ipBlocks            the blocks to perform balancing over.
    * @param ipFilter            function to filter out certain IP addresses picked from the IP block, causing another random to be chosen.
    * @param handleSearchFailure whether a search 429 should trigger the ip as failing
    */
-  public BalancingIpRoutePlanner(IpBlock ipBlock, Predicate<InetAddress> ipFilter, boolean handleSearchFailure) {
-    super(ipBlock, handleSearchFailure);
+  public BalancingIpRoutePlanner(List<IpBlock> ipBlocks, Predicate<InetAddress> ipFilter, boolean handleSearchFailure) {
+    super(ipBlocks, handleSearchFailure);
     this.ipFilter = ipFilter;
   }
+
 
   @Override
   protected Tuple<InetAddress, InetAddress> determineAddressPair(Tuple<Inet4Address, Inet6Address> remoteAddresses) throws HttpException {
     InetAddress localAddress;
     final InetAddress remoteAddress;
+    final IpBlock ipBlock = getCurrentIpBlock();
     if (ipBlock.getType() == Inet4Address.class) {
       if (remoteAddresses.l != null) {
         localAddress = getRandomAddress(ipBlock);
@@ -79,6 +82,7 @@ public class BalancingIpRoutePlanner extends AbstractRoutePlanner {
     BigInteger it = BigInteger.valueOf(0);
     do {
       if (ipBlock.getSize().multiply(BigInteger.valueOf(2)).compareTo(it) < 0) {
+        nextBlock();
         throw new RuntimeException("Can't find a free ip");
       }
       it = it.add(BigInteger.ONE);
