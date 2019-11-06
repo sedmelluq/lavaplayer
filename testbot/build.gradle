@@ -12,5 +12,3 @@ dependencies {
 }
 
 mainClassName = 'com.sedmelluq.discord.lavaplayer.demo.Bootstrap'
-
-compileJava.dependsOn(':natives:checkNatives')

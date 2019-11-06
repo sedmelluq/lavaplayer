@@ -2,6 +2,7 @@ plugins {
   id 'java'
   id 'groovy'
   id 'org.sonarqube'
+  id 'maven-publish'
   id 'com.jfrog.bintray'
 }
 

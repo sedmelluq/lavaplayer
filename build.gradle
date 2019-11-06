@@ -13,7 +13,6 @@ allprojects {
 
   apply plugin: 'java'
   apply plugin: 'idea'
-  apply plugin: 'maven-publish'
 
   sourceCompatibility = 1.8
   targetCompatibility = 1.8

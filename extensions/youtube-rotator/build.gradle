@@ -1,6 +1,7 @@
 plugins {
   id 'java'
   id 'com.jfrog.bintray'
+  id 'maven-publish'
 }
 
 ext.moduleName = 'lavaplayer-ext-youtube-rotator'
