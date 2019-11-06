@@ -138,6 +138,11 @@ public abstract class AbstractRoutePlanner implements HttpRoutePlanner {
 
   protected final void nextBlock() {
     final int index = blockIndex.incrementAndGet();
+    if (index >= ipBlocks.size()) {
+      blockIndex.set(0);
+      onBlockSwitch(ipBlocks.get(0));
+      return;
+    }
     final IpBlock ipBlock = ipBlocks.get(index);
     onBlockSwitch(ipBlock);
   }
