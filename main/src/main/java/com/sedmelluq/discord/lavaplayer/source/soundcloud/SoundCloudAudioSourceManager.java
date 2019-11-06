@@ -232,27 +232,21 @@ public class SoundCloudAudioSourceManager implements AudioSourceManager, HttpCon
 
       String page = EntityUtils.toString(response.getEntity());
       Matcher scriptMatcher = pageAppScriptPattern.matcher(page);
-      MatchResult result = getMatchIndex(scriptMatcher, 7);
+      String result = getLastMatchWithinLimit(scriptMatcher, 7);
 
       if (result != null) {
-        return result.group(0);
+        return result;
       } else {
         throw new IllegalStateException("Could not find application script from main page.");
       }
     }
   }
 
-  private MatchResult getMatchIndex(Matcher m, int index) {
-    int currentIndex = 0;
-
-    while (currentIndex < index) {
-      if (!m.find()) {
-        return null;
-      }
-      currentIndex++;
-    }
-
-    return m.toMatchResult();
+  private String getLastMatchWithinLimit(Matcher m, int limit) {
+    String lastMatch = null;
+    for(int i = 0; m.find() && i < limit; ++i)
+        lastMatch = m.group();
+    return lastMatch;
   }
 
   private String findClientIdFromApplicationScript(HttpInterface httpInterface, String scriptUrl) throws IOException {
