@@ -49,6 +49,10 @@ public abstract class AbstractRoutePlanner implements HttpRoutePlanner {
     log.info("Active RoutePlanner: {}", getClass().getCanonicalName());
   }
 
+  public IpBlock getIpBlock() {
+    return ipBlock;
+  }
+
   public boolean shouldHandleSearchFailure() {
     return this.handleSearchFailure;
   }
