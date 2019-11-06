@@ -28,6 +28,14 @@ public final class NanoIpRoutePlanner extends AbstractRoutePlanner {
     maskBits = ((Ipv6Block) ipBlock).getMaskBits();
   }
 
+  /**
+   * Returns the address offset based on the current nano time
+   * @return address offset as long
+   */
+  public long getCurrentAddress() {
+    return System.nanoTime() - startTime.longValue();
+  }
+
   @Override
   protected Tuple<InetAddress, InetAddress> determineAddressPair(final Tuple<Inet4Address, Inet6Address> remoteAddresses) throws HttpException {
     InetAddress currentAddress = null;
