@@ -3,27 +3,11 @@ package com.sedmelluq.lava.extensions.youtuberotator.tools.ip;
 import java.math.BigInteger;
 import java.net.Inet6Address;
 import java.net.InetAddress;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.locks.ReentrantLock;
 
 public final class CombinedIpBlock extends IpBlock {
-
-  public static void main(final String[] args) {
-    final List<IpBlock> blocks = new ArrayList<>();
-    blocks.add(new Ipv6Block("beef:beef:beef:beef:beef:beef:beef:beef/128"));
-    blocks.add(new Ipv6Block("beef:beef:beef:beef:beef:feed:beef:beef/128"));
-    blocks.add(new Ipv6Block("beef:beef:beef:beef:beef:cafe:beef:beef/128"));
-    blocks.add(new Ipv6Block("beef:beef:beef:beef:ceed:feed:beef:beef/128"));
-    blocks.add(new Ipv6Block("beef:beef:beef:beef:ceef:feed:beef:beef/126"));
-    blocks.add(new Ipv6Block("beef:beef:beef:beef:ceef:feed:beef:beef/126"));
-
-    final CombinedIpBlock combinedIpBlock = new CombinedIpBlock(blocks);
-
-    System.out.println(combinedIpBlock.getMaskBits());
-    System.out.println(combinedIpBlock.getSize());
-  }
 
   private static final Random random = new Random();
 
@@ -87,6 +71,7 @@ public final class CombinedIpBlock extends IpBlock {
 
   /**
    * Estimates the virtual mask bits of the combined block
+   *
    * @return mask bits
    */
   @Override
