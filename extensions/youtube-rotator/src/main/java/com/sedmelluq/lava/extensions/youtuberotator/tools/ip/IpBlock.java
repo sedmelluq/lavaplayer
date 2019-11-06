@@ -7,7 +7,9 @@ public abstract class IpBlock<I extends InetAddress> {
 
   public abstract I getRandomAddress();
 
-  public abstract I getAddressAtIndex(long index);
+  public I getAddressAtIndex(long index) {
+    return getAddressAtIndex(BigInteger.valueOf(index));
+  }
 
   public I getAddressAtIndex(BigInteger index) {
     return getAddressAtIndex(index.longValue());
@@ -16,4 +18,6 @@ public abstract class IpBlock<I extends InetAddress> {
   public abstract Class<I> getType();
 
   public abstract BigInteger getSize();
+
+  public abstract int getMaskBits();
 }

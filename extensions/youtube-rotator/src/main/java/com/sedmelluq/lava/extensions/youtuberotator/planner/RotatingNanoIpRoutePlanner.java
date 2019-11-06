@@ -59,7 +59,7 @@ public final class RotatingNanoIpRoutePlanner extends AbstractRoutePlanner {
    *
    * @return address offset as long
    */
-  public long getEstAddressIndexInBlock() {
+  public long getAddressIndexInBlock() {
     return System.nanoTime() - blockNanoStart.get().longValue();
   }
 

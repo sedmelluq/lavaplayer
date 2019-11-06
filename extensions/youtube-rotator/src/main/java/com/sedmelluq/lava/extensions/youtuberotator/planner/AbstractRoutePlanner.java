@@ -1,6 +1,7 @@
 package com.sedmelluq.lava.extensions.youtuberotator.planner;
 
 import com.sedmelluq.lava.extensions.youtuberotator.tools.Tuple;
+import com.sedmelluq.lava.extensions.youtuberotator.tools.ip.CombinedIpBlock;
 import com.sedmelluq.lava.extensions.youtuberotator.tools.ip.IpAddressTools;
 import com.sedmelluq.lava.extensions.youtuberotator.tools.ip.IpBlock;
 import org.apache.http.HttpException;
@@ -33,20 +34,18 @@ public abstract class AbstractRoutePlanner implements HttpRoutePlanner {
   private static final long FAILING_TIME = TimeUnit.DAYS.toMillis(7);
   private static final Logger log = LoggerFactory.getLogger(AbstractRoutePlanner.class);
 
-  protected final List<IpBlock> ipBlocks;
+  protected final IpBlock ipBlock;
   private final ThreadLocal<InetAddress> lastAddresses;
   protected final Map<String, Long> failingAddresses;
   private final SchemePortResolver schemePortResolver;
   private final boolean handleSearchFailure;
-  private final AtomicInteger blockIndex;
 
   protected AbstractRoutePlanner(final List<IpBlock> ipBlocks, final boolean handleSearchFailure) {
-    this.ipBlocks = ipBlocks;
+    this.ipBlock = new CombinedIpBlock(ipBlocks);
     this.lastAddresses = new ThreadLocal<>();
     this.failingAddresses = new HashMap<>();
     this.schemePortResolver = DefaultSchemePortResolver.INSTANCE;
     this.handleSearchFailure = handleSearchFailure;
-    this.blockIndex = new AtomicInteger(0);
     log.info("Active RoutePlanner: {}", getClass().getCanonicalName());
   }
 
@@ -56,14 +55,6 @@ public abstract class AbstractRoutePlanner implements HttpRoutePlanner {
 
   public final InetAddress getLastAddress() {
     return this.lastAddresses.get();
-  }
-
-  public List<IpBlock> getIpBlock() {
-    return ipBlocks;
-  }
-
-  public IpBlock getCurrentIpBlock() {
-    return ipBlocks.get(blockIndex.get());
   }
 
   public Map<String, Long> getFailingAddresses() {
@@ -136,32 +127,12 @@ public abstract class AbstractRoutePlanner implements HttpRoutePlanner {
     }
   }
 
-  protected final void nextBlock() {
-    final int index = blockIndex.incrementAndGet();
-    if (index >= ipBlocks.size()) {
-      blockIndex.set(0);
-      onBlockSwitch(ipBlocks.get(0));
-      return;
-    }
-    final IpBlock ipBlock = ipBlocks.get(index);
-    onBlockSwitch(ipBlock);
-  }
-
   /**
    * Called when an address is marked as failing
    *
    * @param address the failing address
    */
   protected void onAddressFailure(final InetAddress address) {
-
-  }
-
-  /**
-   * Called when switching to a new ip block
-   *
-   * @param newBlock the new block
-   */
-  protected void onBlockSwitch(final IpBlock newBlock) {
 
   }
 
