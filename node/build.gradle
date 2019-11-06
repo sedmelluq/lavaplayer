@@ -16,30 +16,3 @@ bootJar {
   mainClassName = 'com.sedmelluq.discord.lavaplayer.node.NodeApplication'
   classifier = 'boot'
 }
-
-publish {
-  dependsOn assemble
-}
-
-task sourceJar(type: Jar) {
-  from sourceSets.main.allJava
-}
-
-publishing {
-  publications {
-    mavenJava(MavenPublication) {
-      groupId 'com.sedmelluq'
-      artifactId 'lavaplayer-node'
-
-      from components.java
-
-      artifact sourceJar {
-        classifier "sources"
-      }
-
-      artifact ("$buildDir/libs/$project.name-$version-boot.jar") {
-        classifier = 'boot'
-      }
-    }
-  }
-}

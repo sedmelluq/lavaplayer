@@ -49,7 +49,7 @@ public class BeamAudioTrack extends M3uStreamAudioTrack {
   }
 
   @Override
-  public AudioTrack makeClone() {
+  protected AudioTrack makeShallowClone() {
     return new BeamAudioTrack(trackInfo, sourceManager);
   }
 

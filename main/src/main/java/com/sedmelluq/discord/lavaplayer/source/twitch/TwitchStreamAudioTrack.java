@@ -57,7 +57,7 @@ public class TwitchStreamAudioTrack extends M3uStreamAudioTrack {
   }
 
   @Override
-  public AudioTrack makeClone() {
+  protected AudioTrack makeShallowClone() {
     return new TwitchStreamAudioTrack(trackInfo, sourceManager);
   }
 
