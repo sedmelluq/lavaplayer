@@ -35,7 +35,7 @@ public final class RotatingIpRoutePlanner extends AbstractRoutePlanner {
   }
 
   /**
-   * @param ipBlocks the block to perform balancing over.
+   * @param ipBlocks  the block to perform balancing over.
    * @param ipFilter function to filter out certain IP addresses picked from the IP block, causing another random to be chosen.
    */
   public RotatingIpRoutePlanner(final List<IpBlock> ipBlocks, final Predicate<InetAddress> ipFilter) {
@@ -43,7 +43,7 @@ public final class RotatingIpRoutePlanner extends AbstractRoutePlanner {
   }
 
   /**
-   * @param ipBlocks            the block to perform balancing over.
+   * @param ipBlocks             the block to perform balancing over.
    * @param ipFilter            function to filter out certain IP addresses picked from the IP block, causing another random to be chosen.
    * @param handleSearchFailure whether a search 429 should trigger the ip as failing
    */
@@ -66,7 +66,7 @@ public final class RotatingIpRoutePlanner extends AbstractRoutePlanner {
   public InetAddress getCurrentAddress() {
     if (index.get().compareTo(BigInteger.ZERO) == 0)
       return null;
-    return getCurrentIpBlock().getAddressAtIndex(index.get().subtract(BigInteger.ONE));
+    return ipBlock.getAddressAtIndex(index.get().subtract(BigInteger.ONE));
   }
 
   public BigInteger getIndex() {
@@ -81,11 +81,10 @@ public final class RotatingIpRoutePlanner extends AbstractRoutePlanner {
   protected Tuple<InetAddress, InetAddress> determineAddressPair(final Tuple<Inet4Address, Inet6Address> remoteAddresses) throws HttpException {
     InetAddress currentAddress = null;
     InetAddress remoteAddress;
-    final IpBlock ipBlock = getCurrentIpBlock();
     if (ipBlock.getType() == Inet4Address.class) {
       if (remoteAddresses.l != null) {
         if (index.get().compareTo(BigInteger.ZERO) == 0 || next.get()) {
-          currentAddress = extractLocalAddress(ipBlock);
+          currentAddress = extractLocalAddress();
           log.info("Selected " + currentAddress.toString() + " as new outgoing ip");
         }
         remoteAddress = remoteAddresses.l;
@@ -95,7 +94,7 @@ public final class RotatingIpRoutePlanner extends AbstractRoutePlanner {
     } else if (ipBlock.getType() == Inet6Address.class) {
       if (remoteAddresses.r != null) {
         if (index.get().compareTo(BigInteger.ZERO) == 0 || next.get()) {
-          currentAddress = extractLocalAddress(ipBlock);
+          currentAddress = extractLocalAddress();
           log.info("Selected " + currentAddress.toString() + " as new outgoing ip");
         }
         remoteAddress = remoteAddresses.r;
@@ -125,21 +124,12 @@ public final class RotatingIpRoutePlanner extends AbstractRoutePlanner {
     next();
   }
 
-  @Override
-  protected void onBlockSwitch(IpBlock newBlock) {
-    this.next.set(false);
-    this.rotateIndex.set(BigInteger.ZERO);
-    this.index.set(BigInteger.ZERO);
-    this.lastFailingAddress = null;
-  }
-
-  private InetAddress extractLocalAddress(final IpBlock ipBlock) {
+  private InetAddress extractLocalAddress() {
     InetAddress localAddress;
     long triesSinceBlockSkip = 0;
     BigInteger it = BigInteger.valueOf(0);
     do {
       if (ipBlock.getSize().multiply(BigInteger.valueOf(2)).compareTo(it) < 0) {
-        nextBlock();
         throw new RuntimeException("Can't find a free ip");
       }
       if (ipBlock.getSize().compareTo(BigInteger.valueOf(128)) > 0)

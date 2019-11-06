@@ -39,15 +39,12 @@ public final class RotatingNanoIpRoutePlanner extends AbstractRoutePlanner {
     this.currentBlock = new AtomicReference<>(BigInteger.ZERO);
     this.blockNanoStart = new AtomicReference<>(BigInteger.valueOf(System.nanoTime()));
     this.next = new AtomicBoolean(false);
-    for (IpBlock ipBlock : ipBlocks) {
-      if (ipBlock.getType() != Inet6Address.class || ipBlock.getSize().compareTo(Ipv6Block.BLOCK64_IPS) < 0)
-        throw new IllegalArgumentException("Please use a bigger IPv6 Block!");
-    }
+    if (ipBlock.getType() != Inet6Address.class || ipBlock.getSize().compareTo(Ipv6Block.BLOCK64_IPS) < 0)
+      throw new IllegalArgumentException("Please use a bigger IPv6 Block!");
   }
 
   /**
    * Returns the current block index
-   *
    * @return block index which is currently used
    */
   public BigInteger getCurrentBlock() {
@@ -56,7 +53,6 @@ public final class RotatingNanoIpRoutePlanner extends AbstractRoutePlanner {
 
   /**
    * Returns the address offset for the current nano time
-   *
    * @return address offset as long
    */
   public long getAddressIndexInBlock() {
@@ -67,10 +63,9 @@ public final class RotatingNanoIpRoutePlanner extends AbstractRoutePlanner {
   protected Tuple<InetAddress, InetAddress> determineAddressPair(final Tuple<Inet4Address, Inet6Address> remoteAddresses) throws HttpException {
     InetAddress currentAddress = null;
     InetAddress remoteAddress;
-    final IpBlock ipBlock = getCurrentIpBlock();
     if (ipBlock.getType() == Inet6Address.class) {
       if (remoteAddresses.r != null) {
-        currentAddress = extractLocalAddress(ipBlock);
+        currentAddress = extractLocalAddress();
         log.debug("Selected " + currentAddress.toString() + " as new outgoing ip");
         remoteAddress = remoteAddresses.r;
       } else if (remoteAddresses.l != null) {
@@ -92,20 +87,13 @@ public final class RotatingNanoIpRoutePlanner extends AbstractRoutePlanner {
     blockNanoStart.set(BigInteger.valueOf(System.nanoTime()));
   }
 
-  @Override
-  protected void onBlockSwitch(IpBlock newBlock) {
-    currentBlock.set(BigInteger.ZERO);
-    blockNanoStart.set(BigInteger.valueOf(System.nanoTime()));
-  }
-
-  private InetAddress extractLocalAddress(final IpBlock ipBlock) {
+  private InetAddress extractLocalAddress() {
     InetAddress localAddress;
     long triesSinceBlockSkip = 0;
     BigInteger it = BigInteger.valueOf(0);
     do {
       try {
         if (ipBlock.getSize().multiply(BigInteger.valueOf(2)).compareTo(it) < 0) {
-          nextBlock();
           throw new RuntimeException("Can't find a free ip");
         }
         it = it.add(BigInteger.ONE);
