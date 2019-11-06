@@ -4,7 +4,7 @@ plugins {
 }
 
 ext.moduleName = 'lavaplayer-ext-youtube-rotator'
-version = '0.1.1'
+version = '0.1.2'
 
 dependencies {
   compile project(':main')
