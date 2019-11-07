@@ -1,6 +1,7 @@
 package com.sedmelluq.lava.extensions.youtuberotator.planner;
 
 import com.sedmelluq.lava.extensions.youtuberotator.tools.Tuple;
+import com.sedmelluq.lava.extensions.youtuberotator.tools.ip.CombinedIpBlock;
 import com.sedmelluq.lava.extensions.youtuberotator.tools.ip.IpAddressTools;
 import com.sedmelluq.lava.extensions.youtuberotator.tools.ip.IpBlock;
 import org.apache.http.HttpException;
@@ -23,8 +24,10 @@ import java.net.Inet4Address;
 import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public abstract class AbstractRoutePlanner implements HttpRoutePlanner {
 
@@ -37,13 +40,17 @@ public abstract class AbstractRoutePlanner implements HttpRoutePlanner {
   private final SchemePortResolver schemePortResolver;
   private final boolean handleSearchFailure;
 
-  protected AbstractRoutePlanner(final IpBlock ipBlock, final boolean handleSearchFailure) {
-    this.ipBlock = ipBlock;
+  protected AbstractRoutePlanner(final List<IpBlock> ipBlocks, final boolean handleSearchFailure) {
+    this.ipBlock = new CombinedIpBlock(ipBlocks);
     this.lastAddresses = new ThreadLocal<>();
     this.failingAddresses = new HashMap<>();
     this.schemePortResolver = DefaultSchemePortResolver.INSTANCE;
     this.handleSearchFailure = handleSearchFailure;
     log.info("Active RoutePlanner: {}", getClass().getCanonicalName());
+  }
+
+  public IpBlock getIpBlock() {
+    return ipBlock;
   }
 
   public boolean shouldHandleSearchFailure() {
@@ -52,10 +59,6 @@ public abstract class AbstractRoutePlanner implements HttpRoutePlanner {
 
   public final InetAddress getLastAddress() {
     return this.lastAddresses.get();
-  }
-
-  public IpBlock getIpBlock() {
-    return ipBlock;
   }
 
   public Map<String, Long> getFailingAddresses() {

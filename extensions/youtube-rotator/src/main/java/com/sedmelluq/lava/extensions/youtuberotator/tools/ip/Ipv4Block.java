@@ -79,6 +79,11 @@ public final class Ipv4Block extends IpBlock<Inet4Address> {
     return BigInteger.valueOf(2).pow(NBITS - maskBits);
   }
 
+  @Override
+  public int getMaskBits() {
+    return maskBits;
+  }
+
   private Inet4Address intToAddress(final int val) {
     byte[] octets = new byte[4];
     for (int j = 3; j >= 0; --j) {

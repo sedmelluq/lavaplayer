@@ -11,6 +11,7 @@ import java.math.BigInteger;
 import java.net.Inet4Address;
 import java.net.Inet6Address;
 import java.net.InetAddress;
+import java.util.List;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
@@ -27,27 +28,27 @@ public final class RotatingIpRoutePlanner extends AbstractRoutePlanner {
   private volatile InetAddress lastFailingAddress;
 
   /**
-   * @param ipBlock the block to perform balancing over.
+   * @param ipBlocks the block to perform balancing over.
    */
-  public RotatingIpRoutePlanner(final IpBlock ipBlock) {
-    this(ipBlock, i -> true);
+  public RotatingIpRoutePlanner(final List<IpBlock> ipBlocks) {
+    this(ipBlocks, i -> true);
   }
 
   /**
-   * @param ipBlock  the block to perform balancing over.
+   * @param ipBlocks  the block to perform balancing over.
    * @param ipFilter function to filter out certain IP addresses picked from the IP block, causing another random to be chosen.
    */
-  public RotatingIpRoutePlanner(final IpBlock ipBlock, final Predicate<InetAddress> ipFilter) {
-    this(ipBlock, ipFilter, true);
+  public RotatingIpRoutePlanner(final List<IpBlock> ipBlocks, final Predicate<InetAddress> ipFilter) {
+    this(ipBlocks, ipFilter, true);
   }
 
   /**
-   * @param ipBlock             the block to perform balancing over.
+   * @param ipBlocks             the block to perform balancing over.
    * @param ipFilter            function to filter out certain IP addresses picked from the IP block, causing another random to be chosen.
    * @param handleSearchFailure whether a search 429 should trigger the ip as failing
    */
-  public RotatingIpRoutePlanner(final IpBlock ipBlock, final Predicate<InetAddress> ipFilter, final boolean handleSearchFailure) {
-    super(ipBlock, handleSearchFailure);
+  public RotatingIpRoutePlanner(final List<IpBlock> ipBlocks, final Predicate<InetAddress> ipFilter, final boolean handleSearchFailure) {
+    super(ipBlocks, handleSearchFailure);
     this.ipFilter = ipFilter;
     this.next = new AtomicBoolean(false);
     this.rotateIndex = new AtomicReference<>(BigInteger.valueOf(0));

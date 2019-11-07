@@ -11,6 +11,7 @@ import java.math.BigInteger;
 import java.net.Inet4Address;
 import java.net.Inet6Address;
 import java.net.InetAddress;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
@@ -24,16 +25,16 @@ public final class RotatingNanoIpRoutePlanner extends AbstractRoutePlanner {
   private final AtomicReference<BigInteger> blockNanoStart;
   private final AtomicBoolean next;
 
-  public RotatingNanoIpRoutePlanner(final IpBlock ipBlock) {
-    this(ipBlock, ip -> true);
+  public RotatingNanoIpRoutePlanner(final List<IpBlock> ipBlocks) {
+    this(ipBlocks, ip -> true);
   }
 
-  public RotatingNanoIpRoutePlanner(final IpBlock ipBlock, final Predicate<InetAddress> ipFilter) {
-    this(ipBlock, ipFilter, true);
+  public RotatingNanoIpRoutePlanner(final List<IpBlock> ipBlocks, final Predicate<InetAddress> ipFilter) {
+    this(ipBlocks, ipFilter, true);
   }
 
-  public RotatingNanoIpRoutePlanner(final IpBlock ipBlock, final Predicate<InetAddress> ipFilter, final boolean handleSearchFailure) {
-    super(ipBlock, handleSearchFailure);
+  public RotatingNanoIpRoutePlanner(final List<IpBlock> ipBlocks, final Predicate<InetAddress> ipFilter, final boolean handleSearchFailure) {
+    super(ipBlocks, handleSearchFailure);
     this.ipFilter = ipFilter;
     this.currentBlock = new AtomicReference<>(BigInteger.ZERO);
     this.blockNanoStart = new AtomicReference<>(BigInteger.valueOf(System.nanoTime()));
@@ -54,7 +55,7 @@ public final class RotatingNanoIpRoutePlanner extends AbstractRoutePlanner {
    * Returns the address offset for the current nano time
    * @return address offset as long
    */
-  public long getEstAddressIndexInBlock() {
+  public long getAddressIndexInBlock() {
     return System.nanoTime() - blockNanoStart.get().longValue();
   }
 
