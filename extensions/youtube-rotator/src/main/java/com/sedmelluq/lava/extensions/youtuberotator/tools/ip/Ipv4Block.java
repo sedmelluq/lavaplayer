@@ -12,7 +12,9 @@ import java.util.regex.Pattern;
 
 public final class Ipv4Block extends IpBlock<Inet4Address> {
 
-  public static boolean isIpv4CidrBlock(final String cidr) {
+  public static boolean isIpv4CidrBlock(String cidr) {
+    if (!cidr.contains("/"))
+      cidr += "/32";
     return CIDR_REGEX.matcher(cidr).matches();
   }
 
@@ -40,7 +42,9 @@ public final class Ipv4Block extends IpBlock<Inet4Address> {
   private final int maskBits;
   private final int address;
 
-  public Ipv4Block(final String cidr) {
+  public Ipv4Block(String cidr) {
+    if (!cidr.contains("/"))
+      cidr += "/32";
     final Matcher matcher = CIDR_REGEX.matcher(cidr);
     if (matcher.matches()) {
       this.address = matchAddress(matcher);
