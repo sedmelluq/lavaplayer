@@ -27,7 +27,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public abstract class AbstractRoutePlanner implements HttpRoutePlanner {
   private static final String CHOSEN_IP_ATTRIBUTE = "yt-route-ip";
@@ -61,7 +60,7 @@ public abstract class AbstractRoutePlanner implements HttpRoutePlanner {
   }
 
   public final InetAddress getLastAddress(final HttpClientContext context) {
-    return context.getAttribute(CHOSEN_IP_ATTRIBUTE, InetAddress.class)
+    return context.getAttribute(CHOSEN_IP_ATTRIBUTE, InetAddress.class);
   }
 
   public final void markAddressFailing(HttpClientContext context) {
