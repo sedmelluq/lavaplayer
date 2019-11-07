@@ -1,5 +1,6 @@
 package com.sedmelluq.lava.extensions.youtuberotator.tools.ip;
 
+import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.net.Inet6Address;
 import java.net.InetAddress;
@@ -13,6 +14,8 @@ public final class CombinedIpBlock extends IpBlock {
 
   private final Class type;
   private final List<IpBlock> ipBlocks;
+  private final BigInteger size;
+  private final int[] hitProbability;
   private final ReentrantLock lock;
 
   public CombinedIpBlock(final List<IpBlock> ipBlocks) {
@@ -22,16 +25,44 @@ public final class CombinedIpBlock extends IpBlock {
     if (ipBlocks.stream().anyMatch(block -> !block.getType().equals(type)))
       throw new IllegalArgumentException("All Ip Blocks must have the same type for a combined block");
     this.ipBlocks = ipBlocks;
+    this.hitProbability = new int[this.ipBlocks.size()];
+
+    // Cache size of all blocks
+    BigInteger count = BigInteger.ZERO;
+    for (final IpBlock ipBlock : ipBlocks) {
+      count = count.add(ipBlock.getSize());
+    }
+    this.size = count;
     this.lock = new ReentrantLock();
+    this.calculateHitProbabilities();
   }
 
+  private void calculateHitProbabilities() {
+    final BigDecimal size = new BigDecimal(this.size);
+    final BigInteger sizeMultiplicator = BigInteger.valueOf(Integer.MAX_VALUE); // 100% target = Integer.MAX_VALUE
+    for (int i = 0; i < ipBlocks.size(); i++) {
+      final IpBlock ipBlock = ipBlocks.get(i);
+      final BigInteger calcSize = ipBlock.getSize().multiply(sizeMultiplicator);
+      final BigDecimal probability = new BigDecimal(calcSize).divide(size, BigDecimal.ROUND_HALF_UP);
+      this.hitProbability[i] = probability.intValue();
+    }
+  }
 
   @Override
   public InetAddress getRandomAddress() {
     if (ipBlocks.size() == 1)
       return ipBlocks.get(0).getRandomAddress();
-    final int randomIndex = random.nextInt(ipBlocks.size());
-    return ipBlocks.get(randomIndex).getRandomAddress();
+    final int probability = random.nextInt(Integer.MAX_VALUE);
+    int probabilitySum = 0;
+    int matchIndex = 0;
+    for (int i = 0; i < hitProbability.length; i++) {
+      if (hitProbability[i] > probability - probabilitySum) {
+        matchIndex = i;
+        break;
+      }
+      probabilitySum += hitProbability[i];
+    }
+    return ipBlocks.get(matchIndex).getRandomAddress();
   }
 
   @Override
@@ -56,17 +87,7 @@ public final class CombinedIpBlock extends IpBlock {
 
   @Override
   public BigInteger getSize() {
-    try {
-      lock.lockInterruptibly();
-      BigInteger count = BigInteger.ZERO;
-      for (final IpBlock ipBlock : ipBlocks) {
-        count = count.add(ipBlock.getSize());
-      }
-      lock.unlock();
-      return count;
-    } catch (final InterruptedException ex) {
-      throw new RuntimeException("Could not acquire lock", ex);
-    }
+    return this.size;
   }
 
   /**
