@@ -5,13 +5,14 @@ import com.sedmelluq.discord.lavaplayer.source.youtube.YoutubeAudioSourceManager
 import com.sedmelluq.discord.lavaplayer.source.youtube.YoutubeHttpContextFilter;
 import com.sedmelluq.lava.extensions.youtuberotator.planner.AbstractRoutePlanner;
 import com.sedmelluq.lava.extensions.youtuberotator.tools.RateLimitException;
-import java.net.BindException;
 import org.apache.http.Header;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.protocol.HttpClientContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.net.BindException;
 
 public class YoutubeIpRotator extends YoutubeHttpContextFilter {
   private static final Logger log = LoggerFactory.getLogger(YoutubeIpRotator.class);

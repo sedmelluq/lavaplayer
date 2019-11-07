@@ -44,7 +44,7 @@ public abstract class AbstractRoutePlanner implements HttpRoutePlanner {
     this.failingAddresses = new HashMap<>();
     this.schemePortResolver = DefaultSchemePortResolver.INSTANCE;
     this.handleSearchFailure = handleSearchFailure;
-    log.info("Active RoutePlanner: {}", getClass().getCanonicalName());
+    log.info("Active RoutePlanner: {} using total of {} ips", getClass().getCanonicalName(), this.ipBlock.getSize());
   }
 
   public IpBlock getIpBlock() {
@@ -55,12 +55,12 @@ public abstract class AbstractRoutePlanner implements HttpRoutePlanner {
     return this.handleSearchFailure;
   }
 
-  public final InetAddress getLastAddress(HttpClientContext context) {
-    return context.getAttribute(CHOSEN_IP_ATTRIBUTE, InetAddress.class);
-  }
-
   public Map<String, Long> getFailingAddresses() {
     return failingAddresses;
+  }
+
+  public final InetAddress getLastAddress(final HttpClientContext context) {
+    return context.getAttribute(CHOSEN_IP_ATTRIBUTE, InetAddress.class);
   }
 
   public final void markAddressFailing(HttpClientContext context) {

@@ -16,7 +16,9 @@ import java.util.regex.Pattern;
  */
 public class Ipv6Block extends IpBlock<Inet6Address> {
 
-  public static boolean isIpv6CidrBlock(final String cidr) {
+  public static boolean isIpv6CidrBlock(String cidr) {
+    if (!cidr.contains("/"))
+      cidr += "/128";
     return CIDR_REGEX.matcher(cidr).matches();
   }
 
@@ -34,6 +36,8 @@ public class Ipv6Block extends IpBlock<Inet6Address> {
   private static final Logger log = LoggerFactory.getLogger(Ipv6Block.class);
 
   public Ipv6Block(String cidr) {
+    if (!cidr.contains("/"))
+      cidr += "/128";
     this.cidr = cidr.toLowerCase();
     Matcher matcher = CIDR_REGEX.matcher(this.cidr);
     if (!matcher.find()) {
@@ -61,7 +65,7 @@ public class Ipv6Block extends IpBlock<Inet6Address> {
   public Inet6Address getRandomAddress() {
     if (maskBits == IPV6_BIT_SIZE) return longToAddress(prefix);
 
-    final BigInteger randomAddressOffset = random.nextBigInt(IPV6_BIT_SIZE - (maskBits + 1));
+    final BigInteger randomAddressOffset = random.nextBigInt(IPV6_BIT_SIZE - (maskBits + 1)).abs();
     Inet6Address inetAddress = longToAddress(prefix.add(randomAddressOffset));
     log.info(inetAddress.toString());
     return inetAddress;
