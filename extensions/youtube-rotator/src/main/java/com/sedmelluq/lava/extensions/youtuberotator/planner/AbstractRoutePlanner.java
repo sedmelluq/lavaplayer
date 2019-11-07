@@ -27,22 +27,20 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public abstract class AbstractRoutePlanner implements HttpRoutePlanner {
+  private static final String CHOSEN_IP_ATTRIBUTE = "yt-route-ip";
 
   private static final long FAILING_TIME = TimeUnit.DAYS.toMillis(7);
   private static final Logger log = LoggerFactory.getLogger(AbstractRoutePlanner.class);
 
   protected final IpBlock ipBlock;
-  private final ThreadLocal<InetAddress> lastAddresses;
   protected final Map<String, Long> failingAddresses;
   private final SchemePortResolver schemePortResolver;
   private final boolean handleSearchFailure;
 
   protected AbstractRoutePlanner(final List<IpBlock> ipBlocks, final boolean handleSearchFailure) {
     this.ipBlock = new CombinedIpBlock(ipBlocks);
-    this.lastAddresses = new ThreadLocal<>();
     this.failingAddresses = new HashMap<>();
     this.schemePortResolver = DefaultSchemePortResolver.INSTANCE;
     this.handleSearchFailure = handleSearchFailure;
@@ -57,18 +55,19 @@ public abstract class AbstractRoutePlanner implements HttpRoutePlanner {
     return this.handleSearchFailure;
   }
 
-  public final InetAddress getLastAddress() {
-    return this.lastAddresses.get();
+  public final InetAddress getLastAddress(HttpClientContext context) {
+    return context.getAttribute(CHOSEN_IP_ATTRIBUTE, InetAddress.class);
   }
 
   public Map<String, Long> getFailingAddresses() {
     return failingAddresses;
   }
 
-  public final void markAddressFailing() {
-    final InetAddress address = this.lastAddresses.get();
+  public final void markAddressFailing(HttpClientContext context) {
+    final InetAddress address = getLastAddress(context);
     if (address == null) {
-      log.warn("Call to markAddressFailing() before lastAddresses was set", new RuntimeException("Report this to the devs: address is null"));
+      log.warn("Call to markAddressFailing() without chosen IP set",
+          new RuntimeException("Report this to the devs: address is null"));
       return;
     }
     this.failingAddresses.put(address.toString(), System.currentTimeMillis());
@@ -122,8 +121,8 @@ public abstract class AbstractRoutePlanner implements HttpRoutePlanner {
     final HttpHost target = new HttpHost(addresses.r, host.getHostName(), remotePort, host.getSchemeName());
     final HttpHost proxy = config.getProxy();
     final boolean secure = target.getSchemeName().equalsIgnoreCase("https");
-    this.lastAddresses.set(addresses.l);
-    log.debug("Setting last address to {}", lastAddresses);
+    clientContext.setAttribute(CHOSEN_IP_ATTRIBUTE, addresses.l);
+    log.debug("Setting route context attribute to {}", addresses.l);
     if (proxy == null) {
       return new HttpRoute(target, addresses.l, secure);
     } else {
