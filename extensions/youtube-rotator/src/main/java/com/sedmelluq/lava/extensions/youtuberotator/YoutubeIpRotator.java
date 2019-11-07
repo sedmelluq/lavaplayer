@@ -5,12 +5,13 @@ import com.sedmelluq.discord.lavaplayer.source.youtube.YoutubeAudioSourceManager
 import com.sedmelluq.discord.lavaplayer.source.youtube.YoutubeHttpContextFilter;
 import com.sedmelluq.lava.extensions.youtuberotator.planner.AbstractRoutePlanner;
 import com.sedmelluq.lava.extensions.youtuberotator.tools.RateLimitException;
-import java.net.BindException;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.protocol.HttpClientContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.net.BindException;
 
 public class YoutubeIpRotator extends YoutubeHttpContextFilter {
   private static final Logger log = LoggerFactory.getLogger(YoutubeIpRotator.class);
@@ -47,9 +48,16 @@ public class YoutubeIpRotator extends YoutubeHttpContextFilter {
         if (routePlanner.shouldHandleSearchFailure()) {
           log.warn("YouTube search rate limit reached, marking address as failing and retry");
           routePlanner.markAddressFailing();
+          return true;
         }
-
         throw new RateLimitException("YouTube search rate limit reached");
+      }
+    } else {
+      int statusCode = response.getStatusLine().getStatusCode();
+      if (statusCode == 429) {
+        log.warn("YouTube search rate limit reached, marking address as failing and retry");
+        routePlanner.markAddressFailing();
+        return true;
       }
     }
 
