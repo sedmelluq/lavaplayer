@@ -46,7 +46,7 @@ public abstract class AbstractRoutePlanner implements HttpRoutePlanner {
     this.failingAddresses = new HashMap<>();
     this.schemePortResolver = DefaultSchemePortResolver.INSTANCE;
     this.handleSearchFailure = handleSearchFailure;
-    log.info("Active RoutePlanner: {}", getClass().getCanonicalName());
+    log.info("Active RoutePlanner: {} using total of {} ips", getClass().getCanonicalName(), this.ipBlock.getSize());
   }
 
   public IpBlock getIpBlock() {
