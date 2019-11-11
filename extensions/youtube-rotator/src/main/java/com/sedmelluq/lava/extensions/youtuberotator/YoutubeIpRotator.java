@@ -48,7 +48,9 @@ public class YoutubeIpRotator extends YoutubeHttpContextFilter {
       setRetryCount(context, 0);
     }
 
-    super.onRequest(context, request, isRepetition);
+    if (!isSearch) {
+      super.onRequest(context, request, isRepetition);
+    }
   }
 
   @Override
