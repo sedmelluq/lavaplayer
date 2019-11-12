@@ -66,7 +66,7 @@ public class YoutubeIpRotator extends YoutubeHttpContextFilter {
 
         return limitedRetry(context);
       }
-    } else if (isRateLimited(request, response)) {
+    } else if (isRateLimited(response)) {
       log.warn("YouTube rate limit reached, marking address {} as failing and retry",
           routePlanner.getLastAddress(context));
       routePlanner.markAddressFailing(context);
@@ -77,17 +77,9 @@ public class YoutubeIpRotator extends YoutubeHttpContextFilter {
     return super.onRequestResponse(context, request, response);
   }
 
-  private boolean isRateLimited(HttpUriRequest request, HttpResponse response) {
+  private boolean isRateLimited(HttpResponse response) {
     int statusCode = response.getStatusLine().getStatusCode();
-
-    if (statusCode == 429) {
-      return true;
-    } else if (request.getURI().toString().contains("pbj=1")) {
-      Header contentType = response.getFirstHeader("content-type");
-      return contentType != null && contentType.getValue().contains("text/html");
-    }
-
-    return false;
+    return statusCode == 429;
   }
 
   @Override
