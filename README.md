@@ -18,7 +18,7 @@ repositories {
 }
 
 dependencies {
-  compile 'com.sedmelluq:lavaplayer:x.y.z'
+  implementation 'com.sedmelluq:lavaplayer:x.y.z'
 }
 ```
 
