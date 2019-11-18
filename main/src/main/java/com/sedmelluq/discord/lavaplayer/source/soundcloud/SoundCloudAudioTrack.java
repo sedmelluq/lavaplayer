@@ -2,6 +2,7 @@ package com.sedmelluq.discord.lavaplayer.source.soundcloud;
 
 import com.sedmelluq.discord.lavaplayer.container.mp3.Mp3AudioTrack;
 import com.sedmelluq.discord.lavaplayer.source.AudioSourceManager;
+import com.sedmelluq.discord.lavaplayer.tools.JsonBrowser;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterface;
 import com.sedmelluq.discord.lavaplayer.tools.io.PersistentHttpStream;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
@@ -35,33 +36,41 @@ public class SoundCloudAudioTrack extends DelegatedAudioTrack {
   @Override
   public void process(LocalAudioTrackExecutor localExecutor) throws Exception {
     try (HttpInterface httpInterface = sourceManager.getHttpInterface()) {
-      if (!attemptLoadStream(localExecutor, httpInterface, true)) {
-        sourceManager.updateClientId();
-
-        attemptLoadStream(localExecutor, httpInterface, false);
+      if (trackInfo.identifier.startsWith("O:")) {
+        loadFromOpusStream(localExecutor, httpInterface);
+      } else {
+        loadFromMp3Url(localExecutor, httpInterface);
       }
     }
   }
 
-  private boolean attemptLoadStream(LocalAudioTrackExecutor localExecutor, HttpInterface httpInterface, boolean checkUnauthorized) throws Exception {
+  private void loadFromOpusStream(LocalAudioTrackExecutor localExecutor, HttpInterface httpInterface) throws Exception {
+    String streamLookupUrl = trackInfo.identifier.substring(2);
+    String m3uProviderUrl;
+
+    try (PersistentHttpStream stream = new PersistentHttpStream(httpInterface, new URI(streamLookupUrl), null)) {
+      if (stream.checkStatusCode() != 200) {
+        throw new IOException("Invalid status code for soundcloud stream: " + stream.checkStatusCode());
+      }
+
+      JsonBrowser json = JsonBrowser.parse(stream);
+      m3uProviderUrl = json.get("url").text();
+    }
+
+    processDelegate(new SoundCloudOpusM3uAudioTrack(trackInfo, httpInterface, m3uProviderUrl), localExecutor);
+  }
+
+  private void loadFromMp3Url(LocalAudioTrackExecutor localExecutor, HttpInterface httpInterface) throws Exception {
     String trackUrl = sourceManager.getTrackUrlFromId(trackInfo.identifier);
     log.debug("Starting SoundCloud track from URL: {}", trackUrl);
 
     try (PersistentHttpStream stream = new PersistentHttpStream(httpInterface, new URI(trackUrl), null)) {
-      if (checkUnauthorized) {
-        int statusCode = stream.checkStatusCode();
-
-        if (statusCode == 401) {
-          return false;
-        } else if (statusCode < 200 && statusCode >= 300) {
-          throw new IOException("Invalid status code for soundcloud stream: " + statusCode);
-        }
+      if (stream.checkStatusCode() != 200) {
+        throw new IOException("Invalid status code for soundcloud stream: " + stream.checkStatusCode());
       }
 
       processDelegate(new Mp3AudioTrack(trackInfo, stream), localExecutor);
     }
-
-    return true;
   }
 
   @Override

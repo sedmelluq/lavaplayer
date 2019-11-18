@@ -16,7 +16,9 @@ public abstract class DelegatedAudioTrack extends BaseAudioTrack {
     super(trackInfo);
   }
 
-  protected synchronized void processDelegate(InternalAudioTrack delegate, LocalAudioTrackExecutor localExecutor) throws Exception {
+  protected synchronized void processDelegate(InternalAudioTrack delegate, LocalAudioTrackExecutor localExecutor)
+      throws Exception {
+
     if (this.delegate != null) {
       throw new IllegalStateException("Cannot assign delegate twice.");
     }
