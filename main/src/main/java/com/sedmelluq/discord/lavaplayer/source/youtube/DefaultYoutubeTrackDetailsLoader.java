@@ -37,22 +37,22 @@ public class DefaultYoutubeTrackDetailsLoader implements YoutubeTrackDetailsLoad
 
       try {
         JsonBrowser json = JsonBrowser.parse(responseText);
-        JsonBrowser playerInfo = null;
-        JsonBrowser statusBlock = null;
+        JsonBrowser playerInfo = JsonBrowser.NULL_BROWSER;
+        JsonBrowser statusBlock = JsonBrowser.NULL_BROWSER;
 
         for (JsonBrowser child : json.values()) {
           if (child.isMap()) {
             if (!child.get("player").isNull()) {
               playerInfo = child.get("player");
             } else if (!child.get("playerResponse").isNull()) {
-              statusBlock = child.get("playerResponse").safeGet("playabilityStatus");
+              statusBlock = child.get("playerResponse").get("playabilityStatus");
             }
           }
         }
 
         if (!checkStatusBlock(statusBlock)) {
           return null;
-        } else if (playerInfo == null || playerInfo.isNull()) {
+        } else if (playerInfo.isNull()) {
           throw new RuntimeException("No player info block.");
         }
 
@@ -67,18 +67,18 @@ public class DefaultYoutubeTrackDetailsLoader implements YoutubeTrackDetailsLoad
   }
 
   private boolean checkStatusBlock(JsonBrowser statusBlock) {
-    if (statusBlock == null || statusBlock.isNull()) {
+    if (statusBlock.isNull()) {
       throw new RuntimeException("No playability status block.");
     }
 
-    String status = statusBlock.safeGet("status").text();
+    String status = statusBlock.get("status").text();
 
     if (status == null) {
       throw new RuntimeException("No playability status field.");
     } else if ("OK".equals(status)) {
       return true;
     } else if ("ERROR".equals(status)) {
-      String reason = statusBlock.safeGet("reason").text();
+      String reason = statusBlock.get("reason").text();
 
       if ("Video unavailable".equals(reason)) {
         return false;
@@ -95,17 +95,17 @@ public class DefaultYoutubeTrackDetailsLoader implements YoutubeTrackDetailsLoad
 
   private String getUnplayableReason(JsonBrowser statusBlock) {
     JsonBrowser playerErrorMessage = statusBlock.get("errorScreen").get("playerErrorMessageRenderer");
-    String unplayableReason = statusBlock.safeGet("reason").text();
+    String unplayableReason = statusBlock.get("reason").text();
 
-    if (!playerErrorMessage.safeGet("subreason").isNull()) {
-      JsonBrowser subreason = playerErrorMessage.safeGet("subreason");
+    if (!playerErrorMessage.get("subreason").isNull()) {
+      JsonBrowser subreason = playerErrorMessage.get("subreason");
 
-      if (!subreason.safeGet("simpleText").isNull()) {
-        unplayableReason = subreason.safeGet("simpleText").text();
-      } else if (!subreason.safeGet("runs").isNull() && subreason.safeGet("runs").isList()) {
+      if (!subreason.get("simpleText").isNull()) {
+        unplayableReason = subreason.get("simpleText").text();
+      } else if (!subreason.get("runs").isNull() && subreason.get("runs").isList()) {
         StringBuilder reasonBuilder = new StringBuilder();
-        subreason.safeGet("runs").values().forEach(
-            item -> reasonBuilder.append(item.safeGet("text").text()).append('\n')
+        subreason.get("runs").values().forEach(
+            item -> reasonBuilder.append(item.get("text").text()).append('\n')
         );
         unplayableReason = reasonBuilder.toString();
       }

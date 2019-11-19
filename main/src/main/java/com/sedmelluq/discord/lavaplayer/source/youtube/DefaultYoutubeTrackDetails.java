@@ -66,22 +66,22 @@ public class DefaultYoutubeTrackDetails implements YoutubeTrackDetails {
       HttpInterface httpInterface,
       YoutubeSignatureResolver signatureResolver
   ) throws Exception {
-    JsonBrowser args = info.safeGet("args");
+    JsonBrowser args = info.get("args");
 
-    String adaptiveFormats = args.safeGet("adaptive_fmts").text();
+    String adaptiveFormats = args.get("adaptive_fmts").text();
     if (adaptiveFormats != null) {
       return loadTrackFormatsFromAdaptive(adaptiveFormats);
     }
 
-    String playerResponse = args.safeGet("player_response").text();
+    String playerResponse = args.get("player_response").text();
 
     if (playerResponse != null) {
       JsonBrowser streamingData = JsonBrowser.parse(playerResponse)
-          .safeGet("streamingData");
+          .get("streamingData");
 
       if (!streamingData.isNull()) {
-        List<YoutubeTrackFormat> formats = loadTrackFormatsFromStreamingData(streamingData.safeGet("formats"));
-        formats.addAll(loadTrackFormatsFromStreamingData(streamingData.safeGet("adaptiveFormats")));
+        List<YoutubeTrackFormat> formats = loadTrackFormatsFromStreamingData(streamingData.get("formats"));
+        formats.addAll(loadTrackFormatsFromStreamingData(streamingData.get("adaptiveFormats")));
 
         if (!formats.isEmpty()) {
           return formats;
@@ -89,12 +89,12 @@ public class DefaultYoutubeTrackDetails implements YoutubeTrackDetails {
       }
     }
 
-    String dashUrl = args.safeGet("dashmpd").text();
+    String dashUrl = args.get("dashmpd").text();
     if (dashUrl != null) {
       return loadTrackFormatsFromDash(dashUrl, httpInterface, signatureResolver);
     }
 
-    String formatStreamMap = args.safeGet("url_encoded_fmt_stream_map").text();
+    String formatStreamMap = args.get("url_encoded_fmt_stream_map").text();
     if (formatStreamMap != null) {
       return loadTrackFormatsFromFormatStreamMap(formatStreamMap);
     }
@@ -172,13 +172,13 @@ public class DefaultYoutubeTrackDetails implements YoutubeTrackDetails {
 
     if (!formats.isNull() && formats.isList()) {
       for (JsonBrowser formatJson : formats.values()) {
-        String cipher = formatJson.safeGet("cipher").text();
+        String cipher = formatJson.get("cipher").text();
         Map<String, String> cipherInfo = cipher != null
             ? decodeUrlEncodedItems(cipher, true)
             : Collections.emptyMap();
 
         try {
-          JsonBrowser contentLength = formatJson.safeGet("contentLength");
+          JsonBrowser contentLength = formatJson.get("contentLength");
 
           if (contentLength.isNull()) {
             log.debug("Could not find content length from streamingData format {}, skipping", formatJson.format());
@@ -186,8 +186,8 @@ public class DefaultYoutubeTrackDetails implements YoutubeTrackDetails {
           }
 
           tracks.add(new YoutubeTrackFormat(
-              ContentType.parse(formatJson.safeGet("mimeType").text()),
-              formatJson.safeGet("bitrate").as(Long.class),
+              ContentType.parse(formatJson.get("mimeType").text()),
+              formatJson.get("bitrate").as(Long.class),
               contentLength.as(Long.class),
               cipherInfo.getOrDefault("url", formatJson.get("url").text()),
               cipherInfo.get("s"),

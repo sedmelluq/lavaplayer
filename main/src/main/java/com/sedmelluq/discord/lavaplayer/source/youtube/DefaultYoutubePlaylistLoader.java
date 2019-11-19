@@ -47,40 +47,42 @@ public class DefaultYoutubePlaylistLoader implements YoutubePlaylistLoader {
   private AudioPlaylist buildPlaylist(HttpInterface httpInterface, JsonBrowser json, String selectedVideoId,
                                       Function<AudioTrackInfo, AudioTrack> trackFactory) throws IOException {
 
-    JsonBrowser jsonResponse = json.index(1).safeGet("response");
+    JsonBrowser jsonResponse = json.index(1).get("response");
 
-    JsonBrowser alerts = jsonResponse.safeGet("alerts");
+    JsonBrowser alerts = jsonResponse.get("alerts");
 
-    if (!alerts.isNull()) throw new FriendlyException(alerts.index(0).safeGet("alertRenderer").safeGet("text").safeGet("simpleText").text(), COMMON, null);
+    if (!alerts.isNull()) {
+      throw new FriendlyException(alerts.index(0).get("alertRenderer").get("text").get("simpleText").text(), COMMON, null);
+    }
 
     JsonBrowser info = jsonResponse
-        .safeGet("sidebar")
-        .safeGet("playlistSidebarRenderer")
-        .safeGet("items")
+        .get("sidebar")
+        .get("playlistSidebarRenderer")
+        .get("items")
         .index(0)
-        .safeGet("playlistSidebarPrimaryInfoRenderer");
+        .get("playlistSidebarPrimaryInfoRenderer");
 
     String playlistName = info
-        .safeGet("title")
-        .safeGet("runs")
+        .get("title")
+        .get("runs")
         .index(0)
-        .safeGet("text")
+        .get("text")
         .text();
 
     JsonBrowser playlistVideoList = jsonResponse
-        .safeGet("contents")
-        .safeGet("twoColumnBrowseResultsRenderer")
-        .safeGet("tabs")
+        .get("contents")
+        .get("twoColumnBrowseResultsRenderer")
+        .get("tabs")
         .index(0)
-        .safeGet("tabRenderer")
-        .safeGet("content")
-        .safeGet("sectionListRenderer")
-        .safeGet("contents")
+        .get("tabRenderer")
+        .get("content")
+        .get("sectionListRenderer")
+        .get("contents")
         .index(0)
-        .safeGet("itemSectionRenderer")
-        .safeGet("contents")
+        .get("itemSectionRenderer")
+        .get("contents")
         .index(0)
-        .safeGet("playlistVideoListRenderer");
+        .get("playlistVideoListRenderer");
 
     List<AudioTrack> tracks = new ArrayList<>();
     String loadMoreUrl = extractPlaylistTracks(playlistVideoList, tracks, trackFactory);
@@ -98,9 +100,9 @@ public class DefaultYoutubePlaylistLoader implements YoutubePlaylistLoader {
         JsonBrowser continuationJson = JsonBrowser.parse(response.getEntity().getContent());
 
         JsonBrowser playlistVideoListPage = continuationJson.index(1)
-            .safeGet("response")
-            .safeGet("continuationContents")
-            .safeGet("playlistVideoListContinuation");
+            .get("response")
+            .get("continuationContents")
+            .get("playlistVideoListContinuation");
 
         loadMoreUrl = extractPlaylistTracks(playlistVideoListPage, tracks, trackFactory);
       }
@@ -124,22 +126,22 @@ public class DefaultYoutubePlaylistLoader implements YoutubePlaylistLoader {
   private String extractPlaylistTracks(JsonBrowser playlistVideoList, List<AudioTrack> tracks,
                                        Function<AudioTrackInfo, AudioTrack> trackFactory) {
 
-    JsonBrowser trackArray = playlistVideoList.safeGet("contents");
+    JsonBrowser trackArray = playlistVideoList.get("contents");
 
     if (trackArray.isNull()) return null;
 
     for (JsonBrowser track : trackArray.values()) {
-      JsonBrowser item = track.safeGet("playlistVideoRenderer");
+      JsonBrowser item = track.get("playlistVideoRenderer");
 
-      JsonBrowser shortBylineText = item.safeGet("shortBylineText");
+      JsonBrowser shortBylineText = item.get("shortBylineText");
 
       // If the isPlayable property does not exist, it means the video is removed or private
       // If the shortBylineText property does not exist, it means the Track is Region blocked
-      if (!item.safeGet("isPlayable").isNull() && !shortBylineText.isNull()) {
-        String videoId = item.safeGet("videoId").text();
-        String title = item.safeGet("title").safeGet("simpleText").text();
-        String author = shortBylineText.safeGet("runs").index(0).safeGet("text").text();
-        long duration = Long.parseLong(item.safeGet("lengthSeconds").text()) * 1000;
+      if (!item.get("isPlayable").isNull() && !shortBylineText.isNull()) {
+        String videoId = item.get("videoId").text();
+        String title = item.get("title").get("simpleText").text();
+        String author = shortBylineText.get("runs").index(0).get("text").text();
+        long duration = Long.parseLong(item.get("lengthSeconds").text()) * 1000;
 
         AudioTrackInfo info = new AudioTrackInfo(title, author, duration, videoId, false,
             "https://www.youtube.com/watch?v=" + videoId);
@@ -148,10 +150,10 @@ public class DefaultYoutubePlaylistLoader implements YoutubePlaylistLoader {
       }
     }
 
-    JsonBrowser continuations = playlistVideoList.safeGet("continuations");
+    JsonBrowser continuations = playlistVideoList.get("continuations");
 
     if (!continuations.isNull()) {
-      String continuationsToken = continuations.index(0).safeGet("nextContinuationData").safeGet("continuation").text();
+      String continuationsToken = continuations.index(0).get("nextContinuationData").get("continuation").text();
       return "/browse_ajax" + "?continuation=" + continuationsToken + "&ctoken=" + continuationsToken + "&hl=en";
     }
 

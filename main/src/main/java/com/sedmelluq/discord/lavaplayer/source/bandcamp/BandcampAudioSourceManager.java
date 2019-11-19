@@ -72,7 +72,7 @@ public class BandcampAudioSourceManager implements AudioSourceManager, HttpConfi
     return extractFromPage(trackUrl, (httpClient, text) -> {
       String bandUrl = readBandUrl(text);
       JsonBrowser trackListInfo = readTrackListInformation(text);
-      String artist = trackListInfo.get("artist").text();
+      String artist = trackListInfo.get("artist").safeText();
 
       return extractTrack(trackListInfo.get("trackinfo").index(0), bandUrl, artist);
     });

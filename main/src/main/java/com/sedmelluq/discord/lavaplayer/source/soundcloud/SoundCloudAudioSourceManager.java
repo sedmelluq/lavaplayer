@@ -214,11 +214,15 @@ public class SoundCloudAudioSourceManager implements AudioSourceManager, HttpCon
   private AudioTrack buildAudioTrack(JsonBrowser trackInfoJson, String secretToken) {
     String trackId = trackInfoJson.get("id").text();
 
-    for (JsonBrowser transcoding : trackInfoJson.safeGet("media").safeGet("transcodings").values()) {
-      JsonBrowser format = transcoding.safeGet("format");
+    for (JsonBrowser transcoding : trackInfoJson.get("media").get("transcodings").values()) {
+      JsonBrowser format = transcoding.get("format");
 
-      if (format.safeGet("protocol").text().equals("hls") && format.safeGet("mime_type").text().contains("audio/ogg")) {
-        return buildAudioTrackWithIdentifier(trackInfoJson, "O:" + transcoding.safeGet("url").text());
+      if ("hls".equals(format.get("protocol").text()) && format.get("mime_type").safeText().contains("audio/ogg")) {
+        String url = transcoding.get("url").text();
+
+        if (url != null) {
+          return buildAudioTrackWithIdentifier(trackInfoJson, "O:" + url);
+        }
       }
     }
 
@@ -261,7 +265,7 @@ public class SoundCloudAudioSourceManager implements AudioSourceManager, HttpCon
 
   private JsonBrowser loadTrackInfoFromJson(JsonBrowser json) {
     for (JsonBrowser value : json.values()) {
-      for (JsonBrowser entry : value.safeGet("data").values()) {
+      for (JsonBrowser entry : value.get("data").values()) {
         if (entry.isMap() && "track".equals(entry.get("kind").text())) {
           return entry;
         }
@@ -296,7 +300,7 @@ public class SoundCloudAudioSourceManager implements AudioSourceManager, HttpCon
 
   private JsonBrowser loadPlaylistInfoFromJson(JsonBrowser json) {
     for (JsonBrowser value : json.values()) {
-      for (JsonBrowser entry : value.safeGet("data").values()) {
+      for (JsonBrowser entry : value.get("data").values()) {
         if (entry.isMap() && "playlist".equals(entry.get("kind").text())) {
           return entry;
         }
