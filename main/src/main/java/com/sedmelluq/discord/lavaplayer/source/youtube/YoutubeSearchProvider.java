@@ -60,7 +60,7 @@ public class YoutubeSearchProvider implements YoutubeSearchResultLoader {
 
       try (CloseableHttpResponse response = httpInterface.execute(new HttpGet(url))) {
         int statusCode = response.getStatusLine().getStatusCode();
-        if (statusCode != 200) {
+        if (!HttpClientTools.isSuccessWithContent(statusCode)) {
           throw new IOException("Invalid status code for search response: " + statusCode);
         }
 

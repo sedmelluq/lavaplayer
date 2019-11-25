@@ -27,9 +27,9 @@ import static com.sedmelluq.discord.lavaplayer.container.MediaContainerDetection
 public class MatroskaContainerProbe implements MediaContainerProbe {
   private static final Logger log = LoggerFactory.getLogger(MatroskaContainerProbe.class);
 
-  static final String OPUS_CODEC = "A_OPUS";
-  static final String VORBIS_CODEC = "A_VORBIS";
-  static final String AAC_CODEC = "A_AAC";
+  public static final String OPUS_CODEC = "A_OPUS";
+  public static final String VORBIS_CODEC = "A_VORBIS";
+  public static final String AAC_CODEC = "A_AAC";
 
   private static final int[] EBML_TAG = new int[] { 0x1A, 0x45, 0xDF, 0xA3 };
   private static final List<String> supportedCodecs = Arrays.asList(OPUS_CODEC, VORBIS_CODEC, AAC_CODEC);

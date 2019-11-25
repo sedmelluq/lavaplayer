@@ -248,7 +248,7 @@ public class SoundCloudAudioSourceManager implements AudioSourceManager, HttpCon
 
       if (statusCode == HttpStatus.SC_NOT_FOUND) {
         throw new FriendlyException("That track does not exist.", COMMON, null);
-      } else if (statusCode != HttpStatus.SC_OK) {
+      } else if (!HttpClientTools.isSuccessWithContent(statusCode)) {
         throw new IOException("Invalid status code for video page response: " + statusCode);
       }
 
@@ -322,7 +322,7 @@ public class SoundCloudAudioSourceManager implements AudioSourceManager, HttpCon
   private List<AudioTrack> handlePlaylistTracksResponse(HttpResponse response, String playlistWebUrl, List<String> trackIds) throws IOException {
     List<AudioTrack> tracks = new ArrayList<>();
     int statusCode = response.getStatusLine().getStatusCode();
-    if (statusCode != 200) {
+    if (!HttpClientTools.isSuccessWithContent(statusCode)) {
       throw new IOException("Invalid status code for track list response: " + statusCode);
     }
 
@@ -399,9 +399,9 @@ public class SoundCloudAudioSourceManager implements AudioSourceManager, HttpCon
     try (CloseableHttpResponse response = httpInterface.execute(new HttpGet(likedListUrl))) {
       int statusCode = response.getStatusLine().getStatusCode();
 
-      if (statusCode == 404) {
+      if (statusCode == HttpStatus.SC_NOT_FOUND) {
         return null;
-      } else if (statusCode != 200) {
+      } else if (!HttpClientTools.isSuccessWithContent(statusCode)) {
         throw new IOException("Invalid status code for track list response: " + statusCode);
       }
 
@@ -414,7 +414,7 @@ public class SoundCloudAudioSourceManager implements AudioSourceManager, HttpCon
     return withClientIdRetry(httpInterface, response -> {
       int statusCode = response.getStatusLine().getStatusCode();
 
-      if (statusCode != 200) {
+      if (!HttpClientTools.isSuccessWithContent(statusCode)) {
         throw new IOException("Invalid status code for liked tracks response: " + statusCode);
       }
 

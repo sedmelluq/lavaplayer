@@ -1,5 +1,6 @@
 package com.sedmelluq.discord.lavaplayer.source.youtube;
 
+import com.sedmelluq.discord.lavaplayer.tools.io.HttpClientTools;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterface;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -153,7 +154,7 @@ public class YoutubeSignatureCipherManager implements YoutubeSignatureResolver {
   private void validateResponseCode(CloseableHttpResponse response) throws IOException {
     int statusCode = response.getStatusLine().getStatusCode();
 
-    if (statusCode != 200) {
+    if (!HttpClientTools.isSuccessWithContent(statusCode)) {
       throw new IOException("Received non-success response code " + statusCode);
     }
   }

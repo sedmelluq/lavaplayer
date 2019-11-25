@@ -3,6 +3,7 @@ package com.sedmelluq.discord.lavaplayer.source.soundcloud;
 import com.sedmelluq.discord.lavaplayer.container.mp3.Mp3AudioTrack;
 import com.sedmelluq.discord.lavaplayer.source.AudioSourceManager;
 import com.sedmelluq.discord.lavaplayer.tools.JsonBrowser;
+import com.sedmelluq.discord.lavaplayer.tools.io.HttpClientTools;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterface;
 import com.sedmelluq.discord.lavaplayer.tools.io.PersistentHttpStream;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
@@ -49,7 +50,7 @@ public class SoundCloudAudioTrack extends DelegatedAudioTrack {
     String m3uProviderUrl;
 
     try (PersistentHttpStream stream = new PersistentHttpStream(httpInterface, new URI(streamLookupUrl), null)) {
-      if (stream.checkStatusCode() != 200) {
+      if (!HttpClientTools.isSuccessWithContent(stream.checkStatusCode())) {
         throw new IOException("Invalid status code for soundcloud stream: " + stream.checkStatusCode());
       }
 
@@ -65,7 +66,7 @@ public class SoundCloudAudioTrack extends DelegatedAudioTrack {
     log.debug("Starting SoundCloud track from URL: {}", trackUrl);
 
     try (PersistentHttpStream stream = new PersistentHttpStream(httpInterface, new URI(trackUrl), null)) {
-      if (stream.checkStatusCode() != 200) {
+      if (!HttpClientTools.isSuccessWithContent(stream.checkStatusCode())) {
         throw new IOException("Invalid status code for soundcloud stream: " + stream.checkStatusCode());
       }
 

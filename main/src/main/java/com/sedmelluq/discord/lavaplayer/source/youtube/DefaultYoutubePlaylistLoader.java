@@ -2,6 +2,7 @@ package com.sedmelluq.discord.lavaplayer.source.youtube;
 
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.tools.JsonBrowser;
+import com.sedmelluq.discord.lavaplayer.tools.io.HttpClientTools;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterface;
 import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
@@ -32,7 +33,7 @@ public class DefaultYoutubePlaylistLoader implements YoutubePlaylistLoader {
 
     try (CloseableHttpResponse response = httpInterface.execute(request)) {
       int statusCode = response.getStatusLine().getStatusCode();
-      if (statusCode != 200) {
+      if (!HttpClientTools.isSuccessWithContent(statusCode)) {
         throw new IOException("Invalid status code for playlist response: " + statusCode);
       }
 
@@ -93,7 +94,7 @@ public class DefaultYoutubePlaylistLoader implements YoutubePlaylistLoader {
     while (loadMoreUrl != null && ++loadCount < pageCount) {
       try (CloseableHttpResponse response = httpInterface.execute(new HttpGet("https://www.youtube.com" + loadMoreUrl))) {
         int statusCode = response.getStatusLine().getStatusCode();
-        if (statusCode != 200) {
+        if (!HttpClientTools.isSuccessWithContent(statusCode)) {
           throw new IOException("Invalid status code for playlist response: " + statusCode);
         }
 

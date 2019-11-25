@@ -58,6 +58,14 @@ public class ExceptionTools {
     }
   }
 
+  public static RuntimeException toRuntimeException(Exception e) {
+    if (e instanceof RuntimeException) {
+      return (RuntimeException) e;
+    } else {
+      return new RuntimeException(e);
+    }
+  }
+
   /**
    * Finds the first exception which is an instance of the specified class from the throwable cause chain.
    *

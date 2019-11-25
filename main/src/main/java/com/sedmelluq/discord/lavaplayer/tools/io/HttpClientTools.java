@@ -280,7 +280,8 @@ public class HttpClientTools {
    * @return True if this status code indicates a success with a response body
    */
   public static boolean isSuccessWithContent(int statusCode) {
-    return statusCode == HttpStatus.SC_OK || statusCode == HttpStatus.SC_PARTIAL_CONTENT;
+    return statusCode == HttpStatus.SC_OK || statusCode == HttpStatus.SC_PARTIAL_CONTENT ||
+        statusCode == HttpStatus.SC_NON_AUTHORITATIVE_INFORMATION;
   }
 
   /**
@@ -347,7 +348,7 @@ public class HttpClientTools {
 
       if (statusCode == HttpStatus.SC_NOT_FOUND) {
         return null;
-      } else if (statusCode != HttpStatus.SC_OK) {
+      } else if (!isSuccessWithContent(statusCode)) {
         throw new FriendlyException("Server responded with an error.", SUSPICIOUS,
             new IllegalStateException("Response code from channel info is " + statusCode));
       }
@@ -368,7 +369,7 @@ public class HttpClientTools {
   public static String[] fetchResponseLines(HttpInterface httpInterface, HttpUriRequest request, String name) throws IOException {
     try (CloseableHttpResponse response = httpInterface.execute(request)) {
       int statusCode = response.getStatusLine().getStatusCode();
-      if (statusCode != HttpStatus.SC_OK) {
+      if (!isSuccessWithContent(statusCode)) {
         throw new IOException("Unexpected response code " + statusCode + " from " + name);
       }
 

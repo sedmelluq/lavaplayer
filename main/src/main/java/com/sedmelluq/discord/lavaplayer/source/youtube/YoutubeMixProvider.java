@@ -2,6 +2,7 @@ package com.sedmelluq.discord.lavaplayer.source.youtube;
 
 import com.sedmelluq.discord.lavaplayer.tools.ExceptionTools;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
+import com.sedmelluq.discord.lavaplayer.tools.io.HttpClientTools;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterface;
 import com.sedmelluq.discord.lavaplayer.track.AudioItem;
 import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
@@ -79,7 +80,7 @@ public class YoutubeMixProvider {
 
       try (CloseableHttpResponse response = httpInterface.execute(new HttpGet(mixUrl))) {
         int statusCode = response.getStatusLine().getStatusCode();
-        if (statusCode != 200) {
+        if (!HttpClientTools.isSuccessWithContent(statusCode)) {
           throw new IOException("Invalid status code for mix response: " + statusCode);
         }
 

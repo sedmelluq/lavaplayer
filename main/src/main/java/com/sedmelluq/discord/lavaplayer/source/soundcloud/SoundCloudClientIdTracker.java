@@ -1,5 +1,6 @@
 package com.sedmelluq.discord.lavaplayer.source.soundcloud;
 
+import com.sedmelluq.discord.lavaplayer.tools.io.HttpClientTools;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterface;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterfaceManager;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -89,7 +90,7 @@ public class SoundCloudClientIdTracker {
   private String findApplicationScriptUrl(HttpInterface httpInterface) throws IOException {
     try (CloseableHttpResponse response = httpInterface.execute(new HttpGet("https://soundcloud.com"))) {
       int statusCode = response.getStatusLine().getStatusCode();
-      if (statusCode != 200) {
+      if (!HttpClientTools.isSuccessWithContent(statusCode)) {
         throw new IOException("Invalid status code for main page response: " + statusCode);
       }
 
@@ -115,7 +116,7 @@ public class SoundCloudClientIdTracker {
   private String findClientIdFromApplicationScript(HttpInterface httpInterface, String scriptUrl) throws IOException {
     try (CloseableHttpResponse response = httpInterface.execute(new HttpGet(scriptUrl))) {
       int statusCode = response.getStatusLine().getStatusCode();
-      if (statusCode != 200) {
+      if (!HttpClientTools.isSuccessWithContent(statusCode)) {
         throw new IOException("Invalid status code for application script response: " + statusCode);
       }
 

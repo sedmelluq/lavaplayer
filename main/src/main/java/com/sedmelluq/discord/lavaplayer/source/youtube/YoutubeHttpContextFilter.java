@@ -36,6 +36,7 @@ public class YoutubeHttpContextFilter implements HttpContextFilter {
     request.setHeader("x-youtube-page-label", "youtube.ytfe.desktop_20191024_3_RC0");
     request.setHeader("x-youtube-utc-offset", "0");
     request.setHeader("x-youtube-variants-checksum", "7a1198276cf2b23fc8321fac72aa876b");
+    request.setHeader("accept-language", "en");
   }
 
   @Override
