@@ -3,7 +3,9 @@ package com.sedmelluq.discord.lavaplayer.container.ogg.vorbis;
 import com.sedmelluq.discord.lavaplayer.container.ogg.OggCodecHandler;
 import com.sedmelluq.discord.lavaplayer.container.ogg.OggMetadata;
 import com.sedmelluq.discord.lavaplayer.container.ogg.OggPacketInputStream;
+import com.sedmelluq.discord.lavaplayer.container.ogg.OggTrackBlueprint;
 import com.sedmelluq.discord.lavaplayer.container.ogg.OggTrackHandler;
+import com.sedmelluq.discord.lavaplayer.container.ogg.flac.OggFlacTrackHandler;
 import com.sedmelluq.discord.lavaplayer.tools.io.DirectBufferStreamBroker;
 
 import java.io.IOException;
@@ -30,10 +32,10 @@ public class OggVorbisCodecHandler implements OggCodecHandler {
   }
 
   @Override
-  public OggTrackHandler loadTrackHandler(OggPacketInputStream stream, DirectBufferStreamBroker broker) throws IOException {
+  public OggTrackBlueprint loadBlueprint(OggPacketInputStream stream, DirectBufferStreamBroker broker) throws IOException {
     byte[] infoPacket = broker.extractBytes();
     loadCommentsHeader(stream, broker, true);
-    return new OggVorbisTrackHandler(infoPacket, stream, broker);
+    return new Blueprint(infoPacket, broker);
   }
 
   @Override
@@ -60,6 +62,21 @@ public class OggVorbisCodecHandler implements OggCodecHandler {
       if (!stream.isPacketComplete()) {
         throw new IllegalStateException("Vorbis comments header packet longer than allowed.");
       }
+    }
+  }
+
+  private static class Blueprint implements OggTrackBlueprint {
+    private final byte[] infoPacket;
+    private final DirectBufferStreamBroker broker;
+
+    private Blueprint(byte[] infoPacket, DirectBufferStreamBroker broker) {
+      this.infoPacket = infoPacket;
+      this.broker = broker;
+    }
+
+    @Override
+    public OggTrackHandler loadTrackHandler(OggPacketInputStream stream) {
+      return new OggVorbisTrackHandler(infoPacket, stream, broker);
     }
   }
 }

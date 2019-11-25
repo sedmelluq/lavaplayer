@@ -14,7 +14,7 @@ public interface OggTrackHandler {
    * @param context Configuration and output information for processing
    * @throws IOException On read error.
    */
-  void initialise(AudioProcessingContext context) throws IOException;
+  void initialise(AudioProcessingContext context, OggTrackPosition position) throws IOException;
 
   /**
    * Decodes audio frames and sends them to frame consumer.

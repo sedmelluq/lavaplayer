@@ -4,6 +4,7 @@ import com.sedmelluq.discord.lavaplayer.container.ogg.OggCodecHandler;
 import com.sedmelluq.discord.lavaplayer.container.ogg.OggMetadata;
 import com.sedmelluq.discord.lavaplayer.container.ogg.OggPacketInputStream;
 import com.sedmelluq.discord.lavaplayer.container.ogg.OggStreamSizeInfo;
+import com.sedmelluq.discord.lavaplayer.container.ogg.OggTrackBlueprint;
 import com.sedmelluq.discord.lavaplayer.container.ogg.OggTrackHandler;
 import com.sedmelluq.discord.lavaplayer.container.ogg.vorbis.VorbisCommentParser;
 import com.sedmelluq.discord.lavaplayer.tools.io.DirectBufferStreamBroker;
@@ -37,14 +38,14 @@ public class OggOpusCodecHandler implements OggCodecHandler {
   }
 
   @Override
-  public OggTrackHandler loadTrackHandler(OggPacketInputStream stream, DirectBufferStreamBroker broker) throws IOException {
+  public OggTrackBlueprint loadBlueprint(OggPacketInputStream stream, DirectBufferStreamBroker broker) throws IOException {
     ByteBuffer firstPacket = broker.getBuffer();
     verifyFirstPacket(firstPacket);
 
     loadCommentsHeader(stream, broker, true);
 
     int channelCount = firstPacket.get(9) & 0xFF;
-    return new OggOpusTrackHandler(stream, broker, channelCount, getSampleRate(firstPacket));
+    return new Blueprint(broker, channelCount, getSampleRate(firstPacket));
   }
 
   @Override
@@ -97,6 +98,24 @@ public class OggOpusCodecHandler implements OggCodecHandler {
       if (!stream.isPacketComplete()) {
         throw new IllegalStateException("Opus comments header packet longer than allowed.");
       }
+    }
+  }
+
+  private static class Blueprint implements OggTrackBlueprint {
+    private final DirectBufferStreamBroker broker;
+    private final int channelCount;
+    private final int sampleRate;
+
+    private Blueprint(DirectBufferStreamBroker broker, int channelCount, int sampleRate) {
+      this.broker = broker;
+      this.channelCount = channelCount;
+      this.sampleRate = sampleRate;
+    }
+
+    @Override
+    public OggTrackHandler loadTrackHandler(OggPacketInputStream stream) {
+      broker.clear();
+      return new OggOpusTrackHandler(stream, broker, channelCount, sampleRate);
     }
   }
 }

@@ -30,7 +30,9 @@ public class OpusPacketRouter {
   private final byte[] headerBytes;
   private final MutableAudioFrame offeredFrame;
 
+  private long currentFrameDuration;
   private long currentTimecode;
+  private long requestedTimecode;
   private OpusDecoder opusDecoder;
   private AudioPipeline downstream;
   private ByteBuffer directInput;
@@ -62,6 +64,7 @@ public class OpusPacketRouter {
    * @param providedTimecode Timecode in milliseconds to which the seek was actually performed to
    */
   public void seekPerformed(long requestedTimecode, long providedTimecode) {
+    this.requestedTimecode = requestedTimecode;
     currentTimecode = providedTimecode;
 
     if (downstream != null) {
@@ -125,7 +128,8 @@ public class OpusPacketRouter {
       inputFormat = new OpusAudioDataFormat(inputChannels, inputFrequency, frameSize);
     }
 
-    currentTimecode += frameSize * 1000 / inputFrequency;
+    currentFrameDuration = frameSize * 1000 / inputFrequency;
+    currentTimecode += currentFrameDuration;
     return frameSize;
   }
 
@@ -158,10 +162,12 @@ public class OpusPacketRouter {
   }
 
   private void passThrough(ByteBuffer buffer) throws InterruptedException {
-    offeredFrame.setTimecode(currentTimecode);
-    offeredFrame.setBuffer(buffer);
+    if (requestedTimecode < currentTimecode) {
+      offeredFrame.setTimecode(currentTimecode);
+      offeredFrame.setBuffer(buffer);
 
-    context.frameBuffer.consume(offeredFrame);
+      context.frameBuffer.consume(offeredFrame);
+    }
   }
 
   private void checkDecoderNecessity() {
@@ -189,7 +195,7 @@ public class OpusPacketRouter {
 
     try {
       downstream = AudioPipelineFactory.create(context, new PcmFormat(inputChannels, inputFrequency));
-      downstream.seekPerformed(currentTimecode, currentTimecode);
+      downstream.seekPerformed(Math.max(currentTimecode, requestedTimecode), currentTimecode);
     } finally {
       // When an exception is thrown, do not leave the router in a limbo state with decoder but no downstream.
       if (downstream == null) {

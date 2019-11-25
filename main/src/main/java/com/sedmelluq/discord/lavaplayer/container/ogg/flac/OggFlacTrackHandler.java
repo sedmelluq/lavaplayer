@@ -4,6 +4,7 @@ import com.sedmelluq.discord.lavaplayer.container.flac.FlacTrackInfo;
 import com.sedmelluq.discord.lavaplayer.container.flac.frame.FlacFrameReader;
 import com.sedmelluq.discord.lavaplayer.container.ogg.OggPacketInputStream;
 import com.sedmelluq.discord.lavaplayer.container.ogg.OggTrackHandler;
+import com.sedmelluq.discord.lavaplayer.container.ogg.OggTrackPosition;
 import com.sedmelluq.discord.lavaplayer.filter.AudioPipeline;
 import com.sedmelluq.discord.lavaplayer.filter.AudioPipelineFactory;
 import com.sedmelluq.discord.lavaplayer.filter.PcmFormat;
@@ -43,9 +44,10 @@ public class OggFlacTrackHandler implements OggTrackHandler {
   }
 
   @Override
-  public void initialise(AudioProcessingContext context) {
+  public void initialise(AudioProcessingContext context, OggTrackPosition position) {
     downstream = AudioPipelineFactory.create(context,
         new PcmFormat(info.stream.channelCount, info.stream.sampleRate));
+    downstream.seekPerformed(position.desiredPosition, position.actualPosition);
   }
 
   @Override

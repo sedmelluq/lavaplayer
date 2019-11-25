@@ -1,4 +1,4 @@
-package com.sedmelluq.discord.lavaplayer.source.stream;
+package com.sedmelluq.discord.lavaplayer.container.playlists;
 
 import com.sedmelluq.discord.lavaplayer.tools.DataFormatTools;
 

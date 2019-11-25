@@ -1,17 +1,12 @@
 package com.sedmelluq.discord.lavaplayer.demo;
 
-
-import com.sedmelluq.discord.lavaplayer.jdaudp.NativeAudioSendFactory;
-import net.dv8tion.jda.core.AccountType;
-import net.dv8tion.jda.core.JDA;
-import net.dv8tion.jda.core.JDABuilder;
+import net.dv8tion.jda.api.JDABuilder;
 
 public class Bootstrap {
   public static void main(String[] args) throws Exception {
-    new JDABuilder(AccountType.BOT)
+    new JDABuilder()
         .setToken(System.getProperty("botToken"))
-        .setAudioSendFactory(new NativeAudioSendFactory())
-        .addEventListener(new BotApplicationManager())
-        .buildAsync();
+        .addEventListeners(new BotApplicationManager())
+        .build();
   }
 }

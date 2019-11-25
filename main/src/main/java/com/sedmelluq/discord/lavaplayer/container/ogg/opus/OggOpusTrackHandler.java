@@ -3,6 +3,7 @@ package com.sedmelluq.discord.lavaplayer.container.ogg.opus;
 import com.sedmelluq.discord.lavaplayer.container.common.OpusPacketRouter;
 import com.sedmelluq.discord.lavaplayer.container.ogg.OggPacketInputStream;
 import com.sedmelluq.discord.lavaplayer.container.ogg.OggTrackHandler;
+import com.sedmelluq.discord.lavaplayer.container.ogg.OggTrackPosition;
 import com.sedmelluq.discord.lavaplayer.tools.io.DirectBufferStreamBroker;
 import com.sedmelluq.discord.lavaplayer.track.playback.AudioProcessingContext;
 
@@ -35,8 +36,9 @@ public class OggOpusTrackHandler implements OggTrackHandler {
   }
 
   @Override
-  public void initialise(AudioProcessingContext context) {
+  public void initialise(AudioProcessingContext context, OggTrackPosition position) {
     opusPacketRouter = new OpusPacketRouter(context, sampleRate, channelCount);
+    opusPacketRouter.seekPerformed(position.desiredPosition, position.actualPosition);
   }
 
   @Override

@@ -2,7 +2,7 @@ package com.sedmelluq.discord.lavaplayer.demo.controller;
 
 import com.sedmelluq.discord.lavaplayer.demo.BotApplicationManager;
 import com.sedmelluq.discord.lavaplayer.demo.BotGuildContext;
-import net.dv8tion.jda.core.entities.Guild;
+import net.dv8tion.jda.api.entities.Guild;
 
 public interface BotControllerFactory<T extends BotController> {
   Class<T> getControllerClass();
