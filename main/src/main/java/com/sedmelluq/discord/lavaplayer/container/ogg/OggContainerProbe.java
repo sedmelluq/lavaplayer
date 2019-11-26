@@ -54,7 +54,7 @@ public class OggContainerProbe implements MediaContainerProbe {
 
   @Override
   public AudioTrack createTrack(String parameters, AudioTrackInfo trackInfo, SeekableInputStream inputStream) {
-    return new OggAudioTrack(trackInfo, inputStream, null);
+    return new OggAudioTrack(trackInfo, inputStream);
   }
 
   private void collectStreamInformation(SeekableInputStream stream, AudioTrackInfoBuilder infoBuilder) throws IOException {

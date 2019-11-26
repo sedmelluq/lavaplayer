@@ -463,7 +463,7 @@ public class LocalAudioTrackExecutor implements AudioTrackExecutor {
      *
      * @throws InterruptedException When interrupted externally (or for seek/stop).
      */
-    void performRead() throws InterruptedException;
+    void performRead() throws Exception;
   }
 
   /**
@@ -475,7 +475,7 @@ public class LocalAudioTrackExecutor implements AudioTrackExecutor {
      *
      * @param position Position in milliseconds
      */
-    void performSeek(long position);
+    void performSeek(long position) throws Exception;
   }
 
   private enum SeekResult {

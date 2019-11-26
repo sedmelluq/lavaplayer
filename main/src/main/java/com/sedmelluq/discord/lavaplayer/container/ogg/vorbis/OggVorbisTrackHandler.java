@@ -2,14 +2,12 @@ package com.sedmelluq.discord.lavaplayer.container.ogg.vorbis;
 
 import com.sedmelluq.discord.lavaplayer.container.ogg.OggPacketInputStream;
 import com.sedmelluq.discord.lavaplayer.container.ogg.OggTrackHandler;
-import com.sedmelluq.discord.lavaplayer.container.ogg.OggTrackPosition;
 import com.sedmelluq.discord.lavaplayer.filter.AudioPipeline;
 import com.sedmelluq.discord.lavaplayer.filter.AudioPipelineFactory;
 import com.sedmelluq.discord.lavaplayer.filter.PcmFormat;
 import com.sedmelluq.discord.lavaplayer.natives.vorbis.VorbisDecoder;
 import com.sedmelluq.discord.lavaplayer.tools.io.DirectBufferStreamBroker;
 import com.sedmelluq.discord.lavaplayer.track.playback.AudioProcessingContext;
-
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
@@ -52,7 +50,7 @@ public class OggVorbisTrackHandler implements OggTrackHandler {
   }
 
   @Override
-  public void initialise(AudioProcessingContext context, OggTrackPosition position) throws IOException {
+  public void initialise(AudioProcessingContext context, long timecode, long desiredTimecode) throws IOException {
     ByteBuffer infoBuffer = ByteBuffer.allocateDirect(infoPacket.length);
     infoBuffer.put(infoPacket);
     infoBuffer.flip();
@@ -67,7 +65,7 @@ public class OggVorbisTrackHandler implements OggTrackHandler {
     broker.resetAndCompact();
 
     downstream = AudioPipelineFactory.create(context, new PcmFormat(decoder.getChannelCount(), sampleRate));
-    downstream.seekPerformed(position.desiredPosition, position.actualPosition);
+    downstream.seekPerformed(desiredTimecode, timecode);
   }
 
   @Override
