@@ -7,7 +7,7 @@ dependencies {
   compile project(':main')
 
   compile 'com.sedmelluq:jda-nas:1.0.5'
-  compile 'net.dv8tion:JDA:4.0.0_63'
+  compile 'net.dv8tion:JDA:4.0.0_68'
   runtime 'ch.qos.logback:logback-classic:1.1.8'
 }
 
