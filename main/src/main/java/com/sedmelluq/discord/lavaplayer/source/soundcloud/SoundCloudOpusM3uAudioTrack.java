@@ -15,7 +15,6 @@ import com.sedmelluq.discord.lavaplayer.track.DelegatedAudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.playback.LocalAudioTrackExecutor;
 import java.io.IOException;
 import java.io.InputStream;
-import java.rmi.UnmarshalException;
 import java.util.List;
 import org.apache.http.client.methods.HttpGet;
 

@@ -31,12 +31,12 @@ public class AudioSourceManagers {
    */
   public static void registerRemoteSources(AudioPlayerManager playerManager, MediaContainerRegistry containerRegistry) {
     playerManager.registerSourceManager(new YoutubeAudioSourceManager(true));
-    playerManager.registerSourceManager(new SoundCloudAudioSourceManager());
+    playerManager.registerSourceManager(SoundCloudAudioSourceManager.createDefault());
     playerManager.registerSourceManager(new BandcampAudioSourceManager());
     playerManager.registerSourceManager(new VimeoAudioSourceManager());
     playerManager.registerSourceManager(new TwitchStreamAudioSourceManager());
     playerManager.registerSourceManager(new BeamAudioSourceManager());
-    playerManager.registerSourceManager(new HttpAudioSourceManager());
+    playerManager.registerSourceManager(new HttpAudioSourceManager(containerRegistry));
   }
 
   /**
@@ -55,6 +55,6 @@ public class AudioSourceManagers {
    * @param containerRegistry Media container registry to be used by the local source.
    */
   public static void registerLocalSource(AudioPlayerManager playerManager, MediaContainerRegistry containerRegistry) {
-    playerManager.registerSourceManager(new LocalAudioSourceManager());
+    playerManager.registerSourceManager(new LocalAudioSourceManager(containerRegistry));
   }
 }

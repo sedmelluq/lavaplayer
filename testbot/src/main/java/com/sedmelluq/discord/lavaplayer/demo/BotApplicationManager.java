@@ -49,7 +49,7 @@ public class BotApplicationManager extends ListenerAdapter {
     //playerManager.useRemoteNodes("localhost:8080");
     playerManager.getConfiguration().setResamplingQuality(AudioConfiguration.ResamplingQuality.LOW);
     playerManager.registerSourceManager(new YoutubeAudioSourceManager());
-    playerManager.registerSourceManager(new SoundCloudAudioSourceManager());
+    playerManager.registerSourceManager(SoundCloudAudioSourceManager.createDefault());
     playerManager.registerSourceManager(new BandcampAudioSourceManager());
     playerManager.registerSourceManager(new VimeoAudioSourceManager());
     playerManager.registerSourceManager(new TwitchStreamAudioSourceManager());

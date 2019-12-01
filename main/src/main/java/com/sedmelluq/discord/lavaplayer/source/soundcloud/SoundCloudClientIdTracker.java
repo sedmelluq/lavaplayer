@@ -58,12 +58,6 @@ public class SoundCloudClientIdTracker {
     }
   }
 
-  public void setClientId(String clientId) {
-    synchronized (clientIdLock) {
-      this.clientId = clientId;
-    }
-  }
-
   public String getClientId() {
     synchronized (clientIdLock) {
       if (clientId == null) {

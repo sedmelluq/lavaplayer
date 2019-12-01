@@ -285,6 +285,19 @@ public class HttpClientTools {
   }
 
   /**
+   * @param response The response.
+   * @param context Additional string to include in exception message.
+   * @return True if this status code indicates a success with a response body
+   */
+  public static void assertSuccessWithContent(HttpResponse response, String context) throws IOException {
+    int statusCode = response.getStatusLine().getStatusCode();
+
+    if (!isSuccessWithContent(statusCode)) {
+      throw new IOException("Invalid status code for " + context +  ": " + statusCode);
+    }
+  }
+
+  /**
    * @param exception Exception to check.
    * @return True if retrying to connect after receiving this exception is likely to succeed.
    */
