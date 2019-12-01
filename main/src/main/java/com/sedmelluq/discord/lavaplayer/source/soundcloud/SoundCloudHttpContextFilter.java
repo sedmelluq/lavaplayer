@@ -2,15 +2,14 @@ package com.sedmelluq.discord.lavaplayer.source.soundcloud;
 
 import com.sedmelluq.discord.lavaplayer.tools.http.HttpContextFilter;
 import com.sedmelluq.discord.lavaplayer.tools.http.HttpContextRetryCounter;
+import java.net.URI;
+import java.net.URISyntaxException;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.client.utils.URIBuilder;
-
-import java.net.URI;
-import java.net.URISyntaxException;
 
 public class SoundCloudHttpContextFilter implements HttpContextFilter {
   private static final HttpContextRetryCounter retryCounter = new HttpContextRetryCounter("sc-id-retry");
