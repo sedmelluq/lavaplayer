@@ -1,5 +1,9 @@
 # Change Log
 
+## [1.3.32] -- 2019-12-01
+### Fixed
+- Fixed SoundCloud tracks longer than 30 minutes breaking during playback due to URLs expiring.
+
 ## [1.3.31] -- 2019-12-01
 ### Fixed
 - Fixed redundant retry attempts for SoundCloud liked tracks and search result pages.

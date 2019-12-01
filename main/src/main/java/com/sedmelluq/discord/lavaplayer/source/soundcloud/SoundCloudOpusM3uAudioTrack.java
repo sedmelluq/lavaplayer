@@ -16,16 +16,24 @@ import com.sedmelluq.discord.lavaplayer.track.playback.LocalAudioTrackExecutor;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
+import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 import org.apache.http.client.methods.HttpGet;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class SoundCloudOpusM3uAudioTrack extends DelegatedAudioTrack {
-  private final HttpInterface httpInterface;
-  private final String streamBaseUrl;
+  private static final Logger log = LoggerFactory.getLogger(SoundCloudOpusM3uAudioTrack.class);
 
-  public SoundCloudOpusM3uAudioTrack(AudioTrackInfo trackInfo, HttpInterface httpInterface, String streamBaseUrl) {
+  private static final long SEGMENT_UPDATE_INTERVAL = TimeUnit.MINUTES.toMillis(10);
+
+  private final HttpInterface httpInterface;
+  private final String streamLoopupUrl;
+
+  public SoundCloudOpusM3uAudioTrack(AudioTrackInfo trackInfo, HttpInterface httpInterface, String streamLoopupUrl) {
     super(trackInfo);
     this.httpInterface = httpInterface;
-    this.streamBaseUrl = streamBaseUrl;
+    this.streamLoopupUrl = streamLoopupUrl;
   }
 
   @Override
@@ -51,20 +59,27 @@ public class SoundCloudOpusM3uAudioTrack extends DelegatedAudioTrack {
     }
   }
 
+  private List<HlsStreamSegment> loadSegments() throws IOException {
+    String playbackUrl = SoundCloudHelper.loadPlaybackUrl(httpInterface, streamLoopupUrl);
+    return HlsStreamSegmentParser.parseFromUrl(httpInterface, playbackUrl);
+  }
+
   private SegmentTracker createSegmentTracker() throws IOException {
-    List<HlsStreamSegment> segments = HlsStreamSegmentParser.parseFromUrl(httpInterface, streamBaseUrl);
-    return new SegmentTracker(segments);
+    List<HlsStreamSegment> initialSegments = loadSegments();
+    return new SegmentTracker(initialSegments);
   }
 
   private class SegmentTracker implements AutoCloseable {
     private final List<HlsStreamSegment> segments;
     private long desiredPosition = 0;
     private long streamStartPosition = 0;
+    private long lastUpdate;
     private OggPacketInputStream lastJoinedStream;
     private int segmentIndex = 0;
 
     private SegmentTracker(List<HlsStreamSegment> segments) {
       this.segments = segments;
+      this.lastUpdate = System.currentTimeMillis();
     }
 
     private OggPacketInputStream getOggStream() {
@@ -138,10 +153,47 @@ public class SoundCloudOpusM3uAudioTrack extends DelegatedAudioTrack {
       return HttpStreamTools.streamContent(httpInterface, new HttpGet(segment.url));
     }
 
+    private void updateSegmentList() {
+      try {
+        List<HlsStreamSegment> newSegments = loadSegments();
+
+        if (newSegments.size() != segments.size()) {
+          log.error("For {}, received different number of segments on update, skipping.", trackInfo.identifier);
+          return;
+        }
+
+        for (int i = 0; i < segments.size(); i++) {
+          if (!Objects.equals(newSegments.get(i).duration, segments.get(i).duration)) {
+            log.error("For {}, segment {} has different length than previously on update.", trackInfo.identifier, i);
+            return;
+          }
+        }
+
+        for (int i = 0; i < segments.size(); i++) {
+          segments.set(i, newSegments.get(i));
+        }
+      } catch (Exception e) {
+        log.error("For {}, failed to update segment list, skipping.", trackInfo.identifier, e);
+      }
+    }
+
+    private void checkSegmentListUpdate() {
+      long now = System.currentTimeMillis();
+      long delta = now - lastUpdate;
+
+      if (delta > SEGMENT_UPDATE_INTERVAL) {
+        log.debug("For {}, {}ms has passed since last segment update, updating", trackInfo.identifier, delta);
+
+        updateSegmentList();
+        lastUpdate = now;
+      }
+    }
+
     private HlsStreamSegment getNextSegment() {
       int current = segmentIndex++;
 
       if (current < segments.size()) {
+        checkSegmentListUpdate();
         return segments.get(current);
       } else {
         return null;
