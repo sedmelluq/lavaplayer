@@ -2,9 +2,9 @@ package com.sedmelluq.lava.extensions.youtuberotator;
 
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.source.youtube.YoutubeAudioSourceManager;
-import com.sedmelluq.discord.lavaplayer.source.youtube.YoutubeHttpContextFilter;
-import com.sedmelluq.discord.lavaplayer.tools.http.ExtendedHttpConfigurable;
-import com.sedmelluq.discord.lavaplayer.tools.http.HttpContextFilter;
+import com.sedmelluq.lavaplayer.core.source.youtube.YoutubeHttpContextFilter;
+import com.sedmelluq.lavaplayer.core.http.ExtendedHttpConfigurable;
+import com.sedmelluq.lavaplayer.core.http.HttpContextFilter;
 import com.sedmelluq.lava.extensions.youtuberotator.planner.AbstractRoutePlanner;
 import java.util.ArrayList;
 import java.util.List;

@@ -6,28 +6,18 @@ import com.sedmelluq.discord.lavaplayer.demo.MessageDispatcher;
 import com.sedmelluq.discord.lavaplayer.demo.controller.BotCommandHandler;
 import com.sedmelluq.discord.lavaplayer.demo.controller.BotController;
 import com.sedmelluq.discord.lavaplayer.demo.controller.BotControllerFactory;
-import com.sedmelluq.discord.lavaplayer.filter.equalizer.EqualizerFactory;
-import com.sedmelluq.discord.lavaplayer.player.AudioLoadResultHandler;
-import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
-import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
-import com.sedmelluq.discord.lavaplayer.remote.RemoteNode;
-import com.sedmelluq.discord.lavaplayer.remote.message.NodeStatisticsMessage;
-import com.sedmelluq.discord.lavaplayer.source.youtube.YoutubeAudioSourceManager;
-import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.tools.PlayerLibrary;
-import com.sedmelluq.discord.lavaplayer.tools.io.MessageInput;
-import com.sedmelluq.discord.lavaplayer.tools.io.MessageOutput;
-import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
-import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
-import com.sedmelluq.discord.lavaplayer.track.DecodedTrackHolder;
-import com.sedmelluq.discord.lavaplayer.track.TrackMarker;
-import net.dv8tion.jda.api.entities.Guild;
-import net.dv8tion.jda.api.entities.Message;
-import net.dv8tion.jda.api.entities.TextChannel;
-import net.dv8tion.jda.api.entities.VoiceChannel;
-import net.dv8tion.jda.api.managers.AudioManager;
-import net.iharder.Base64;
-
+import com.sedmelluq.lavaplayer.core.info.loader.AudioInfoRequests;
+import com.sedmelluq.lavaplayer.core.info.loader.AudioInfoResponseHandler;
+import com.sedmelluq.lavaplayer.core.info.playlist.AudioPlaylist;
+import com.sedmelluq.lavaplayer.core.info.track.AudioTrackInfo;
+import com.sedmelluq.lavaplayer.core.manager.AudioPlayerManager;
+import com.sedmelluq.lavaplayer.core.player.AudioPlayer;
+import com.sedmelluq.lavaplayer.core.player.filter.equalizer.EqualizerFactory;
+import com.sedmelluq.lavaplayer.core.player.marker.TrackMarker;
+import com.sedmelluq.lavaplayer.core.player.track.AudioTrack;
+import com.sedmelluq.lavaplayer.core.source.youtube.YoutubeAudioSource;
+import com.sedmelluq.lavaplayer.core.tools.exception.FriendlyException;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -35,6 +25,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
+import net.dv8tion.jda.api.entities.Guild;
+import net.dv8tion.jda.api.entities.Message;
+import net.dv8tion.jda.api.entities.TextChannel;
+import net.dv8tion.jda.api.entities.VoiceChannel;
+import net.dv8tion.jda.api.managers.AudioManager;
+import net.iharder.Base64;
 
 public class MusicController implements BotController {
   private static final float[] BASS_BOOST = { 0.2f, 0.15f, 0.1f, 0.05f, 0.0f, -0.05f, -0.1f, -0.1f, -0.1f, -0.1f, -0.1f,
@@ -76,12 +72,12 @@ public class MusicController implements BotController {
 
   @BotCommandHandler
   private void hex(Message message, int pageCount) {
-    manager.source(YoutubeAudioSourceManager.class).setPlaylistPageCount(pageCount);
+    manager.getSourceRegistry().findSource(YoutubeAudioSource.class).setPlaylistPageCount(pageCount);
   }
 
   @BotCommandHandler
   private void serialize(Message message) throws IOException {
-    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+    /*ByteArrayOutputStream baos = new ByteArrayOutputStream();
     MessageOutput outputStream = new MessageOutput(baos);
 
     for (AudioTrack track : scheduler.drainQueue()) {
@@ -90,12 +86,12 @@ public class MusicController implements BotController {
 
     outputStream.finish();
 
-    message.getChannel().sendMessage(Base64.encodeBytes(baos.toByteArray())).queue();
+    message.getChannel().sendMessage(Base64.encodeBytes(baos.toByteArray())).queue();*/
   }
 
   @BotCommandHandler
   private void deserialize(Message message, String content) throws IOException {
-    outputChannel.set((TextChannel) message.getChannel());
+    /*outputChannel.set((TextChannel) message.getChannel());
     connectToFirstVoiceChannel(guild.getAudioManager());
 
     byte[] bytes = Base64.decode(content);
@@ -107,23 +103,23 @@ public class MusicController implements BotController {
       if (holder.decodedTrack != null) {
         scheduler.addToQueue(holder.decodedTrack);
       }
-    }
+    }*/
   }
 
   @BotCommandHandler
   private void eqsetup(Message message) {
     manager.getConfiguration().setFilterHotSwapEnabled(true);
-    player.setFrameBufferDuration(500);
+    player.getConfiguration().setFrameBufferDuration(500);
   }
 
   @BotCommandHandler
   private void eqstart(Message message) {
-    player.setFilterFactory(equalizer);
+    player.getConfiguration().setFilterFactory(equalizer);
   }
 
   @BotCommandHandler
   private void eqstop(Message message) {
-    player.setFilterFactory(null);
+    player.getConfiguration().setFilterFactory(null);
   }
 
   @BotCommandHandler
@@ -147,17 +143,17 @@ public class MusicController implements BotController {
 
   @BotCommandHandler
   private void volume(Message message, int volume) {
-    player.setVolume(volume);
+    player.getConfiguration().setVolumeLevel(volume);
   }
 
   @BotCommandHandler
   private void nodes(Message message, String addressList) {
-    manager.useRemoteNodes(addressList.split(" "));
+    //manager.useRemoteNodes(addressList.split(" "));
   }
 
   @BotCommandHandler
   private void local(Message message) {
-    manager.useRemoteNodes();
+    //manager.useRemoteNodes();
   }
 
   @BotCommandHandler
@@ -233,15 +229,15 @@ public class MusicController implements BotController {
 
   @BotCommandHandler
   private void nodeinfo(Message message) {
-    for (RemoteNode node : manager.getRemoteNodeRegistry().getNodes()) {
+    /*for (RemoteNode node : manager.getRemoteNodeRegistry().getNodes()) {
       String report = buildReportForNode(node);
       message.getChannel().sendMessage(report).queue();
-    }
+    }*/
   }
 
   @BotCommandHandler
   private void provider(Message message) {
-    forPlayingTrack(track -> {
+    /*forPlayingTrack(track -> {
       RemoteNode node = manager.getRemoteNodeRegistry().getNodeUsedForTrack(track);
 
       if (node != null) {
@@ -249,7 +245,7 @@ public class MusicController implements BotController {
       } else {
         message.getChannel().sendMessage("Not played by a remote node.").queue();
       }
-    });
+    });*/
   }
 
   @BotCommandHandler
@@ -257,7 +253,7 @@ public class MusicController implements BotController {
     guild.getAudioManager().closeAudioConnection();
   }
 
-  private String buildReportForNode(RemoteNode node) {
+  /*private String buildReportForNode(RemoteNode node) {
     StringBuilder builder = new StringBuilder();
     builder.append("--- ").append(node.getAddress()).append(" ---\n");
     builder.append("Connection state: ").append(node.getConnectionState()).append("\n");
@@ -318,17 +314,17 @@ public class MusicController implements BotController {
     }
 
     return builder.toString();
-  }
+  }*/
 
   private void addTrack(final Message message, final String identifier, final boolean now) {
     outputChannel.set((TextChannel) message.getChannel());
 
-    manager.loadItemOrdered(this, identifier, new AudioLoadResultHandler() {
+    manager.requestInfo(AudioInfoRequests.generic(identifier, new AudioInfoResponseHandler() {
       @Override
-      public void trackLoaded(AudioTrack track) {
+      public void trackLoaded(AudioTrackInfo track) {
         connectToFirstVoiceChannel(guild.getAudioManager());
 
-        message.getChannel().sendMessage("Starting now: " + track.getInfo().title + " (length " + track.getDuration() + ")").queue();
+        message.getChannel().sendMessage("Starting now: " + track.getTitle() + " (length " + track.getLength() + ")").queue();
 
         if (now) {
           scheduler.playNow(track, true);
@@ -339,18 +335,18 @@ public class MusicController implements BotController {
 
       @Override
       public void playlistLoaded(AudioPlaylist playlist) {
-        List<AudioTrack> tracks = playlist.getTracks();
+        List<AudioTrackInfo> tracks = playlist.getTracks();
         message.getChannel().sendMessage("Loaded playlist: " + playlist.getName() + " (" + tracks.size() + ")").queue();
 
         connectToFirstVoiceChannel(guild.getAudioManager());
 
-        AudioTrack selected = playlist.getSelectedTrack();
+        AudioTrackInfo selected = playlist.getSelectedTrack();
 
         if (selected != null) {
-          message.getChannel().sendMessage("Selected track from playlist: " + selected.getInfo().title).queue();
+          message.getChannel().sendMessage("Selected track from playlist: " + selected.getTitle()).queue();
         } else {
           selected = tracks.get(0);
-          message.getChannel().sendMessage("Added first track from playlist: " + selected.getInfo().title).queue();
+          message.getChannel().sendMessage("Added first track from playlist: " + selected.getTitle()).queue();
         }
 
         if (now) {
@@ -375,7 +371,7 @@ public class MusicController implements BotController {
       public void loadFailed(FriendlyException throwable) {
         message.getChannel().sendMessage("Failed with message: " + throwable.getMessage() + " (" + throwable.getClass().getSimpleName() + ")").queue();
       }
-    });
+    }));
   }
 
   private void forPlayingTrack(TrackOperation operation) {

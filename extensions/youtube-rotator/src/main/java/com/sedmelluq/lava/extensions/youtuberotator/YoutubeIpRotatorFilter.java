@@ -1,6 +1,6 @@
 package com.sedmelluq.lava.extensions.youtuberotator;
 
-import com.sedmelluq.discord.lavaplayer.tools.http.HttpContextFilter;
+import com.sedmelluq.lavaplayer.core.http.HttpContextFilter;
 import com.sedmelluq.lava.extensions.youtuberotator.planner.AbstractRoutePlanner;
 import com.sedmelluq.lava.extensions.youtuberotator.tools.RateLimitException;
 import java.net.BindException;

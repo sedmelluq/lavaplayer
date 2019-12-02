@@ -1,7 +1,7 @@
 package com.sedmelluq.discord.lavaplayer.demo.music;
 
-import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
-import com.sedmelluq.discord.lavaplayer.track.playback.MutableAudioFrame;
+import com.sedmelluq.lavaplayer.core.player.AudioPlayer;
+import com.sedmelluq.lavaplayer.core.player.frame.MutableAudioFrame;
 import java.nio.Buffer;
 import net.dv8tion.jda.api.audio.AudioSendHandler;
 

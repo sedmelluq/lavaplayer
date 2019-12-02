@@ -1,6 +1,6 @@
 package com.sedmelluq.discord.lavaplayer.demo.music;
 
-import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
+import com.sedmelluq.lavaplayer.core.player.track.AudioTrack;
 
 public class TrackBoxBuilder {
   private static final String TOP_LEFT_CORNER = "\u2554";
@@ -18,7 +18,7 @@ public class TrackBoxBuilder {
 
   private static String buildFirstLine(int width, AudioTrack track) {
     StringBuilder builder = new StringBuilder();
-    String title = track.getInfo().title;
+    String title = track.getInfo().getTitle();
     int titleWidth = width - 7;
 
     if (title.length() > titleWidth) {

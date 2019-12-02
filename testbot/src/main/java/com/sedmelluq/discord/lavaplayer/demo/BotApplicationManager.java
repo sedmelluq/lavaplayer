@@ -4,18 +4,15 @@ import com.sedmelluq.discord.lavaplayer.demo.controller.BotCommandMappingHandler
 import com.sedmelluq.discord.lavaplayer.demo.controller.BotController;
 import com.sedmelluq.discord.lavaplayer.demo.controller.BotControllerManager;
 import com.sedmelluq.discord.lavaplayer.demo.music.MusicController;
-import com.sedmelluq.discord.lavaplayer.player.AudioConfiguration;
-import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
-import com.sedmelluq.discord.lavaplayer.player.DefaultAudioPlayerManager;
-import com.sedmelluq.discord.lavaplayer.source.bandcamp.BandcampAudioSourceManager;
-import com.sedmelluq.discord.lavaplayer.source.beam.BeamAudioSourceManager;
-import com.sedmelluq.discord.lavaplayer.source.http.HttpAudioSourceManager;
-import com.sedmelluq.discord.lavaplayer.source.local.LocalAudioSourceManager;
-import com.sedmelluq.discord.lavaplayer.source.soundcloud.SoundCloudAudioSourceManager;
-import com.sedmelluq.discord.lavaplayer.source.twitch.TwitchStreamAudioSourceManager;
-import com.sedmelluq.discord.lavaplayer.source.vimeo.VimeoAudioSourceManager;
-import com.sedmelluq.discord.lavaplayer.source.youtube.YoutubeAudioSourceManager;
 import com.sedmelluq.lava.common.tools.DaemonThreadFactory;
+import com.sedmelluq.lavaplayer.core.manager.AudioPlayerManager;
+import com.sedmelluq.lavaplayer.core.manager.DefaultAudioPlayerManager;
+import com.sedmelluq.lavaplayer.core.player.configuration.AudioConfiguration;
+import com.sedmelluq.lavaplayer.core.source.AudioSourceManagers;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import net.dv8tion.jda.api.entities.ChannelType;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
@@ -25,11 +22,6 @@ import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
 
 public class BotApplicationManager extends ListenerAdapter {
   private static final Logger log = LoggerFactory.getLogger(BotApplicationManager.class);
@@ -45,17 +37,11 @@ public class BotApplicationManager extends ListenerAdapter {
 
     controllerManager.registerController(new MusicController.Factory());
 
-    playerManager = new DefaultAudioPlayerManager();
+    playerManager = DefaultAudioPlayerManager.createDefault();
     //playerManager.useRemoteNodes("localhost:8080");
     playerManager.getConfiguration().setResamplingQuality(AudioConfiguration.ResamplingQuality.LOW);
-    playerManager.registerSourceManager(new YoutubeAudioSourceManager());
-    playerManager.registerSourceManager(SoundCloudAudioSourceManager.createDefault());
-    playerManager.registerSourceManager(new BandcampAudioSourceManager());
-    playerManager.registerSourceManager(new VimeoAudioSourceManager());
-    playerManager.registerSourceManager(new TwitchStreamAudioSourceManager());
-    playerManager.registerSourceManager(new BeamAudioSourceManager());
-    playerManager.registerSourceManager(new HttpAudioSourceManager());
-    playerManager.registerSourceManager(new LocalAudioSourceManager());
+    AudioSourceManagers.registerRemoteSources(playerManager);
+    AudioSourceManagers.registerLocalSource(playerManager);
 
     executorService = Executors.newScheduledThreadPool(1, new DaemonThreadFactory("bot"));
   }

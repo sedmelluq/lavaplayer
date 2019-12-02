@@ -1,12 +1,10 @@
 package com.sedmelluq.lava.player.extras.stream;
 
-import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
-import com.sedmelluq.discord.lavaplayer.player.event.AudioEvent;
-import com.sedmelluq.discord.lavaplayer.player.event.AudioEventAdapter;
-import com.sedmelluq.discord.lavaplayer.player.event.TrackEndEvent;
-import com.sedmelluq.discord.lavaplayer.player.event.TrackStuckEvent;
-import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
-import com.sedmelluq.discord.lavaplayer.track.playback.AudioFrame;
+import com.sedmelluq.lavaplayer.core.player.AudioPlayer;
+import com.sedmelluq.lavaplayer.core.player.AudioTrackRequestBuilder;
+import com.sedmelluq.lavaplayer.core.player.event.AudioPlayerEventAdapter;
+import com.sedmelluq.lavaplayer.core.player.frame.AudioFrame;
+import com.sedmelluq.lavaplayer.core.player.track.AudioTrack;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,7 +14,7 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
-public class StreamInstance {
+public class StreamInstance implements AutoCloseable {
   private static final Logger log = LoggerFactory.getLogger(StreamInstance.class);
 
   private final AudioTrack track;
@@ -53,11 +51,12 @@ public class StreamInstance {
     return cursor;
   }
 
-  public synchronized void shutdown() {
+  @Override
+  public synchronized void close() throws Exception {
     destroy();
   }
 
-  private void destroy() {
+  private void destroy() throws Exception {
     if (!destroyed) {
       destroyed = true;
 
@@ -68,7 +67,7 @@ public class StreamInstance {
 
       if (initialized) {
         log.debug("Shutting down centralized stream for {}.", track.getInfo());
-        trackPlayer.destroy();
+        trackPlayer.close();
       }
     }
   }
@@ -80,7 +79,7 @@ public class StreamInstance {
       log.debug("Initializing centralized stream for {}.", track.getInfo());
 
       trackPlayer.addListener(new Listener());
-      trackPlayer.playTrack(track);
+      trackPlayer.playTrack(new AudioTrackRequestBuilder(track.getInfo()).build());
     }
   }
 
@@ -159,7 +158,7 @@ public class StreamInstance {
     }
   }
 
-  private class Listener extends AudioEventAdapter {
+  private class Listener extends AudioPlayerEventAdapter {
     @Override
     public void onEvent(AudioEvent event) {
       if (event instanceof TrackEndEvent || event instanceof TrackStuckEvent) {

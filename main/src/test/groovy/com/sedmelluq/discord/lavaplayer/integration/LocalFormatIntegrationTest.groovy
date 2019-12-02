@@ -1,16 +1,17 @@
 package com.sedmelluq.discord.lavaplayer.integration
 
-import com.sedmelluq.discord.lavaplayer.format.Pcm16AudioDataFormat
 import com.sedmelluq.discord.lavaplayer.integration.LocalFormatSampleIndex.Sample
-import com.sedmelluq.discord.lavaplayer.player.AudioPlayer
-import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager
-import com.sedmelluq.discord.lavaplayer.player.DefaultAudioPlayerManager
-import com.sedmelluq.discord.lavaplayer.player.event.AudioEvent
-import com.sedmelluq.discord.lavaplayer.player.event.AudioEventListener
-import com.sedmelluq.discord.lavaplayer.player.event.TrackEndEvent
-import com.sedmelluq.discord.lavaplayer.player.event.TrackStartEvent
-import com.sedmelluq.discord.lavaplayer.source.AudioSourceManagers
-import com.sedmelluq.discord.lavaplayer.track.playback.MutableAudioFrame
+import com.sedmelluq.lavaplayer.core.format.Pcm16AudioDataFormat
+import com.sedmelluq.lavaplayer.core.manager.AudioPlayerManager
+import com.sedmelluq.lavaplayer.core.manager.DefaultAudioPlayerManager
+import com.sedmelluq.lavaplayer.core.player.AudioPlayer
+import com.sedmelluq.lavaplayer.core.player.AudioTrackRequestBuilder
+import com.sedmelluq.lavaplayer.core.player.event.AudioPlayerEvent
+import com.sedmelluq.lavaplayer.core.player.event.AudioPlayerEventListener
+import com.sedmelluq.lavaplayer.core.player.event.TrackEndEvent
+import com.sedmelluq.lavaplayer.core.player.event.TrackStartEvent
+import com.sedmelluq.lavaplayer.core.player.frame.MutableAudioFrame
+import com.sedmelluq.lavaplayer.core.source.AudioSourceManagers
 import org.apache.commons.io.IOUtils
 import spock.lang.Specification
 import spock.lang.Timeout
@@ -28,7 +29,7 @@ class LocalFormatIntegrationTest extends Specification {
   static File temporaryDirectory
 
   def setupSpec() {
-    manager = new DefaultAudioPlayerManager()
+    manager = DefaultAudioPlayerManager.createDefault()
     AudioSourceManagers.registerLocalSource(manager)
 
     temporaryDirectory = Files.createTempDirectory('lavaplayer-test-samples').toFile()
@@ -43,7 +44,7 @@ class LocalFormatIntegrationTest extends Specification {
   }
 
   def cleanupSpec() {
-    manager.shutdown()
+    manager.close()
 
     temporaryDirectory.deleteDir()
   }
@@ -57,16 +58,16 @@ class LocalFormatIntegrationTest extends Specification {
     MutableAudioFrame frame = new MutableAudioFrame()
     frame.setBuffer(buffer)
 
-    List<AudioEvent> events = []
+    List<AudioPlayerEvent> events = []
 
-    player.addListener(new AudioEventListener() {
+    player.addListener(new AudioPlayerEventListener() {
       @Override
-      void onEvent(AudioEvent event) {
+      void onEvent(AudioPlayerEvent event) {
         events.add(event)
       }
     })
 
-    player.playTrack(loadTrack(manager, temporaryDirectory.absolutePath + "/" + sample.filename))
+    player.playTrack(new AudioTrackRequestBuilder(loadTrack(manager, temporaryDirectory.absolutePath + "/" + sample.filename)))
 
     expect:
     sample.validCrcs.contains(consumeTrack(player))

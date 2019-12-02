@@ -1,23 +1,19 @@
 package com.sedmelluq.lava.player.extras.stream;
 
-import com.sedmelluq.discord.lavaplayer.player.AudioLoadResultHandler;
-import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
-import com.sedmelluq.discord.lavaplayer.player.DefaultAudioPlayerManager;
-import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
-import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
-import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import com.sedmelluq.lava.common.tools.ExecutorTools;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import com.sedmelluq.lavaplayer.core.manager.DefaultAudioPlayerManager;
+import com.sedmelluq.lavaplayer.core.player.track.AudioTrack;
+import com.sedmelluq.lavaplayer.core.tools.exception.FriendlyException;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.Future;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import static com.sedmelluq.discord.lavaplayer.tools.DataFormatTools.defaultOnNull;
+import static com.sedmelluq.lavaplayer.core.tools.DataFormatTools.defaultOnNull;
 
 public class StreamAudioPlayerManager extends DefaultAudioPlayerManager {
   private static final Logger log = LoggerFactory.getLogger(StreamAudioPlayerManager.class);
@@ -60,7 +56,7 @@ public class StreamAudioPlayerManager extends DefaultAudioPlayerManager {
 
   public StreamInstance.Cursor openTrack(AudioTrack track, Consumer<StreamInstance.Cursor> detachListener) {
     synchronized (streams) {
-      StreamInstance instance = streams.get(track.getIdentifier());
+      StreamInstance instance = streams.get(track.getInfo().getIdentifier());
 
       if (instance != null) {
         StreamInstance.Cursor cursor = instance.createCursor(detachListener);

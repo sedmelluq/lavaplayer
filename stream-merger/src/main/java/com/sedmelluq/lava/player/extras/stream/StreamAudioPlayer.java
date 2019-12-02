@@ -1,43 +1,47 @@
 package com.sedmelluq.lava.player.extras.stream;
 
-import com.sedmelluq.discord.lavaplayer.filter.PcmFilterFactory;
-import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
-import com.sedmelluq.discord.lavaplayer.player.event.AudioEvent;
-import com.sedmelluq.discord.lavaplayer.player.event.AudioEventAdapter;
-import com.sedmelluq.discord.lavaplayer.player.event.AudioEventListener;
-import com.sedmelluq.discord.lavaplayer.player.event.PlayerPauseEvent;
-import com.sedmelluq.discord.lavaplayer.player.event.PlayerResumeEvent;
-import com.sedmelluq.discord.lavaplayer.player.event.TrackEndEvent;
-import com.sedmelluq.discord.lavaplayer.player.event.TrackExceptionEvent;
-import com.sedmelluq.discord.lavaplayer.player.event.TrackStartEvent;
-import com.sedmelluq.discord.lavaplayer.player.event.TrackStuckEvent;
-import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
-import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
-import com.sedmelluq.discord.lavaplayer.track.AudioTrackEndReason;
-import com.sedmelluq.discord.lavaplayer.track.playback.AudioFrame;
-import com.sedmelluq.discord.lavaplayer.track.playback.MutableAudioFrame;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import com.sedmelluq.lavaplayer.core.player.AudioPlayer;
+import com.sedmelluq.lavaplayer.core.player.AudioTrackRequestBuilder;
+import com.sedmelluq.lavaplayer.core.player.event.AudioPlayerEvent;
+import com.sedmelluq.lavaplayer.core.player.event.AudioPlayerEventAdapter;
+import com.sedmelluq.lavaplayer.core.player.event.AudioPlayerEventListener;
+import com.sedmelluq.lavaplayer.core.player.event.PlayerPauseEvent;
+import com.sedmelluq.lavaplayer.core.player.event.PlayerResumeEvent;
+import com.sedmelluq.lavaplayer.core.player.event.TrackEndEvent;
+import com.sedmelluq.lavaplayer.core.player.event.TrackExceptionEvent;
+import com.sedmelluq.lavaplayer.core.player.event.TrackStartEvent;
+import com.sedmelluq.lavaplayer.core.player.event.TrackStuckEvent;
+import com.sedmelluq.lavaplayer.core.player.frame.AudioFrame;
+import com.sedmelluq.lavaplayer.core.player.frame.MutableAudioFrame;
+import com.sedmelluq.lavaplayer.core.player.track.AudioTrack;
+import com.sedmelluq.lavaplayer.core.player.track.AudioTrackEndReason;
+import com.sedmelluq.lavaplayer.core.player.track.AudioTrackFactory;
+import com.sedmelluq.lavaplayer.core.player.track.AudioTrackRequest;
+import com.sedmelluq.lavaplayer.core.player.track.ExecutableAudioTrack;
+import com.sedmelluq.lavaplayer.core.tools.exception.FriendlyException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import static com.sedmelluq.discord.lavaplayer.track.AudioTrackEndReason.REPLACED;
+import static com.sedmelluq.lavaplayer.core.player.track.AudioTrackEndReason.REPLACED;
 
 public class StreamAudioPlayer implements AudioPlayer {
   private static final Logger log = LoggerFactory.getLogger(StreamAudioPlayer.class);
 
+  private final AudioTrackFactory trackFactory;
   private final AudioPlayer fallback;
   private final StreamAudioPlayerManager manager;
   private final Object lock;
-  private final List<AudioEventListener> listeners;
+  private final List<AudioPlayerEventListener> listeners;
   private final DetachListener detachListener;
   private StreamInstance.Cursor streamCursor;
 
-  public StreamAudioPlayer(AudioPlayer fallback, StreamAudioPlayerManager manager) {
+  public StreamAudioPlayer(AudioTrackFactory trackFactory, AudioPlayer fallback, StreamAudioPlayerManager manager) {
+    this.trackFactory = trackFactory;
     this.fallback = fallback;
     this.manager = manager;
     this.lock = new Object();
@@ -59,21 +63,22 @@ public class StreamAudioPlayer implements AudioPlayer {
   }
 
   @Override
-  public void playTrack(AudioTrack track) {
-    startTrack(track, false);
-  }
+  public AudioTrack playTrack(AudioTrackRequest request) {
+    ExecutableAudioTrack newTrack;
+    ExecutableAudioTrack previousTrack;
 
-  @Override
-  public boolean startTrack(AudioTrack track, boolean noInterrupt) {
-    if (track == null) {
+    if (request == null || request.getTrackInfo() == null) {
       stopTrack();
+      return null;
     } else {
       synchronized (lock) {
-        AudioTrack previousTrack = getPlayingTrack();
+        previousTrack = (ExecutableAudioTrack) getPlayingTrack();
 
-        if (noInterrupt && previousTrack != null) {
-          return false;
+        if (!request.getReplaceExisting() && previousTrack != null) {
+          return null;
         }
+
+        newTrack = trackFactory.create(request, fallback.getConfiguration());
 
         if (previousTrack != null) {
           if (streamCursor == null) {
@@ -85,17 +90,19 @@ public class StreamAudioPlayer implements AudioPlayer {
           dispatchEvent(new TrackEndEvent(this, previousTrack, REPLACED));
         }
 
-        streamCursor = manager.openTrack(track, detachListener);
+        streamCursor = manager.openTrack(newTrack, detachListener);
 
         if (streamCursor == null) {
-          fallback.startTrack(track, false);
+          newTrack = (ExecutableAudioTrack) fallback.playTrack(new AudioTrackRequestBuilder(newTrack.getInfo())
+              .withReplaceExisting(false)
+              .build());
         }
 
-        dispatchEvent(new TrackStartEvent(this, track));
+        dispatchEvent(new TrackStartEvent(this, newTrack));
       }
     }
 
-    return true;
+    return newTrack;
   }
 
   @Override
@@ -111,26 +118,6 @@ public class StreamAudioPlayer implements AudioPlayer {
   }
 
   @Override
-  public int getVolume() {
-    return fallback.getVolume();
-  }
-
-  @Override
-  public void setVolume(int volume) {
-    fallback.setVolume(volume);
-  }
-
-  @Override
-  public void setFilterFactory(PcmFilterFactory factory) {
-    fallback.setFilterFactory(factory);
-  }
-
-  @Override
-  public void setFrameBufferDuration(Integer duration) {
-    fallback.setFrameBufferDuration(duration);
-  }
-
-  @Override
   public boolean isPaused() {
     return fallback.isPaused();
   }
@@ -141,34 +128,29 @@ public class StreamAudioPlayer implements AudioPlayer {
   }
 
   @Override
-  public void destroy() {
+  public void close() throws Exception {
     synchronized (lock) {
       if (streamCursor != null) {
         streamCursor.close();
         streamCursor = null;
       }
 
-      fallback.destroy();
+      fallback.close();
     }
   }
 
   @Override
-  public void addListener(AudioEventListener listener) {
+  public void addListener(AudioPlayerEventListener listener) {
     synchronized (lock) {
       listeners.add(listener);
     }
   }
 
   @Override
-  public void removeListener(AudioEventListener listener) {
+  public void removeListener(AudioPlayerEventListener listener) {
     synchronized (lock) {
       listeners.removeIf(audioEventListener -> audioEventListener == listener);
     }
-  }
-
-  @Override
-  public void checkCleanup(long threshold) {
-
   }
 
   @Override
@@ -234,9 +216,9 @@ public class StreamAudioPlayer implements AudioPlayer {
     }
   }
 
-  private void dispatchEvent(AudioEvent event) {
+  private void dispatchEvent(AudioPlayerEvent event) {
     synchronized (lock) {
-      for (AudioEventListener listener : listeners) {
+      for (AudioPlayerEventListener listener : listeners) {
         try {
           listener.onEvent(event);
         } catch (Exception e) {
@@ -258,7 +240,7 @@ public class StreamAudioPlayer implements AudioPlayer {
     }
   }
 
-  private class StreamEventListener extends AudioEventAdapter {
+  private class StreamEventListener extends AudioPlayerEventAdapter {
     @Override
     public void onPlayerPause(AudioPlayer player) {
       dispatchEvent(new PlayerPauseEvent(StreamAudioPlayer.this));
@@ -271,7 +253,7 @@ public class StreamAudioPlayer implements AudioPlayer {
 
     @Override
     public void onTrackStart(AudioPlayer player, AudioTrack track) {
-      log.debug("Received start event from delegate player for track {}.", track.getIdentifier());
+      log.debug("Received start event from delegate player for track {}.", track.getInfo().getIdentifier());
     }
 
     @Override

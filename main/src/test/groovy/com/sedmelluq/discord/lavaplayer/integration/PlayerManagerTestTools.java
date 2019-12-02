@@ -1,11 +1,12 @@
 package com.sedmelluq.discord.lavaplayer.integration;
 
-import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
-import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
-import com.sedmelluq.discord.lavaplayer.player.FunctionalResultHandler;
-import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
-import com.sedmelluq.discord.lavaplayer.track.playback.MutableAudioFrame;
+import com.sedmelluq.lavaplayer.core.info.loader.AudioInfoRequests;
+import com.sedmelluq.lavaplayer.core.info.loader.SplitAudioInfoResponseHandler;
 
+import com.sedmelluq.lavaplayer.core.info.track.AudioTrackInfo;
+import com.sedmelluq.lavaplayer.core.manager.AudioPlayerManager;
+import com.sedmelluq.lavaplayer.core.player.AudioPlayer;
+import com.sedmelluq.lavaplayer.core.player.frame.MutableAudioFrame;
 import java.nio.ByteBuffer;
 import java.util.NoSuchElementException;
 import java.util.concurrent.CompletableFuture;
@@ -13,15 +14,15 @@ import java.util.concurrent.TimeUnit;
 import java.util.zip.CRC32;
 
 public class PlayerManagerTestTools {
-  public static AudioTrack loadTrack(AudioPlayerManager manager, String identifier) throws Exception {
-    CompletableFuture<AudioTrack> result = new CompletableFuture<>();
+  public static AudioTrackInfo loadTrack(AudioPlayerManager manager, String identifier) throws Exception {
+    CompletableFuture<AudioTrackInfo> result = new CompletableFuture<>();
 
-    manager.loadItem(identifier, new FunctionalResultHandler(
+    manager.requestInfo(AudioInfoRequests.generic(identifier, new SplitAudioInfoResponseHandler(
         result::complete,
         (playlist) -> result.completeExceptionally(new IllegalArgumentException()),
         () -> result.completeExceptionally(new NoSuchElementException()),
         result::completeExceptionally
-    ));
+    )));
 
     return result.get(10, TimeUnit.SECONDS);
   }
