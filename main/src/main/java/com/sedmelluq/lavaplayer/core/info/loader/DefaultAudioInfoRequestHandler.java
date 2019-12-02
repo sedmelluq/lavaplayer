@@ -122,6 +122,10 @@ public class DefaultAudioInfoRequestHandler implements AudioInfoRequestHandler {
 
   protected AudioInfoEntity checkSourcesForItemOnce(LookupContext context, AudioInfoRequest request) {
     for (AudioSource source : sourceRegistry.getAllSources()) {
+      if (!request.isSourceAllowed(source)) {
+        continue;
+      }
+
       AudioInfoEntity item = source.loadItem(request);
 
       if (item != null) {
