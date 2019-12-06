@@ -1,7 +1,9 @@
 package com.sedmelluq.discord.lavaplayer.source.stream;
 
+import com.sedmelluq.discord.lavaplayer.container.playlists.ExtendedM3uParser;
 import com.sedmelluq.discord.lavaplayer.tools.ExceptionTools;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
+import com.sedmelluq.discord.lavaplayer.tools.io.HttpClientTools;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterface;
 import java.io.IOException;
 import java.io.InputStream;
@@ -99,7 +101,7 @@ public abstract class M3uStreamSegmentUrlProvider {
       response = httpInterface.execute(createSegmentGetRequest(url));
       int statusCode = response.getStatusLine().getStatusCode();
 
-      if (statusCode != 200) {
+      if (!HttpClientTools.isSuccessWithContent(statusCode)) {
         throw new IOException("Invalid status code from segment data URL: " + statusCode);
       }
 

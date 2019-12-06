@@ -6,10 +6,9 @@ import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo;
 import com.sedmelluq.discord.lavaplayer.track.BaseAudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.playback.AudioProcessingContext;
 import com.sedmelluq.discord.lavaplayer.track.playback.LocalAudioTrackExecutor;
+import java.io.IOException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.IOException;
 
 import static com.sedmelluq.discord.lavaplayer.tools.FriendlyException.Severity.SUSPICIOUS;
 
@@ -43,25 +42,23 @@ public class OggAudioTrack extends BaseAudioTrack {
       } catch (IOException e) {
         throw new FriendlyException("Stream broke when playing OGG track.", SUSPICIOUS, e);
       }
-    }, null);
+    }, null, true);
   }
 
   private void processTrackLoop(OggPacketInputStream packetInputStream, AudioProcessingContext context) throws IOException, InterruptedException {
-    OggTrackHandler track = OggTrackLoader.loadTrackHandler(packetInputStream);
+    OggTrackBlueprint blueprint = OggTrackLoader.loadTrackBlueprint(packetInputStream);
 
-    if (track == null) {
+    if (blueprint == null) {
       throw new IOException("Stream terminated before the first packet.");
     }
 
-    while (track != null) {
-      try {
-        track.initialise(context);
-        track.provideFrames();
-      } finally {
-        track.close();
+    while (blueprint != null) {
+      try (OggTrackHandler handler = blueprint.loadTrackHandler(packetInputStream)) {
+        handler.initialise(context, 0, 0);
+        handler.provideFrames();
       }
 
-      track = OggTrackLoader.loadTrackHandler(packetInputStream);
+      blueprint = OggTrackLoader.loadTrackBlueprint(packetInputStream);
     }
   }
 }

@@ -1,5 +1,49 @@
 # Change Log
 
+## [1.3.32] -- 2019-12-01
+### Fixed
+- Fixed SoundCloud tracks longer than 30 minutes breaking during playback due to URLs expiring.
+
+## [1.3.31] -- 2019-12-01
+### Fixed
+- Fixed redundant retry attempts for SoundCloud liked tracks and search result pages.
+
+## [1.3.30] -- 2019-12-01
+### Changed
+- SoundCloud source manager is now modular and more easily extendable.
+
+### Fixed
+- Fixed non-opus tracks no longer working due to old stream API not being available anymore.
+- Fixed SoundCloud opus seeking not working when applied before track starts.
+
+## [1.3.29] -- 2019-11-25
+### Fixed
+- Fixed SoundCloud opus seeking not working.
+
+## [1.3.28] -- 2019-11-25
+### Fixed
+- Fixed response code 203 treated as an error everywhere.
+
+## [1.3.27] -- 2019-11-19
+### Fixed
+- Fixed SoundCloud track loading failing if no opus track is available.
+
+## [1.3.26] -- 2019-11-19
+### Added
+- Support for SoundCloud opus streams by default, old MP3 streams only used if opus is not available.
+
+## [1.3.25] -- 2019-11-06
+### Changed
+- Manipulation of HTTP requests and triggering retries with HTTP context filter instead of a simple request modifier.
+
+## [1.3.24] -- 2019-11-06
+### Added
+- HTTP request modifier interface which allows modifying outgoing requests.
+
+## [1.3.23] -- 2019-10-28
+### Changed
+- Use YouTube pbj=1 requests for tracks and playlists.
+
 ## [1.3.22] -- 2019-09-11
 ### Fixed
 - Fixed new track formats breaking YouTube track loading (PR 210 by Ferderikam) 

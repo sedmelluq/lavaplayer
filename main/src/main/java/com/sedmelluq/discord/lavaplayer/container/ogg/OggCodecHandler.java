@@ -9,7 +9,7 @@ public interface OggCodecHandler {
 
   int getMaximumFirstPacketLength();
 
-  OggTrackHandler loadTrackHandler(OggPacketInputStream stream, DirectBufferStreamBroker broker) throws IOException;
+  OggTrackBlueprint loadBlueprint(OggPacketInputStream stream, DirectBufferStreamBroker broker) throws IOException;
 
   OggMetadata loadMetadata(OggPacketInputStream stream, DirectBufferStreamBroker broker) throws IOException;
 }

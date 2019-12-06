@@ -2,17 +2,18 @@ package com.sedmelluq.discord.lavaplayer.source.soundcloud;
 
 import com.sedmelluq.discord.lavaplayer.container.mp3.Mp3AudioTrack;
 import com.sedmelluq.discord.lavaplayer.source.AudioSourceManager;
+import com.sedmelluq.discord.lavaplayer.tools.JsonBrowser;
+import com.sedmelluq.discord.lavaplayer.tools.io.HttpClientTools;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterface;
 import com.sedmelluq.discord.lavaplayer.tools.io.PersistentHttpStream;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo;
 import com.sedmelluq.discord.lavaplayer.track.DelegatedAudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.playback.LocalAudioTrackExecutor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.IOException;
 import java.net.URI;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Audio track that handles processing SoundCloud tracks.
@@ -35,37 +36,56 @@ public class SoundCloudAudioTrack extends DelegatedAudioTrack {
   @Override
   public void process(LocalAudioTrackExecutor localExecutor) throws Exception {
     try (HttpInterface httpInterface = sourceManager.getHttpInterface()) {
-      if (!attemptLoadStream(localExecutor, httpInterface, true)) {
-        sourceManager.updateClientId();
-
-        attemptLoadStream(localExecutor, httpInterface, false);
-      }
+      playFromIdentifier(httpInterface, trackInfo.identifier, false, localExecutor);
     }
   }
 
-  private boolean attemptLoadStream(LocalAudioTrackExecutor localExecutor, HttpInterface httpInterface, boolean checkUnauthorized) throws Exception {
-    String trackUrl = sourceManager.getTrackUrlFromId(trackInfo.identifier);
+  private void playFromIdentifier(
+      HttpInterface httpInterface,
+      String identifier,
+      boolean recursion,
+      LocalAudioTrackExecutor localExecutor
+  ) throws Exception {
+    String opusLookupUrl = sourceManager.getFormatHandler().getOpusLookupUrl(identifier);
+
+    if (opusLookupUrl != null) {
+      processDelegate(new SoundCloudOpusM3uAudioTrack(trackInfo, httpInterface, opusLookupUrl), localExecutor);
+      return;
+    }
+
+    String mp3LookupUrl = sourceManager.getFormatHandler().getMp3LookupUrl(identifier);
+
+    if (mp3LookupUrl != null) {
+      String playbackUrl = SoundCloudHelper.loadPlaybackUrl(httpInterface, identifier.substring(2));
+      loadFromMp3Url(localExecutor, httpInterface, playbackUrl);
+      return;
+    }
+
+    if (!recursion) {
+      // Old "track ID" entry? Let's "load" it to get url.
+      AudioTrack track = sourceManager.loadFromTrackPage(trackInfo.uri);
+      playFromIdentifier(httpInterface, track.getIdentifier(), true, localExecutor);
+    }
+  }
+
+  private void loadFromMp3Url(
+      LocalAudioTrackExecutor localExecutor,
+      HttpInterface httpInterface,
+      String trackUrl
+  ) throws Exception {
     log.debug("Starting SoundCloud track from URL: {}", trackUrl);
 
     try (PersistentHttpStream stream = new PersistentHttpStream(httpInterface, new URI(trackUrl), null)) {
-      if (checkUnauthorized) {
-        int statusCode = stream.checkStatusCode();
-
-        if (statusCode == 401) {
-          return false;
-        } else if (statusCode < 200 && statusCode >= 300) {
-          throw new IOException("Invalid status code for soundcloud stream: " + statusCode);
-        }
+      if (!HttpClientTools.isSuccessWithContent(stream.checkStatusCode())) {
+        throw new IOException("Invalid status code for soundcloud stream: " + stream.checkStatusCode());
       }
 
       processDelegate(new Mp3AudioTrack(trackInfo, stream), localExecutor);
     }
-
-    return true;
   }
 
   @Override
-  public AudioTrack makeClone() {
+  protected AudioTrack makeShallowClone() {
     return new SoundCloudAudioTrack(trackInfo, sourceManager);
   }
 

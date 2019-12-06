@@ -43,6 +43,7 @@ public class LocalAudioTrackExecutor implements AudioTrackExecutor {
   private final AtomicReference<AudioTrackState> state = new AtomicReference<>(AudioTrackState.INACTIVE);
   private final Object actionSynchronizer = new Object();
   private final TrackMarkerTracker markerTracker = new TrackMarkerTracker();
+  private long externalSeekPosition = -1;
   private boolean interruptibleForSeek = false;
   private volatile Throwable trackException;
 
@@ -231,12 +232,16 @@ public class LocalAudioTrackExecutor implements AudioTrackExecutor {
     return trackException != null && !frameBuffer.hasReceivedFrames();
   }
 
+  public void executeProcessingLoop(ReadExecutor readExecutor, SeekExecutor seekExecutor) {
+    executeProcessingLoop(readExecutor, seekExecutor, true);
+  }
+
   /**
    * Execute the read and seek loop for the track.
    * @param readExecutor Callback for reading the track
    * @param seekExecutor Callback for performing a seek on the track, may be null on a non-seekable track
    */
-  public void executeProcessingLoop(ReadExecutor readExecutor, SeekExecutor seekExecutor) {
+  public void executeProcessingLoop(ReadExecutor readExecutor, SeekExecutor seekExecutor, boolean waitOnEnd) {
     boolean proceed = true;
 
     if (checkPendingSeek(seekExecutor) == SeekResult.EXTERNAL_SEEK) {
@@ -257,8 +262,14 @@ public class LocalAudioTrackExecutor implements AudioTrackExecutor {
         readExecutor.performRead();
         setInterruptibleForSeek(false);
 
-        // Must not finish before terminator frame has been consumed the user may still want to perform seeks until then
-        waitOnEnd();
+        if (seekExecutor != null && externalSeekPosition != -1) {
+          long nextPosition = externalSeekPosition;
+          externalSeekPosition = -1;
+          performSeek(seekExecutor, nextPosition);
+          proceed = true;
+        } else if (waitOnEnd) {
+          waitOnEnd();
+        }
       } catch (Exception e) {
         setInterruptibleForSeek(false);
         InterruptedException interruption = findInterrupt(e);
@@ -368,15 +379,19 @@ public class LocalAudioTrackExecutor implements AudioTrackExecutor {
     }
 
     if (seekExecutor != null) {
-      try {
-        seekExecutor.performSeek(seekPosition);
-      } catch (Exception e) {
-        throw ExceptionTools.wrapUnfriendlyExceptions("Something went wrong when seeking to a position.", FAULT, e);
-      }
-
+      performSeek(seekExecutor, seekPosition);
       return SeekResult.INTERNAL_SEEK;
     } else {
+      externalSeekPosition = seekPosition;
       return SeekResult.EXTERNAL_SEEK;
+    }
+  }
+
+  private void performSeek(SeekExecutor seekExecutor, long seekPosition) {
+    try {
+      seekExecutor.performSeek(seekPosition);
+    } catch (Exception e) {
+      throw ExceptionTools.wrapUnfriendlyExceptions("Something went wrong when seeking to a position.", FAULT, e);
     }
   }
 
@@ -448,7 +463,7 @@ public class LocalAudioTrackExecutor implements AudioTrackExecutor {
      *
      * @throws InterruptedException When interrupted externally (or for seek/stop).
      */
-    void performRead() throws InterruptedException;
+    void performRead() throws Exception;
   }
 
   /**
@@ -460,7 +475,7 @@ public class LocalAudioTrackExecutor implements AudioTrackExecutor {
      *
      * @param position Position in milliseconds
      */
-    void performSeek(long position);
+    void performSeek(long position) throws Exception;
   }
 
   private enum SeekResult {

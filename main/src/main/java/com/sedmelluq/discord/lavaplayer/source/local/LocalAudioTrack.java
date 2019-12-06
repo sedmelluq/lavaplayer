@@ -48,7 +48,7 @@ public class LocalAudioTrack extends DelegatedAudioTrack {
   }
 
   @Override
-  public AudioTrack makeClone() {
+  protected AudioTrack makeShallowClone() {
     return new LocalAudioTrack(trackInfo, containerTrackFactory, sourceManager);
   }
 

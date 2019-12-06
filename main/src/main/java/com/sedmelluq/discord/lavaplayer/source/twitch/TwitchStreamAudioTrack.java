@@ -3,6 +3,7 @@ package com.sedmelluq.discord.lavaplayer.source.twitch;
 import com.sedmelluq.discord.lavaplayer.source.AudioSourceManager;
 import com.sedmelluq.discord.lavaplayer.source.stream.M3uStreamAudioTrack;
 import com.sedmelluq.discord.lavaplayer.source.stream.M3uStreamSegmentUrlProvider;
+import com.sedmelluq.discord.lavaplayer.source.stream.MpegTsM3uStreamAudioTrack;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterface;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo;
@@ -15,7 +16,7 @@ import static com.sedmelluq.discord.lavaplayer.source.twitch.TwitchStreamAudioSo
 /**
  * Audio track that handles processing Twitch tracks.
  */
-public class TwitchStreamAudioTrack extends M3uStreamAudioTrack {
+public class TwitchStreamAudioTrack extends MpegTsM3uStreamAudioTrack {
   private static final Logger log = LoggerFactory.getLogger(TwitchStreamAudioTrack.class);
 
   private final TwitchStreamAudioSourceManager sourceManager;
@@ -57,7 +58,7 @@ public class TwitchStreamAudioTrack extends M3uStreamAudioTrack {
   }
 
   @Override
-  public AudioTrack makeClone() {
+  protected AudioTrack makeShallowClone() {
     return new TwitchStreamAudioTrack(trackInfo, sourceManager);
   }
 

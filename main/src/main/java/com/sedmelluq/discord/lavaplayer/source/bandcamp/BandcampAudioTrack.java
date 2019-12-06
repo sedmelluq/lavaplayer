@@ -3,6 +3,7 @@ package com.sedmelluq.discord.lavaplayer.source.bandcamp;
 import com.sedmelluq.discord.lavaplayer.container.mp3.Mp3AudioTrack;
 import com.sedmelluq.discord.lavaplayer.source.AudioSourceManager;
 import com.sedmelluq.discord.lavaplayer.tools.JsonBrowser;
+import com.sedmelluq.discord.lavaplayer.tools.io.HttpClientTools;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterface;
 import com.sedmelluq.discord.lavaplayer.tools.io.PersistentHttpStream;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
@@ -54,7 +55,7 @@ public class BandcampAudioTrack extends DelegatedAudioTrack {
   private String getTrackMediaUrl(HttpInterface httpInterface) throws IOException {
     try (CloseableHttpResponse response = httpInterface.execute(new HttpGet(trackInfo.identifier))) {
       int statusCode = response.getStatusLine().getStatusCode();
-      if (statusCode != 200) {
+      if (!HttpClientTools.isSuccessWithContent(statusCode)) {
         throw new IOException("Invalid status code for track page: " + statusCode);
       }
 
@@ -66,7 +67,7 @@ public class BandcampAudioTrack extends DelegatedAudioTrack {
   }
 
   @Override
-  public AudioTrack makeClone() {
+  protected AudioTrack makeShallowClone() {
     return new BandcampAudioTrack(trackInfo, sourceManager);
   }
 

@@ -1,9 +1,6 @@
 package com.sedmelluq.discord.lavaplayer.container.playlists;
 
-import com.sedmelluq.discord.lavaplayer.source.stream.ExtendedM3uParser;
 import com.sedmelluq.discord.lavaplayer.source.stream.M3uStreamSegmentUrlProvider;
-import com.sedmelluq.discord.lavaplayer.tools.JsonBrowser;
-import com.sedmelluq.discord.lavaplayer.tools.io.HttpClientTools;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterface;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpUriRequest;

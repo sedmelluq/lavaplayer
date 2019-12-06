@@ -15,6 +15,7 @@ import com.sedmelluq.discord.lavaplayer.track.AudioReference;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo;
 import org.apache.commons.io.IOUtils;
+import org.apache.http.HttpStatus;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
@@ -116,9 +117,9 @@ public class VimeoAudioSourceManager implements AudioSourceManager, HttpConfigur
     try (CloseableHttpResponse response = httpInterface.execute(new HttpGet(trackUrl))) {
       int statusCode = response.getStatusLine().getStatusCode();
 
-      if (statusCode == 404) {
+      if (statusCode == HttpStatus.SC_NOT_FOUND) {
         return AudioReference.NO_TRACK;
-      } else if (statusCode != 200) {
+      } else if (!HttpClientTools.isSuccessWithContent(statusCode)) {
         throw new FriendlyException("Server responded with an error.", SUSPICIOUS,
             new IllegalStateException("Response code is " + statusCode));
       }

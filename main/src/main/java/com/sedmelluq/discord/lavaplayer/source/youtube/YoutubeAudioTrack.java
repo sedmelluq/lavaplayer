@@ -84,7 +84,7 @@ public class YoutubeAudioTrack extends DelegatedAudioTrack {
   }
 
   @Override
-  public AudioTrack makeClone() {
+  protected AudioTrack makeShallowClone() {
     return new YoutubeAudioTrack(trackInfo, sourceManager);
   }
 

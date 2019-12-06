@@ -27,9 +27,9 @@ public class OggTrackLoader {
    * @throws IOException On read error
    * @throws IllegalStateException If the track uses an unknown codec.
    */
-  public static OggTrackHandler loadTrackHandler(OggPacketInputStream packetInputStream) throws IOException {
+  public static OggTrackBlueprint loadTrackBlueprint(OggPacketInputStream packetInputStream) throws IOException {
     CodecDetection result = detectCodec(packetInputStream);
-    return result != null ? result.provider.loadTrackHandler(packetInputStream, result.broker) : null;
+    return result != null ? result.provider.loadBlueprint(packetInputStream, result.broker) : null;
   }
 
   public static OggMetadata loadMetadata(OggPacketInputStream packetInputStream) throws IOException {

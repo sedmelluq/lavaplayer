@@ -16,6 +16,8 @@ import java.util.List;
  * Allows to easily navigate in decoded JSON data
  */
 public class JsonBrowser {
+  public static final JsonBrowser NULL_BROWSER = new JsonBrowser(null);
+
   private static final ObjectMapper mapper = setupMapper();
 
   private final JsonNode node;
@@ -45,9 +47,9 @@ public class JsonBrowser {
    */
   public JsonBrowser index(int index) {
     if (isList()) {
-      return new JsonBrowser(node.get(index));
+      return create(node.get(index));
     } else {
-      throw new IllegalStateException("Index only works on a list");
+      return NULL_BROWSER;
     }
   }
 
@@ -58,22 +60,9 @@ public class JsonBrowser {
    */
   public JsonBrowser get(String key) {
     if (isMap()) {
-      return new JsonBrowser(node.get(key));
+      return create(node.get(key));
     } else {
-      throw new IllegalStateException("Get only works on a map");
-    }
-  }
-
-  /**
-   * Get an element by key from a map value
-   * @param key Map key
-   * @return JsonBrowser instance which wraps the value with the specified key
-   */
-  public JsonBrowser safeGet(String key) {
-    if (isMap()) {
-      return new JsonBrowser(node.get(key));
-    } else {
-      return new JsonBrowser(null);
+      return NULL_BROWSER;
     }
   }
 
@@ -97,7 +86,9 @@ public class JsonBrowser {
   public List<JsonBrowser> values() {
     List<JsonBrowser> values = new ArrayList<>();
 
-    node.elements().forEachRemaining(child -> values.add(new JsonBrowser(child)));
+    if (node != null) {
+      node.elements().forEachRemaining(child -> values.add(new JsonBrowser(child)));
+    }
 
     return values;
   }
@@ -147,6 +138,11 @@ public class JsonBrowser {
     return null;
   }
 
+  public String safeText() {
+    String text = text();
+    return text != null ? text : "";
+  }
+
   public String format() {
     try {
       return node != null ? mapper.writeValueAsString(node) : null;
@@ -169,7 +165,7 @@ public class JsonBrowser {
    * @throws IOException When parsing the JSON failed
    */
   public static JsonBrowser parse(String json) throws IOException {
-    return new JsonBrowser(mapper.readTree(json));
+    return create(mapper.readTree(json));
   }
 
   /**
@@ -179,7 +175,7 @@ public class JsonBrowser {
    * @throws IOException When parsing the JSON failed
    */
   public static JsonBrowser parse(InputStream stream) throws IOException {
-    return new JsonBrowser(mapper.readTree(stream));
+    return create(mapper.readTree(stream));
   }
 
   private static ObjectMapper setupMapper() {
@@ -187,5 +183,9 @@ public class JsonBrowser {
     jsonFactory.enable(JsonParser.Feature.ALLOW_COMMENTS);
     jsonFactory.enable(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES);
     return new ObjectMapper(jsonFactory);
+  }
+
+  private static JsonBrowser create(JsonNode node) {
+    return node != null ? new JsonBrowser(node) : NULL_BROWSER;
   }
 }

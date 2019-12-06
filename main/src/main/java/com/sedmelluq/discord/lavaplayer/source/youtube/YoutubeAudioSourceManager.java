@@ -267,7 +267,7 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
         try (CloseableHttpResponse response = httpInterface.execute(new HttpGet("https://www.youtube.com/watch_videos?video_ids=" + videoIds))) {
           int statusCode = response.getStatusLine().getStatusCode();
           HttpClientContext context = httpInterface.getContext();
-          if (statusCode != 200) {
+          if (!HttpClientTools.isSuccessWithContent(statusCode)) {
             throw new IOException("Invalid status code for playlist response: " + statusCode);
           }
           // youtube currently transforms watch_video links into a link with a video id and a list id.

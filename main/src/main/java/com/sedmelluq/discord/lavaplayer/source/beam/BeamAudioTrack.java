@@ -3,6 +3,7 @@ package com.sedmelluq.discord.lavaplayer.source.beam;
 import com.sedmelluq.discord.lavaplayer.source.AudioSourceManager;
 import com.sedmelluq.discord.lavaplayer.source.stream.M3uStreamAudioTrack;
 import com.sedmelluq.discord.lavaplayer.source.stream.M3uStreamSegmentUrlProvider;
+import com.sedmelluq.discord.lavaplayer.source.stream.MpegTsM3uStreamAudioTrack;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterface;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo;
@@ -13,7 +14,7 @@ import org.slf4j.LoggerFactory;
 /**
  * Audio track that handles processing Beam.pro tracks.
  */
-public class BeamAudioTrack extends M3uStreamAudioTrack {
+public class BeamAudioTrack extends MpegTsM3uStreamAudioTrack {
   private static final Logger log = LoggerFactory.getLogger(BeamAudioTrack.class);
 
   private final BeamAudioSourceManager sourceManager;
@@ -49,7 +50,7 @@ public class BeamAudioTrack extends M3uStreamAudioTrack {
   }
 
   @Override
-  public AudioTrack makeClone() {
+  protected AudioTrack makeShallowClone() {
     return new BeamAudioTrack(trackInfo, sourceManager);
   }
 

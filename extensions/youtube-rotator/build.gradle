@@ -1,0 +1,33 @@
+plugins {
+  id 'java'
+  id 'com.jfrog.bintray'
+  id 'maven-publish'
+}
+
+ext.moduleName = 'lavaplayer-ext-youtube-rotator'
+version = '0.2.1'
+
+dependencies {
+  compile project(':main')
+}
+
+task sourceJar(type: Jar) {
+  from sourceSets.main.allJava
+}
+
+publishing {
+  publications {
+    mavenJava(MavenPublication) {
+      groupId rootProject.group
+      artifactId moduleName
+
+      from components.java
+
+      artifact sourceJar {
+        classifier 'sources'
+      }
+    }
+  }
+}
+
+apply from: "${rootDir}/gradle/bintray.gradle"

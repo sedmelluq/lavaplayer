@@ -9,6 +9,7 @@ import com.sedmelluq.discord.lavaplayer.container.ogg.OggCodecHandler;
 import com.sedmelluq.discord.lavaplayer.container.ogg.OggMetadata;
 import com.sedmelluq.discord.lavaplayer.container.ogg.OggPacketInputStream;
 import com.sedmelluq.discord.lavaplayer.container.ogg.OggStreamSizeInfo;
+import com.sedmelluq.discord.lavaplayer.container.ogg.OggTrackBlueprint;
 import com.sedmelluq.discord.lavaplayer.container.ogg.OggTrackHandler;
 import com.sedmelluq.discord.lavaplayer.tools.io.ByteBufferInputStream;
 import com.sedmelluq.discord.lavaplayer.tools.io.DirectBufferStreamBroker;
@@ -37,8 +38,8 @@ public class OggFlacCodecHandler implements OggCodecHandler {
   }
 
   @Override
-  public OggTrackHandler loadTrackHandler(OggPacketInputStream stream, DirectBufferStreamBroker broker) throws IOException {
-    return new OggFlacTrackHandler(load(stream, broker), stream);
+  public OggTrackBlueprint loadBlueprint(OggPacketInputStream stream, DirectBufferStreamBroker broker) throws IOException {
+    return new Blueprint(load(stream, broker));
   }
 
   @Override
@@ -88,5 +89,18 @@ public class OggFlacCodecHandler implements OggCodecHandler {
     }
 
     return trackInfoBuilder.build();
+  }
+
+  private static class Blueprint implements OggTrackBlueprint {
+    private final FlacTrackInfo info;
+
+    private Blueprint(FlacTrackInfo info) {
+      this.info = info;
+    }
+
+    @Override
+    public OggTrackHandler loadTrackHandler(OggPacketInputStream stream) {
+      return new OggFlacTrackHandler(info, stream);
+    }
   }
 }

@@ -1,6 +1,6 @@
 package com.sedmelluq.discord.lavaplayer.source.twitch;
 
-import com.sedmelluq.discord.lavaplayer.source.stream.ExtendedM3uParser;
+import com.sedmelluq.discord.lavaplayer.container.playlists.ExtendedM3uParser;
 import com.sedmelluq.discord.lavaplayer.source.stream.M3uStreamSegmentUrlProvider;
 import com.sedmelluq.discord.lavaplayer.tools.JsonBrowser;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpClientTools;
@@ -82,7 +82,7 @@ public class TwitchStreamSegmentUrlProvider extends M3uStreamSegmentUrlProvider 
 
     try (CloseableHttpResponse response = httpInterface.execute(request)) {
       int statusCode = response.getStatusLine().getStatusCode();
-      if (statusCode != 200) {
+      if (!HttpClientTools.isSuccessWithContent(statusCode)) {
         throw new IOException("Unexpected response code from access token request: " + statusCode);
       }
 

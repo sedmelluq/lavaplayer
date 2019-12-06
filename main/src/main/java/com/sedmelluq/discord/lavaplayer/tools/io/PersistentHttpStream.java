@@ -19,6 +19,7 @@ import java.util.Collections;
 import java.util.List;
 
 import static com.sedmelluq.discord.lavaplayer.tools.io.HttpClientTools.getHeaderValue;
+import static com.sedmelluq.discord.lavaplayer.tools.io.HttpClientTools.isSuccessWithContent;
 
 /**
  * Use an HTTP endpoint as a stream, where the connection resetting is handled gracefully by reopening the connection
@@ -82,7 +83,7 @@ public class PersistentHttpStream extends SeekableInputStream implements AutoClo
     int statusCode = response.getStatusLine().getStatusCode();
     if (returnOnServerError && statusCode >= HttpStatus.SC_INTERNAL_SERVER_ERROR) {
       return false;
-    } else if (statusCode != HttpStatus.SC_OK && statusCode != HttpStatus.SC_PARTIAL_CONTENT) {
+    } else if (!isSuccessWithContent(statusCode)) {
       throw new RuntimeException("Not success status code: " + statusCode);
     }
     return true;

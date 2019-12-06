@@ -4,6 +4,7 @@ import com.sedmelluq.discord.lavaplayer.container.mpeg.MpegAudioTrack;
 import com.sedmelluq.discord.lavaplayer.source.AudioSourceManager;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.tools.JsonBrowser;
+import com.sedmelluq.discord.lavaplayer.tools.io.HttpClientTools;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterface;
 import com.sedmelluq.discord.lavaplayer.tools.io.PersistentHttpStream;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
@@ -69,7 +70,7 @@ public class VimeoAudioTrack extends DelegatedAudioTrack {
     try (CloseableHttpResponse response = httpInterface.execute(new HttpGet(trackInfo.identifier))) {
       int statusCode = response.getStatusLine().getStatusCode();
 
-      if (statusCode != 200) {
+      if (!HttpClientTools.isSuccessWithContent(statusCode)) {
         throw new FriendlyException("Server responded with an error.", SUSPICIOUS,
             new IllegalStateException("Response code for player config is " + statusCode));
       }
@@ -82,7 +83,7 @@ public class VimeoAudioTrack extends DelegatedAudioTrack {
     try (CloseableHttpResponse response = httpInterface.execute(new HttpGet(trackAccessInfoUrl))) {
       int statusCode = response.getStatusLine().getStatusCode();
 
-      if (statusCode != 200) {
+      if (!HttpClientTools.isSuccessWithContent(statusCode)) {
         throw new FriendlyException("Server responded with an error.", SUSPICIOUS,
             new IllegalStateException("Response code for track access info is " + statusCode));
       }
@@ -92,7 +93,7 @@ public class VimeoAudioTrack extends DelegatedAudioTrack {
   }
 
   @Override
-  public AudioTrack makeClone() {
+  protected AudioTrack makeShallowClone() {
     return new VimeoAudioTrack(trackInfo, sourceManager);
   }
 

@@ -2,8 +2,6 @@ package com.sedmelluq.discord.lavaplayer.demo.controller;
 
 import com.sedmelluq.discord.lavaplayer.demo.BotApplicationManager;
 import com.sedmelluq.discord.lavaplayer.demo.BotGuildContext;
-import net.dv8tion.jda.core.entities.Guild;
-import net.dv8tion.jda.core.entities.Message;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -12,6 +10,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import net.dv8tion.jda.api.entities.Guild;
+import net.dv8tion.jda.api.entities.Message;
 
 public class BotControllerManager {
   private final List<BotControllerFactory> controllerFactories;

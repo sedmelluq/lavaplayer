@@ -86,7 +86,7 @@ public class NicoAudioSourceManager implements AudioSourceManager, HttpConfigura
     try (HttpInterface httpInterface = getHttpInterface()) {
       try (CloseableHttpResponse response = httpInterface.execute(new HttpGet("http://ext.nicovideo.jp/api/getthumbinfo/" + videoId))) {
         int statusCode = response.getStatusLine().getStatusCode();
-        if (statusCode != 200) {
+        if (!HttpClientTools.isSuccessWithContent(statusCode)) {
           throw new IOException("Unexpected response code from video info: " + statusCode);
         }
 

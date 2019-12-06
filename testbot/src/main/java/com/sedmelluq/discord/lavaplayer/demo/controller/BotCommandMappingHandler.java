@@ -1,6 +1,6 @@
 package com.sedmelluq.discord.lavaplayer.demo.controller;
 
-import net.dv8tion.jda.core.entities.Message;
+import net.dv8tion.jda.api.entities.Message;
 
 public interface BotCommandMappingHandler {
   void commandNotFound(Message message, String name);

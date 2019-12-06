@@ -5,7 +5,6 @@ import com.sedmelluq.discord.lavaplayer.container.ogg.OggPacketInputStream;
 import com.sedmelluq.discord.lavaplayer.container.ogg.OggTrackHandler;
 import com.sedmelluq.discord.lavaplayer.tools.io.DirectBufferStreamBroker;
 import com.sedmelluq.discord.lavaplayer.track.playback.AudioProcessingContext;
-
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
@@ -35,8 +34,9 @@ public class OggOpusTrackHandler implements OggTrackHandler {
   }
 
   @Override
-  public void initialise(AudioProcessingContext context) {
+  public void initialise(AudioProcessingContext context, long timecode, long desiredTimecode) {
     opusPacketRouter = new OpusPacketRouter(context, sampleRate, channelCount);
+    opusPacketRouter.seekPerformed(desiredTimecode, timecode);
   }
 
   @Override

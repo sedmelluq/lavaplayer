@@ -25,6 +25,7 @@ import com.sedmelluq.discord.lavaplayer.track.playback.AudioFrameBuffer;
 import com.sedmelluq.discord.lavaplayer.track.playback.AudioTrackExecutor;
 import com.sedmelluq.discord.lavaplayer.track.playback.ImmutableAudioFrame;
 import org.apache.commons.io.input.CountingInputStream;
+import org.apache.http.HttpStatus;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
@@ -248,7 +249,7 @@ public class RemoteNodeProcessor implements RemoteNode, Runnable {
 
     try {
       tickBuilder.responseCode = response.getStatusLine().getStatusCode();
-      if (tickBuilder.responseCode != 200) {
+      if (tickBuilder.responseCode != HttpStatus.SC_OK) {
         throw new IOException("Returned an unexpected response code " + tickBuilder.responseCode);
       }
 
