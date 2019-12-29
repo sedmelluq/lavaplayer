@@ -3,13 +3,8 @@ plugins {
   id 'application'
 }
 
-repositories {
-  maven { url "https://dl.bintray.com/gabixdev/kyoko" }
-}
-
 dependencies {
   compile project(':main')
-  compile project(':extensions:format-xm')
 
   compile 'com.sedmelluq:jda-nas:1.0.5'
   compile 'net.dv8tion:JDA:4.0.0_68'
