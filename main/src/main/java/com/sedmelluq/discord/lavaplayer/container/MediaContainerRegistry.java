@@ -24,4 +24,14 @@ public class MediaContainerRegistry {
   public List<MediaContainerProbe> getAll() {
     return probes;
   }
+
+  public static MediaContainerRegistry extended(MediaContainerProbe... additional) {
+    List<MediaContainerProbe> probes = MediaContainer.asList();
+
+    for (MediaContainerProbe probe : additional) {
+      probes.add(probe);
+    }
+
+    return new MediaContainerRegistry(probes);
+  }
 }

@@ -1,2 +1,2 @@
 include 'main', 'natives', 'testbot', 'node', 'demo-jda', 'demo-d4j', 'common', 'natives-publish', 'stream-merger',
-    'test-samples', ':extensions:youtube-rotator'
+    'test-samples', ':extensions:youtube-rotator', ':extensions:format-xm'

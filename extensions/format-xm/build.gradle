@@ -1,0 +1,38 @@
+plugins {
+  id 'java'
+  id 'com.jfrog.bintray'
+  id 'maven-publish'
+}
+
+ext.moduleName = 'lavaplayer-ext-format-xm'
+version = '0.1.0'
+
+repositories {
+  maven { url "https://dl.bintray.com/gabixdev/kyoko" }
+}
+
+dependencies {
+  compile project(':main')
+  implementation 'com.github.micromod:ibxm:a73'
+}
+
+task sourceJar(type: Jar) {
+  from sourceSets.main.allJava
+}
+
+publishing {
+  publications {
+    mavenJava(MavenPublication) {
+      groupId rootProject.group
+      artifactId moduleName
+
+      from components.java
+
+      artifact sourceJar {
+        classifier 'sources'
+      }
+    }
+  }
+}
+
+apply from: "${rootDir}/gradle/bintray.gradle"
