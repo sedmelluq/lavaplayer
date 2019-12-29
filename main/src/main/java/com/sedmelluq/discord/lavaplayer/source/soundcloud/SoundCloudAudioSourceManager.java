@@ -254,7 +254,7 @@ public class SoundCloudAudioSourceManager implements AudioSourceManager, HttpCon
     for (JsonBrowser item : likedTracks.get("collection").values()) {
       JsonBrowser trackItem = item.get("track");
 
-      if (!trackItem.isNull()) {
+      if (!trackItem.isNull() && !dataReader.isTrackBlocked(trackItem)) {
         tracks.add(loadFromTrackData(trackItem));
       }
     }
