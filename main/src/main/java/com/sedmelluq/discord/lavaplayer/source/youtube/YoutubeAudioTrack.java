@@ -73,6 +73,12 @@ public class YoutubeAudioTrack extends DelegatedAudioTrack {
 
   private FormatWithUrl loadBestFormatWithUrl(HttpInterface httpInterface) throws Exception {
     YoutubeTrackDetails details = sourceManager.getTrackDetailsLoader().loadDetails(httpInterface, getIdentifier());
+
+    // If the error reason is "Video unavailable" details will return null
+    if (details == null) {
+      throw new FriendlyException("This video is not available", FriendlyException.Severity.COMMON, null);
+    }
+
     List<YoutubeTrackFormat> formats = details.getFormats(httpInterface, sourceManager.getSignatureResolver());;
 
     YoutubeTrackFormat format = findBestSupportedFormat(formats);
