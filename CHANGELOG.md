@@ -1,5 +1,14 @@
 # Change Log
 
+## [1.3.23] -- 2020-01-05
+### Fixed
+- Fixed NPE instead of common exception for missing YouTube video (PR 264 by duncte123).
+- Fixed blocked tracks included in SoundCloud liked tracks result (PR 261 by nikammerlaan).
+
+### Added
+- Added builder for SoundCloud source manager.
+- Added a more concise way to create an extended media container registry.
+
 ## [1.3.32] -- 2019-12-01
 ### Fixed
 - Fixed SoundCloud tracks longer than 30 minutes breaking during playback due to URLs expiring.
