@@ -75,6 +75,10 @@ public class SoundCloudAudioSourceManager implements AudioSourceManager, HttpCon
         new DefaultSoundCloudPlaylistLoader(htmlDataLoader, dataReader, formatHandler));
   }
 
+  public static Builder builder() {
+    return new Builder();
+  }
+
   /**
    * Create an instance.
    * @param allowSearch Whether to allow search queries as identifiers
@@ -332,5 +336,95 @@ public class SoundCloudAudioSourceManager implements AudioSourceManager, HttpCon
     }
 
     return new BasicAudioPlaylist("Search results for: " + query, tracks, null, true);
+  }
+
+  public static class Builder {
+    private boolean allowSearch = true;
+    private SoundCloudDataReader dataReader;
+    private SoundCloudHtmlDataLoader htmlDataLoader;
+    private SoundCloudFormatHandler formatHandler;
+    private SoundCloudPlaylistLoader playlistLoader;
+    private PlaylistLoaderFactory playlistLoaderFactory;
+
+    public Builder withAllowSearch(boolean allowSearch) {
+      this.allowSearch = allowSearch;
+      return this;
+    }
+
+    public Builder withDataReader(SoundCloudDataReader dataReader) {
+      this.dataReader = dataReader;
+      return this;
+    }
+
+    public Builder withHtmlDataLoader(SoundCloudHtmlDataLoader htmlDataLoader) {
+      this.htmlDataLoader = htmlDataLoader;
+      return this;
+    }
+
+    public Builder withFormatHandler(SoundCloudFormatHandler formatHandler) {
+      this.formatHandler = formatHandler;
+      return this;
+    }
+
+    public Builder withPlaylistLoader(SoundCloudPlaylistLoader playlistLoader) {
+      this.playlistLoader = playlistLoader;
+      return this;
+    }
+
+    public Builder withPlaylistLoaderFactory(PlaylistLoaderFactory playlistLoaderFactory) {
+      this.playlistLoaderFactory = playlistLoaderFactory;
+      return this;
+    }
+
+    public SoundCloudAudioSourceManager build() {
+      SoundCloudDataReader usedDataReader = dataReader;
+
+      if (usedDataReader == null) {
+        usedDataReader = new DefaultSoundCloudDataReader();
+      }
+
+      SoundCloudHtmlDataLoader usedHtmlDataLoader = htmlDataLoader;
+
+      if (usedHtmlDataLoader == null) {
+        usedHtmlDataLoader = new DefaultSoundCloudHtmlDataLoader();
+      }
+
+      SoundCloudFormatHandler usedFormatHandler = formatHandler;
+
+      if (usedFormatHandler == null) {
+        usedFormatHandler = new DefaultSoundCloudFormatHandler();
+      }
+
+      SoundCloudPlaylistLoader usedPlaylistLoader = playlistLoader;
+
+      if (usedPlaylistLoader == null) {
+        PlaylistLoaderFactory factory = playlistLoaderFactory;
+
+        if (factory != null) {
+          usedPlaylistLoader = factory.create(usedDataReader, usedHtmlDataLoader, usedFormatHandler);
+        }
+      }
+
+      if (usedPlaylistLoader == null) {
+        usedPlaylistLoader = new DefaultSoundCloudPlaylistLoader(usedHtmlDataLoader, usedDataReader, usedFormatHandler);
+      }
+
+      return new SoundCloudAudioSourceManager(
+          allowSearch,
+          usedDataReader,
+          usedHtmlDataLoader,
+          usedFormatHandler,
+          usedPlaylistLoader
+      );
+    }
+
+    @FunctionalInterface
+    interface PlaylistLoaderFactory {
+      SoundCloudPlaylistLoader create(
+          SoundCloudDataReader dataReader,
+          SoundCloudHtmlDataLoader htmlDataLoader,
+          SoundCloudFormatHandler formatHandler
+      );
+    }
   }
 }
