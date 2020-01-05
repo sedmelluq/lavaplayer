@@ -1,6 +1,6 @@
 # Change Log
 
-## [1.3.23] -- 2020-01-05
+## [1.3.33] -- 2020-01-05
 ### Fixed
 - Fixed NPE instead of common exception for missing YouTube video (PR 264 by duncte123).
 - Fixed blocked tracks included in SoundCloud liked tracks result (PR 261 by nikammerlaan).
