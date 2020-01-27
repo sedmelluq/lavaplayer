@@ -1,5 +1,9 @@
 # Change Log
 
+## [1.3.34] -- 2020-01-27
+### Fixed
+- Fixed YouTube missing fallback to embed page for "objectionable content" videos (PR 270 by Xavinlol).
+
 ## [1.3.33] -- 2020-01-05
 ### Fixed
 - Fixed NPE instead of common exception for missing YouTube video (PR 264 by duncte123).
