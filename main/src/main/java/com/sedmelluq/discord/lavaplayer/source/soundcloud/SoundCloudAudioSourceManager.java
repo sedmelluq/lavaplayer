@@ -203,7 +203,7 @@ public class SoundCloudAudioSourceManager implements AudioSourceManager, HttpCon
       JsonBrowser trackData = dataReader.findTrackData(rootData);
 
       if (trackData == null) {
-        throw new FriendlyException("This video is not available", COMMON, null);
+        throw new FriendlyException("This track is not available", COMMON, null);
       }
 
       return loadFromTrackData(trackData);
