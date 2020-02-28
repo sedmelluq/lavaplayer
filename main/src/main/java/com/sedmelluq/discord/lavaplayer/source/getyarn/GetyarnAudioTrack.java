@@ -1,12 +1,11 @@
 package com.sedmelluq.discord.lavaplayer.source.getyarn;
 
-import com.sedmelluq.discord.lavaplayer.container.MediaContainer;
+import com.sedmelluq.discord.lavaplayer.container.mpeg.MpegAudioTrack;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterface;
 import com.sedmelluq.discord.lavaplayer.tools.io.PersistentHttpStream;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo;
 import com.sedmelluq.discord.lavaplayer.track.DelegatedAudioTrack;
-import com.sedmelluq.discord.lavaplayer.track.InternalAudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.playback.LocalAudioTrackExecutor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,10 +25,10 @@ public class GetyarnAudioTrack extends DelegatedAudioTrack {
     @Override
     public void process(LocalAudioTrackExecutor localExecutor) throws Exception {
         try (HttpInterface httpInterface = sourceManager.getHttpInterface()) {
-            log.debug("Starting http track from URL: {}", trackInfo.identifier);
+            log.debug("Starting getyarn.io track from URL: {}", trackInfo.identifier);
 
             try (PersistentHttpStream inputStream = new PersistentHttpStream(httpInterface, new URI(trackInfo.identifier), Long.MAX_VALUE)) {
-                processDelegate((InternalAudioTrack) MediaContainer.MP4.probe.createTrack(null, trackInfo, inputStream), localExecutor);
+                processDelegate(new MpegAudioTrack(trackInfo, inputStream), localExecutor);
             }
         }
     }
