@@ -35,6 +35,7 @@ import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.util.EntityUtils;
 
+import static com.sedmelluq.discord.lavaplayer.tools.FriendlyException.Severity.COMMON;
 import static com.sedmelluq.discord.lavaplayer.tools.FriendlyException.Severity.SUSPICIOUS;
 
 /**
@@ -200,6 +201,11 @@ public class SoundCloudAudioSourceManager implements AudioSourceManager, HttpCon
     try (HttpInterface httpInterface = getHttpInterface()) {
       JsonBrowser rootData = htmlDataLoader.load(httpInterface, trackWebUrl);
       JsonBrowser trackData = dataReader.findTrackData(rootData);
+
+      if (trackData == null) {
+        throw new FriendlyException("This track is not available", COMMON, null);
+      }
+
       return loadFromTrackData(trackData);
     } catch (IOException e) {
       throw new FriendlyException("Loading track from SoundCloud failed.", SUSPICIOUS, e);
