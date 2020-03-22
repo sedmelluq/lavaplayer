@@ -1,14 +1,15 @@
 package com.sedmelluq.discord.lavaplayer.tools.http;
 
-import com.sedmelluq.discord.lavaplayer.tools.ExceptionTools;
-import com.sun.org.apache.xerces.internal.impl.XMLEntityScanner;
 import java.io.IOException;
 import java.net.ConnectException;
+import java.net.Inet4Address;
+import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.NoRouteToHostException;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
+import java.util.function.IntPredicate;
 import org.apache.http.HttpHost;
 import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.config.Lookup;
@@ -28,6 +29,7 @@ import org.apache.http.protocol.HttpContext;
 
 public class ExtendedConnectionOperator implements HttpClientConnectionOperator {
   private static final String SOCKET_FACTORY_REGISTRY = "http.socket-factory-registry";
+  private static final String RESOLVED_ADDRESSES = "lp.resolved-addresses";
 
   private final Lookup<ConnectionSocketFactory> socketFactoryRegistry;
   private final SchemePortResolver schemePortResolver;
@@ -43,6 +45,14 @@ public class ExtendedConnectionOperator implements HttpClientConnectionOperator 
     this.dnsResolver = dnsResolver != null ? dnsResolver : SystemDefaultDnsResolver.INSTANCE;
   }
 
+  public static void setResolvedAddresses(HttpContext context, HttpHost host, InetAddress[] addresses) {
+    if (host == null || addresses == null) {
+      context.removeAttribute(RESOLVED_ADDRESSES);
+    } else {
+      context.setAttribute(RESOLVED_ADDRESSES, new ResolvedAddresses(host, addresses));
+    }
+  }
+
   @Override
   public void connect(
       ManagedHttpClientConnection connection,
@@ -55,15 +65,27 @@ public class ExtendedConnectionOperator implements HttpClientConnectionOperator 
     ConnectionSocketFactory socketFactory = getSocketFactory(host, context);
 
     int port = schemePortResolver.resolve(host);
-    InetAddress[] addresses = host.getAddress() != null ?
-        new InetAddress[] { host.getAddress() } : this.dnsResolver.resolve(host.getHostName());
+
+    InetAddress[] addresses = resolveAddresses(host, context);
+    int lastMatchIndex = lastMatchIndex(localAddress, addresses);
 
     for (int i = 0; i < addresses.length; i++) {
+      if (!addressTypesMatch(localAddress, addresses[i])) {
+        continue;
+      }
+
       InetSocketAddress remoteAddress = new InetSocketAddress(addresses[i], port);
+      boolean isLast = i == lastMatchIndex;
 
       try {
-        connectWithDestination(socketFactory, context, socketConfig, host, localAddress, connectTimeout, connection,
-            remoteAddress, addresses, i == addresses.length - 1);
+        boolean connected = connectWithDestination(
+            socketFactory, context, socketConfig, host, localAddress, connectTimeout, connection,
+            remoteAddress, addresses, isLast
+        );
+
+        if (connected) {
+          return;
+        }
       } catch (IOException | RuntimeException | Error e) {
         complementException(e, host, localAddress, remoteAddress, connectTimeout, addresses, i);
         throw e;
@@ -73,6 +95,11 @@ public class ExtendedConnectionOperator implements HttpClientConnectionOperator 
         throw delegated;
       }
     }
+
+    NoRouteToHostException exception =
+        new NoRouteToHostException("Local address protocol does not match any remote addresses.");
+    complementException(exception, host, localAddress, null, connectTimeout, addresses, 0);
+    throw exception;
   }
 
   @Override
@@ -93,7 +120,25 @@ public class ExtendedConnectionOperator implements HttpClientConnectionOperator 
     connection.bind(socket);
   }
 
-  private void connectWithDestination(
+  private InetAddress[] resolveAddresses(HttpHost host, HttpContext context) throws IOException {
+    if (host.getAddress() != null) {
+      return new InetAddress[] { host.getAddress() };
+    }
+
+    Object resolvedObject = context.getAttribute(RESOLVED_ADDRESSES);
+
+    if (resolvedObject instanceof ResolvedAddresses) {
+      ResolvedAddresses resolved = (ResolvedAddresses) resolvedObject;
+
+      if (resolved.host.equals(host)) {
+        return resolved.addresses;
+      }
+    }
+
+    return dnsResolver.resolve(host.getHostName());
+  }
+
+  private boolean connectWithDestination(
       ConnectionSocketFactory socketFactory,
       HttpContext context,
       SocketConfig socketConfig,
@@ -111,6 +156,7 @@ public class ExtendedConnectionOperator implements HttpClientConnectionOperator 
     try {
       socket = socketFactory.connectSocket(connectTimeout, socket, host, remoteAddress, localAddress, context);
       connection.bind(socket);
+      return true;
     } catch (final SocketTimeoutException ex) {
       if (last) {
         throw new ConnectTimeoutException(ex, host, addresses);
@@ -127,6 +173,29 @@ public class ExtendedConnectionOperator implements HttpClientConnectionOperator 
         throw ex;
       }
     }
+
+    return false;
+  }
+
+  private int lastMatchIndex(InetSocketAddress localSocketAddress, InetAddress[] remoteAddresses) {
+    for (int i = remoteAddresses.length - 1; i >= 0; i--) {
+      if (addressTypesMatch(localSocketAddress, remoteAddresses[i])) {
+        return i;
+      }
+    }
+
+    return -1;
+  }
+
+  private boolean addressTypesMatch(InetSocketAddress localSocketAddress, InetAddress remoteAddress) {
+    InetAddress localAddress = localSocketAddress != null ? localSocketAddress.getAddress() : null;
+
+    if (localAddress == null || remoteAddress == null) {
+      return true;
+    }
+
+    return (localAddress instanceof Inet4Address && remoteAddress instanceof Inet4Address) ||
+        (localAddress instanceof Inet6Address && remoteAddress instanceof Inet6Address);
   }
 
   private void configureSocket(Socket socket, SocketConfig socketConfig) throws IOException {
@@ -189,8 +258,17 @@ public class ExtendedConnectionOperator implements HttpClientConnectionOperator 
 
     builder.append("\n  connectTimeout: ").append(connectTimeout);
 
-    appendAddresses(builder, "triedAddresses", addresses, 0, currentIndex - 1);
-    appendAddresses(builder, "untriedAddresses", addresses, currentIndex + 1, addresses.length - 1);
+    appendAddresses(builder, "triedAddresses", addresses, index ->
+        index <= currentIndex && addressTypesMatch(localAddress, addresses[index])
+    );
+
+    appendAddresses(builder, "untriedAddresses", addresses, index ->
+        index > currentIndex && addressTypesMatch(localAddress, addresses[index])
+    );
+
+    appendAddresses(builder, "unsuitableAddresses", addresses, index ->
+        !addressTypesMatch(localAddress, addresses[index])
+    );
 
     exception.addSuppressed(new AdditionalDetails(builder.toString()));
   }
@@ -205,14 +283,21 @@ public class ExtendedConnectionOperator implements HttpClientConnectionOperator 
     }
   }
 
-  private void appendAddresses(StringBuilder builder, String label, InetAddress[] array, int first, int last) {
-    if (first <= last) {
-      builder.append("\n  ").append(label).append(": ");
+  private void appendAddresses(StringBuilder builder, String label, InetAddress[] array, IntPredicate check) {
+    boolean started = false;
 
-      for (int i = first; i <= last; i++) {
+    for (int i = 0; i < array.length; i++) {
+      if (check.test(i)) {
+        if (!started) {
+          builder.append("\n  ").append(label).append(": ");
+          started = true;
+        }
+
         builder.append(array[i]).append(", ");
       }
+    }
 
+    if (started) {
       builder.setLength(builder.length() - 2);
     }
   }
@@ -220,6 +305,16 @@ public class ExtendedConnectionOperator implements HttpClientConnectionOperator 
   private static class AdditionalDetails extends Exception {
     protected AdditionalDetails(String message) {
       super(message, null, true, false);
+    }
+  }
+
+  private static class ResolvedAddresses {
+    private final HttpHost host;
+    private final InetAddress[] addresses;
+
+    private ResolvedAddresses(HttpHost host, InetAddress[] addresses) {
+      this.host = host;
+      this.addresses = addresses;
     }
   }
 }
