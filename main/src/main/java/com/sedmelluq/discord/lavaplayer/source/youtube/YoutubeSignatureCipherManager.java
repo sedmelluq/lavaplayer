@@ -247,7 +247,7 @@ public class YoutubeSignatureCipherManager implements YoutubeSignatureResolver {
       if (urlString.startsWith("//")) {
         return new URI("https:" + urlString);
       } else if (urlString.startsWith("/")) {
-        return new URI("https://s.ytimg.com" + urlString);
+        return new URI("https://www.youtube.com" + urlString);
       } else {
         return new URI(urlString);
       }
