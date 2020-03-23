@@ -140,7 +140,7 @@ public class YoutubeSignatureCipherManager implements YoutubeSignatureResolver {
         log.debug("Parsing cipher from player script {}.", cipherScriptUrl);
 
         try (CloseableHttpResponse response = httpInterface.execute(new HttpGet(parseTokenScriptUrl(cipherScriptUrl)))) {
-          validateResponseCode(response);
+          validateResponseCode(cipherScriptUrl, response);
 
           cipherKey = extractTokensFromScript(IOUtils.toString(response.getEntity().getContent(), "UTF-8"), cipherScriptUrl);
           cipherCache.put(cipherScriptUrl, cipherKey);
@@ -151,11 +151,12 @@ public class YoutubeSignatureCipherManager implements YoutubeSignatureResolver {
     return cipherKey;
   }
 
-  private void validateResponseCode(CloseableHttpResponse response) throws IOException {
+  private void validateResponseCode(String cipherScriptUrl, CloseableHttpResponse response) throws IOException {
     int statusCode = response.getStatusLine().getStatusCode();
 
     if (!HttpClientTools.isSuccessWithContent(statusCode)) {
-      throw new IOException("Received non-success response code " + statusCode);
+      throw new IOException("Received non-success response code " + statusCode + " from script url " +
+          cipherScriptUrl + " ( " + parseTokenScriptUrl(cipherScriptUrl) + " )");
     }
   }
 
