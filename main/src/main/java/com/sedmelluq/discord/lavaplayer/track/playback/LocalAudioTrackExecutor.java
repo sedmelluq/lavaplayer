@@ -69,6 +69,20 @@ public class LocalAudioTrackExecutor implements AudioTrackExecutor {
     return processingContext;
   }
 
+  public StackTraceElement[] getStackTrace() {
+    Thread thread = playingThread.get();
+
+    if (thread != null) {
+      StackTraceElement[] trace = thread.getStackTrace();
+
+      if (playingThread.get() == thread) {
+        return trace;
+      }
+    }
+
+    return null;
+  }
+
   @Override
   public AudioFrameBuffer getAudioBuffer() {
     return frameBuffer;

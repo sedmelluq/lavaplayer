@@ -58,6 +58,10 @@ public abstract class AudioEventAdapter implements AudioEventListener {
     // Adapter dummy method
   }
 
+  public void onTrackStuck(AudioPlayer player, AudioTrack track, long thresholdMs, StackTraceElement[] stackTrace) {
+    onTrackStuck(player, track, thresholdMs);
+  }
+
   @Override
   public void onEvent(AudioEvent event) {
     if (event instanceof PlayerPauseEvent) {

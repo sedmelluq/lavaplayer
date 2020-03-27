@@ -18,6 +18,8 @@ import com.sedmelluq.discord.lavaplayer.track.TrackStateListener;
 import com.sedmelluq.discord.lavaplayer.track.playback.AudioFrame;
 import com.sedmelluq.discord.lavaplayer.track.playback.AudioFrameProvider;
 import com.sedmelluq.discord.lavaplayer.track.playback.AudioFrameProviderTools;
+import com.sedmelluq.discord.lavaplayer.track.playback.AudioTrackExecutor;
+import com.sedmelluq.discord.lavaplayer.track.playback.LocalAudioTrackExecutor;
 import com.sedmelluq.discord.lavaplayer.track.playback.MutableAudioFrame;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -265,8 +267,24 @@ public class DefaultAudioPlayer implements AudioPlayer, TrackStateListener {
   private void checkStuck(AudioTrack track) {
     if (!stuckEventSent && System.nanoTime() - lastReceiveTime > manager.getTrackStuckThresholdNanos()) {
       stuckEventSent = true;
-      dispatchEvent(new TrackStuckEvent(this, track, TimeUnit.NANOSECONDS.toMillis(manager.getTrackStuckThresholdNanos())));
+
+      StackTraceElement[] stackTrace = getStackTrace(track);
+      long threshold = TimeUnit.NANOSECONDS.toMillis(manager.getTrackStuckThresholdNanos());
+
+      dispatchEvent(new TrackStuckEvent(this, track, threshold, stackTrace));
     }
+  }
+
+  private StackTraceElement[] getStackTrace(AudioTrack track) {
+    if (track instanceof InternalAudioTrack) {
+      AudioTrackExecutor executor = ((InternalAudioTrack) track).getActiveExecutor();
+
+      if (executor instanceof LocalAudioTrackExecutor) {
+        return ((LocalAudioTrackExecutor) executor).getStackTrace();
+      }
+    }
+
+    return null;
   }
 
   public int getVolume() {
@@ -362,7 +380,7 @@ public class DefaultAudioPlayer implements AudioPlayer, TrackStateListener {
 
   @Override
   public void onTrackStuck(AudioTrack track, long thresholdMs) {
-    dispatchEvent(new TrackStuckEvent(this, track, thresholdMs));
+    dispatchEvent(new TrackStuckEvent(this, track, thresholdMs, null));
   }
 
   /**
