@@ -2,26 +2,19 @@ package com.sedmelluq.discord.lavaplayer.tools.http;
 
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.tools.io.TrustManagerBuilder;
-import java.io.IOException;
-import java.net.InetSocketAddress;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.X509TrustManager;
-import org.apache.http.HttpHost;
 import org.apache.http.HttpResponseFactory;
 import org.apache.http.ProtocolVersion;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpExecutionAware;
-import org.apache.http.client.methods.HttpRequestWrapper;
-import org.apache.http.client.methods.HttpUriRequest;
-import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.config.MessageConstraints;
 import org.apache.http.config.Registry;
 import org.apache.http.config.RegistryBuilder;
-import org.apache.http.config.SocketConfig;
 import org.apache.http.conn.HttpClientConnectionManager;
 import org.apache.http.conn.HttpClientConnectionOperator;
+import org.apache.http.conn.HttpConnectionFactory;
 import org.apache.http.conn.ManagedHttpClientConnection;
 import org.apache.http.conn.routing.HttpRoute;
 import org.apache.http.conn.socket.ConnectionSocketFactory;
@@ -32,7 +25,6 @@ import org.apache.http.conn.util.PublicSuffixMatcherLoader;
 import org.apache.http.impl.DefaultHttpResponseFactory;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.http.impl.conn.DefaultHttpClientConnectionOperator;
 import org.apache.http.impl.conn.DefaultHttpResponseParser;
 import org.apache.http.impl.conn.ManagedHttpClientConnectionFactory;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
@@ -41,7 +33,6 @@ import org.apache.http.io.SessionInputBuffer;
 import org.apache.http.message.BasicLineParser;
 import org.apache.http.message.LineParser;
 import org.apache.http.message.ParserCursor;
-import org.apache.http.protocol.HttpContext;
 import org.apache.http.ssl.SSLContexts;
 import org.apache.http.util.CharArrayBuffer;
 import org.slf4j.Logger;
@@ -56,6 +47,8 @@ public class ExtendedHttpClientBuilder extends HttpClientBuilder {
   private static final SSLContext defaultSslContext = setupSslContext();
 
   private SSLContext sslContextOverride;
+  private String[] sslSupportedProtocols;
+  private ConnectionManagerFactory connectionManagerFactory = ExtendedHttpClientBuilder::createDefaultConnectionManager;
 
   @Override
   public synchronized CloseableHttpClient build() {
@@ -74,29 +67,30 @@ public class ExtendedHttpClientBuilder extends HttpClientBuilder {
     this.sslContextOverride = sslContextOverride;
   }
 
+  public void setSslSupportedProtocols(String[] protocols) {
+    this.sslSupportedProtocols = protocols;
+  }
+
+  public void setConnectionManagerFactory(ConnectionManagerFactory factory) {
+    this.connectionManagerFactory = factory;
+  }
+
   @Override
   protected ClientExecChain decorateMainExec(ClientExecChain mainExec) {
     return mainExec;
   }
 
   private HttpClientConnectionManager createConnectionManager() {
-    PoolingHttpClientConnectionManager manager = new PoolingHttpClientConnectionManager(
+    return connectionManagerFactory.create(
         new ExtendedConnectionOperator(createConnectionSocketFactory(), null, null),
-        createConnectionFactory(),
-        -1,
-        TimeUnit.MILLISECONDS
+        createConnectionFactory()
     );
-
-    manager.setMaxTotal(3000);
-    manager.setDefaultMaxPerRoute(1500);
-
-    return manager;
   }
 
   private Registry<ConnectionSocketFactory> createConnectionSocketFactory() {
     HostnameVerifier hostnameVerifier = new DefaultHostnameVerifier(PublicSuffixMatcherLoader.getDefault());
     ConnectionSocketFactory sslSocketFactory = new SSLConnectionSocketFactory(sslContextOverride != null ?
-        sslContextOverride : defaultSslContext, hostnameVerifier);
+        sslContextOverride : defaultSslContext, sslSupportedProtocols, null, hostnameVerifier);
 
     return RegistryBuilder.<ConnectionSocketFactory>create()
         .register("http", PlainConnectionSocketFactory.getSocketFactory())
@@ -112,6 +106,23 @@ public class ExtendedHttpClientBuilder extends HttpClientBuilder {
             DefaultHttpResponseFactory.INSTANCE,
             constraints
         ));
+  }
+
+  private static HttpClientConnectionManager createDefaultConnectionManager(
+      HttpClientConnectionOperator operator,
+      HttpConnectionFactory<HttpRoute, ManagedHttpClientConnection> connectionFactory
+  ) {
+    PoolingHttpClientConnectionManager manager = new PoolingHttpClientConnectionManager(
+        operator,
+        connectionFactory,
+        -1,
+        TimeUnit.MILLISECONDS
+    );
+
+    manager.setMaxTotal(3000);
+    manager.setDefaultMaxPerRoute(1500);
+
+    return manager;
   }
 
   private static SSLContext setupSslContext() {
@@ -180,5 +191,12 @@ public class ExtendedHttpClientBuilder extends HttpClientBuilder {
 
       return super.hasProtocolVersion(buffer, cursor);
     }
+  }
+
+  public interface ConnectionManagerFactory {
+    HttpClientConnectionManager create(
+        HttpClientConnectionOperator operator,
+        HttpConnectionFactory<HttpRoute, ManagedHttpClientConnection> connectionFactory
+    );
   }
 }
