@@ -6,10 +6,10 @@ import com.sedmelluq.discord.lavaplayer.source.youtube.YoutubeHttpContextFilter;
 import com.sedmelluq.discord.lavaplayer.tools.http.ExtendedHttpClientBuilder;
 import com.sedmelluq.discord.lavaplayer.tools.http.ExtendedHttpConfigurable;
 import com.sedmelluq.discord.lavaplayer.tools.http.HttpContextFilter;
+import com.sedmelluq.discord.lavaplayer.tools.http.SimpleHttpClientConnectionManager;
 import com.sedmelluq.lava.extensions.youtuberotator.planner.AbstractRoutePlanner;
 import java.util.ArrayList;
 import java.util.List;
-import org.apache.http.impl.conn.BasicHttpClientConnectionManager;
 
 public class YoutubeIpRotatorSetup {
   private static final int DEFAULT_RETRY_LIMIT = 4;
@@ -78,7 +78,7 @@ public class YoutubeIpRotatorSetup {
   protected void apply(List<ExtendedHttpConfigurable> configurables, YoutubeIpRotatorFilter filter) {
     for (ExtendedHttpConfigurable configurable : configurables) {
       configurable.configureBuilder(builder ->
-          ((ExtendedHttpClientBuilder) builder).setConnectionManagerFactory(BasicHttpClientConnectionManager::new)
+          ((ExtendedHttpClientBuilder) builder).setConnectionManagerFactory(SimpleHttpClientConnectionManager::new)
       );
 
       configurable.configureBuilder(it -> {
