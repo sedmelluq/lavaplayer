@@ -6,13 +6,13 @@ public class DefaultSoundCloudFormatHandler implements SoundCloudFormatHandler {
   @Override
   public SoundCloudTrackFormat chooseBestFormat(List<SoundCloudTrackFormat> formats) {
     for (SoundCloudTrackFormat format : formats) {
-      if ("hls".equals(format.getProtocol()) && format.getMimeType().contains("audio/ogg")) {
+      if ("progressive".equals(format.getProtocol()) && format.getMimeType().contains("audio/mpeg")) {
         return format;
       }
     }
 
     for (SoundCloudTrackFormat format : formats) {
-      if ("progressive".equals(format.getProtocol()) && format.getMimeType().contains("audio/mpeg")) {
+      if ("hls".equals(format.getProtocol()) && format.getMimeType().contains("audio/ogg")) {
         return format;
       }
     }
