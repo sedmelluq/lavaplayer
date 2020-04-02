@@ -1,5 +1,50 @@
 # Change Log
 
+## [1.3.43] -- 2020-04-02
+### Fixed
+- Fixed SoundCloud connection leaks which eventually caused pool limit to be reached and new connections getting stuck.
+
+## [1.3.42] -- 2020-04-01
+### Added
+- Added `AbstractHttpContextFilter` to easily create additional HTTP context filters with delegates.
+
+## [1.3.41] -- 2020-04-01
+### Added
+- Added support for GetYarn.io as a source (PR 277 by duncte123).
+
+### Fixed
+- Fixed audio event adapter method with stuck stacktrace included not getting called.
+
+## [1.3.40] -- 2020-03-28
+### Added
+- Added `SimpleHttpClientConnectionManager` to sources which can be used to disable pooling for HTTP of some source.
+
+## [1.3.39] -- 2020-03-27
+### Added
+- Added method to set Apache HTTP connection manager factory to customize connection handling.
+
+### Changed
+- Track stuck events now provide stacktrace of the struck thread.
+
+## [1.3.38] -- 2020-03-23
+### Fixed
+- Fixed unable to fetch YouTube player script for ciphered URLs.
+
+## [1.3.37] -- 2020-03-23
+### Changed
+- Unexpected response code from YouTube player script request now logs more details.
+
+## [1.3.36] -- 2020-03-22
+### Added
+- Added method to provide a set of IPs to be used for making an HTTP connection without choosing a specific one.
+
+### Changed
+- HTTP connection failure exceptions now contain all details about the connection that was being established.
+
+## [1.3.35] -- 2020-03-09
+### Fixed
+- Fixed NPE for unavailable SoundCloud tracks (PR 276 by duncte123).
+
 ## [1.3.34] -- 2020-01-27
 ### Fixed
 - Fixed YouTube missing fallback to embed page for "objectionable content" videos (PR 270 by Xavinlol).
