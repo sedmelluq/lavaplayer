@@ -45,4 +45,9 @@ public class NonSeekableInputStream extends SeekableInputStream {
   public int read(byte[] buffer, int offset, int length) throws IOException {
     return delegate.read(buffer, offset, length);
   }
+
+  @Override
+  public void close() throws IOException {
+    delegate.close();
+  }
 }

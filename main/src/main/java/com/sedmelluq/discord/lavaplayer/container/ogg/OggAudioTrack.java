@@ -32,7 +32,7 @@ public class OggAudioTrack extends BaseAudioTrack {
 
   @Override
   public void process(final LocalAudioTrackExecutor localExecutor) {
-    OggPacketInputStream packetInputStream = new OggPacketInputStream(inputStream);
+    OggPacketInputStream packetInputStream = new OggPacketInputStream(inputStream, false);
 
     log.debug("Starting to play an OGG stream track {}", getIdentifier());
 

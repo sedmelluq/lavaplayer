@@ -85,7 +85,7 @@ public class SoundCloudOpusM3uAudioTrack extends DelegatedAudioTrack {
     private OggPacketInputStream getOggStream() {
       if (lastJoinedStream == null) {
         lastJoinedStream = new OggPacketInputStream(
-            new NonSeekableInputStream(new ChainedInputStream(this::getNextStream)));
+            new NonSeekableInputStream(new ChainedInputStream(this::getNextStream)), true);
       }
 
       return lastJoinedStream;
