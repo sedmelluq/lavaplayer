@@ -1,5 +1,9 @@
 # Change Log
 
+## [1.3.44] -- 2020-04-04
+### Fixed
+- Fixed failing to load SoundCloud playlists with more than 50 tracks (PR 290 by Devoxin).
+
 ## [1.3.43] -- 2020-04-02
 ### Fixed
 - Fixed SoundCloud connection leaks which eventually caused pool limit to be reached and new connections getting stuck.
