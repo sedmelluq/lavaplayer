@@ -99,7 +99,7 @@ public class DefaultSoundCloudPlaylistLoader implements SoundCloudPlaylistLoader
     List<JsonBrowser> trackDataList = new ArrayList<>();
 
     for (int i = 0; i < numTrackIds; i += 50) {
-      int last = Math.min(i + 49, numTrackIds);
+      int last = Math.min(i + 50, numTrackIds);
       List<String> trackIdSegment = trackIds.subList(i, last);
 
       try (CloseableHttpResponse response = httpInterface.execute(new HttpGet(buildTrackListUrl(trackIdSegment)))) {
