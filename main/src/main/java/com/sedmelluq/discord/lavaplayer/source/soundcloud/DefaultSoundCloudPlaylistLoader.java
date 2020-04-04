@@ -95,13 +95,19 @@ public class DefaultSoundCloudPlaylistLoader implements SoundCloudPlaylistLoader
         .map(dataReader::readTrackId)
         .collect(Collectors.toList());
 
-    List<JsonBrowser> trackDataList;
+    int numTrackIds = trackIds.size();
+    List<JsonBrowser> trackDataList = new ArrayList<>();
 
-    try (CloseableHttpResponse response = httpInterface.execute(new HttpGet(buildTrackListUrl(trackIds)))) {
-      HttpClientTools.assertSuccessWithContent(response, "track list response");
+    for (int i = 0; i < numTrackIds; i += 50) {
+      int last = Math.min(i + 50, numTrackIds);
+      List<String> trackIdSegment = trackIds.subList(i, last);
 
-      JsonBrowser trackList = JsonBrowser.parse(response.getEntity().getContent());
-      trackDataList = trackList.values();
+      try (CloseableHttpResponse response = httpInterface.execute(new HttpGet(buildTrackListUrl(trackIdSegment)))) {
+        HttpClientTools.assertSuccessWithContent(response, "track list response");
+
+        JsonBrowser trackList = JsonBrowser.parse(response.getEntity().getContent());
+        trackDataList.addAll(trackList.values());
+      }
     }
 
     sortPlaylistTracks(trackDataList, trackIds);
