@@ -60,7 +60,7 @@ public class YoutubeMpegStreamAudioTrack extends MpegAudioTrack {
 
     try {
       while (!state.finished) {
-        processNextSegment(localExecutor, state);
+        processNextSegment(localExecutor, state, false);
         state.relativeSequence++;
       }
     } finally {
@@ -70,12 +70,17 @@ public class YoutubeMpegStreamAudioTrack extends MpegAudioTrack {
     }
   }
 
-  private void processNextSegment(LocalAudioTrackExecutor localExecutor, TrackState state) throws InterruptedException {
+  private void processNextSegment(LocalAudioTrackExecutor localExecutor, TrackState state, boolean isRetry) throws InterruptedException {
     URI segmentUrl = getNextSegmentUrl(state);
 
     try (YoutubePersistentHttpStream stream = new YoutubePersistentHttpStream(httpInterface, segmentUrl, Long.MAX_VALUE)) {
       if (stream.checkStatusCode() == HttpStatus.SC_NO_CONTENT || stream.getContentLength() == 0) {
-        state.finished = true;
+        if (isRetry) {
+          state.finished = true;
+        } else {
+          Thread.sleep(400);
+          processNextSegment(localExecutor, state, true);
+        }
         return;
       }
 
