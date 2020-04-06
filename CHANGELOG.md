@@ -1,5 +1,9 @@
 # Change Log
 
+## [1.3.45] -- 2020-04-07
+### Fixed
+- Fixed some YouTube live streams not being loaded and randomly stopping (PR 293 by Devoxin).
+
 ## [1.3.44] -- 2020-04-04
 ### Fixed
 - Fixed failing to load SoundCloud playlists with more than 50 tracks (PR 290 by Devoxin).
