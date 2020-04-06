@@ -1,30 +1,20 @@
 package com.sedmelluq.discord.lavaplayer.source.youtube;
 
-import com.sedmelluq.discord.lavaplayer.tools.ExceptionTools;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
+import com.sedmelluq.discord.lavaplayer.tools.JsonBrowser;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpClientTools;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterface;
-import com.sedmelluq.discord.lavaplayer.track.AudioItem;
-import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
-import com.sedmelluq.discord.lavaplayer.track.AudioReference;
-import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
-import com.sedmelluq.discord.lavaplayer.track.BasicAudioPlaylist;
+import com.sedmelluq.discord.lavaplayer.track.*;
 import com.sedmelluq.lava.common.tools.DaemonThreadFactory;
 import com.sedmelluq.lava.common.tools.ExecutorTools;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorCompletionService;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -73,10 +63,11 @@ public class YoutubeMixProvider {
    * @return Playlist of the tracks in the mix.
    */
   public AudioItem loadMixWithId(String mixId, String selectedVideoId) {
-    List<String> videoIds = new ArrayList<>();
+    String playlistTitle = "YouTube mix";
+    List<AudioTrack> tracks = new ArrayList<>();
 
     try (HttpInterface httpInterface = sourceManager.getHttpInterface()) {
-      String mixUrl = "https://www.youtube.com/watch?v=" + selectedVideoId + "&list=" + mixId;
+      String mixUrl = "https://www.youtube.com/watch?v=" + selectedVideoId + "&list=" + mixId + "&pbj=1";
 
       try (CloseableHttpResponse response = httpInterface.execute(new HttpGet(mixUrl))) {
         int statusCode = response.getStatusLine().getStatusCode();
@@ -84,55 +75,63 @@ public class YoutubeMixProvider {
           throw new IOException("Invalid status code for mix response: " + statusCode);
         }
 
-        Document document = Jsoup.parse(response.getEntity().getContent(), StandardCharsets.UTF_8.name(), "");
-        extractVideoIdsFromMix(document, videoIds);
+        JsonBrowser body = JsonBrowser.parse(response.getEntity().getContent());
+        JsonBrowser playlist = body.index(3).get("response")
+                .get("contents")
+                .get("twoColumnWatchNextResults")
+                .get("playlist")
+                .get("playlist");
 
-        if (videoIds.isEmpty() && !document.select("#player-unavailable").isEmpty()) {
-          return AudioReference.NO_TRACK;
+        JsonBrowser title = playlist.get("title");
+
+        if (!title.isNull()) {
+          playlistTitle = title.text();
         }
+
+        extractPlaylistTracks(playlist.get("contents"), tracks);
       }
     } catch (IOException e) {
       throw new FriendlyException("Could not read mix page.", SUSPICIOUS, e);
     }
 
-    if (videoIds.isEmpty()) {
+    if (tracks.isEmpty()) {
       throw new FriendlyException("Could not find tracks from mix.", SUSPICIOUS, null);
     }
 
-    return loadTracksAsynchronously(videoIds, selectedVideoId);
-  }
-
-  private void extractVideoIdsFromMix(Document document, List<String> videoIds) {
-    for (Element videoList : document.select("#playlist-autoscroll-list")) {
-      for (Element item : videoList.select("li")) {
-        videoIds.add(item.attr("data-video-id"));
-      }
-    }
-  }
-
-  private AudioPlaylist loadTracksAsynchronously(List<String> videoIds, String selectedVideoId) {
-    ExecutorCompletionService<AudioItem> completion = new ExecutorCompletionService<>(mixLoadingExecutor);
-    List<AudioTrack> tracks = new ArrayList<>();
-
-    for (final String videoId : videoIds) {
-      completion.submit(() -> sourceManager.loadTrackWithVideoId(videoId, true));
-    }
-
-    try {
-      fetchTrackResultsFromExecutor(completion, tracks, videoIds.size());
-    } catch (InterruptedException e) {
-      Thread.currentThread().interrupt();
-    }
-
     AudioTrack selectedTrack = findSelectedTrack(tracks, selectedVideoId);
+    return new BasicAudioPlaylist(playlistTitle, tracks, selectedTrack, false);
+  }
 
-    if (tracks.isEmpty()) {
-      throw new FriendlyException("No tracks from the mix loaded succesfully.", SUSPICIOUS, null);
-    } else if (selectedTrack == null) {
-      throw new FriendlyException("The selected track of the mix failed to load.", SUSPICIOUS, null);
+  private void extractPlaylistTracks(JsonBrowser browser, List<AudioTrack> tracks) {
+    for (JsonBrowser video : browser.values()) {
+      JsonBrowser renderer = video.get("playlistPanelVideoRenderer");
+      String title = renderer.get("title").get("simpleText").text();
+      String author = renderer.get("longBylineText").get("runs").index(0).get("text").text();
+      String durationStr = renderer.get("lengthText").get("simpleText").text();
+      long duration = parseDuration(durationStr);
+      String identifier = renderer.get("videoId").text();
+      String uri = "https://youtube.com/watch?v=" + identifier;
+
+      AudioTrackInfo trackInfo = new AudioTrackInfo(title, author, duration, identifier, false, uri);
+      tracks.add(new YoutubeAudioTrack(trackInfo, sourceManager));
     }
+  }
 
-    return new BasicAudioPlaylist("YouTube mix", tracks, selectedTrack, false);
+  private long parseDuration(String duration) {
+    String[] parts = duration.split(":");
+
+    if (parts.length == 3) { // hh::mm:ss
+      int hours = Integer.parseInt(parts[0]);
+      int minutes = Integer.parseInt(parts[1]);
+      int seconds = Integer.parseInt(parts[2]);
+      return (hours * 3600000) + (minutes * 60000) + (seconds * 1000);
+    } else if (parts.length == 2) { // mm:ss
+      int minutes = Integer.parseInt(parts[0]);
+      int seconds = Integer.parseInt(parts[1]);
+      return (minutes * 60000) + (seconds * 1000);
+    } else {
+      return -1L;
+    }
   }
 
   private AudioTrack findSelectedTrack(List<AudioTrack> tracks, String selectedVideoId) {
@@ -145,23 +144,5 @@ public class YoutubeMixProvider {
     }
 
     return null;
-  }
-
-  private void fetchTrackResultsFromExecutor(ExecutorCompletionService<AudioItem> completion, List<AudioTrack> tracks, int size) throws InterruptedException {
-    for (int i = 0; i < size; i++) {
-      try {
-        AudioItem item = completion.take().get();
-
-        if (item instanceof AudioTrack) {
-          tracks.add((AudioTrack) item);
-        }
-      } catch (ExecutionException e) {
-        if (e.getCause() instanceof FriendlyException) {
-          ExceptionTools.log(log, (FriendlyException) e.getCause(), "Loading a track from a mix.");
-        } else {
-          log.warn("Failed to load a track from a mix.", e);
-        }
-      }
-    }
   }
 }

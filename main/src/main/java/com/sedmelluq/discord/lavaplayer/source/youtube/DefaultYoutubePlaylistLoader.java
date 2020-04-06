@@ -155,7 +155,7 @@ public class DefaultYoutubePlaylistLoader implements YoutubePlaylistLoader {
 
     if (!continuations.isNull()) {
       String continuationsToken = continuations.index(0).get("nextContinuationData").get("continuation").text();
-      return "/browse_ajax" + "?continuation=" + continuationsToken + "&ctoken=" + continuationsToken + "&hl=en";
+      return "/browse_ajax?continuation=" + continuationsToken + "&ctoken=" + continuationsToken + "&hl=en";
     }
 
     return null;
