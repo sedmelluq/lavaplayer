@@ -13,7 +13,7 @@ public class AudioTrackInfo {
    */
   public final String author;
   /**
-   * Length of the track in milliseconds, Long.MAX_VALUE for streams
+   * Length of the track in milliseconds, UnitConstants.DURATION_MS_UNKNOWN for streams
    */
   public final long length;
   /**

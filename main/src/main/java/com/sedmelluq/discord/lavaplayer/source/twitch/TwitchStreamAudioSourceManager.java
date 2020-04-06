@@ -5,6 +5,7 @@ import com.sedmelluq.discord.lavaplayer.source.AudioSourceManager;
 import com.sedmelluq.discord.lavaplayer.tools.ExceptionTools;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.tools.JsonBrowser;
+import com.sedmelluq.discord.lavaplayer.tools.Units;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpConfigurable;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterface;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterfaceManager;
@@ -95,7 +96,7 @@ public class TwitchStreamAudioSourceManager implements AudioSourceManager, HttpC
       return new TwitchStreamAudioTrack(new AudioTrackInfo(
           status,
           displayName,
-          Long.MAX_VALUE,
+          Units.DURATION_MS_UNKNOWN,
           reference.identifier,
           true,
           reference.identifier

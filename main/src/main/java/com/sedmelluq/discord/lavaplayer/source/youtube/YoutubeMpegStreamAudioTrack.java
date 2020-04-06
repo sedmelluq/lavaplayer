@@ -6,6 +6,7 @@ import com.sedmelluq.discord.lavaplayer.container.mpeg.MpegTrackConsumer;
 import com.sedmelluq.discord.lavaplayer.container.mpeg.reader.MpegFileTrackProvider;
 import com.sedmelluq.discord.lavaplayer.tools.DataFormatTools;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
+import com.sedmelluq.discord.lavaplayer.tools.Units;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterface;
 import com.sedmelluq.discord.lavaplayer.tools.io.SeekableInputStream;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo;
@@ -29,6 +30,8 @@ import static com.sedmelluq.discord.lavaplayer.tools.FriendlyException.Severity.
  */
 public class YoutubeMpegStreamAudioTrack extends MpegAudioTrack {
   private static final RequestConfig streamingRequestConfig = RequestConfig.custom().setConnectTimeout(10000).build();
+  private static final long EMPTY_RETRY_THRESHOLD_MS = 400;
+  private static final long EMPTY_RETRY_INTERVAL_MS = 50;
 
   private final HttpInterface httpInterface;
   private final URI signedUrl;
@@ -60,7 +63,7 @@ public class YoutubeMpegStreamAudioTrack extends MpegAudioTrack {
 
     try {
       while (!state.finished) {
-        processNextSegment(localExecutor, state, false);
+        processNextSegmentWithRetry(localExecutor, state);
         state.relativeSequence++;
       }
     } finally {
@@ -70,18 +73,41 @@ public class YoutubeMpegStreamAudioTrack extends MpegAudioTrack {
     }
   }
 
-  private void processNextSegment(LocalAudioTrackExecutor localExecutor, TrackState state, boolean isRetry) throws InterruptedException {
+  private void processNextSegmentWithRetry(
+      LocalAudioTrackExecutor localExecutor,
+      TrackState state
+  ) throws InterruptedException {
+    if (processNextSegment(localExecutor, state)) {
+      return;
+    }
+
+    // First attempt gave empty result, possibly because the stream is not yet finished, but the next segment is just
+    // not ready yet. Keep retrying at EMPTY_RETRY_INTERVAL_MS intervals until EMPTY_RETRY_THRESHOLD_MS is reached.
+    long waitStart = System.currentTimeMillis();
+    long iterationStart = waitStart;
+
+    while (!processNextSegment(localExecutor, state)) {
+      // EMPTY_RETRY_THRESHOLD_MS is the maximum time between the end of the first attempt and the beginning of the last
+      // attempt, to avoid retry being skipped due to response coming slowly.
+      if (iterationStart - waitStart >= EMPTY_RETRY_THRESHOLD_MS) {
+        state.finished = true;
+        break;
+      } else {
+        Thread.sleep(EMPTY_RETRY_INTERVAL_MS);
+        iterationStart = System.currentTimeMillis();
+      }
+    }
+  }
+
+  private boolean processNextSegment(
+      LocalAudioTrackExecutor localExecutor,
+      TrackState state
+  ) throws InterruptedException {
     URI segmentUrl = getNextSegmentUrl(state);
 
-    try (YoutubePersistentHttpStream stream = new YoutubePersistentHttpStream(httpInterface, segmentUrl, Long.MAX_VALUE)) {
+    try (YoutubePersistentHttpStream stream = new YoutubePersistentHttpStream(httpInterface, segmentUrl, Units.CONTENT_LENGTH_UNKNOWN)) {
       if (stream.checkStatusCode() == HttpStatus.SC_NO_CONTENT || stream.getContentLength() == 0) {
-        if (isRetry) {
-          state.finished = true;
-        } else {
-          Thread.sleep(400);
-          processNextSegment(localExecutor, state, true);
-        }
-        return;
+        return false;
       }
 
       // If we were redirected, use that URL as a base for the next segment URL. Otherwise we will likely get redirected
@@ -95,6 +121,8 @@ public class YoutubeMpegStreamAudioTrack extends MpegAudioTrack {
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
+
+    return true;
   }
 
   private void processSegmentStream(SeekableInputStream stream, AudioProcessingContext context, TrackState state) throws InterruptedException {

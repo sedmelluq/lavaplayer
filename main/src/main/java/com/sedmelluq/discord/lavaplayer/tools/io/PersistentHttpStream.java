@@ -1,5 +1,6 @@
 package com.sedmelluq.discord.lavaplayer.tools.io;
 
+import com.sedmelluq.discord.lavaplayer.tools.Units;
 import com.sedmelluq.discord.lavaplayer.track.info.AudioTrackInfoBuilder;
 import com.sedmelluq.discord.lavaplayer.track.info.AudioTrackInfoProvider;
 import org.apache.http.Header;
@@ -43,7 +44,7 @@ public class PersistentHttpStream extends SeekableInputStream implements AutoClo
    * @param contentLength The length of the resource in bytes
    */
   public PersistentHttpStream(HttpInterface httpInterface, URI contentUrl, Long contentLength) {
-    super(contentLength == null ? Long.MAX_VALUE : contentLength, MAX_SKIP_DISTANCE);
+    super(contentLength == null ? Units.CONTENT_LENGTH_UNKNOWN : contentLength, MAX_SKIP_DISTANCE);
 
     this.httpInterface = httpInterface;
     this.contentUrl = contentUrl;
@@ -125,11 +126,11 @@ public class PersistentHttpStream extends SeekableInputStream implements AutoClo
 
     currentContent = new BufferedInputStream(currentResponse.getEntity().getContent());
 
-    if (contentLength == Long.MAX_VALUE) {
+    if (contentLength == Units.CONTENT_LENGTH_UNKNOWN) {
       Header header = currentResponse.getFirstHeader("Content-Length");
 
       if (header != null) {
-        contentLength = Long.valueOf(header.getValue());
+        contentLength = Long.parseLong(header.getValue());
       }
     }
 
@@ -276,7 +277,7 @@ public class PersistentHttpStream extends SeekableInputStream implements AutoClo
 
   @Override
   public boolean canSeekHard() {
-    return contentLength != Long.MAX_VALUE;
+    return contentLength != Units.CONTENT_LENGTH_UNKNOWN;
   }
 
   @Override

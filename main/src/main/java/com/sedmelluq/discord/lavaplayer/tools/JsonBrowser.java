@@ -138,6 +138,22 @@ public class JsonBrowser {
     return null;
   }
 
+  public boolean asBoolean(boolean defaultValue) {
+    if (node != null && node.isBoolean()) {
+      return node.booleanValue();
+    } else {
+      return defaultValue;
+    }
+  }
+
+  public long asLong(long defaultValue) {
+    if (node != null && node.isNumber()) {
+      return node.numberValue().longValue();
+    } else {
+      return defaultValue;
+    }
+  }
+
   public String safeText() {
     String text = text();
     return text != null ? text : "";

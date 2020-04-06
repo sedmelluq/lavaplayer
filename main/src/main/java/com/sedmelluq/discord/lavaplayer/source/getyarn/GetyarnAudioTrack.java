@@ -1,6 +1,7 @@
 package com.sedmelluq.discord.lavaplayer.source.getyarn;
 
 import com.sedmelluq.discord.lavaplayer.container.mpeg.MpegAudioTrack;
+import com.sedmelluq.discord.lavaplayer.tools.Units;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterface;
 import com.sedmelluq.discord.lavaplayer.tools.io.PersistentHttpStream;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
@@ -27,7 +28,7 @@ public class GetyarnAudioTrack extends DelegatedAudioTrack {
         try (HttpInterface httpInterface = sourceManager.getHttpInterface()) {
             log.debug("Starting getyarn.io track from URL: {}", trackInfo.identifier);
 
-            try (PersistentHttpStream inputStream = new PersistentHttpStream(httpInterface, new URI(trackInfo.identifier), Long.MAX_VALUE)) {
+            try (PersistentHttpStream inputStream = new PersistentHttpStream(httpInterface, new URI(trackInfo.identifier), Units.CONTENT_LENGTH_UNKNOWN)) {
                 processDelegate(new MpegAudioTrack(trackInfo, inputStream), localExecutor);
             }
         }

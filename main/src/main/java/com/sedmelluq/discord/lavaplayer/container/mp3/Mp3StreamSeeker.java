@@ -1,16 +1,18 @@
 package com.sedmelluq.discord.lavaplayer.container.mp3;
 
+import com.sedmelluq.discord.lavaplayer.tools.Units;
 import com.sedmelluq.discord.lavaplayer.tools.io.SeekableInputStream;
 
 import java.io.IOException;
 
 /**
- * Seeker for an MP3 stream, which actually does not allow seeking and reports Long.MAX_VALUE as duration.
+ * Seeker for an MP3 stream, which actually does not allow seeking and reports UnitConstants.DURATION_MS_UNKNOWN as
+ * duration.
  */
 public class Mp3StreamSeeker implements Mp3Seeker {
   @Override
   public long getDuration() {
-    return Long.MAX_VALUE;
+    return Units.DURATION_MS_UNKNOWN;
   }
 
   @Override

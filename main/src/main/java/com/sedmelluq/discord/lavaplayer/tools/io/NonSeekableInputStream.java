@@ -1,5 +1,6 @@
 package com.sedmelluq.discord.lavaplayer.tools.io;
 
+import com.sedmelluq.discord.lavaplayer.tools.Units;
 import com.sedmelluq.discord.lavaplayer.track.info.AudioTrackInfoProvider;
 import org.apache.commons.io.input.CountingInputStream;
 
@@ -12,7 +13,7 @@ public class NonSeekableInputStream extends SeekableInputStream {
   private final CountingInputStream delegate;
 
   public NonSeekableInputStream(InputStream delegate) {
-    super(Long.MAX_VALUE, 0);
+    super(Units.CONTENT_LENGTH_UNKNOWN, 0);
     this.delegate = new CountingInputStream(delegate);
   }
 

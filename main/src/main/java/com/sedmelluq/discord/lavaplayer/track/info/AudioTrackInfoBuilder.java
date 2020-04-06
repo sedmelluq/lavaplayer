@@ -5,6 +5,8 @@ import com.sedmelluq.discord.lavaplayer.tools.io.SeekableInputStream;
 import com.sedmelluq.discord.lavaplayer.track.AudioReference;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo;
 
+import static com.sedmelluq.discord.lavaplayer.tools.Units.DURATION_MS_UNKNOWN;
+
 /**
  * Builder for {@link AudioTrackInfo}.
  */
@@ -98,14 +100,14 @@ public class AudioTrackInfoBuilder implements AudioTrackInfoProvider {
    * @return Audio track info instance.
    */
   public AudioTrackInfo build() {
-    long finalLength = DataFormatTools.defaultOnNull(length, Long.MAX_VALUE);
+    long finalLength = DataFormatTools.defaultOnNull(length, DURATION_MS_UNKNOWN);
 
     return new AudioTrackInfo(
         title,
         author,
         finalLength,
         identifier,
-        DataFormatTools.defaultOnNull(isStream, finalLength == Long.MAX_VALUE),
+        DataFormatTools.defaultOnNull(isStream, finalLength == DURATION_MS_UNKNOWN),
         uri
     );
   }
@@ -121,7 +123,7 @@ public class AudioTrackInfoBuilder implements AudioTrackInfoProvider {
     AudioTrackInfoBuilder builder = new AudioTrackInfoBuilder()
         .setAuthor(UNKNOWN_ARTIST)
         .setTitle(UNKNOWN_TITLE)
-        .setLength(Long.MAX_VALUE);
+        .setLength(DURATION_MS_UNKNOWN);
 
     builder.apply(reference);
 

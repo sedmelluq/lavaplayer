@@ -4,6 +4,7 @@ import com.sedmelluq.discord.lavaplayer.player.DefaultAudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.source.AudioSourceManager;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.tools.JsonBrowser;
+import com.sedmelluq.discord.lavaplayer.tools.Units;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpClientTools;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpConfigurable;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterface;
@@ -69,7 +70,7 @@ public class BeamAudioSourceManager implements AudioSourceManager, HttpConfigura
       return new BeamAudioTrack(new AudioTrackInfo(
           displayName,
           streamName,
-          Long.MAX_VALUE,
+          Units.DURATION_MS_UNKNOWN,
           id + "|" + streamName + "|" + reference.identifier,
           true,
           "https://beam.pro/" + streamName

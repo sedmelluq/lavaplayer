@@ -1,5 +1,6 @@
 package com.sedmelluq.discord.lavaplayer.container.ogg;
 
+import com.sedmelluq.discord.lavaplayer.tools.Units;
 import com.sedmelluq.discord.lavaplayer.track.info.AudioTrackInfoProvider;
 
 import java.util.Collections;
@@ -9,7 +10,7 @@ import java.util.Map;
  * Audio track info provider based on OGG metadata map.
  */
 public class OggMetadata implements AudioTrackInfoProvider {
-  public static final OggMetadata EMPTY = new OggMetadata(Collections.emptyMap(), Long.MAX_VALUE);
+  public static final OggMetadata EMPTY = new OggMetadata(Collections.emptyMap(), Units.DURATION_MS_UNKNOWN);
 
   private static final String TITLE_FIELD = "TITLE";
   private static final String ARTIST_FIELD = "ARTIST";

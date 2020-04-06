@@ -3,6 +3,7 @@ package com.sedmelluq.lavaplayer.extensions.format.xm;
 import com.sedmelluq.discord.lavaplayer.container.MediaContainerDetectionResult;
 import com.sedmelluq.discord.lavaplayer.container.MediaContainerHints;
 import com.sedmelluq.discord.lavaplayer.container.MediaContainerProbe;
+import com.sedmelluq.discord.lavaplayer.tools.Units;
 import com.sedmelluq.discord.lavaplayer.tools.io.SeekableInputStream;
 import com.sedmelluq.discord.lavaplayer.track.AudioReference;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
@@ -44,7 +45,7 @@ public class XmContainerProbe implements MediaContainerProbe {
     return supportedFormat(this, null, new AudioTrackInfo(
         module.songName,
         UNKNOWN_ARTIST,
-        Long.MAX_VALUE,
+        Units.DURATION_MS_UNKNOWN,
         reference.identifier,
         true,
         reference.identifier

@@ -4,6 +4,7 @@ import com.sedmelluq.discord.lavaplayer.filter.AudioPipeline;
 import com.sedmelluq.discord.lavaplayer.filter.AudioPipelineFactory;
 import com.sedmelluq.discord.lavaplayer.filter.PcmFormat;
 import com.sedmelluq.discord.lavaplayer.natives.mp3.Mp3Decoder;
+import com.sedmelluq.discord.lavaplayer.tools.Units;
 import com.sedmelluq.discord.lavaplayer.tools.io.SeekableInputStream;
 import com.sedmelluq.discord.lavaplayer.track.info.AudioTrackInfoProvider;
 import com.sedmelluq.discord.lavaplayer.track.playback.AudioProcessingContext;
@@ -92,7 +93,7 @@ public class Mp3TrackProvider implements AudioTrackInfoProvider {
     seeker = Mp3XingSeeker.createFromFrame(startPosition, inputStream.getContentLength(), frameBuffer);
 
     if (seeker == null) {
-      if (inputStream.getContentLength() == Long.MAX_VALUE) {
+      if (inputStream.getContentLength() == Units.CONTENT_LENGTH_UNKNOWN) {
         seeker = new Mp3StreamSeeker();
       } else {
         if (context == null) {
