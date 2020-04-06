@@ -77,12 +77,13 @@ public class DefaultYoutubeTrackDetails implements YoutubeTrackDetails {
     String playerResponse = args.get("player_response").text();
 
     if (playerResponse != null) {
-      JsonBrowser streamingData = JsonBrowser.parse(playerResponse)
-          .get("streamingData");
+      JsonBrowser playerData = JsonBrowser.parse(playerResponse);
+      JsonBrowser streamingData = playerData.get("streamingData");
+      boolean isLive = playerData.get("videoDetails").get("isLive").as(Boolean.class);
 
       if (!streamingData.isNull()) {
-        List<YoutubeTrackFormat> formats = loadTrackFormatsFromStreamingData(streamingData.get("formats"));
-        formats.addAll(loadTrackFormatsFromStreamingData(streamingData.get("adaptiveFormats")));
+        List<YoutubeTrackFormat> formats = loadTrackFormatsFromStreamingData(streamingData.get("formats"), isLive);
+        formats.addAll(loadTrackFormatsFromStreamingData(streamingData.get("adaptiveFormats"), isLive));
 
         if (!formats.isEmpty()) {
           return formats;
@@ -167,7 +168,7 @@ public class DefaultYoutubeTrackDetails implements YoutubeTrackDetails {
     return tracks;
   }
 
-  private List<YoutubeTrackFormat> loadTrackFormatsFromStreamingData(JsonBrowser formats) {
+  private List<YoutubeTrackFormat> loadTrackFormatsFromStreamingData(JsonBrowser formats, boolean isLive) {
     List<YoutubeTrackFormat> tracks = new ArrayList<>();
     boolean anyFailures = false;
 
@@ -181,15 +182,17 @@ public class DefaultYoutubeTrackDetails implements YoutubeTrackDetails {
         try {
           JsonBrowser contentLength = formatJson.get("contentLength");
 
-          if (contentLength.isNull()) {
+          if (contentLength.isNull() && !isLive) {
             log.debug("Could not find content length from streamingData format {}, skipping", formatJson.format());
             continue;
           }
 
+          long contentLen = isLive ? -1 : contentLength.get("contentLength").as(Long.class);
+
           tracks.add(new YoutubeTrackFormat(
               ContentType.parse(formatJson.get("mimeType").text()),
               formatJson.get("bitrate").as(Long.class),
-              contentLength.as(Long.class),
+              contentLen,
               cipherInfo.getOrDefault("url", formatJson.get("url").text()),
               cipherInfo.get("s"),
               cipherInfo.getOrDefault("sp", DEFAULT_SIGNATURE_KEY)
