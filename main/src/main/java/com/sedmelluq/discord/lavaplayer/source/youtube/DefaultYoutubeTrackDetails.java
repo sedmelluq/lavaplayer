@@ -79,7 +79,8 @@ public class DefaultYoutubeTrackDetails implements YoutubeTrackDetails {
     if (playerResponse != null) {
       JsonBrowser playerData = JsonBrowser.parse(playerResponse);
       JsonBrowser streamingData = playerData.get("streamingData");
-      boolean isLive = playerData.get("videoDetails").get("isLive").as(Boolean.class);
+      JsonBrowser isLiveNode = playerData.get("videoDetails").get("isLive");
+      boolean isLive = isLiveNode.isNull() ? false : isLiveNode.as(Boolean.class);
 
       if (!streamingData.isNull()) {
         List<YoutubeTrackFormat> formats = loadTrackFormatsFromStreamingData(streamingData.get("formats"), isLive);
