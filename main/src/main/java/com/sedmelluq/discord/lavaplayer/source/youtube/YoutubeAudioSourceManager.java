@@ -43,7 +43,7 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
   private final YoutubeSignatureResolver signatureResolver;
   private final HttpInterfaceManager httpInterfaceManager;
   private final ExtendedHttpConfigurable combinedHttpConfiguration;
-  private final YoutubeMixProvider mixProvider;
+  private final YoutubeMixLoader mixLoader;
   private final boolean allowSearch;
   private final YoutubeTrackDetailsLoader trackDetailsLoader;
   private final YoutubeSearchResultLoader searchResultLoader;
@@ -69,7 +69,8 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
         new YoutubeSearchProvider(),
         new YoutubeSignatureCipherManager(),
         new DefaultYoutubePlaylistLoader(),
-        new DefaultYoutubeLinkRouter()
+        new DefaultYoutubeLinkRouter(),
+        new YoutubeMixProvider()
     );
   }
 
@@ -79,19 +80,19 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
       YoutubeSearchResultLoader searchResultLoader,
       YoutubeSignatureResolver signatureResolver,
       YoutubePlaylistLoader playlistLoader,
-      YoutubeLinkRouter linkRouter
+      YoutubeLinkRouter linkRouter,
+      YoutubeMixLoader mixLoader
   ) {
     httpInterfaceManager = HttpClientTools.createDefaultThreadLocalManager();
     httpInterfaceManager.setHttpContextFilter(new YoutubeHttpContextFilter());
 
     this.allowSearch = allowSearch;
-    mixProvider = new YoutubeMixProvider(this);
-
     this.trackDetailsLoader = trackDetailsLoader;
     this.signatureResolver = signatureResolver;
     this.searchResultLoader = searchResultLoader;
     this.playlistLoader = playlistLoader;
     this.linkRouter = linkRouter;
+    this.mixLoader = mixLoader;
     this.loadingRoutes = new LoadingRoutes();
 
     combinedHttpConfiguration = new MultiHttpConfigurable(Arrays.asList(
@@ -113,13 +114,6 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
    */
   public void setPlaylistPageCount(int playlistPageCount) {
     playlistLoader.setPlaylistPageCount(playlistPageCount);
-  }
-
-  /**
-   * @param maximumPoolSize Maximum number of threads in mix loader thread pool.
-   */
-  public void setMixLoaderMaximumPoolSize(int maximumPoolSize) {
-    mixProvider.setLoaderMaximumPoolSize(maximumPoolSize);
   }
 
   @Override
@@ -159,8 +153,6 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
   @Override
   public void shutdown() {
     ExceptionTools.closeWithWarnings(httpInterfaceManager);
-
-    mixProvider.shutdown();
   }
 
   /**
@@ -246,7 +238,14 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
 
     @Override
     public AudioItem mix(String mixId, String selectedVideoId) {
-      return mixProvider.loadMixWithId(mixId, selectedVideoId);
+      log.debug("Starting to load mix with ID {} selected track {}", mixId, selectedVideoId);
+
+      try (HttpInterface httpInterface = getHttpInterface()) {
+        return mixLoader.load(httpInterface, mixId, selectedVideoId,
+            YoutubeAudioSourceManager.this::buildTrackFromInfo);
+      } catch (Exception e) {
+        throw ExceptionTools.wrapUnfriendlyExceptions(e);
+      }
     }
 
     @Override

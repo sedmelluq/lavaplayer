@@ -1,8 +1,12 @@
 # Change Log
 
+## [1.3.46] -- 2020-04-07
+### Fixed
+- Fixed YouTube mix loading, mixes loaded with just one request now (PR 293 by Devoxin).
+
 ## [1.3.45] -- 2020-04-07
 ### Fixed
-- Fixed some YouTube live streams not being loaded and randomly stopping (PR 293 by Devoxin).
+- Fixed some YouTube live streams not being loaded and randomly stopping (PR 291 by Devoxin).
 
 ## [1.3.44] -- 2020-04-04
 ### Fixed
