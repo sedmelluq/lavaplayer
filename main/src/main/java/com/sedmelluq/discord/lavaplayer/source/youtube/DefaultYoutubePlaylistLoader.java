@@ -144,7 +144,7 @@ public class DefaultYoutubePlaylistLoader implements YoutubePlaylistLoader {
         String title = item.get("title").get("simpleText").text();
         String author = shortBylineText.get("runs").index(0).get("text").text();
         JsonBrowser lengthSeconds = item.get("lengthSeconds");
-        long duration = lengthSeconds.isNull() ? Units.DURATION_MS_UNKNOWN : lengthSeconds.as(Long.class) * 1000;
+        long duration = Units.secondsToMillis(lengthSeconds.asLong(Units.DURATION_SEC_UNKNOWN));
 
         AudioTrackInfo info = new AudioTrackInfo(title, author, duration, videoId, false,
             "https://www.youtube.com/watch?v=" + videoId);
