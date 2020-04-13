@@ -2,6 +2,7 @@ package com.sedmelluq.discord.lavaplayer.source.youtube;
 
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.tools.JsonBrowser;
+import com.sedmelluq.discord.lavaplayer.tools.Units;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpClientTools;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterface;
 import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
@@ -142,7 +143,8 @@ public class DefaultYoutubePlaylistLoader implements YoutubePlaylistLoader {
         String videoId = item.get("videoId").text();
         String title = item.get("title").get("simpleText").text();
         String author = shortBylineText.get("runs").index(0).get("text").text();
-        long duration = Long.parseLong(item.get("lengthSeconds").text()) * 1000;
+        JsonBrowser lengthSeconds = item.get("lengthSeconds");
+        long duration = Units.secondsToMillis(lengthSeconds.asLong(Units.DURATION_SEC_UNKNOWN));
 
         AudioTrackInfo info = new AudioTrackInfo(title, author, duration, videoId, false,
             "https://www.youtube.com/watch?v=" + videoId);
