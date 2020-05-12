@@ -179,6 +179,11 @@ public class DefaultYoutubeTrackDetails implements YoutubeTrackDetails {
     if (!formats.isNull() && formats.isList()) {
       for (JsonBrowser formatJson : formats.values()) {
         String cipher = formatJson.get("cipher").text();
+
+        if (cipher == null) {
+          cipher = formatJson.get("signatureCipher").text();
+        }
+
         Map<String, String> cipherInfo = cipher != null
             ? decodeUrlEncodedItems(cipher, true)
             : Collections.emptyMap();
