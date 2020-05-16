@@ -102,6 +102,12 @@ public class DefaultYoutubeTrackDetailsLoader implements YoutubeTrackDetailsLoad
       String unplayableReason = getUnplayableReason(statusBlock);
       throw new FriendlyException(unplayableReason, COMMON, null);
     } else if ("LOGIN_REQUIRED".equals(status)) {
+      String errorReason = statusBlock.get("errorScreen").get("playerErrorMessageRenderer").get("reason").get("simpleText").text();
+
+      if ("Private video".equals(errorReason)) {
+        return InfoStatus.DOES_NOT_EXIST;
+      }
+
       return InfoStatus.REQUIRES_LOGIN;
     } else {
       throw new FriendlyException("This video cannot be viewed anonymously.", COMMON, null);
