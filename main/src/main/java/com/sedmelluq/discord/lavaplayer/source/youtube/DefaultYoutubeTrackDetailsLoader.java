@@ -109,7 +109,7 @@ public class DefaultYoutubeTrackDetailsLoader implements YoutubeTrackDetailsLoad
               .text();
 
       if ("Private video".equals(errorReason)) {
-        return InfoStatus.DOES_NOT_EXIST;
+        throw new FriendlyException("This is a private video.", COMMON, null);
       }
 
       return InfoStatus.REQUIRES_LOGIN;
