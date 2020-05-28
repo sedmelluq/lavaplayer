@@ -85,7 +85,7 @@ public class NativeLibraryLoader {
       loadInternal();
       previousResult = true;
     } catch (Throwable e) {
-      log.error("Native library {}: loading failed.", e);
+      log.error("Native library {}: loading failed.", libraryName, e);
 
       previousFailure = new RuntimeException(e);
       previousResult = false;
