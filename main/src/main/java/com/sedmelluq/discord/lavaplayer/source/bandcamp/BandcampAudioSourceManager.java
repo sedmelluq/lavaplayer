@@ -1,20 +1,16 @@
 package com.sedmelluq.discord.lavaplayer.source.bandcamp;
 
-import com.sedmelluq.discord.lavaplayer.player.DefaultAudioPlayerManager;
+import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.source.AudioSourceManager;
 import com.sedmelluq.discord.lavaplayer.tools.DataFormatTools;
 import com.sedmelluq.discord.lavaplayer.tools.ExceptionTools;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.tools.JsonBrowser;
+import com.sedmelluq.discord.lavaplayer.tools.io.HttpClientTools;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpConfigurable;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterface;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterfaceManager;
-import com.sedmelluq.discord.lavaplayer.tools.io.HttpClientTools;
-import com.sedmelluq.discord.lavaplayer.track.AudioItem;
-import com.sedmelluq.discord.lavaplayer.track.AudioReference;
-import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
-import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo;
-import com.sedmelluq.discord.lavaplayer.track.BasicAudioPlaylist;
+import com.sedmelluq.discord.lavaplayer.track.*;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.config.RequestConfig;
@@ -60,7 +56,7 @@ public class BandcampAudioSourceManager implements AudioSourceManager, HttpConfi
   }
 
   @Override
-  public AudioItem loadItem(DefaultAudioPlayerManager manager, AudioReference reference) {
+  public AudioItem loadItem(AudioPlayerManager manager, AudioReference reference) {
     if (trackUrlPattern.matcher(reference.identifier).matches()) {
       return loadTrack(reference.identifier);
     } else if (albumUrlPattern.matcher(reference.identifier).matches()) {
