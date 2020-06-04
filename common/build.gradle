@@ -13,6 +13,12 @@ dependencies {
   compile 'commons-io:commons-io:2.6'
 }
 
+jar {
+  manifest {
+    attributes('Automatic-Module-Name':'com.sedmelluq.lava.common')
+  }
+}
+
 task sourceJar(type: Jar) {
   from sourceSets.main.allJava
 }
