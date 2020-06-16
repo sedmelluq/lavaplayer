@@ -2,9 +2,9 @@ package com.sedmelluq.discord.lavaplayer.source.youtube;
 
 import com.sedmelluq.discord.lavaplayer.tools.DataFormatTools;
 import com.sedmelluq.discord.lavaplayer.tools.ExceptionTools;
+import com.sedmelluq.discord.lavaplayer.tools.JsonBrowser;
 import com.sedmelluq.discord.lavaplayer.tools.http.ExtendedHttpConfigurable;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpClientTools;
-import com.sedmelluq.discord.lavaplayer.tools.io.HttpConfigurable;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterface;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterfaceManager;
 import com.sedmelluq.discord.lavaplayer.track.AudioItem;
@@ -12,14 +12,13 @@ import com.sedmelluq.discord.lavaplayer.track.AudioReference;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo;
 import com.sedmelluq.discord.lavaplayer.track.BasicAudioPlaylist;
-import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.utils.URIBuilder;
-import org.apache.http.impl.client.HttpClientBuilder;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,9 +26,11 @@ import java.io.IOException;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
-import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Handles processing YouTube searches.
@@ -37,7 +38,9 @@ import java.util.function.Function;
 public class YoutubeSearchProvider implements YoutubeSearchResultLoader {
   private static final Logger log = LoggerFactory.getLogger(YoutubeSearchProvider.class);
 
+  private static final String WATCH_URL_PREFIX = "https://www.youtube.com/watch?v=";
   private final HttpInterfaceManager httpInterfaceManager;
+  private final Pattern polymerInitialDataRegex = Pattern.compile("window\\[\"ytInitialData\"]\\s*=\\s*(.*);+\\n");
 
   public YoutubeSearchProvider() {
     this.httpInterfaceManager = HttpClientTools.createCookielessThreadLocalManager();
@@ -76,12 +79,21 @@ public class YoutubeSearchProvider implements YoutubeSearchResultLoader {
                                          Function<AudioTrackInfo, AudioTrack> trackFactory) {
 
     List<AudioTrack> tracks = new ArrayList<>();
-
-    for (Element results : document.select("#page > #content #results")) {
-      for (Element result : results.select(".yt-lockup-video")) {
-        if (!result.hasAttr("data-ad-impressions") && result.select(".standalone-ypc-badge-renderer-label").isEmpty()) {
-          extractTrackFromResultEntry(tracks, result, trackFactory);
+    Elements resultsSelection = document.select("#page > #content #results");
+    if (!resultsSelection.isEmpty()) {
+      for (Element results : resultsSelection) {
+        for (Element result : results.select(".yt-lockup-video")) {
+          if (!result.hasAttr("data-ad-impressions") && result.select(".standalone-ypc-badge-renderer-label").isEmpty()) {
+            extractTrackFromResultEntry(tracks, result, trackFactory);
+          }
         }
+      }
+    } else {
+      log.debug("Attempting to parse results page as polymer");
+      try {
+        tracks = polymerExtractTracks(document, trackFactory);
+      } catch (IOException e) {
+        throw new RuntimeException(e);
       }
     }
 
@@ -109,8 +121,49 @@ public class YoutubeSearchProvider implements YoutubeSearchResultLoader {
     String author = contentElement.select(".yt-lockup-byline > a").text();
 
     AudioTrackInfo info = new AudioTrackInfo(title, author, duration, videoId, false,
-        "https://www.youtube.com/watch?v=" + videoId);
+        WATCH_URL_PREFIX + videoId);
 
     tracks.add(trackFactory.apply(info));
+  }
+
+  private List<AudioTrack> polymerExtractTracks(Document document, Function<AudioTrackInfo, AudioTrack> trackFactory) throws IOException {
+    // Match the JSON from the HTML. It should be within a script tag
+    Matcher matcher = polymerInitialDataRegex.matcher(document.outerHtml());
+    if (!matcher.find()) {
+      log.warn("Failed to match ytInitialData JSON object");
+      return Collections.emptyList();
+    }
+
+    JsonBrowser jsonBrowser = JsonBrowser.parse(matcher.group(1));
+    ArrayList<AudioTrack> list = new ArrayList<>();
+    jsonBrowser.get("contents")
+        .get("twoColumnSearchResultsRenderer")
+        .get("primaryContents")
+        .get("sectionListRenderer")
+        .get("contents")
+        .index(0)
+        .get("itemSectionRenderer")
+        .get("contents")
+        .values()
+        .forEach(json -> {
+          AudioTrack track = extractPolymerData(json, trackFactory);
+          if (track != null) list.add(track);
+        });
+    return list;
+  }
+
+  private AudioTrack extractPolymerData(JsonBrowser json, Function<AudioTrackInfo, AudioTrack> trackFactory) {
+    json = json.get("videoRenderer");
+    if (json.isNull()) return null; // Ignore everything which is not a track
+
+    String title = json.get("title").get("runs").index(0).get("text").text();
+    String author = json.get("ownerText").get("runs").index(0).get("text").text();
+    long duration = DataFormatTools.durationTextToMillis(json.get("lengthText").get("simpleText").text());
+    String videoId = json.get("videoId").text();
+
+    AudioTrackInfo info = new AudioTrackInfo(title, author, duration, videoId, false,
+        WATCH_URL_PREFIX + videoId);
+
+    return trackFactory.apply(info);
   }
 }
