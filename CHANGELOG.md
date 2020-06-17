@@ -1,5 +1,9 @@
 # Change Log
 
+## [1.3.50] -- 2020-06-17
+### Fixed
+- Fixed YT search sometimes not finding anything because of YT providing different format (PR 492 by Frederikam).
+
 ## [1.3.49] -- 2020-05-21
 ### Fixed
 - Fixed Twitch streaming breaking due to API change (PR 480 by Devoxin).

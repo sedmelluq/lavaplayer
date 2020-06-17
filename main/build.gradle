@@ -7,7 +7,7 @@ plugins {
 }
 
 ext.moduleName = 'lavaplayer'
-version = '1.3.49'
+version = '1.3.50'
 
 repositories {
   maven {
