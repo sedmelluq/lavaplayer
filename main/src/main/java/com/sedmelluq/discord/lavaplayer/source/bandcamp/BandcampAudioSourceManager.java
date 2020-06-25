@@ -78,7 +78,7 @@ public class BandcampAudioSourceManager implements AudioSourceManager, HttpConfi
         return loadAlbum(ogUrl);
       }
       return null; //return null if a bandcamp site was not found
-	  });
+	});
   }
 
   private AudioItem loadTrack(String trackUrl) {
