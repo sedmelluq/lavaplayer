@@ -308,7 +308,7 @@ public class DefaultYoutubeTrackDetails implements YoutubeTrackDetails {
 
     JsonBrowser videoDetails = playerResponse.get("videoDetails");
 
-    boolean isStream = videoDetails.get("isLiveContent").asBoolean(false);
+    boolean isStream = "0".equals(videoDetails.get("lengthSeconds").text());
     long duration = extractDurationSeconds(isStream, videoDetails, "lengthSeconds");
 
     return buildTrackInfo(videoId, videoDetails.get("title").text(), videoDetails.get("author").text(), isStream, duration);
