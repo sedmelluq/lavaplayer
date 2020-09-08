@@ -109,10 +109,13 @@ public class BandcampAudioSourceManager implements AudioSourceManager, HttpConfi
   }
 
   private String readBandUrl(String text) {
-    String bandUrl = DataFormatTools.extractBetween(text, "var band_url = \"", "\";");
+    String bandUrl = DataFormatTools.extractBetween(text, "linkback : \"", "\" + \"");
 
     if (bandUrl == null) {
-      throw new FriendlyException("Band information not found on the Bandcamp page.", SUSPICIOUS, null);
+      bandUrl = DataFormatTools.extractBetween(text, "linkback: \"", "\" + \"");
+      if (bandUrl == null) {
+        throw new FriendlyException("Band information not found on the Bandcamp page.", SUSPICIOUS, null);
+      }
     }
 
     return bandUrl;
