@@ -91,7 +91,7 @@ public class BandcampAudioSourceManager implements AudioSourceManager, HttpConfi
       }
 
       JsonBrowser albumInfo = readAlbumInformation(text);
-      return new BasicAudioPlaylist(albumInfo.get("album_title").text(), tracks, null, false);
+      return new BasicAudioPlaylist(albumInfo.get("current").get("title").text(), tracks, null, false);
     });
   }
 
@@ -119,25 +119,25 @@ public class BandcampAudioSourceManager implements AudioSourceManager, HttpConfi
   }
 
   private JsonBrowser readAlbumInformation(String text) throws IOException {
-    String albumInfoJson = DataFormatTools.extractBetween(text, "var EmbedData = ", "};");
+    String albumInfoJson = DataFormatTools.extractBetween(text, "data-tralbum=\"", "\"");
 
     if (albumInfoJson == null) {
       throw new FriendlyException("Album information not found on the Bandcamp page.", SUSPICIOUS, null);
     }
 
-    albumInfoJson = albumInfoJson.replace("\" + \"", "") + "};";
+    albumInfoJson = albumInfoJson.replace("&quot;", "\"");
     return JsonBrowser.parse(albumInfoJson);
   }
 
   JsonBrowser readTrackListInformation(String text) throws IOException {
-    String trackInfoJson = DataFormatTools.extractBetween(text, "var TralbumData = ", "};");
+    String trackInfoJson = DataFormatTools.extractBetween(text, "data-tralbum=\"", "\"");
 
     if (trackInfoJson == null) {
       throw new FriendlyException("Track information not found on the Bandcamp page.", SUSPICIOUS, null);
     }
 
-    trackInfoJson = trackInfoJson.replace("\" + \"", "") + "};";
-    return JsonBrowser.parse(trackInfoJson + "};");
+    trackInfoJson = trackInfoJson.replace("&quot;", "\"");
+    return JsonBrowser.parse(trackInfoJson);
   }
 
   private AudioItem extractFromPage(String url, AudioItemExtractor extractor) {
