@@ -88,6 +88,10 @@ public class DataFormatTools {
   public static long durationTextToMillis(String durationText) {
     int length = 0;
 
+    if (durationText.isNull()) {
+      return null;
+    }
+    
     for (String part : durationText.split("[:.]")) {
       length = length * 60 + Integer.valueOf(part);
     }
