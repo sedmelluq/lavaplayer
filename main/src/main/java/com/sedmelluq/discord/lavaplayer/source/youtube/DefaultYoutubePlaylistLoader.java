@@ -12,6 +12,7 @@ import com.sedmelluq.discord.lavaplayer.track.BasicAudioPlaylist;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Function;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
@@ -141,7 +142,9 @@ public class DefaultYoutubePlaylistLoader implements YoutubePlaylistLoader {
       // If the shortBylineText property does not exist, it means the Track is Region blocked
       if (!item.get("isPlayable").isNull() && !shortBylineText.isNull()) {
         String videoId = item.get("videoId").text();
-        String title = item.get("title").get("simpleText").text();
+        String title = Optional.ofNullable(item.get("title").get("simpleText"))
+                .map(JsonBrowser::text)
+                .orElse(item.get("title").get("runs").index(0).get("text").text());
         String author = shortBylineText.get("runs").index(0).get("text").text();
         JsonBrowser lengthSeconds = item.get("lengthSeconds");
         long duration = Units.secondsToMillis(lengthSeconds.asLong(Units.DURATION_SEC_UNKNOWN));
