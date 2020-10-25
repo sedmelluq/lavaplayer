@@ -46,7 +46,7 @@ public class JsonBrowser {
    * @return JsonBrowser instance which wraps the value at the specified index
    */
   public JsonBrowser index(int index) {
-    if (isList()) {
+    if (isList() && index >= 0 && index < node.size()) {
       return create(node.get(index));
     } else {
       return NULL_BROWSER;
