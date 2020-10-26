@@ -83,7 +83,7 @@ public class DefaultYoutubeTrackDetailsLoader implements YoutubeTrackDetailsLoad
       JsonBrowser basicInfo = loadTrackBaseInfoFromEmbedPage(httpInterface, videoId);
 
       return fromEmbedParts(
-          loadTrackBaseInfoFromEmbedPage(httpInterface, videoId),
+          basicInfo,
           loadTrackArgsFromVideoInfoPage(httpInterface, videoId, basicInfo.get("sts").text())
       );
     } else {
