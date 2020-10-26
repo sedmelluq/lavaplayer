@@ -7,7 +7,6 @@ import com.sedmelluq.discord.lavaplayer.source.AudioSourceManagers;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
-import net.dv8tion.jda.api.AccountType;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.TextChannel;
@@ -19,10 +18,12 @@ import net.dv8tion.jda.api.managers.AudioManager;
 import java.util.HashMap;
 import java.util.Map;
 
+import static net.dv8tion.jda.api.requests.GatewayIntent.GUILD_MESSAGES;
+import static net.dv8tion.jda.api.requests.GatewayIntent.GUILD_VOICE_STATES;
+
 public class Main extends ListenerAdapter {
   public static void main(String[] args) throws Exception {
-    new JDABuilder(AccountType.BOT)
-        .setToken(System.getProperty("botToken"))
+    JDABuilder.create(System.getProperty("botToken"), GUILD_MESSAGES, GUILD_VOICE_STATES)
         .addEventListeners(new Main())
         .build();
   }
