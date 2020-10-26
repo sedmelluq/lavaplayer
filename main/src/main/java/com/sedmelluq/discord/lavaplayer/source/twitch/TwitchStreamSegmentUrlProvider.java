@@ -78,7 +78,7 @@ public class TwitchStreamSegmentUrlProvider extends M3uStreamSegmentUrlProvider 
 
   private JsonBrowser loadAccessToken(HttpInterface httpInterface) throws IOException {
     HttpUriRequest request = createSegmentGetRequest("https://api.twitch.tv/api/channels/" + channelName +
-        "/access_token?adblock=false&need_https=true&platform=web&player_type=site");
+        "/access_token?oauth_token=undefined&need_https=true&player_type=site&player_backend=mediaplayer");
 
     try (CloseableHttpResponse response = httpInterface.execute(request)) {
       int statusCode = response.getStatusLine().getStatusCode();
@@ -113,7 +113,7 @@ public class TwitchStreamSegmentUrlProvider extends M3uStreamSegmentUrlProvider 
     }
 
     return new ChannelStreams(
-        (long) (Double.valueOf(serverTimeValue) * 1000.0),
+        (long) (Double.parseDouble(serverTimeValue) * 1000.0),
         streams
     );
   }
