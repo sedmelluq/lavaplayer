@@ -30,6 +30,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static com.sedmelluq.discord.lavaplayer.tools.FriendlyException.Severity.FAULT;
@@ -41,9 +42,11 @@ import static com.sedmelluq.discord.lavaplayer.tools.FriendlyException.Severity.
 public class BandcampAudioSourceManager implements AudioSourceManager, HttpConfigurable {
   private static final String TRACK_URL_REGEX = "^https?://(?:[^.]+\\.|)bandcamp\\.com/track/([a-zA-Z0-9-_]+)/?(?:\\?.*|)$";
   private static final String ALBUM_URL_REGEX = "^https?://(?:[^.]+\\.|)bandcamp\\.com/album/([a-zA-Z0-9-_]+)/?(?:\\?.*|)$";
+  private static final String BASE_URL_REGEX = "^(https?://(?:[^.]+\\.|)bandcamp\\.com)/(track|album)/([a-zA-Z0-9-_]+)/?(?:\\?.*|)$";
 
   private static final Pattern trackUrlPattern = Pattern.compile(TRACK_URL_REGEX);
   private static final Pattern albumUrlPattern = Pattern.compile(ALBUM_URL_REGEX);
+  private static final Pattern baseUrlRegex = Pattern.compile(BASE_URL_REGEX);
 
   private final HttpInterfaceManager httpInterfaceManager;
 
@@ -71,7 +74,7 @@ public class BandcampAudioSourceManager implements AudioSourceManager, HttpConfi
 
   private AudioItem loadTrack(String trackUrl) {
     return extractFromPage(trackUrl, (httpClient, text) -> {
-      String bandUrl = readBandUrl(text);
+      String bandUrl = readBandUrl(trackUrl);
       JsonBrowser trackListInfo = readTrackListInformation(text);
       String artist = trackListInfo.get("artist").safeText();
 
@@ -81,7 +84,7 @@ public class BandcampAudioSourceManager implements AudioSourceManager, HttpConfi
 
   private AudioItem loadAlbum(String albumUrl) {
     return extractFromPage(albumUrl, (httpClient, text) -> {
-      String bandUrl = readBandUrl(text);
+      String bandUrl = readBandUrl(albumUrl);
       JsonBrowser trackListInfo = readTrackListInformation(text);
       String artist = trackListInfo.get("artist").text();
 
@@ -91,7 +94,7 @@ public class BandcampAudioSourceManager implements AudioSourceManager, HttpConfi
       }
 
       JsonBrowser albumInfo = readAlbumInformation(text);
-      return new BasicAudioPlaylist(albumInfo.get("album_title").text(), tracks, null, false);
+      return new BasicAudioPlaylist(albumInfo.get("current").get("title").text(), tracks, null, false);
     });
   }
 
@@ -108,36 +111,40 @@ public class BandcampAudioSourceManager implements AudioSourceManager, HttpConfi
     ), this);
   }
 
-  private String readBandUrl(String text) {
-    String bandUrl = DataFormatTools.extractBetween(text, "var band_url = \"", "\";");
+  private String readBandUrl(String url) {
+    String baseUrl = null;
+    final Matcher matcher = baseUrlRegex.matcher(url);
+    if (matcher.matches()) {
+      baseUrl = matcher.group(1);
+    }
 
-    if (bandUrl == null) {
+    if (baseUrl == null) {
       throw new FriendlyException("Band information not found on the Bandcamp page.", SUSPICIOUS, null);
     }
 
-    return bandUrl;
+    return baseUrl;
   }
 
   private JsonBrowser readAlbumInformation(String text) throws IOException {
-    String albumInfoJson = DataFormatTools.extractBetween(text, "var EmbedData = ", "};");
+    String albumInfoJson = DataFormatTools.extractBetween(text, "data-tralbum=\"", "\"");
 
     if (albumInfoJson == null) {
       throw new FriendlyException("Album information not found on the Bandcamp page.", SUSPICIOUS, null);
     }
 
-    albumInfoJson = albumInfoJson.replace("\" + \"", "") + "};";
+    albumInfoJson = albumInfoJson.replace("&quot;", "\"");
     return JsonBrowser.parse(albumInfoJson);
   }
 
   JsonBrowser readTrackListInformation(String text) throws IOException {
-    String trackInfoJson = DataFormatTools.extractBetween(text, "var TralbumData = ", "};");
+    String trackInfoJson = DataFormatTools.extractBetween(text, "data-tralbum=\"", "\"");
 
     if (trackInfoJson == null) {
       throw new FriendlyException("Track information not found on the Bandcamp page.", SUSPICIOUS, null);
     }
 
-    trackInfoJson = trackInfoJson.replace("\" + \"", "") + "};";
-    return JsonBrowser.parse(trackInfoJson + "};");
+    trackInfoJson = trackInfoJson.replace("&quot;", "\"");
+    return JsonBrowser.parse(trackInfoJson);
   }
 
   private AudioItem extractFromPage(String url, AudioItemExtractor extractor) {
