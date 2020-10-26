@@ -1,5 +1,13 @@
 # Change Log
 
+## [1.3.52] -- 2020-10-25
+### Fixed
+- Fixed a redundant request made for YouTube age-restricted tracks.
+
+## [1.3.51] -- 2020-10-25
+### Fixed
+- Fixed various issues with YouTube track loading and searches.
+
 ## [1.3.50] -- 2020-06-17
 ### Fixed
 - Fixed YT search sometimes not finding anything because of YT providing different format (PR 492 by Frederikam).
