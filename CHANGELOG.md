@@ -1,5 +1,11 @@
 # Change Log
 
+## [1.3.53] -- 2020-10-26
+### Fixed
+- Fixed Bandcamp track and album loading which broke due to url changes (PR 527 by Walkyst).
+- Fixed Twitch stream loading failure which broke due to access token changes (PR 410 by kimcore).
+- Fixed Twitch stream including ads which also broke stream start sometimes.
+
 ## [1.3.52] -- 2020-10-25
 ### Fixed
 - Fixed a redundant request made for YouTube age-restricted tracks.
@@ -7,6 +13,7 @@
 ## [1.3.51] -- 2020-10-25
 ### Fixed
 - Fixed various issues with YouTube track loading and searches.
+- Fixed YouTube playlist track titles being null (PR 534 by gmfonseca).
 
 ## [1.3.50] -- 2020-06-17
 ### Fixed
