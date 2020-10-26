@@ -15,7 +15,6 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static com.sedmelluq.discord.lavaplayer.source.youtube.YoutubeJsonTools.PLAYABILITY_STATUS_FIELD;
 import static com.sedmelluq.discord.lavaplayer.tools.FriendlyException.Severity.COMMON;
 import static com.sedmelluq.discord.lavaplayer.tools.FriendlyException.Severity.SUSPICIOUS;
 import static com.sedmelluq.discord.lavaplayer.tools.Units.DURATION_MS_UNKNOWN;
@@ -40,11 +39,7 @@ public class DefaultYoutubeTrackDetails implements YoutubeTrackDetails {
 
   @Override
   public AudioTrackInfo getTrackInfo() {
-    try {
-      return loadTrackInfo();
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
+    return loadTrackInfo();
   }
 
   @Override
@@ -84,8 +79,8 @@ public class DefaultYoutubeTrackDetails implements YoutubeTrackDetails {
         new IllegalStateException("No track formats found."));
   }
 
-  private AudioTrackInfo loadTrackInfo() throws IOException {
-    JsonBrowser playabilityStatus = data.playerResponse.get(PLAYABILITY_STATUS_FIELD);
+  private AudioTrackInfo loadTrackInfo() {
+    JsonBrowser playabilityStatus = data.playerResponse.get("playabilityStatus");
 
     if ("ERROR".equals(playabilityStatus.get("status").text())) {
       throw new FriendlyException(playabilityStatus.get("reason").text(), COMMON, null);
