@@ -40,13 +40,8 @@ import static com.sedmelluq.discord.lavaplayer.tools.FriendlyException.Severity.
  * Audio source manager that implements finding Bandcamp tracks based on URL.
  */
 public class BandcampAudioSourceManager implements AudioSourceManager, HttpConfigurable {
-  private static final String TRACK_URL_REGEX = "^https?://(?:[^.]+\\.|)bandcamp\\.com/track/([a-zA-Z0-9-_]+)/?(?:\\?.*|)$";
-  private static final String ALBUM_URL_REGEX = "^https?://(?:[^.]+\\.|)bandcamp\\.com/album/([a-zA-Z0-9-_]+)/?(?:\\?.*|)$";
-  private static final String BASE_URL_REGEX = "^(https?://(?:[^.]+\\.|)bandcamp\\.com)/(track|album)/([a-zA-Z0-9-_]+)/?(?:\\?.*|)$";
-
-  private static final Pattern trackUrlPattern = Pattern.compile(TRACK_URL_REGEX);
-  private static final Pattern albumUrlPattern = Pattern.compile(ALBUM_URL_REGEX);
-  private static final Pattern baseUrlRegex = Pattern.compile(BASE_URL_REGEX);
+  private static final String URL_REGEX = "^(https?://(?:[^.]+\\.|)bandcamp\\.com)/(track|album)/([a-zA-Z0-9-_]+)/?(?:\\?.*|)$";
+  private static final Pattern urlRegex = Pattern.compile(URL_REGEX);
 
   private final HttpInterfaceManager httpInterfaceManager;
 
@@ -64,33 +59,46 @@ public class BandcampAudioSourceManager implements AudioSourceManager, HttpConfi
 
   @Override
   public AudioItem loadItem(DefaultAudioPlayerManager manager, AudioReference reference) {
-    if (trackUrlPattern.matcher(reference.identifier).matches()) {
-      return loadTrack(reference.identifier);
-    } else if (albumUrlPattern.matcher(reference.identifier).matches()) {
-      return loadAlbum(reference.identifier);
+    UrlInfo urlInfo = parseUrl(reference.identifier);
+
+    if (urlInfo != null) {
+      if (urlInfo.isAlbum) {
+        return loadAlbum(urlInfo);
+      } else {
+        return loadTrack(urlInfo);
+      }
     }
+
     return null;
   }
 
-  private AudioItem loadTrack(String trackUrl) {
-    return extractFromPage(trackUrl, (httpClient, text) -> {
-      String bandUrl = readBandUrl(trackUrl);
+  private UrlInfo parseUrl(String url) {
+    Matcher matcher = urlRegex.matcher(url);
+
+    if (matcher.matches()) {
+      return new UrlInfo(url, matcher.group(1), "album".equals(matcher.group(2)));
+    } else {
+      return null;
+    }
+  }
+
+  private AudioItem loadTrack(UrlInfo urlInfo) {
+    return extractFromPage(urlInfo.fullUrl, (httpClient, text) -> {
       JsonBrowser trackListInfo = readTrackListInformation(text);
       String artist = trackListInfo.get("artist").safeText();
 
-      return extractTrack(trackListInfo.get("trackinfo").index(0), bandUrl, artist);
+      return extractTrack(trackListInfo.get("trackinfo").index(0), urlInfo.baseUrl, artist);
     });
   }
 
-  private AudioItem loadAlbum(String albumUrl) {
-    return extractFromPage(albumUrl, (httpClient, text) -> {
-      String bandUrl = readBandUrl(albumUrl);
+  private AudioItem loadAlbum(UrlInfo urlInfo) {
+    return extractFromPage(urlInfo.fullUrl, (httpClient, text) -> {
       JsonBrowser trackListInfo = readTrackListInformation(text);
       String artist = trackListInfo.get("artist").text();
 
       List<AudioTrack> tracks = new ArrayList<>();
       for (JsonBrowser trackInfo : trackListInfo.get("trackinfo").values()) {
-        tracks.add(extractTrack(trackInfo, bandUrl, artist));
+        tracks.add(extractTrack(trackInfo, urlInfo.baseUrl, artist));
       }
 
       JsonBrowser albumInfo = readAlbumInformation(text);
@@ -109,20 +117,6 @@ public class BandcampAudioSourceManager implements AudioSourceManager, HttpConfi
         false,
         trackPageUrl
     ), this);
-  }
-
-  private String readBandUrl(String url) {
-    String baseUrl = null;
-    final Matcher matcher = baseUrlRegex.matcher(url);
-    if (matcher.matches()) {
-      baseUrl = matcher.group(1);
-    }
-
-    if (baseUrl == null) {
-      throw new FriendlyException("Band information not found on the Bandcamp page.", SUSPICIOUS, null);
-    }
-
-    return baseUrl;
   }
 
   private JsonBrowser readAlbumInformation(String text) throws IOException {
@@ -212,5 +206,17 @@ public class BandcampAudioSourceManager implements AudioSourceManager, HttpConfi
 
   private interface AudioItemExtractor {
     AudioItem extract(HttpInterface httpInterface, String text) throws Exception;
+  }
+
+  private static class UrlInfo {
+    public final String fullUrl;
+    public final String baseUrl;
+    public final boolean isAlbum;
+
+    private UrlInfo(String fullUrl, String baseUrl, boolean isAlbum) {
+      this.fullUrl = fullUrl;
+      this.baseUrl = baseUrl;
+      this.isAlbum = isAlbum;
+    }
   }
 }
