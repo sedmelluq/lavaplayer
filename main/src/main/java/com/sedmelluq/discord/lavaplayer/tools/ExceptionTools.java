@@ -1,6 +1,7 @@
 package com.sedmelluq.discord.lavaplayer.tools;
 
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException.Severity;
+import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -115,6 +116,19 @@ public class ExceptionTools {
         log.error("Error in {}", context, exception);
         break;
     }
+  }
+
+  public static RuntimeException throwWithLoggedPayload(
+      Logger log,
+      Throwable exception,
+      String message,
+      String name,
+      String value
+  ) {
+    String errorId = UUID.randomUUID().toString();
+    String fullMessage = message + " EID: " + errorId + ", " + name + ": ";
+    log.warn("{} {}", fullMessage, value, exception);
+    return new RuntimeException(fullMessage + " redacted, check EID from log", exception);
   }
 
   /**

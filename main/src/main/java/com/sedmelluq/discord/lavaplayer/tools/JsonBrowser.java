@@ -73,7 +73,11 @@ public class JsonBrowser {
    */
   public void put(String key, Object item) {
     if (node instanceof ObjectNode) {
-      ((ObjectNode) node).set(key, mapper.valueToTree(item));
+      if (item instanceof JsonBrowser) {
+        ((ObjectNode) node).set(key, ((JsonBrowser) item).node);
+      } else {
+        ((ObjectNode) node).set(key, mapper.valueToTree(item));
+      }
     } else {
       throw new IllegalStateException("Put only works on a map");
     }
@@ -208,6 +212,10 @@ public class JsonBrowser {
    */
   public static JsonBrowser parse(InputStream stream) throws IOException {
     return create(mapper.readTree(stream));
+  }
+
+  public static JsonBrowser newMap() throws IOException {
+    return create(mapper.createObjectNode());
   }
 
   private static ObjectMapper setupMapper() {

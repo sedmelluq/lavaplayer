@@ -197,7 +197,7 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
    */
   public AudioItem loadTrackWithVideoId(String videoId, boolean mustExist) {
     try (HttpInterface httpInterface = getHttpInterface()) {
-      YoutubeTrackDetails details = trackDetailsLoader.loadDetails(httpInterface, videoId);
+      YoutubeTrackDetails details = trackDetailsLoader.loadDetails(httpInterface, videoId, false);
 
       if (details == null) {
         if (mustExist) {

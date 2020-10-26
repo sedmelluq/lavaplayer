@@ -40,7 +40,7 @@ public class YoutubeSearchProvider implements YoutubeSearchResultLoader {
 
   private static final String WATCH_URL_PREFIX = "https://www.youtube.com/watch?v=";
   private final HttpInterfaceManager httpInterfaceManager;
-  private final Pattern polymerInitialDataRegex = Pattern.compile("window\\[\"ytInitialData\"]\\s*=\\s*(.*);+\\n");
+  private final Pattern polymerInitialDataRegex = Pattern.compile("(window\\[\"ytInitialData\"]|var ytInitialData)\\s*=\\s*(.*);");
 
   public YoutubeSearchProvider() {
     this.httpInterfaceManager = HttpClientTools.createCookielessThreadLocalManager();
@@ -134,7 +134,7 @@ public class YoutubeSearchProvider implements YoutubeSearchResultLoader {
       return Collections.emptyList();
     }
 
-    JsonBrowser jsonBrowser = JsonBrowser.parse(matcher.group(1));
+    JsonBrowser jsonBrowser = JsonBrowser.parse(matcher.group(2));
     ArrayList<AudioTrack> list = new ArrayList<>();
     jsonBrowser.get("contents")
         .get("twoColumnSearchResultsRenderer")

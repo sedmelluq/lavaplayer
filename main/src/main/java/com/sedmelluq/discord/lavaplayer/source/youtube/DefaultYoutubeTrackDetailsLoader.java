@@ -1,85 +1,99 @@
 package com.sedmelluq.discord.lavaplayer.source.youtube;
 
 import com.sedmelluq.discord.lavaplayer.tools.DataFormatTools;
+import com.sedmelluq.discord.lavaplayer.tools.DataFormatTools.TextRange;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.tools.JsonBrowser;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpClientTools;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterface;
 import java.io.IOException;
 import java.net.URLEncoder;
-import java.util.Map;
+import org.apache.http.NameValuePair;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.http.util.EntityUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import static com.sedmelluq.discord.lavaplayer.tools.DataFormatTools.convertToMapLayout;
+import static com.sedmelluq.discord.lavaplayer.source.youtube.YoutubeTrackJsonData.fromEmbedParts;
+import static com.sedmelluq.discord.lavaplayer.tools.ExceptionTools.throwWithLoggedPayload;
 import static com.sedmelluq.discord.lavaplayer.tools.FriendlyException.Severity.COMMON;
 import static com.sedmelluq.discord.lavaplayer.tools.FriendlyException.Severity.SUSPICIOUS;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class DefaultYoutubeTrackDetailsLoader implements YoutubeTrackDetailsLoader {
+  private static final Logger log = LoggerFactory.getLogger(DefaultYoutubeTrackDetailsLoader.class);
+
+  private static final TextRange[] EMBED_CONFIG_RANGES = new TextRange[] {
+      new TextRange("'PLAYER_CONFIG':", "});writeEmbed();"),
+      new TextRange("'PLAYER_CONFIG':", "});yt.setConfig"),
+      new TextRange("\"PLAYER_CONFIG\":", "});writeEmbed();"),
+      new TextRange("\"PLAYER_CONFIG\":", "});yt.setConfig")
+  };
+
+  private volatile CachedPlayerScript cachedPlayerScript = null;
 
   @Override
-  public YoutubeTrackDetails loadDetails(HttpInterface httpInterface, String videoId) {
+  public YoutubeTrackDetails loadDetails(HttpInterface httpInterface, String videoId, boolean requireFormats) {
     try {
-      return load(httpInterface, videoId);
+      return load(httpInterface, videoId, requireFormats);
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
   }
 
-  private YoutubeTrackDetails load(HttpInterface httpInterface, String videoId) throws IOException {
-    String url = "https://www.youtube.com/watch?v=" + videoId + "&pbj=1&hl=en";
+  private YoutubeTrackDetails load(
+      HttpInterface httpInterface,
+      String videoId,
+      boolean requireFormats
+  ) throws IOException {
+    JsonBrowser mainInfo = loadTrackInfoFromMainPage(httpInterface, videoId);
 
-    try (CloseableHttpResponse response = httpInterface.execute(new HttpGet(url))) {
-      int statusCode = response.getStatusLine().getStatusCode();
+    try {
+      YoutubeTrackJsonData initialData = loadBaseResponse(mainInfo, httpInterface, videoId, requireFormats);
 
-      if (!HttpClientTools.isSuccessWithContent(statusCode)) {
-        throw new IOException("Invalid status code for video page response: " + statusCode);
+      if (initialData == null) {
+        return null;
       }
 
-      String responseText = EntityUtils.toString(response.getEntity(), UTF_8);
-
-      try {
-        JsonBrowser json = JsonBrowser.parse(responseText);
-        JsonBrowser playerInfo = JsonBrowser.NULL_BROWSER;
-        JsonBrowser statusBlock = JsonBrowser.NULL_BROWSER;
-
-        for (JsonBrowser child : json.values()) {
-          if (child.isMap()) {
-            if (!child.get("player").isNull()) {
-              playerInfo = child.get("player");
-            } else if (!child.get("playerResponse").isNull()) {
-              statusBlock = child.get("playerResponse").get("playabilityStatus");
-            }
-          }
-        }
-
-        switch (checkStatusBlock(statusBlock)) {
-          case INFO_PRESENT:
-            if (playerInfo.isNull()) {
-              throw new RuntimeException("No player info block.");
-            }
-
-            return new DefaultYoutubeTrackDetails(videoId, playerInfo);
-          case REQUIRES_LOGIN:
-            return new DefaultYoutubeTrackDetails(videoId, getTrackInfoFromEmbedPage(httpInterface, videoId));
-          case DOES_NOT_EXIST:
-            return null;
-        }
-
-        return new DefaultYoutubeTrackDetails(videoId, playerInfo);
-      } catch (FriendlyException e) {
-        throw e;
-      } catch (Exception e) {
-        throw new FriendlyException("Received unexpected response from YouTube.", SUSPICIOUS,
-            new RuntimeException("Failed to parse: " + responseText, e));
-      }
+      YoutubeTrackJsonData finalData = augmentWithPlayerScript(initialData, httpInterface, requireFormats);
+      return new DefaultYoutubeTrackDetails(videoId, finalData);
+    } catch (FriendlyException e) {
+      throw e;
+    } catch (Exception e) {
+      throw throwWithLoggedPayload(log, e, "Error when extracting data", "mainJson", mainInfo.format());
     }
   }
 
-  protected InfoStatus checkStatusBlock(JsonBrowser statusBlock) {
+  protected YoutubeTrackJsonData loadBaseResponse(
+      JsonBrowser mainInfo,
+      HttpInterface httpInterface,
+      String videoId,
+      boolean requireFormats
+  ) throws IOException {
+    YoutubeTrackJsonData data = YoutubeTrackJsonData.fromMainResult(mainInfo);
+    InfoStatus status = checkPlayabilityStatus(data.playerResponse);
+
+    if (status == InfoStatus.DOES_NOT_EXIST) {
+      return null;
+    }
+
+    if (requireFormats && status == InfoStatus.REQUIRES_LOGIN) {
+      JsonBrowser basicInfo = loadTrackBaseInfoFromEmbedPage(httpInterface, videoId);
+
+      return fromEmbedParts(
+          loadTrackBaseInfoFromEmbedPage(httpInterface, videoId),
+          loadTrackArgsFromVideoInfoPage(httpInterface, videoId, basicInfo.get("sts").text())
+      );
+    } else {
+      return data;
+    }
+  }
+
+  protected InfoStatus checkPlayabilityStatus(JsonBrowser playerResponse) {
+    JsonBrowser statusBlock = playerResponse.get("playabilityStatus");
+
     if (statusBlock.isNull()) {
       throw new RuntimeException("No playability status block.");
     }
@@ -145,10 +159,27 @@ public class DefaultYoutubeTrackDetailsLoader implements YoutubeTrackDetailsLoad
     return unplayableReason;
   }
 
-  protected JsonBrowser getTrackInfoFromEmbedPage(HttpInterface httpInterface, String videoId) throws IOException {
-    JsonBrowser basicInfo = loadTrackBaseInfoFromEmbedPage(httpInterface, videoId);
-    basicInfo.put("args", loadTrackArgsFromVideoInfoPage(httpInterface, videoId, basicInfo.get("sts").text()));
-    return basicInfo;
+  protected JsonBrowser loadTrackInfoFromMainPage(HttpInterface httpInterface, String videoId) throws IOException {
+    String url = "https://www.youtube.com/watch?v=" + videoId + "&pbj=1&hl=en";
+
+    try (CloseableHttpResponse response = httpInterface.execute(new HttpGet(url))) {
+      int statusCode = response.getStatusLine().getStatusCode();
+
+      if (!HttpClientTools.isSuccessWithContent(statusCode)) {
+        throw new IOException("Invalid status code for video page response: " + statusCode);
+      }
+
+      String responseText = EntityUtils.toString(response.getEntity(), UTF_8);
+
+      try {
+        return JsonBrowser.parse(responseText);
+      } catch (FriendlyException e) {
+        throw e;
+      } catch (Exception e) {
+        throw new FriendlyException("Received unexpected response from YouTube.", SUSPICIOUS,
+            new RuntimeException("Failed to parse: " + responseText, e));
+      }
+    }
   }
 
   protected JsonBrowser loadTrackBaseInfoFromEmbedPage(HttpInterface httpInterface, String videoId) throws IOException {
@@ -156,18 +187,20 @@ public class DefaultYoutubeTrackDetailsLoader implements YoutubeTrackDetailsLoad
       HttpClientTools.assertSuccessWithContent(response, "embed video page response");
 
       String html = EntityUtils.toString(response.getEntity(), UTF_8);
-      String configJson = DataFormatTools.extractBetween(html, "'PLAYER_CONFIG': ", "});writeEmbed();");
+      String configJson = DataFormatTools.extractBetween(html, EMBED_CONFIG_RANGES);
 
       if (configJson != null) {
         return JsonBrowser.parse(configJson);
       }
+
+      log.debug("Did not find player config in track {} embed page HTML: {}", videoId, html);
     }
 
     throw new FriendlyException("Track information is unavailable.", SUSPICIOUS,
             new IllegalStateException("Expected player config is not present in embed page."));
   }
 
-  protected Map<String, String> loadTrackArgsFromVideoInfoPage(HttpInterface httpInterface, String videoId, String sts) throws IOException {
+  protected JsonBrowser loadTrackArgsFromVideoInfoPage(HttpInterface httpInterface, String videoId, String sts) throws IOException {
     String videoApiUrl = "https://youtube.googleapis.com/v/" + videoId;
     String encodedApiUrl = URLEncoder.encode(videoApiUrl, UTF_8.name());
     String url = "https://www.youtube.com/get_video_info?video_id=" + videoId + "&eurl=" + encodedApiUrl +
@@ -177,9 +210,63 @@ public class DefaultYoutubeTrackDetailsLoader implements YoutubeTrackDetailsLoad
       url += "&sts=" + sts;
     }
 
+    JsonBrowser values = JsonBrowser.newMap();
+
     try (CloseableHttpResponse response = httpInterface.execute(new HttpGet(url))) {
       HttpClientTools.assertSuccessWithContent(response, "video info response");
-      return convertToMapLayout(URLEncodedUtils.parse(response.getEntity()));
+
+      for (NameValuePair pair : URLEncodedUtils.parse(response.getEntity())) {
+        values.put(pair.getName(), pair.getValue());
+      }
+    }
+
+    return values;
+  }
+
+  protected YoutubeTrackJsonData augmentWithPlayerScript(
+      YoutubeTrackJsonData data,
+      HttpInterface httpInterface,
+      boolean requireFormats
+  ) throws IOException {
+    long now = System.currentTimeMillis();
+
+    if (data.playerScriptUrl != null) {
+      cachedPlayerScript = new CachedPlayerScript(data.playerScriptUrl, now);
+      return data;
+    } else if (!requireFormats) {
+      return data;
+    }
+
+    CachedPlayerScript cached = cachedPlayerScript;
+
+    if (cached != null && cached.timestamp + 600000L >= now) {
+      return data.withPlayerScriptUrl(cached.playerScriptUrl);
+    }
+
+    try (CloseableHttpResponse response = httpInterface.execute(new HttpGet("https://www.youtube.com"))) {
+      HttpClientTools.assertSuccessWithContent(response, "youtube root");
+
+      String responseText = EntityUtils.toString(response.getEntity());
+      String encodedUrl = DataFormatTools.extractBetween(responseText, "\"PLAYER_JS_URL\":\"", "\"");
+
+      if (encodedUrl == null) {
+        throw throwWithLoggedPayload(log, null, "no PLAYER_JS_URL in youtube root", "html", responseText);
+      }
+
+      String fetchedPlayerScript = JsonBrowser.parse("{\"url\":\"" + encodedUrl + "\"}").get("url").text();
+      cachedPlayerScript = new CachedPlayerScript(fetchedPlayerScript, now);
+
+      return data.withPlayerScriptUrl(fetchedPlayerScript);
+    }
+  }
+
+  protected static class CachedPlayerScript {
+    public final String playerScriptUrl;
+    public final long timestamp;
+
+    public CachedPlayerScript(String playerScriptUrl, long timestamp) {
+      this.playerScriptUrl = playerScriptUrl;
+      this.timestamp = timestamp;
     }
   }
 }
