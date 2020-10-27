@@ -167,7 +167,7 @@ playerManager.loadItem(identifier, new AudioLoadResultHandler() {
   public void loadFailed(FriendlyException throwable) {
     // Notify the user that everything exploded
   }
-}
+});
 ```
 
 Most of these methods are rather obvious. In addition to everything exploding, `loadFailed` will also be called for example when a YouTube track is blocked or not available in your area. The `FriendlyException` class has a field called `severity`. If the value of this is `COMMON`, then it means that the reason is definitely not a bug or a network issue, but because the track is not available, such as the YouTube blocked video example. These message in this case can simply be forwarded as is to the user.
