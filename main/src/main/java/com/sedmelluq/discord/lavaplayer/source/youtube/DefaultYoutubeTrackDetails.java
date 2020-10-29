@@ -136,7 +136,7 @@ public class DefaultYoutubeTrackDetails implements YoutubeTrackDetails {
 
       return new TemporalInfo(
           isActiveStream,
-          wasLiveStream || durationValue == 0 ? DURATION_MS_UNKNOWN : Units.secondsToMillis(durationValue)
+          durationValue == 0 ? DURATION_MS_UNKNOWN : Units.secondsToMillis(durationValue)
       );
     }
   }

@@ -1,5 +1,9 @@
 # Change Log
 
+## [1.3.54] -- 2020-10-29
+### Fixed
+- Fixed YouTube VOD duration set to unknown.
+
 ## [1.3.53] -- 2020-10-26
 ### Fixed
 - Fixed Bandcamp track and album loading which broke due to url changes (PR 527 by Walkyst).

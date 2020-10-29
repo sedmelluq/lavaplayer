@@ -29,5 +29,6 @@ natives/samplerate/src
 natives/vorbis/*/
 udpqueue-natives/dist
 version.txt
+testbot/src/main/java/local
 
 *.log
