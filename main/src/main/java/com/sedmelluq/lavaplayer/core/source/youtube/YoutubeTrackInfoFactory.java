@@ -10,9 +10,11 @@ import static com.sedmelluq.lavaplayer.core.info.property.AudioTrackPropertyFact
 import static com.sedmelluq.lavaplayer.core.info.property.AudioTrackPropertyFactory.coreLength;
 import static com.sedmelluq.lavaplayer.core.info.property.AudioTrackPropertyFactory.coreSourceName;
 import static com.sedmelluq.lavaplayer.core.info.property.AudioTrackPropertyFactory.coreTitle;
+import static com.sedmelluq.lavaplayer.core.info.property.AudioTrackPropertyFactory.coreUrl;
 
 public class YoutubeTrackInfoFactory {
   private static final AudioTrackProperty sourceProperty = coreSourceName("youtube");
+  private static final String WATCH_URL_PREFIX = "https://www.youtube.com/watch?v=";
 
   public static YoutubeAudioTrackInfo create(
       AudioTrackInfoTemplate template,
@@ -29,6 +31,7 @@ public class YoutubeTrackInfoFactory {
         .with(coreTitle(title))
         .with(coreAuthor(uploader))
         .with(coreLength(duration))
+        .with(coreUrl(WATCH_URL_PREFIX + videoId))
         .build());
   }
 }
