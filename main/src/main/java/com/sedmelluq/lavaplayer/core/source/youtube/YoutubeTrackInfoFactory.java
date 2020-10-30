@@ -14,7 +14,6 @@ import static com.sedmelluq.lavaplayer.core.info.property.AudioTrackPropertyFact
 
 public class YoutubeTrackInfoFactory {
   private static final AudioTrackProperty sourceProperty = coreSourceName("youtube");
-  private static final String WATCH_URL_PREFIX = "https://www.youtube.com/watch?v=";
 
   public static YoutubeAudioTrackInfo create(
       AudioTrackInfoTemplate template,
@@ -31,7 +30,6 @@ public class YoutubeTrackInfoFactory {
         .with(coreTitle(title))
         .with(coreAuthor(uploader))
         .with(coreLength(duration))
-        .with(coreUrl(WATCH_URL_PREFIX + videoId))
         .build());
   }
 }
