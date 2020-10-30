@@ -21,6 +21,10 @@ public class PlaybackAudioTrackFactory implements AudioTrackFactory {
   private final AudioFrameBufferFactory frameBufferFactory;
   private final ExecutorService executorService;
 
+  public PlaybackAudioTrackFactory() {
+    this(null);
+  }
+
   public PlaybackAudioTrackFactory(AudioSourceRegistry sourceRegistry) {
     this(
         sourceRegistry,
@@ -47,27 +51,41 @@ public class PlaybackAudioTrackFactory implements AudioTrackFactory {
   @Override
   public ExecutableAudioTrack create(AudioTrackRequest request, AudioConfiguration configuration) {
     AudioTrackInfo trackInfo = request.getTrackInfo();
-    AudioSource sourceManager = request.getSource();
+    AudioSource source = determineSource(request);
 
-    if (sourceManager == null) {
-      sourceManager = sourceRegistry.findSource(trackInfo.getSourceName());
-    }
-
-    if (sourceManager != null) {
-      return new PlaybackAudioTrack(
-          trackInfo,
-          sourceManager.createPlayback(trackInfo),
-          configuration,
-          frameBufferFactory,
-          sourceManager,
-          executorService);
-    } else {
-      throw new IllegalStateException("Track is not playable, its source is not registered.");
-    }
+    return new PlaybackAudioTrack(
+        trackInfo,
+        source.createPlayback(trackInfo),
+        configuration,
+        frameBufferFactory,
+        source,
+        executorService
+    );
   }
 
   @Override
   public void close() {
     ExecutorTools.shutdownExecutor(executorService, "playback");
+  }
+
+  private AudioSource determineSource(AudioTrackRequest request) {
+    AudioSource explicitSource = request.getSource();
+
+    if (explicitSource == null) {
+      if (sourceRegistry != null) {
+        String sourceName = request.getTrackInfo().getSourceName();
+        AudioSource source = sourceRegistry.findSource(sourceName);
+
+        if (source == null) {
+          throw new IllegalStateException("Track is not playable, its source " + sourceName + " is not registered.");
+        }
+
+        return source;
+      } else {
+        throw new IllegalStateException("Track is not playable, explicit source not given and no source registry.");
+      }
+    } else {
+      return explicitSource;
+    }
   }
 }

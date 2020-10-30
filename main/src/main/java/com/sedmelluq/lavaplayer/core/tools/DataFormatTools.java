@@ -1,5 +1,6 @@
 package com.sedmelluq.lavaplayer.core.tools;
 
+import java.nio.charset.StandardCharsets;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.NameValuePair;
 
@@ -12,6 +13,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Pattern;
+import org.apache.http.client.utils.URLEncodedUtils;
 
 /**
  * Helper methods related to strings and maps.
@@ -41,6 +43,18 @@ public class DataFormatTools {
     return null;
   }
 
+  public static String extractBetween(String haystack, TextRange[] candidates) {
+    for (TextRange candidate : candidates) {
+      String result = extractBetween(haystack, candidate.start, candidate.end);
+
+      if (result != null) {
+        return result;
+      }
+    }
+
+    return null;
+  }
+
   /**
    * Converts name value pairs to a map, with the last entry for each name being present.
    * @param pairs Name value pairs to convert
@@ -52,6 +66,14 @@ public class DataFormatTools {
       map.put(pair.getName(), pair.getValue());
     }
     return map;
+  }
+
+  public static Map<String, String> decodeUrlEncodedItems(String input, boolean escapedSeparator) {
+    if (escapedSeparator) {
+      input = input.replace("\\\\u0026", "&");
+    }
+
+    return convertToMapLayout(URLEncodedUtils.parse(input, StandardCharsets.UTF_8));
   }
 
   /**
@@ -136,5 +158,15 @@ public class DataFormatTools {
     }
 
     return true;
+  }
+
+  public static class TextRange {
+    public final String start;
+    public final String end;
+
+    public TextRange(String start, String end) {
+      this.start = start;
+      this.end = end;
+    }
   }
 }

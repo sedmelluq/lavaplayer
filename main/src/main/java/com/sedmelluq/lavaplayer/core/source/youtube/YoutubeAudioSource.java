@@ -49,21 +49,19 @@ public class YoutubeAudioSource implements AudioSource, HttpConfigurable {
   private final YoutubeSignatureResolver signatureResolver;
   private final HttpInterfaceManager httpInterfaceManager;
   private final ExtendedHttpConfigurable combinedHttpConfiguration;
-  private final YoutubeMixProvider mixProvider;
+  private final DefaultYoutubeMixLoader mixProvider;
   private final YoutubeTrackDetailsLoader trackDetailsLoader;
   private final YoutubeSearchResultLoader searchResultLoader;
   private final YoutubePlaylistLoader playlistLoader;
   private final YoutubeLinkRouter linkRouter;
 
   public static YoutubeAudioSource createDefault() {
-    YoutubeTrackDetailsLoader trackDetailsLoader = new DefaultYoutubeTrackDetailsLoader();
-
     return new YoutubeAudioSource(
-        trackDetailsLoader,
+        new DefaultYoutubeTrackDetailsLoader(),
         new DefaultYoutubeSearchResultLoader(),
         new DefaultYoutubeSignatureResolver(),
         new DefaultYoutubePlaylistLoader(),
-        new DefaultYoutubeMixProvider(trackDetailsLoader),
+        new DefaultYoutubeMixLoader(),
         new DefaultYoutubeLinkRouter()
     );
   }
@@ -73,7 +71,7 @@ public class YoutubeAudioSource implements AudioSource, HttpConfigurable {
       YoutubeSearchResultLoader searchResultLoader,
       YoutubeSignatureResolver signatureResolver,
       YoutubePlaylistLoader playlistLoader,
-      YoutubeMixProvider mixProvider,
+      DefaultYoutubeMixLoader mixProvider,
       YoutubeLinkRouter linkRouter
   ) {
     httpInterfaceManager = HttpClientTools.createDefaultThreadLocalManager();
@@ -100,7 +98,7 @@ public class YoutubeAudioSource implements AudioSource, HttpConfigurable {
     return signatureResolver;
   }
 
-  public YoutubeMixProvider getMixProvider() {
+  public DefaultYoutubeMixLoader getMixProvider() {
     return mixProvider;
   }
 
@@ -199,7 +197,7 @@ public class YoutubeAudioSource implements AudioSource, HttpConfigurable {
    */
   public AudioInfoEntity loadTrackWithVideoId(String videoId, boolean mustExist, AudioTrackInfoTemplate template) {
     try (HttpInterface httpInterface = getHttpInterface()) {
-      YoutubeTrackDetails details = trackDetailsLoader.loadDetails(httpInterface, videoId, template);
+      YoutubeTrackDetails details = trackDetailsLoader.loadDetails(httpInterface, videoId, template, false);
 
       if (details == null) {
         if (mustExist) {

@@ -46,7 +46,7 @@ public class JsonBrowser {
    * @return JsonBrowser instance which wraps the value at the specified index
    */
   public JsonBrowser index(int index) {
-    if (isList()) {
+    if (isList() && index >= 0 && index < node.size()) {
       return create(node.get(index));
     } else {
       return NULL_BROWSER;
@@ -73,7 +73,11 @@ public class JsonBrowser {
    */
   public void put(String key, Object item) {
     if (node instanceof ObjectNode) {
-      ((ObjectNode) node).set(key, mapper.valueToTree(item));
+      if (item instanceof JsonBrowser) {
+        ((ObjectNode) node).set(key, ((JsonBrowser) item).node);
+      } else {
+        ((ObjectNode) node).set(key, mapper.valueToTree(item));
+      }
     } else {
       throw new IllegalStateException("Put only works on a map");
     }
@@ -138,6 +142,38 @@ public class JsonBrowser {
     return null;
   }
 
+  public boolean asBoolean(boolean defaultValue) {
+    if (node != null) {
+      if (node.isBoolean()) {
+        return node.booleanValue();
+      } else if (node.isTextual()) {
+        if ("true".equals(node.textValue())) {
+          return true;
+        } else if ("false".equals(node.textValue())) {
+          return false;
+        }
+      }
+    }
+
+    return defaultValue;
+  }
+
+  public long asLong(long defaultValue) {
+    if (node != null) {
+      if (node.isNumber()) {
+        return node.numberValue().longValue();
+      } else if (node.isTextual()) {
+        try {
+          return Long.parseLong(node.textValue());
+        } catch (NumberFormatException ignored) {
+          // Fall through to default value.
+        }
+      }
+    }
+
+    return defaultValue;
+  }
+
   public String safeText() {
     String text = text();
     return text != null ? text : "";
@@ -176,6 +212,10 @@ public class JsonBrowser {
    */
   public static JsonBrowser parse(InputStream stream) throws IOException {
     return create(mapper.readTree(stream));
+  }
+
+  public static JsonBrowser newMap() throws IOException {
+    return create(mapper.createObjectNode());
   }
 
   private static ObjectMapper setupMapper() {

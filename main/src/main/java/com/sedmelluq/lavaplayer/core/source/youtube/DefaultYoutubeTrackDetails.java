@@ -1,56 +1,47 @@
 package com.sedmelluq.lavaplayer.core.source.youtube;
 
-import com.sedmelluq.lavaplayer.core.info.request.AudioInfoRequest;
-import com.sedmelluq.lavaplayer.core.info.track.AudioTrackInfoTemplate;
-import com.sedmelluq.lavaplayer.core.tools.DataFormatTools;
-import com.sedmelluq.lavaplayer.core.tools.exception.FriendlyException;
-import com.sedmelluq.lavaplayer.core.tools.JsonBrowser;
-import com.sedmelluq.lavaplayer.core.http.HttpClientTools;
 import com.sedmelluq.lavaplayer.core.http.HttpInterface;
 import com.sedmelluq.lavaplayer.core.info.track.AudioTrackInfo;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Collections;
+import com.sedmelluq.lavaplayer.core.info.track.AudioTrackInfoTemplate;
+import com.sedmelluq.lavaplayer.core.source.youtube.format.LegacyAdaptiveFormatsExtractor;
+import com.sedmelluq.lavaplayer.core.source.youtube.format.LegacyDashMpdFormatsExtractor;
+import com.sedmelluq.lavaplayer.core.source.youtube.format.LegacyStreamMapFormatsExtractor;
+import com.sedmelluq.lavaplayer.core.source.youtube.format.StreamingDataFormatsExtractor;
+import com.sedmelluq.lavaplayer.core.source.youtube.format.YoutubeTrackFormatExtractor;
+import com.sedmelluq.lavaplayer.core.tools.JsonBrowser;
+import com.sedmelluq.lavaplayer.core.tools.Units;
+import com.sedmelluq.lavaplayer.core.tools.exception.FriendlyException;
 import java.util.List;
-import java.util.Map;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.utils.URLEncodedUtils;
-import org.apache.http.entity.ContentType;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.parser.Parser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static com.sedmelluq.lavaplayer.core.tools.DataFormatTools.convertToMapLayout;
+import static com.sedmelluq.lavaplayer.core.tools.Units.DURATION_MS_UNKNOWN;
 import static com.sedmelluq.lavaplayer.core.tools.exception.FriendlyException.Severity.COMMON;
 import static com.sedmelluq.lavaplayer.core.tools.exception.FriendlyException.Severity.SUSPICIOUS;
 
 public class DefaultYoutubeTrackDetails implements YoutubeTrackDetails {
   private static final Logger log = LoggerFactory.getLogger(DefaultYoutubeTrackDetails.class);
 
-  private static final String DEFAULT_SIGNATURE_KEY = "signature";
+  private static final YoutubeTrackFormatExtractor[] FORMAT_EXTRACTORS = new YoutubeTrackFormatExtractor[] {
+      new LegacyAdaptiveFormatsExtractor(),
+      new StreamingDataFormatsExtractor(),
+      new LegacyDashMpdFormatsExtractor(),
+      new LegacyStreamMapFormatsExtractor()
+  };
 
   private final String videoId;
-  private final JsonBrowser info;
+  private final YoutubeTrackJsonData data;
   private final AudioTrackInfoTemplate template;
 
-  public DefaultYoutubeTrackDetails(String videoId, JsonBrowser info, AudioTrackInfoTemplate template) {
+  public DefaultYoutubeTrackDetails(String videoId, YoutubeTrackJsonData data, AudioTrackInfoTemplate template) {
     this.videoId = videoId;
-    this.info = info;
+    this.data = data;
     this.template = template;
   }
 
   @Override
   public AudioTrackInfo getTrackInfo() {
-    try {
-      return loadTrackInfo();
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
+    return loadTrackInfo();
   }
 
   @Override
@@ -64,266 +55,98 @@ public class DefaultYoutubeTrackDetails implements YoutubeTrackDetails {
 
   @Override
   public String getPlayerScript() {
-    return info.get("assets").get("js").text();
+    return data.playerScriptUrl;
   }
 
   private List<YoutubeTrackFormat> loadTrackFormats(
       HttpInterface httpInterface,
       YoutubeSignatureResolver signatureResolver
-  ) throws Exception {
-    JsonBrowser args = info.get("args");
+  ) {
+    for (YoutubeTrackFormatExtractor extractor : FORMAT_EXTRACTORS) {
+      List<YoutubeTrackFormat> formats = extractor.extract(data, httpInterface, signatureResolver);
 
-    String adaptiveFormats = args.get("adaptive_fmts").text();
-    if (adaptiveFormats != null) {
-      return loadTrackFormatsFromAdaptive(adaptiveFormats);
-    }
-
-    String playerResponse = args.get("player_response").text();
-
-    if (playerResponse != null) {
-      JsonBrowser streamingData = JsonBrowser.parse(playerResponse)
-          .get("streamingData");
-
-      if (!streamingData.isNull()) {
-        List<YoutubeTrackFormat> formats = loadTrackFormatsFromStreamingData(streamingData.get("formats"));
-        formats.addAll(loadTrackFormatsFromStreamingData(streamingData.get("adaptiveFormats")));
-
-        if (!formats.isEmpty()) {
-          return formats;
-        }
+      if (!formats.isEmpty()) {
+        return formats;
       }
     }
 
-    String dashUrl = args.get("dashmpd").text();
-    if (dashUrl != null) {
-      return loadTrackFormatsFromDash(dashUrl, httpInterface, signatureResolver);
-    }
-
-    String formatStreamMap = args.get("url_encoded_fmt_stream_map").text();
-    if (formatStreamMap != null) {
-      return loadTrackFormatsFromFormatStreamMap(formatStreamMap);
-    }
-
-    log.warn("Video {} with no detected format field, arguments are: {}", videoId, args.format());
+    log.warn(
+        "Video {} with no detected format field, response {} polymer {}",
+        videoId,
+        data.playerResponse.format(),
+        data.polymerArguments.format()
+    );
 
     throw new FriendlyException("Unable to play this YouTube track.", SUSPICIOUS,
-        new IllegalStateException("No adaptive formats, no dash, no stream map."));
+        new IllegalStateException("No track formats found."));
   }
 
-  private List<YoutubeTrackFormat> loadTrackFormatsFromAdaptive(String adaptiveFormats) throws Exception {
-    List<YoutubeTrackFormat> tracks = new ArrayList<>();
-
-    for (String formatString : adaptiveFormats.split(",")) {
-      Map<String, String> format = decodeUrlEncodedItems(formatString, false);
-
-      tracks.add(new YoutubeTrackFormat(
-          ContentType.parse(format.get("type")),
-          Long.parseLong(format.get("bitrate")),
-          Long.parseLong(format.get("clen")),
-          format.get("url"),
-          format.get("s"),
-          format.getOrDefault("sp", DEFAULT_SIGNATURE_KEY)
-      ));
-    }
-
-    return tracks;
-  }
-
-  private List<YoutubeTrackFormat> loadTrackFormatsFromFormatStreamMap(String adaptiveFormats) throws Exception {
-    List<YoutubeTrackFormat> tracks = new ArrayList<>();
-    boolean anyFailures = false;
-
-    for (String formatString : adaptiveFormats.split(",")) {
-      try {
-        Map<String, String> format = decodeUrlEncodedItems(formatString, false);
-        String url = format.get("url");
-
-        if (url == null) {
-          continue;
-        }
-
-        String contentLength = DataFormatTools.extractBetween(url, "clen=", "&");
-
-        if (contentLength == null) {
-          log.debug("Could not find content length from URL {}, skipping format", url);
-          continue;
-        }
-
-        tracks.add(new YoutubeTrackFormat(
-            ContentType.parse(format.get("type")),
-            qualityToBitrateValue(format.get("quality")),
-            Long.parseLong(contentLength),
-            url,
-            format.get("s"),
-            format.getOrDefault("sp", DEFAULT_SIGNATURE_KEY)
-        ));
-      } catch (RuntimeException e) {
-        anyFailures = true;
-        log.debug("Failed to parse format {}, skipping.", formatString, e);
-      }
-    }
-
-    if (tracks.isEmpty() && anyFailures) {
-      log.warn("In adaptive format map {}, all formats either failed to load or were skipped due to missing fields",
-          adaptiveFormats);
-    }
-
-    return tracks;
-  }
-
-  private List<YoutubeTrackFormat> loadTrackFormatsFromStreamingData(JsonBrowser formats) {
-    List<YoutubeTrackFormat> tracks = new ArrayList<>();
-    boolean anyFailures = false;
-
-    if (!formats.isNull() && formats.isList()) {
-      for (JsonBrowser formatJson : formats.values()) {
-        String cipher = formatJson.get("cipher").text();
-        Map<String, String> cipherInfo = cipher != null
-            ? decodeUrlEncodedItems(cipher, true)
-            : Collections.emptyMap();
-
-        try {
-          JsonBrowser contentLength = formatJson.get("contentLength");
-
-          if (contentLength.isNull()) {
-            log.debug("Could not find content length from streamingData format {}, skipping", formatJson.format());
-            continue;
-          }
-
-          tracks.add(new YoutubeTrackFormat(
-              ContentType.parse(formatJson.get("mimeType").text()),
-              formatJson.get("bitrate").as(Long.class),
-              contentLength.as(Long.class),
-              cipherInfo.getOrDefault("url", formatJson.get("url").text()),
-              cipherInfo.get("s"),
-              cipherInfo.getOrDefault("sp", DEFAULT_SIGNATURE_KEY)
-          ));
-        } catch (RuntimeException e) {
-          anyFailures = true;
-          log.debug("Failed to parse format {}, skipping", formatJson, e);
-        }
-      }
-    }
-
-    if (tracks.isEmpty() && anyFailures) {
-      log.warn("In streamingData adaptive formats {}, all formats either failed to load or were skipped due to missing " +
-          "fields", formats.format());
-    }
-
-    return tracks;
-  }
-
-  private long qualityToBitrateValue(String quality) {
-    // Return negative bitrate values to indicate missing bitrate info, but still retain the relative order.
-    if ("small".equals(quality)) {
-      return -10;
-    } else if ("medium".equals(quality)) {
-      return -5;
-    } else if ("hd720".equals(quality)) {
-      return -4;
-    } else {
-      return -1;
-    }
-  }
-
-  private List<YoutubeTrackFormat> loadTrackFormatsFromDash(
-      String dashUrl,
-      HttpInterface httpInterface,
-      YoutubeSignatureResolver signatureResolver
-  ) throws Exception {
-    String resolvedDashUrl = signatureResolver.resolveDashUrl(httpInterface, getPlayerScript(), dashUrl);
-
-    try (CloseableHttpResponse response = httpInterface.execute(new HttpGet(resolvedDashUrl))) {
-      int statusCode = response.getStatusLine().getStatusCode();
-      if (!HttpClientTools.isSuccessWithContent(statusCode)) {
-        throw new IOException("Invalid status code for track info page response: " + statusCode);
-      }
-
-      Document document = Jsoup.parse(response.getEntity().getContent(), StandardCharsets.UTF_8.name(), "",
-          Parser.xmlParser());
-      return loadTrackFormatsFromDashDocument(document);
-    }
-  }
-
-  private List<YoutubeTrackFormat> loadTrackFormatsFromDashDocument(Document document) {
-    List<YoutubeTrackFormat> tracks = new ArrayList<>();
-
-    for (Element adaptation : document.select("AdaptationSet")) {
-      String mimeType = adaptation.attr("mimeType");
-
-      for (Element representation : adaptation.select("Representation")) {
-        String url = representation.select("BaseURL").first().text();
-        String contentLength = DataFormatTools.extractBetween(url, "/clen/", "/");
-        String contentType = mimeType + "; codecs=" + representation.attr("codecs");
-
-        if (contentLength == null) {
-          log.debug("Skipping format {} because the content length is missing", contentType);
-          continue;
-        }
-
-        tracks.add(new YoutubeTrackFormat(
-            ContentType.parse(contentType),
-            Long.parseLong(representation.attr("bandwidth")),
-            Long.parseLong(contentLength),
-            url,
-            null,
-            DEFAULT_SIGNATURE_KEY
-        ));
-      }
-    }
-
-    return tracks;
-  }
-
-  private AudioTrackInfo loadTrackInfo() throws IOException {
-    if (info == null) {
-      return null;
-    }
-
-    JsonBrowser args = info.get("args");
-    boolean useOldFormat = args.get("player_response").isNull();
-
-    if (useOldFormat) {
-      if ("fail".equals(args.get("status").text())) {
-        throw new FriendlyException(args.get("reason").text(), COMMON, null);
-      }
-
-      boolean isStream = "1".equals(args.get("live_playback").text());
-      long duration = isStream ? Long.MAX_VALUE : args.get("length_seconds").as(Long.class) * 1000;
-      return buildTrackInfo(videoId, args, isStream, duration);
-    }
-
-    JsonBrowser playerResponse = JsonBrowser.parse(args.get("player_response").text());
-    JsonBrowser playabilityStatus = playerResponse.get("playabilityStatus");
+  private AudioTrackInfo loadTrackInfo() {
+    JsonBrowser playabilityStatus = data.playerResponse.get("playabilityStatus");
 
     if ("ERROR".equals(playabilityStatus.get("status").text())) {
       throw new FriendlyException(playabilityStatus.get("reason").text(), COMMON, null);
     }
 
-    JsonBrowser videoDetails = playerResponse.get("videoDetails");
+    JsonBrowser videoDetails = data.playerResponse.get("videoDetails");
 
-    boolean isStream = videoDetails.get("isLiveContent").as(Boolean.class);
-    long duration = isStream ? Long.MAX_VALUE : videoDetails.get("lengthSeconds").as(Long.class) * 1000;
+    if (videoDetails.isNull()) {
+      return loadLegacyTrackInfo();
+    }
 
-    return buildTrackInfo(videoId, videoDetails, isStream, duration);
+    TemporalInfo temporalInfo = TemporalInfo.fromRawData(
+        videoDetails.get("isLiveContent").asBoolean(false),
+        videoDetails.get("lengthSeconds")
+    );
+
+    return buildTrackInfo(videoId, videoDetails, temporalInfo);
   }
 
-  private AudioTrackInfo buildTrackInfo(String videoId, JsonBrowser holder, boolean isStream, long duration) {
+  private AudioTrackInfo loadLegacyTrackInfo() {
+    JsonBrowser args = data.polymerArguments;
+
+    if ("fail".equals(args.get("status").text())) {
+      throw new FriendlyException(args.get("reason").text(), COMMON, null);
+    }
+
+    TemporalInfo temporalInfo = TemporalInfo.fromRawData(
+        "1".equals(args.get("live_playback").text()),
+        args.get("length_seconds")
+    );
+
+    return buildTrackInfo(videoId, args, temporalInfo);
+  }
+
+  private AudioTrackInfo buildTrackInfo(String videoId, JsonBrowser holder, TemporalInfo temporalInfo) {
     return YoutubeTrackInfoFactory.create(
         template,
         videoId,
         holder.get("author").text(),
         holder.get("title").text(),
-        duration,
-        isStream
+        temporalInfo.durationMillis,
+        temporalInfo.isActiveStream
     );
   }
 
-  private static Map<String, String> decodeUrlEncodedItems(String input, boolean escapedSeparator) {
-    if (escapedSeparator) {
-      input = input.replace("\\\\u0026", "&");
+  private static class TemporalInfo {
+    public final boolean isActiveStream;
+    public final long durationMillis;
+
+    private TemporalInfo(boolean isActiveStream, long durationMillis) {
+      this.isActiveStream = isActiveStream;
+      this.durationMillis = durationMillis;
     }
 
-    return convertToMapLayout(URLEncodedUtils.parse(input, StandardCharsets.UTF_8));
+    public static TemporalInfo fromRawData(boolean wasLiveStream, JsonBrowser durationSecondsField) {
+      long durationValue = durationSecondsField.asLong(0L);
+      // VODs are not really live streams, even though that field in JSON claims they are. If it is actually live, then
+      // duration is also missing or 0.
+      boolean isActiveStream = wasLiveStream && durationValue == 0;
+
+      return new TemporalInfo(
+          isActiveStream,
+          durationValue == 0 ? DURATION_MS_UNKNOWN : Units.secondsToMillis(durationValue)
+      );
+    }
   }
 }

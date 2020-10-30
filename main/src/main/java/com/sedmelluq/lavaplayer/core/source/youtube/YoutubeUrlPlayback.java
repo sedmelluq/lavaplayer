@@ -1,26 +1,25 @@
 package com.sedmelluq.lavaplayer.core.source.youtube;
 
-import com.sedmelluq.lavaplayer.core.info.track.AudioTrackInfoTemplate;
-import com.sedmelluq.lavaplayer.core.tools.exception.ExceptionTools;
-import com.sedmelluq.lavaplayer.core.tools.exception.FriendlyException;
-import com.sedmelluq.lavaplayer.core.http.HttpInterface;
 import com.sedmelluq.lavaplayer.core.container.matroska.MatroskaStreamPlayback;
+import com.sedmelluq.lavaplayer.core.container.mpeg.MpegFileLoader;
 import com.sedmelluq.lavaplayer.core.container.mpeg.MpegStreamPlayback;
+import com.sedmelluq.lavaplayer.core.container.mpeg.MpegTrackConsumer;
+import com.sedmelluq.lavaplayer.core.container.mpeg.MpegTrackConsumerFactory;
+import com.sedmelluq.lavaplayer.core.container.mpeg.reader.MpegFileTrackProvider;
 import com.sedmelluq.lavaplayer.core.info.track.AudioTrackInfo;
 import com.sedmelluq.lavaplayer.core.player.playback.AudioPlayback;
 import com.sedmelluq.lavaplayer.core.player.playback.AudioPlaybackController;
+import com.sedmelluq.lavaplayer.core.tools.DataFormatTools;
+import com.sedmelluq.lavaplayer.core.tools.exception.FriendlyException;
+import com.sedmelluq.lavaplayer.core.tools.io.SeekableInputStream;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.StringJoiner;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import static com.sedmelluq.lavaplayer.core.container.Formats.MIME_AUDIO_WEBM;
-import static com.sedmelluq.lavaplayer.core.tools.exception.FriendlyException.Severity.COMMON;
+import static com.sedmelluq.lavaplayer.core.tools.exception.FriendlyException.Severity.SUSPICIOUS;
 
 public class YoutubeUrlPlayback implements AudioPlayback {
-  private static final Logger log = LoggerFactory.getLogger(YoutubeUrlPlayback.class);
-
   private final YoutubeAudioSource sourceManager;
   private final AudioTrackInfo trackInfo;
 
@@ -31,53 +30,7 @@ public class YoutubeUrlPlayback implements AudioPlayback {
 
   @Override
   public void process(AudioPlaybackController controller) {
-    try (HttpInterface httpInterface = sourceManager.getHttpInterface()) {
-      FormatWithUrl format = loadBestFormatWithUrl(httpInterface);
-
-      log.debug("Starting track from URL: {}", format.signedUrl);
-
-      if (trackInfo.isStream()) {
-        processStream(controller, format);
-      } else {
-        processStatic(controller, httpInterface, format);
-      }
-    } catch (Exception e) {
-      throw ExceptionTools.toRuntimeException(e);
-    }
-  }
-
-  private void processStatic(AudioPlaybackController controller, HttpInterface httpInterface, FormatWithUrl format) throws Exception {
-    try (YoutubePersistentHttpStream stream = new YoutubePersistentHttpStream(httpInterface, format.signedUrl, format.details.getContentLength())) {
-      if (format.details.getType().getMimeType().endsWith("/webm")) {
-        new MatroskaStreamPlayback(stream).process(controller);
-      } else {
-        new MpegStreamPlayback(stream).process(controller);
-      }
-    }
-  }
-
-  private void processStream(AudioPlaybackController controller, FormatWithUrl format) throws Exception {
-    if (MIME_AUDIO_WEBM.equals(format.details.getType().getMimeType())) {
-      throw new FriendlyException("YouTube WebM streams are currently not supported.", COMMON, null);
-    } else {
-      try (HttpInterface streamingInterface = sourceManager.getHttpInterface()) {
-        new YoutubeMpegStreamUrlPlayback(streamingInterface, format.signedUrl).process(controller);
-      }
-    }
-  }
-
-  private FormatWithUrl loadBestFormatWithUrl(HttpInterface httpInterface) throws Exception {
-    YoutubeTrackDetails details = sourceManager.getTrackDetailsLoader()
-        .loadDetails(httpInterface, trackInfo.getIdentifier(), null);
-
-    List<YoutubeTrackFormat> formats = details.getFormats(httpInterface, sourceManager.getSignatureResolver());;
-
-    YoutubeTrackFormat format = findBestSupportedFormat(formats);
-
-    URI signedUrl = sourceManager.getSignatureResolver()
-        .resolveFormatUrl(httpInterface, details.getPlayerScript(), format);
-
-    return new FormatWithUrl(format, signedUrl);
+    new YoutubeUrlReader(sourceManager, trackInfo, new ReadHandler(controller)).read();
   }
 
   private static boolean isBetterFormat(YoutubeTrackFormat format, YoutubeTrackFormat other) {
@@ -94,7 +47,7 @@ public class YoutubeUrlPlayback implements AudioPlayback {
     }
   }
 
-  private static YoutubeTrackFormat findBestSupportedFormat(List<YoutubeTrackFormat> formats) {
+  private static YoutubeTrackFormat selectFormat(List<YoutubeTrackFormat> formats) {
     YoutubeTrackFormat bestFormat = null;
 
     for (YoutubeTrackFormat format : formats) {
@@ -103,22 +56,92 @@ public class YoutubeUrlPlayback implements AudioPlayback {
       }
     }
 
-    if (bestFormat == null) {
-      StringJoiner joiner = new StringJoiner(", ");
-      formats.forEach(format -> joiner.add(format.getType().toString()));
-      throw new IllegalStateException("No supported audio streams available, available types: " + joiner.toString());
-    }
-
     return bestFormat;
   }
 
-  private static class FormatWithUrl {
-    private final YoutubeTrackFormat details;
-    private final URI signedUrl;
+  private static class ReadHandler implements
+      YoutubeUrlReader.Handler,
+      YoutubeUrlReader.ReadHandler,
+      YoutubeUrlReader.LiveStreamHandler
+  {
+    private final AudioPlaybackController controller;
+    private MpegTrackConsumer trackConsumer;
 
-    private FormatWithUrl(YoutubeTrackFormat details, URI signedUrl) {
-      this.details = details;
-      this.signedUrl = signedUrl;
+    private ReadHandler(AudioPlaybackController controller) {
+      this.controller = controller;
+    }
+
+    @Override
+    public void handleFormats(List<YoutubeTrackFormat> formats, YoutubeUrlReader.FormatReader reader) {
+      YoutubeTrackFormat selectedFormat = selectFormat(formats);
+
+      if (selectedFormat == null) {
+        StringJoiner joiner = new StringJoiner(", ");
+        formats.forEach(format -> joiner.add(format.getType().toString()));
+        throw new IllegalStateException("No supported audio streams available, available types: " + joiner.toString());
+      }
+
+      reader.read(selectedFormat, this);
+    }
+
+    @Override
+    public void consumeStream(YoutubeTrackFormat format, URI url, SeekableInputStream stream) {
+      if (format.getType().getMimeType().endsWith("/webm")) {
+        new MatroskaStreamPlayback(stream).process(controller);
+      } else {
+        new MpegStreamPlayback(stream).process(controller);
+      }
+    }
+
+    @Override
+    public void handleLiveStream(YoutubeTrackFormat format, YoutubeUrlReader.LiveStreamReader reader) {
+      controller.executeProcessingLoop(() -> {
+        try {
+          reader.read(this);
+        } finally {
+          if (trackConsumer != null) {
+            trackConsumer.close();
+          }
+
+          trackConsumer = null;
+        }
+      }, null);
+    }
+
+    @Override
+    public Long consumeSegmentStream(URI url, SeekableInputStream stream) {
+      MpegFileLoader file = new MpegFileLoader(stream);
+      file.parseHeaders();
+
+      Long absoluteSequence = extractAbsoluteSequenceFromEvent(file.getLastEventMessage());
+
+      if (trackConsumer == null) {
+        trackConsumer = MpegTrackConsumerFactory.create(file, controller.getContext());
+      }
+
+      MpegFileTrackProvider fileReader = file.loadReader(trackConsumer);
+      if (fileReader == null) {
+        throw new FriendlyException("Unknown MP4 format.", SUSPICIOUS, null);
+      }
+
+      try {
+        fileReader.provideFrames();
+      } catch (InterruptedException e) {
+        throw new RuntimeException(e);
+      }
+
+      return absoluteSequence;
+    }
+
+    private Long extractAbsoluteSequenceFromEvent(byte[] data) {
+      if (data == null) {
+        return null;
+      }
+
+      String message = new String(data, StandardCharsets.UTF_8);
+      String sequence = DataFormatTools.extractBetween(message, "Sequence-Number: ", "\r\n");
+
+      return sequence != null ? Long.valueOf(sequence) : null;
     }
   }
 }
