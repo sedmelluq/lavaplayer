@@ -18,11 +18,11 @@ public class AudioTrackPropertyFactory {
   }
 
   public static AudioTrackProperty coreLength(long value) {
-    return core(AudioTrackCoreProperty.AUTHOR, value);
+    return core(AudioTrackCoreProperty.LENGTH, value);
   }
 
   public static AudioTrackProperty coreIsStream(boolean value) {
-    return core(AudioTrackCoreProperty.AUTHOR, value ? 1 : 0);
+    return core(AudioTrackCoreProperty.IS_STREAM, value ? 1 : 0);
   }
 
   public static AudioTrackProperty coreUrl(String url) {

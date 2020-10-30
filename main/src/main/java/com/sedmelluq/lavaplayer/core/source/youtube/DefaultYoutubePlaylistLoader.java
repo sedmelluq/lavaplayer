@@ -7,10 +7,12 @@ import com.sedmelluq.lavaplayer.core.info.playlist.BasicAudioPlaylist;
 import com.sedmelluq.lavaplayer.core.info.track.AudioTrackInfo;
 import com.sedmelluq.lavaplayer.core.info.track.AudioTrackInfoTemplate;
 import com.sedmelluq.lavaplayer.core.tools.JsonBrowser;
+import com.sedmelluq.lavaplayer.core.tools.Units;
 import com.sedmelluq.lavaplayer.core.tools.exception.FriendlyException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 
@@ -148,9 +150,15 @@ public class DefaultYoutubePlaylistLoader implements YoutubePlaylistLoader {
       // If the shortBylineText property does not exist, it means the Track is Region blocked
       if (!item.get("isPlayable").isNull() && !shortBylineText.isNull()) {
         String videoId = item.get("videoId").text();
-        String title = item.get("title").get("simpleText").text();
+
+        JsonBrowser titleField = item.get("title");
+        String title = Optional.ofNullable(titleField.get("simpleText").text())
+            .orElse(titleField.get("runs").index(0).get("text").text());
+
         String author = shortBylineText.get("runs").index(0).get("text").text();
-        long duration = Long.parseLong(item.get("lengthSeconds").text()) * 1000;
+
+        JsonBrowser lengthSeconds = item.get("lengthSeconds");
+        long duration = Units.secondsToMillis(lengthSeconds.asLong(Units.DURATION_SEC_UNKNOWN));
 
         tracks.add(YoutubeTrackInfoFactory.create(template, videoId, author, title, duration, false));
       }
@@ -160,7 +168,7 @@ public class DefaultYoutubePlaylistLoader implements YoutubePlaylistLoader {
 
     if (!continuations.isNull()) {
       String continuationsToken = continuations.index(0).get("nextContinuationData").get("continuation").text();
-      return "/browse_ajax" + "?continuation=" + continuationsToken + "&ctoken=" + continuationsToken + "&hl=en";
+      return "/browse_ajax?continuation=" + continuationsToken + "&ctoken=" + continuationsToken + "&hl=en";
     }
 
     return null;
