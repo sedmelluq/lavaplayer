@@ -1,8 +1,5 @@
 package com.sedmelluq.lavaplayer.core.container.matroska.format;
 
-import com.sedmelluq.lavaplayer.core.container.matroska.format.MatroskaElement;
-import com.sedmelluq.lavaplayer.core.container.matroska.format.MatroskaElementType;
-
 /**
  * Mutable instance of {@link MatroskaElement} for reducing allocation rate during parsing.
  */
