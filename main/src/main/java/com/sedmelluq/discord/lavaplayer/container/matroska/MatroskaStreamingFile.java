@@ -242,7 +242,7 @@ public class MatroskaStreamingFile {
     seeking = true;
 
     if (cuePoints == null && cueElementPosition != null) {
-      reader.seek(segmentElement.getPosition() + cueElementPosition);
+      reader.seek(segmentElement.getDataPosition() + cueElementPosition);
 
       MatroskaElement cuesElement = reader.readNextElement(segmentElement);
       if (!cuesElement.is(MatroskaElementType.Cues)) {
