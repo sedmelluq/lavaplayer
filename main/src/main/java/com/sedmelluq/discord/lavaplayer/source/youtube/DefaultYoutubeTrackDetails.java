@@ -2,7 +2,7 @@ package com.sedmelluq.discord.lavaplayer.source.youtube;
 
 import com.sedmelluq.discord.lavaplayer.source.youtube.format.LegacyAdaptiveFormatsExtractor;
 import com.sedmelluq.discord.lavaplayer.source.youtube.format.LegacyDashMpdFormatsExtractor;
-import com.sedmelluq.discord.lavaplayer.source.youtube.format.LegacyStreamMapFormatsExtractors;
+import com.sedmelluq.discord.lavaplayer.source.youtube.format.LegacyStreamMapFormatsExtractor;
 import com.sedmelluq.discord.lavaplayer.source.youtube.format.StreamingDataFormatsExtractor;
 import com.sedmelluq.discord.lavaplayer.source.youtube.format.YoutubeTrackFormatExtractor;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
@@ -25,7 +25,7 @@ public class DefaultYoutubeTrackDetails implements YoutubeTrackDetails {
       new LegacyAdaptiveFormatsExtractor(),
       new StreamingDataFormatsExtractor(),
       new LegacyDashMpdFormatsExtractor(),
-      new LegacyStreamMapFormatsExtractors()
+      new LegacyStreamMapFormatsExtractor()
   };
 
   private final String videoId;
