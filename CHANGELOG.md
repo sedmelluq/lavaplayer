@@ -1,5 +1,10 @@
 # Change Log
 
+## [1.3.55] -- 2020-10-31
+### Fixed
+- Fixed no exception thrown when native lib loading fails.
+- Fixed seeking on MKV files with cues in the end of the file.
+
 ## [1.3.54] -- 2020-10-29
 ### Fixed
 - Fixed YouTube VOD duration set to unknown.
