@@ -31,8 +31,7 @@ public class NativeLibraryLoader {
   private final NativeLibraryProperties properties;
   private final NativeLibraryBinaryProvider binaryProvider;
   private final Object lock;
-  private volatile RuntimeException previousFailure;
-  private volatile Boolean previousResult;
+  private volatile LoadResult previousResult;
 
   public NativeLibraryLoader(String libraryName, Predicate<SystemType> systemFilter, NativeLibraryProperties properties,
                              NativeLibraryBinaryProvider binaryProvider) {
@@ -60,35 +59,33 @@ public class NativeLibraryLoader {
   }
 
   public void load() {
-    Boolean result = previousResult;
+    LoadResult result = previousResult;
 
     if (result == null) {
       synchronized (lock) {
         result = previousResult;
 
         if (result == null) {
-          loadAndRemember();
-          return;
+          result = loadWithFailureCheck();
+          previousResult = result;
         }
       }
     }
 
-    if (!result) {
-      throw previousFailure;
+    if (!result.success) {
+      throw result.exception;
     }
   }
 
-  private void loadAndRemember() {
+  private LoadResult loadWithFailureCheck() {
     log.info("Native library {}: loading with filter {}", libraryName, systemFilter);
 
     try {
       loadInternal();
-      previousResult = true;
+      return new LoadResult(true, null);
     } catch (Throwable e) {
       log.error("Native library {}: loading failed.", libraryName, e);
-
-      previousFailure = new RuntimeException(e);
-      previousResult = false;
+      return new LoadResult(false, new RuntimeException(e));
     }
   }
 
@@ -208,6 +205,16 @@ public class NativeLibraryLoader {
       Files.createDirectories(path);
     } else {
       Files.createDirectories(path, asFileAttribute(fromString("rwxrwxrwx")));
+    }
+  }
+
+  private static class LoadResult {
+    public final boolean success;
+    public final RuntimeException exception;
+
+    private LoadResult(boolean success, RuntimeException exception) {
+      this.success = success;
+      this.exception = exception;
     }
   }
 }
