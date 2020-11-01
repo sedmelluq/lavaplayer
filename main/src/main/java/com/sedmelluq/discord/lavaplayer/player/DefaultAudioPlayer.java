@@ -363,7 +363,8 @@ public class DefaultAudioPlayer implements AudioPlayer, TrackStateListener {
     log.debug("Firing an event with class {}", event.getClass().getSimpleName());
 
     synchronized (trackSwitchLock) {
-      for (AudioEventListener listener : listeners) {
+	  List<AudioEventListener> listenersCopy = new ArrayList<>(listeners);
+      for (AudioEventListener listener : listenersCopy) {
         try {
           listener.onEvent(event);
         } catch (Exception e) {
