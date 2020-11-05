@@ -5,6 +5,7 @@ import com.sedmelluq.discord.lavaplayer.container.mpeg.reader.MpegReader;
 import com.sedmelluq.discord.lavaplayer.container.mpeg.reader.MpegSectionInfo;
 import com.sedmelluq.discord.lavaplayer.container.mpeg.MpegTrackConsumer;
 import com.sedmelluq.discord.lavaplayer.container.mpeg.reader.MpegVersionedSectionInfo;
+import com.sedmelluq.discord.lavaplayer.tools.Units;
 import com.sedmelluq.discord.lavaplayer.tools.io.DetachedByteChannel;
 
 import java.io.IOException;
@@ -37,7 +38,7 @@ public class MpegFragmentedFileTrackProvider implements MpegFileTrackProvider {
 
   @Override
   public boolean initialise(MpegTrackConsumer consumer) {
-    if (!isFragmented || globalSeekInfo == null) {
+    if (!isFragmented) {
       return false;
     }
 
@@ -77,6 +78,11 @@ public class MpegFragmentedFileTrackProvider implements MpegFileTrackProvider {
 
   @Override
   public void seekToTimecode(long timecode) {
+    if (globalSeekInfo == null) {
+      // Not seekable
+      return;
+    }
+
     minimumTimecode = timecode * globalSeekInfo.timescale / 1000;
     seeking = true;
 
@@ -97,6 +103,10 @@ public class MpegFragmentedFileTrackProvider implements MpegFileTrackProvider {
 
   @Override
   public long getDuration() {
+    if (globalSeekInfo == null) {
+      return Units.DURATION_MS_UNKNOWN;
+    }
+
     return totalDuration * 1000 / globalSeekInfo.timescale;
   }
 

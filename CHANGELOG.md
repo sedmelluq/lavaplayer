@@ -1,5 +1,9 @@
 # Change Log
 
+## [1.3.56] -- 2020-11-05
+### Fixed
+- Fixed some YouTube live streams caused by MP4 audio data being skipped in MP4 with no sidx.
+
 ## [1.3.55] -- 2020-10-31
 ### Fixed
 - Fixed no exception thrown when native lib loading fails.

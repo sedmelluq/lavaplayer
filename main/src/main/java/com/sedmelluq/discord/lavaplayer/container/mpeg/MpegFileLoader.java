@@ -140,6 +140,8 @@ public class MpegFileLoader {
     return (child, start) -> {
       if (!start && "sidx".equals(child.type)) {
         return true;
+      } else if (!start && "emsg".equals(child.type)) {
+        return movieBoxSeen.get();
       } else if (start && ("mdat".equals(child.type) || "free".equals(child.type))) {
         return movieBoxSeen.get();
       } else {
