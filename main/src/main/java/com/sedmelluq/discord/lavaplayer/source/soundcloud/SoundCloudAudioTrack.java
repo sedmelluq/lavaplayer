@@ -2,7 +2,6 @@ package com.sedmelluq.discord.lavaplayer.source.soundcloud;
 
 import com.sedmelluq.discord.lavaplayer.container.mp3.Mp3AudioTrack;
 import com.sedmelluq.discord.lavaplayer.source.AudioSourceManager;
-import com.sedmelluq.discord.lavaplayer.tools.JsonBrowser;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpClientTools;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterface;
 import com.sedmelluq.discord.lavaplayer.tools.io.PersistentHttpStream;
@@ -46,10 +45,10 @@ public class SoundCloudAudioTrack extends DelegatedAudioTrack {
       boolean recursion,
       LocalAudioTrackExecutor localExecutor
   ) throws Exception {
-    String opusLookupUrl = sourceManager.getFormatHandler().getOpusLookupUrl(identifier);
+    SoundCloudM3uInfo m3uInfo = sourceManager.getFormatHandler().getM3uInfo(identifier);
 
-    if (opusLookupUrl != null) {
-      processDelegate(new SoundCloudOpusM3uAudioTrack(trackInfo, httpInterface, opusLookupUrl), localExecutor);
+    if (m3uInfo != null) {
+      processDelegate(new SoundCloudM3uAudioTrack(trackInfo, httpInterface, m3uInfo), localExecutor);
       return;
     }
 

@@ -7,7 +7,7 @@ public interface SoundCloudFormatHandler {
 
   String buildFormatIdentifier(SoundCloudTrackFormat format);
 
-  String getOpusLookupUrl(String identifier);
+  SoundCloudM3uInfo getM3uInfo(String identifier);
 
   String getMp3LookupUrl(String identifier);
 }

@@ -1,15 +1,12 @@
 package com.sedmelluq.discord.lavaplayer.source.soundcloud;
 
-import com.sedmelluq.discord.lavaplayer.container.ogg.OggPacketInputStream;
-import com.sedmelluq.discord.lavaplayer.container.ogg.OggTrackBlueprint;
-import com.sedmelluq.discord.lavaplayer.container.ogg.OggTrackHandler;
-import com.sedmelluq.discord.lavaplayer.container.ogg.OggTrackLoader;
 import com.sedmelluq.discord.lavaplayer.container.playlists.HlsStreamSegment;
 import com.sedmelluq.discord.lavaplayer.container.playlists.HlsStreamSegmentParser;
 import com.sedmelluq.discord.lavaplayer.tools.http.HttpStreamTools;
 import com.sedmelluq.discord.lavaplayer.tools.io.ChainedInputStream;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterface;
 import com.sedmelluq.discord.lavaplayer.tools.io.NonSeekableInputStream;
+import com.sedmelluq.discord.lavaplayer.tools.io.SeekableInputStream;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo;
 import com.sedmelluq.discord.lavaplayer.track.DelegatedAudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.playback.LocalAudioTrackExecutor;
@@ -22,51 +19,43 @@ import org.apache.http.client.methods.HttpGet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class SoundCloudOpusM3uAudioTrack extends DelegatedAudioTrack {
-  private static final Logger log = LoggerFactory.getLogger(SoundCloudOpusM3uAudioTrack.class);
+public class SoundCloudM3uAudioTrack extends DelegatedAudioTrack {
+  private static final Logger log = LoggerFactory.getLogger(SoundCloudM3uAudioTrack.class);
 
   private static final long SEGMENT_UPDATE_INTERVAL = TimeUnit.MINUTES.toMillis(10);
 
   private final HttpInterface httpInterface;
-  private final String streamLoopupUrl;
+  private final SoundCloudM3uInfo m3uInfo;
 
-  public SoundCloudOpusM3uAudioTrack(AudioTrackInfo trackInfo, HttpInterface httpInterface, String streamLoopupUrl) {
+  public SoundCloudM3uAudioTrack(AudioTrackInfo trackInfo, HttpInterface httpInterface, SoundCloudM3uInfo m3uInfo) {
     super(trackInfo);
     this.httpInterface = httpInterface;
-    this.streamLoopupUrl = streamLoopupUrl;
+    this.m3uInfo = m3uInfo;
   }
 
   @Override
   public void process(LocalAudioTrackExecutor localExecutor) throws Exception {
     try (SegmentTracker segmentTracker = createSegmentTracker()) {
-      OggTrackBlueprint blueprint = OggTrackLoader.loadTrackBlueprint(segmentTracker.getOggStream());
+      segmentTracker.decoder.prepareStream(true);
 
-      if (blueprint == null) {
-        throw new IOException("No OGG track detected in the stream.");
-      }
-
-      localExecutor.executeProcessingLoop(() -> {
-        try (OggTrackHandler handler = blueprint.loadTrackHandler(segmentTracker.getOggStream())) {
-          handler.initialise(
-              localExecutor.getProcessingContext(),
-              segmentTracker.streamStartPosition,
-              segmentTracker.desiredPosition
-          );
-
-          handler.provideFrames();
-        }
-      }, segmentTracker::seekToTimecode, true);
+      localExecutor.executeProcessingLoop(() -> segmentTracker.decoder.playStream(
+          localExecutor.getProcessingContext(),
+          segmentTracker.streamStartPosition,
+          segmentTracker.desiredPosition
+      ), segmentTracker::seekToTimecode, true);
     }
   }
 
   private List<HlsStreamSegment> loadSegments() throws IOException {
-    String playbackUrl = SoundCloudHelper.loadPlaybackUrl(httpInterface, streamLoopupUrl);
+    String playbackUrl = SoundCloudHelper.loadPlaybackUrl(httpInterface, m3uInfo.lookupUrl);
     return HlsStreamSegmentParser.parseFromUrl(httpInterface, playbackUrl);
   }
 
   private SegmentTracker createSegmentTracker() throws IOException {
     List<HlsStreamSegment> initialSegments = loadSegments();
-    return new SegmentTracker(initialSegments);
+    SegmentTracker tracker = new SegmentTracker(initialSegments);
+    tracker.setupDecoder(m3uInfo.decoderFactory);
+    return tracker;
   }
 
   private class SegmentTracker implements AutoCloseable {
@@ -74,7 +63,7 @@ public class SoundCloudOpusM3uAudioTrack extends DelegatedAudioTrack {
     private long desiredPosition = 0;
     private long streamStartPosition = 0;
     private long lastUpdate;
-    private OggPacketInputStream lastJoinedStream;
+    private SoundCloudSegmentDecoder decoder;
     private int segmentIndex = 0;
 
     private SegmentTracker(List<HlsStreamSegment> segments) {
@@ -82,20 +71,12 @@ public class SoundCloudOpusM3uAudioTrack extends DelegatedAudioTrack {
       this.lastUpdate = System.currentTimeMillis();
     }
 
-    private OggPacketInputStream getOggStream() {
-      if (lastJoinedStream == null) {
-        lastJoinedStream = new OggPacketInputStream(
-            new NonSeekableInputStream(new ChainedInputStream(this::getNextStream)), true);
-      }
-
-      return lastJoinedStream;
+    private void setupDecoder(SoundCloudSegmentDecoder.Factory factory) {
+      decoder = factory.create(this::createChainedStream);
     }
 
-    private void resetStream() throws IOException {
-      if (lastJoinedStream != null) {
-        lastJoinedStream.close();
-        lastJoinedStream = null;
-      }
+    private SeekableInputStream createChainedStream() {
+      return new NonSeekableInputStream(new ChainedInputStream(this::getNextStream));
     }
 
     private void seekToTimecode(long timecode) throws IOException {
@@ -122,23 +103,17 @@ public class SoundCloudOpusM3uAudioTrack extends DelegatedAudioTrack {
     }
 
     private void seekToSegment(int index, long requestedTimecode, long segmentTimecode) throws IOException {
-      resetStream();
+      decoder.resetStream();
 
       segmentIndex = index;
       desiredPosition = requestedTimecode;
       streamStartPosition = segmentTimecode;
 
-      OggPacketInputStream nextStream = getOggStream();
-
-      if (streamStartPosition == 0) {
-        OggTrackLoader.loadTrackBlueprint(nextStream);
-      } else {
-        nextStream.startNewTrack();
-      }
+      decoder.prepareStream(streamStartPosition == 0);
     }
 
     private void seekToEnd() throws IOException {
-      resetStream();
+      decoder.resetStream();
 
       segmentIndex = segments.size();
     }
@@ -202,7 +177,7 @@ public class SoundCloudOpusM3uAudioTrack extends DelegatedAudioTrack {
 
     @Override
     public void close() throws Exception {
-      resetStream();
+      decoder.resetStream();
     }
   }
 }
