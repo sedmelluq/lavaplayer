@@ -1,5 +1,9 @@
 # Change Log
 
+## [1.3.57] -- 2020-11-06
+### Added
+- Added support for SoundCloud tracks which only have MP3 HLS format available.
+
 ## [1.3.56] -- 2020-11-05
 ### Fixed
 - Fixed some YouTube live streams caused by MP4 audio data being skipped in MP4 with no sidx.
