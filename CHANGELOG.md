@@ -1,5 +1,9 @@
 # Change Log
 
+## [1.3.58] -- 2020-11-06
+### Fixed
+- Fixed AAC streams possibly detected as MP3 even if their mime type is set to audio/aac.
+
 ## [1.3.57] -- 2020-11-06
 ### Added
 - Added support for SoundCloud tracks which only have MP3 HLS format available.
