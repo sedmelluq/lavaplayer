@@ -1,5 +1,9 @@
 # Change Log
 
+## [1.3.58] -- 2020-11-07
+### Fixed
+- Fixed YouTube playlist pagination being broken (PR 552 by Xavinlol).
+
 ## [1.3.58] -- 2020-11-06
 ### Fixed
 - Fixed AAC streams possibly detected as MP3 even if their mime type is set to audio/aac.
