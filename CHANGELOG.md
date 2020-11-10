@@ -1,6 +1,10 @@
 # Change Log
 
-## [1.3.58] -- 2020-11-07
+## [1.3.60] -- 2020-11-11
+### Fixed
+- Fixed removing/adding player listeners failing when done from within listener callback.
+
+## [1.3.59] -- 2020-11-07
 ### Fixed
 - Fixed YouTube playlist pagination being broken (PR 552 by Xavinlol).
 
