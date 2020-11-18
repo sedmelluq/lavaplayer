@@ -26,6 +26,10 @@ public class DefaultYoutubeTrackDetailsLoader implements YoutubeTrackDetailsLoad
   private static final Logger log = LoggerFactory.getLogger(DefaultYoutubeTrackDetailsLoader.class);
 
   private static final TextRange[] EMBED_CONFIG_RANGES = new TextRange[] {
+      new TextRange("'WEB_PLAYER_CONTEXT_CONFIGS':", "});writeEmbed();"),
+      new TextRange("'WEB_PLAYER_CONTEXT_CONFIGS':", "});yt.setConfig"),
+      new TextRange("\"WEB_PLAYER_CONTEXT_CONFIGS\":", "});writeEmbed();"),
+      new TextRange("\"WEB_PLAYER_CONTEXT_CONFIGS\":", "});yt.setConfig"),
       new TextRange("'PLAYER_CONFIG':", "});writeEmbed();"),
       new TextRange("'PLAYER_CONFIG':", "});yt.setConfig"),
       new TextRange("\"PLAYER_CONFIG\":", "});writeEmbed();"),
