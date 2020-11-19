@@ -1,5 +1,10 @@
 # Change Log
 
+## [1.3.61] -- 2020-11-19
+### Fixed
+- Fixed age restricted YouTube videos (PR 559 by Walkyst).
+- Fixed YouTube search results using current locale language (PR 557 by madeyoga).
+
 ## [1.3.60] -- 2020-11-11
 ### Fixed
 - Fixed removing/adding player listeners failing when done from within listener callback.
