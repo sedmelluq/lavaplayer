@@ -59,7 +59,10 @@ public class YoutubeSearchProvider implements YoutubeSearchResultLoader {
     log.debug("Performing a search with query {}", query);
 
     try (HttpInterface httpInterface = httpInterfaceManager.getInterface()) {
-      URI url = new URIBuilder("https://www.youtube.com/results").addParameter("search_query", query).build();
+      URI url = new URIBuilder("https://www.youtube.com/results")
+              .addParameter("search_query", query)
+              .addParameter("hl", "en")
+              .addParameter("persist_hl", "1").build();
 
       try (CloseableHttpResponse response = httpInterface.execute(new HttpGet(url))) {
         int statusCode = response.getStatusLine().getStatusCode();
