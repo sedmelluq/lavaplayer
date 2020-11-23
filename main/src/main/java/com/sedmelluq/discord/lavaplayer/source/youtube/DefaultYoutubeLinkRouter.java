@@ -12,6 +12,7 @@ import static com.sedmelluq.discord.lavaplayer.tools.FriendlyException.Severity.
 
 public class DefaultYoutubeLinkRouter implements YoutubeLinkRouter {
   private static final String SEARCH_PREFIX = "ytsearch:";
+  private static final String SEARCH_MUSIC_PREFIX = "ytmsearch:";
 
   private static final String PROTOCOL_REGEX = "(?:http://|https://|)";
   private static final String DOMAIN_REGEX = "(?:www\\.|m\\.|music\\.|)youtube\\.com";
@@ -31,7 +32,9 @@ public class DefaultYoutubeLinkRouter implements YoutubeLinkRouter {
   @Override
   public <T> T route(String link, Routes<T> routes) {
     if (link.startsWith(SEARCH_PREFIX)) {
-      return routes.search(link.substring(SEARCH_PREFIX.length()).trim());
+      return routes.searchVideo(link.substring(SEARCH_PREFIX.length()).trim());
+    } else if (link.startsWith(SEARCH_MUSIC_PREFIX)) {
+      return routes.searchMusic(link.substring(SEARCH_MUSIC_PREFIX.length()).trim());
     }
 
     for (Extractor extractor : extractors) {

@@ -10,7 +10,9 @@ public interface YoutubeLinkRouter {
 
     T mix(String mixId, String selectedVideoId);
 
-    T search(String query);
+    T searchVideo(String query);
+
+    T searchMusic(String query);
 
     T anonymous(String videoIds);
 
