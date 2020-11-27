@@ -32,9 +32,9 @@ public class DefaultYoutubeLinkRouter implements YoutubeLinkRouter {
   @Override
   public <T> T route(String link, Routes<T> routes) {
     if (link.startsWith(SEARCH_PREFIX)) {
-      return routes.searchVideo(link.substring(SEARCH_PREFIX.length()).trim());
+      return routes.search(link.substring(SEARCH_PREFIX.length()).trim(), false);
     } else if (link.startsWith(SEARCH_MUSIC_PREFIX)) {
-      return routes.searchMusic(link.substring(SEARCH_MUSIC_PREFIX.length()).trim());
+      return routes.search(link.substring(SEARCH_MUSIC_PREFIX.length()).trim(), true);
     }
 
     for (Extractor extractor : extractors) {
