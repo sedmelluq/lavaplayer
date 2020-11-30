@@ -5,6 +5,7 @@ import com.sedmelluq.discord.lavaplayer.source.youtube.format.LegacyDashMpdForma
 import com.sedmelluq.discord.lavaplayer.source.youtube.format.LegacyStreamMapFormatsExtractor;
 import com.sedmelluq.discord.lavaplayer.source.youtube.format.StreamingDataFormatsExtractor;
 import com.sedmelluq.discord.lavaplayer.source.youtube.format.YoutubeTrackFormatExtractor;
+import com.sedmelluq.discord.lavaplayer.tools.ExceptionTools;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.tools.JsonBrowser;
 import com.sedmelluq.discord.lavaplayer.tools.Units;
@@ -46,7 +47,7 @@ public class DefaultYoutubeTrackDetails implements YoutubeTrackDetails {
     try {
       return loadTrackFormats(httpInterface, signatureResolver);
     } catch (Exception e) {
-      throw new RuntimeException(e);
+      throw ExceptionTools.toRuntimeException(e);
     }
   }
 

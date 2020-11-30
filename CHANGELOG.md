@@ -1,5 +1,10 @@
 # Change Log
 
+## [1.3.62] -- 2020-11-30
+### Changed
+- Status code 429 from YouTube now causes an exception which explains YouTube block.
+- GC logging no longer warns about pauses shorter than 200ms.
+
 ## [1.3.61] -- 2020-11-19
 ### Fixed
 - Fixed age restricted YouTube videos (PR 559 by Walkyst).

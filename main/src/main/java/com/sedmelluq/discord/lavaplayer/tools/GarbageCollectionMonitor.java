@@ -125,7 +125,7 @@ public class GarbageCollectionMonitor implements NotificationListener, Runnable 
     boolean hasBadLatency;
 
     synchronized (bucketCounters) {
-      hasBadLatency = bucketCounters[3] > 1 || bucketCounters[2] > 0;
+      hasBadLatency = (bucketCounters[0] + bucketCounters[1] + bucketCounters[2]) > 0;
 
       for (int i = bucketCounters.length - 1; i >= 0; i--) {
         statistics.append(String.format("[Bucket %d = %d] ", BUCKETS[i], bucketCounters[i]));

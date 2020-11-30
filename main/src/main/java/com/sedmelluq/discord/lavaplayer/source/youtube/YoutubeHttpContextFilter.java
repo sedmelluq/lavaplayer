@@ -1,11 +1,14 @@
 package com.sedmelluq.discord.lavaplayer.source.youtube;
 
+import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.tools.http.HttpContextFilter;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.CookieStore;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.impl.client.BasicCookieStore;
+
+import static com.sedmelluq.discord.lavaplayer.tools.FriendlyException.Severity.COMMON;
 
 public class YoutubeHttpContextFilter implements HttpContextFilter {
   @Override
@@ -41,6 +44,10 @@ public class YoutubeHttpContextFilter implements HttpContextFilter {
 
   @Override
   public boolean onRequestResponse(HttpClientContext context, HttpUriRequest request, HttpResponse response) {
+    if (response.getStatusLine().getStatusCode() == 429) {
+      throw new FriendlyException("This IP address has been blocked by YouTube (429).", COMMON, null);
+    }
+
     return false;
   }
 
