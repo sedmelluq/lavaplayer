@@ -18,7 +18,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static com.sedmelluq.discord.lavaplayer.source.youtube.YoutubeTrackJsonData.fromEmbedParts;
-import static com.sedmelluq.discord.lavaplayer.tools.ExceptionTools.throwWithLoggedPayload;
+import static com.sedmelluq.discord.lavaplayer.tools.ExceptionTools.throwWithDebugInfo;
 import static com.sedmelluq.discord.lavaplayer.tools.FriendlyException.Severity.COMMON;
 import static com.sedmelluq.discord.lavaplayer.tools.FriendlyException.Severity.SUSPICIOUS;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -67,7 +67,7 @@ public class DefaultYoutubeTrackDetailsLoader implements YoutubeTrackDetailsLoad
     } catch (FriendlyException e) {
       throw e;
     } catch (Exception e) {
-      throw throwWithLoggedPayload(log, e, "Error when extracting data", "mainJson", mainInfo.format());
+      throw throwWithDebugInfo(log, e, "Error when extracting data", "mainJson", mainInfo.format());
     }
   }
 
@@ -255,7 +255,7 @@ public class DefaultYoutubeTrackDetailsLoader implements YoutubeTrackDetailsLoad
       String encodedUrl = DataFormatTools.extractBetween(responseText, "\"PLAYER_JS_URL\":\"", "\"");
 
       if (encodedUrl == null) {
-        throw throwWithLoggedPayload(log, null, "no PLAYER_JS_URL in youtube root", "html", responseText);
+        throw throwWithDebugInfo(log, null, "no PLAYER_JS_URL in youtube root", "html", responseText);
       }
 
       String fetchedPlayerScript = JsonBrowser.parse("{\"url\":\"" + encodedUrl + "\"}").get("url").text();

@@ -16,6 +16,7 @@ import java.util.List;
  */
 public class ExceptionTools {
   private static final Logger log = LoggerFactory.getLogger(ExceptionTools.class);
+  private static volatile ErrorDebugInfoHandler debugInfoHandler = new DefaultErrorDebugInfoHandler();
 
   /**
    * Sometimes it is necessary to catch Throwable instances for logging or reporting purposes. However, unless for
@@ -118,17 +119,20 @@ public class ExceptionTools {
     }
   }
 
-  public static RuntimeException throwWithLoggedPayload(
+  public static void setDebugInfoHandler(ErrorDebugInfoHandler debugInfoHandler) {
+    ExceptionTools.debugInfoHandler = debugInfoHandler;
+  }
+
+  public static RuntimeException throwWithDebugInfo(
       Logger log,
-      Throwable exception,
+      Throwable cause,
       String message,
       String name,
       String value
   ) {
-    String errorId = UUID.randomUUID().toString();
-    String fullMessage = message + " EID: " + errorId + ", " + name + ": ";
-    log.warn("{} {}", fullMessage, value, exception);
-    return new RuntimeException(fullMessage + " redacted, check EID from log", exception);
+    ErrorDebugInfo debugInfo = new ErrorDebugInfo(log, UUID.randomUUID().toString(), cause, message, name, value);
+    debugInfoHandler.handle(debugInfo);
+    return new RuntimeException(message + " EID: " + debugInfo.errorId + ", " + name + "<redacted>", cause);
   }
 
   /**
@@ -233,5 +237,42 @@ public class ExceptionTools {
     }
 
     return trace;
+  }
+
+  public static class ErrorDebugInfo {
+    public final Logger log;
+    public final String errorId;
+    public final Throwable cause;
+    public final String message;
+    public final String name;
+    public final String value;
+
+    public ErrorDebugInfo(
+        Logger log,
+        String errorId,
+        Throwable cause,
+        String message,
+        String name,
+        String value
+    ) {
+      this.log = log;
+      this.errorId = errorId;
+      this.cause = cause;
+      this.message = message;
+      this.name = name;
+      this.value = value;
+    }
+  }
+
+  public interface ErrorDebugInfoHandler {
+    void handle(ErrorDebugInfo payload);
+  }
+
+  public static class DefaultErrorDebugInfoHandler implements ErrorDebugInfoHandler {
+
+    @Override
+    public void handle(ErrorDebugInfo debugInfo) {
+      log.warn("{} EID: {}, {}: {}", debugInfo.message, debugInfo.errorId, debugInfo.name, debugInfo.value);
+    }
   }
 }
