@@ -1,11 +1,13 @@
 package com.sedmelluq.discord.lavaplayer.tools.io;
 
 import com.sedmelluq.discord.lavaplayer.tools.DataFormatTools;
+import com.sedmelluq.discord.lavaplayer.tools.ExceptionTools;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.tools.JsonBrowser;
 import com.sedmelluq.discord.lavaplayer.tools.http.ExtendedHttpClientBuilder;
 import org.apache.http.ConnectionClosedException;
 import org.apache.http.Header;
+import org.apache.http.HttpHeaders;
 import org.apache.http.HttpRequest;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
@@ -16,10 +18,12 @@ import org.apache.http.client.config.CookieSpecs;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpUriRequest;
+import org.apache.http.entity.ContentType;
 import org.apache.http.impl.client.BasicCookieStore;
 import org.apache.http.impl.client.DefaultHttpRequestRetryHandler;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.protocol.HttpContext;
+import org.apache.http.util.EntityUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -151,6 +155,28 @@ public class HttpClientTools {
 
     if (!isSuccessWithContent(statusCode)) {
       throw new IOException("Invalid status code for " + context +  ": " + statusCode);
+    }
+  }
+
+  public static String getRawContentType(HttpResponse response) {
+    Header header = response.getFirstHeader(HttpHeaders.CONTENT_TYPE);
+    return header != null ? header.getValue() : null;
+  }
+
+  public static boolean hasJsonContentType(HttpResponse response) {
+    String contentType = getRawContentType(response);
+    return contentType != null && contentType.startsWith(ContentType.APPLICATION_JSON.getMimeType());
+  }
+
+  public static void assertJsonContentType(HttpResponse response) throws IOException {
+    if (!HttpClientTools.hasJsonContentType(response)) {
+      throw ExceptionTools.throwWithDebugInfo(
+          log,
+          null,
+          "Expected JSON content type, got " + HttpClientTools.getRawContentType(response),
+          "responseContent",
+          EntityUtils.toString(response.getEntity())
+      );
     }
   }
 

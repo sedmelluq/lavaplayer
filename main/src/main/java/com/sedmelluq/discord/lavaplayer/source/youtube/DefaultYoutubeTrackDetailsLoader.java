@@ -168,11 +168,7 @@ public class DefaultYoutubeTrackDetailsLoader implements YoutubeTrackDetailsLoad
     String url = "https://www.youtube.com/watch?v=" + videoId + "&pbj=1&hl=en";
 
     try (CloseableHttpResponse response = httpInterface.execute(new HttpGet(url))) {
-      int statusCode = response.getStatusLine().getStatusCode();
-
-      if (!HttpClientTools.isSuccessWithContent(statusCode)) {
-        throw new IOException("Invalid status code for video page response: " + statusCode);
-      }
+      HttpClientTools.assertSuccessWithContent(response, "video page response");
 
       String responseText = EntityUtils.toString(response.getEntity(), UTF_8);
 

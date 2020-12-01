@@ -65,10 +65,7 @@ public class YoutubeSearchProvider implements YoutubeSearchResultLoader {
           .addParameter("persist_hl", "1").build();
 
       try (CloseableHttpResponse response = httpInterface.execute(new HttpGet(url))) {
-        int statusCode = response.getStatusLine().getStatusCode();
-        if (!HttpClientTools.isSuccessWithContent(statusCode)) {
-          throw new IOException("Invalid status code for search response: " + statusCode);
-        }
+        HttpClientTools.assertSuccessWithContent(response, "search response");
 
         Document document = Jsoup.parse(response.getEntity().getContent(), StandardCharsets.UTF_8.name(), "");
         return extractSearchResults(document, query, trackFactory);

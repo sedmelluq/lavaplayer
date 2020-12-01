@@ -1,5 +1,6 @@
 package com.sedmelluq.discord.lavaplayer.source.youtube;
 
+import com.sedmelluq.discord.lavaplayer.tools.ExceptionTools;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.tools.JsonBrowser;
 import com.sedmelluq.discord.lavaplayer.tools.Units;
@@ -16,10 +17,15 @@ import java.util.Optional;
 import java.util.function.Function;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
+import org.apache.http.util.EntityUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static com.sedmelluq.discord.lavaplayer.tools.FriendlyException.Severity.COMMON;
 
 public class DefaultYoutubePlaylistLoader implements YoutubePlaylistLoader {
+  private static final Logger log = LoggerFactory.getLogger(DefaultYoutubePlaylistLoader.class);
+
   private volatile int playlistPageCount = 6;
 
   @Override
@@ -34,13 +40,10 @@ public class DefaultYoutubePlaylistLoader implements YoutubePlaylistLoader {
     HttpGet request = new HttpGet(getPlaylistUrl(playlistId) + "&pbj=1&hl=en");
 
     try (CloseableHttpResponse response = httpInterface.execute(request)) {
-      int statusCode = response.getStatusLine().getStatusCode();
-      if (!HttpClientTools.isSuccessWithContent(statusCode)) {
-        throw new IOException("Invalid status code for playlist response: " + statusCode);
-      }
+      HttpClientTools.assertSuccessWithContent(response, "playlist response");
+      HttpClientTools.assertJsonContentType(response);
 
       JsonBrowser json = JsonBrowser.parse(response.getEntity().getContent());
-
       return buildPlaylist(httpInterface, json, selectedVideoId, trackFactory);
     } catch (IOException e) {
       throw new RuntimeException(e);
@@ -96,10 +99,7 @@ public class DefaultYoutubePlaylistLoader implements YoutubePlaylistLoader {
     // Also load the next pages, each result gives us a JSON with separate values for list html and next page loader html
     while (loadMoreUrl != null && ++loadCount < pageCount) {
       try (CloseableHttpResponse response = httpInterface.execute(new HttpGet("https://www.youtube.com" + loadMoreUrl))) {
-        int statusCode = response.getStatusLine().getStatusCode();
-        if (!HttpClientTools.isSuccessWithContent(statusCode)) {
-          throw new IOException("Invalid status code for playlist response: " + statusCode);
-        }
+        HttpClientTools.assertSuccessWithContent(response, "playlist response");
 
         JsonBrowser continuationJson = JsonBrowser.parse(response.getEntity().getContent());
 

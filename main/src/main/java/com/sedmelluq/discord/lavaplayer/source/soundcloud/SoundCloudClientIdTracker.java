@@ -82,10 +82,7 @@ public class SoundCloudClientIdTracker {
 
   private String findApplicationScriptUrl(HttpInterface httpInterface) throws IOException {
     try (CloseableHttpResponse response = httpInterface.execute(new HttpGet("https://soundcloud.com"))) {
-      int statusCode = response.getStatusLine().getStatusCode();
-      if (!HttpClientTools.isSuccessWithContent(statusCode)) {
-        throw new IOException("Invalid status code for main page response: " + statusCode);
-      }
+      HttpClientTools.assertSuccessWithContent(response, "main page response");
 
       String page = EntityUtils.toString(response.getEntity());
       Matcher scriptMatcher = pageAppScriptPattern.matcher(page);
@@ -108,10 +105,7 @@ public class SoundCloudClientIdTracker {
 
   private String findClientIdFromApplicationScript(HttpInterface httpInterface, String scriptUrl) throws IOException {
     try (CloseableHttpResponse response = httpInterface.execute(new HttpGet(scriptUrl))) {
-      int statusCode = response.getStatusLine().getStatusCode();
-      if (!HttpClientTools.isSuccessWithContent(statusCode)) {
-        throw new IOException("Invalid status code for application script response: " + statusCode);
-      }
+      HttpClientTools.assertSuccessWithContent(response, "application script response");
 
       String page = EntityUtils.toString(response.getEntity());
       Matcher clientIdMatcher = appScriptClientIdPattern.matcher(page);

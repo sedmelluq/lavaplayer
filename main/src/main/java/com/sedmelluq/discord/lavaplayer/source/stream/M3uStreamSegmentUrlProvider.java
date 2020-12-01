@@ -99,11 +99,7 @@ public abstract class M3uStreamSegmentUrlProvider {
 
     try {
       response = httpInterface.execute(createSegmentGetRequest(url));
-      int statusCode = response.getStatusLine().getStatusCode();
-
-      if (!HttpClientTools.isSuccessWithContent(statusCode)) {
-        throw new IOException("Invalid status code from segment data URL: " + statusCode);
-      }
+      HttpClientTools.assertSuccessWithContent(response, "segment data URL");
 
       success = true;
       return response.getEntity().getContent();

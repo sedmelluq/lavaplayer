@@ -264,11 +264,8 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
     public AudioItem anonymous(String videoIds) {
       try (HttpInterface httpInterface = getHttpInterface()) {
         try (CloseableHttpResponse response = httpInterface.execute(new HttpGet("https://www.youtube.com/watch_videos?video_ids=" + videoIds))) {
-          int statusCode = response.getStatusLine().getStatusCode();
+          HttpClientTools.assertSuccessWithContent(response, "playlist response");
           HttpClientContext context = httpInterface.getContext();
-          if (!HttpClientTools.isSuccessWithContent(statusCode)) {
-            throw new IOException("Invalid status code for playlist response: " + statusCode);
-          }
           // youtube currently transforms watch_video links into a link with a video id and a list id.
           // because thats what happens, we can simply re-process with the redirected link
           List<URI> redirects = context.getRedirectLocations();

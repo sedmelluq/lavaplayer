@@ -54,10 +54,7 @@ public class BandcampAudioTrack extends DelegatedAudioTrack {
 
   private String getTrackMediaUrl(HttpInterface httpInterface) throws IOException {
     try (CloseableHttpResponse response = httpInterface.execute(new HttpGet(trackInfo.identifier))) {
-      int statusCode = response.getStatusLine().getStatusCode();
-      if (!HttpClientTools.isSuccessWithContent(statusCode)) {
-        throw new IOException("Invalid status code for track page: " + statusCode);
-      }
+      HttpClientTools.assertSuccessWithContent(response, "track page");
 
       String responseText = IOUtils.toString(response.getEntity().getContent(), StandardCharsets.UTF_8);
       JsonBrowser trackInfo = sourceManager.readTrackListInformation(responseText);
