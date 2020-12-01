@@ -1,5 +1,15 @@
 # Change Log
 
+## [1.3.63] -- 2020-12-01
+### Added
+- Added option to override logging handler for errors with large payloads.
+
+### Removed
+- Removed Mixer implementation, source manager class kept for now to not cause a breaking change.
+
+### Changed
+- YouTube playlist loader logs response content if content type is not JSON.
+
 ## [1.3.62] -- 2020-11-30
 ### Changed
 - Status code 429 from YouTube now causes an exception which explains YouTube block.
