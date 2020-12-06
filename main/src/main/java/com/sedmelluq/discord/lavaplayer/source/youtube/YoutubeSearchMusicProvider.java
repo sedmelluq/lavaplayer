@@ -39,7 +39,7 @@ public class YoutubeSearchMusicProvider implements YoutubeSearchMusicResultLoade
 
   private static final String WATCH_URL_PREFIX = "https://www.youtube.com/watch?v=";
   private static final String YT_MUSIC_KEY = "AIzaSyC9XL3ZjWddXya6X74dJoCTL-WEYFDNX30";
-  private static final String YT_MUSIC_PAYLOAD = "{\"context\":{\"client\":{\"clientName\":\"WEB_REMIX\",\"clientVersion\":\"0.1\"}},\"query\":\"%s\",\"params\":\"Eg-KAQwIARAAGAAgACgAMABqCBADEAkQBBAK\"}";
+  private static final String YT_MUSIC_PAYLOAD = "{\"context\":{\"client\":{\"clientName\":\"WEB_REMIX\",\"clientVersion\":\"0.1\"}},\"query\":\"%s\",\"params\":\"Eg-KAQwIARAAGAAgACgAMABqChADEAQQCRAFEAo=\"}";
   private final HttpInterfaceManager httpInterfaceManager;
   private final Pattern ytMusicDataRegex = Pattern.compile("<body>\\s*(.*)\\s*</body>");
 
@@ -105,14 +105,21 @@ public class YoutubeSearchMusicProvider implements YoutubeSearchMusicResultLoade
 
     JsonBrowser jsonBrowser = JsonBrowser.parse(matcher.group(1));
     ArrayList<AudioTrack> list = new ArrayList<>();
-    jsonBrowser.get("contents")
-        .get("sectionListRenderer")
-        .get("contents")
-        .index(0)
-        .get("musicShelfRenderer")
-        .get("contents")
-        .values()
-        .forEach(json -> {
+    JsonBrowser tracks = jsonBrowser.get("contents")
+            .get("sectionListRenderer")
+            .get("contents")
+            .index(0)
+            .get("musicShelfRenderer")
+            .get("contents");
+    if (tracks == JsonBrowser.NULL_BROWSER) {
+      tracks = jsonBrowser.get("contents")
+              .get("sectionListRenderer")
+              .get("contents")
+              .index(1)
+              .get("musicShelfRenderer")
+              .get("contents");
+    }
+    tracks.values().forEach(json -> {
           AudioTrack track = extractMusicData(json, trackFactory);
           if (track != null) list.add(track);
         });
