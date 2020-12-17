@@ -1,5 +1,9 @@
 # Change Log
 
+## [1.3.64] -- 2020-12-17
+### Fixed
+- Fixed SoundCloud not working due to a change in the site (PR 570 by reptar25).
+
 ## [1.3.63] -- 2020-12-01
 ### Added
 - Added option to override logging handler for errors with large payloads.
