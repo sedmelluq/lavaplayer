@@ -36,6 +36,6 @@ public class DefaultSoundCloudHtmlDataLoader implements SoundCloudHtmlDataLoader
   }
 
   protected String extractJsonFromHtml(String html) {
-    return DataFormatTools.extractBetween(html, "catch(t){}})},", ");</script>");
+    return DataFormatTools.extractBetween(html, "catch(e){}})},", ");</script>");
   }
 }
