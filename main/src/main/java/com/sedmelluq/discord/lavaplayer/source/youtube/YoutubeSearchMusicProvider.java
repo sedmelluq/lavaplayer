@@ -127,49 +127,28 @@ public class YoutubeSearchMusicProvider implements YoutubeSearchMusicResultLoade
   }
 
   private AudioTrack extractMusicData(JsonBrowser json, Function<AudioTrackInfo, AudioTrack> trackFactory) {
-    JsonBrowser renderer = json.get("musicResponsiveListItemRenderer");
-
-    if (renderer.isNull()) {
+    JsonBrowser columns = json.get("musicResponsiveListItemRenderer").get("flexColumns");
+    if (columns.isNull()) {
       // Somehow don't get track info, ignore
       return null;
     }
-
-    String title = renderer.get("flexColumns")
-        .index(0)
-        .get("musicResponsiveListItemFlexColumnRenderer")
-        .get("text")
-        .get("runs")
-        .index(0)
-        .get("text").text();
-    String author = renderer.get("flexColumns")
-        .index(1)
-        .get("musicResponsiveListItemFlexColumnRenderer")
-        .get("text")
-        .get("runs")
-        .index(0)
-        .get("text").text();
-    // Do this because sometimes youtube music present album name or rarely it can be empty/null on index 2 instead of track time
-    long duration;
-    try {
-      duration = DataFormatTools.durationTextToMillis(renderer.get("flexColumns")
-          .index(2)
-          .get("musicResponsiveListItemFlexColumnRenderer")
-          .get("text")
-          .get("runs")
-          .index(0)
-          .get("text").text());
-    } catch (RuntimeException ignored) {
-      duration = DataFormatTools.durationTextToMillis(renderer.get("flexColumns")
-          .index(3)
-          .get("musicResponsiveListItemFlexColumnRenderer")
-          .get("text")
-          .get("runs")
-          .index(0)
-          .get("text").text());
-    }
-    String videoId = renderer.get("doubleTapCommand")
-        .get("watchEndpoint")
-        .get("videoId").text();
+    JsonBrowser firstColumn = columns.index(0)
+            .get("musicResponsiveListItemFlexColumnRenderer")
+            .get("text")
+            .get("runs")
+            .index(0);
+    String title = firstColumn.get("text").text();
+    String videoId = firstColumn.get("navigationEndpoint")
+            .get("watchEndpoint")
+            .get("videoId").text();
+    List<JsonBrowser> secondColumn = columns.index(1)
+            .get("musicResponsiveListItemFlexColumnRenderer")
+            .get("text")
+            .get("runs").values();
+    String author = secondColumn.get(0)
+            .get("text").text();
+    long duration = DataFormatTools.durationTextToMillis(secondColumn.get(secondColumn.size() - 1)
+            .get("text").text());
 
     AudioTrackInfo info = new AudioTrackInfo(title, author, duration, videoId, false,
         WATCH_URL_PREFIX + videoId);
