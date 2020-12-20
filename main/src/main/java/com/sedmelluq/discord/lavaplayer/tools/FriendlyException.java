@@ -1,5 +1,7 @@
 package com.sedmelluq.discord.lavaplayer.tools;
 
+import com.sedmelluq.discord.lavaplayer.tools.exception.EnvironmentInformation;
+
 /**
  * An exception with a friendly message.
  */
@@ -18,6 +20,8 @@ public class FriendlyException extends RuntimeException {
     super(friendlyMessage, cause);
 
     this.severity = severity;
+
+    addSuppressed(EnvironmentInformation.INSTANCE);
   }
 
   /**
