@@ -1,5 +1,9 @@
 # Change Log
 
+## [1.3.65] -- 2020-12-20
+### Added
+- Attached LP, OS and JDK version information to all FriendlyExceptions as a suppressed exception.
+
 ## [1.3.64] -- 2020-12-17
 ### Fixed
 - Fixed SoundCloud not working due to a change in the site (PR 570 by reptar25).
