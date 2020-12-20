@@ -1,5 +1,6 @@
 package com.sedmelluq.discord.lavaplayer.tools.http;
 
+import com.sedmelluq.discord.lavaplayer.tools.exception.DetailMessageBuilder;
 import java.io.IOException;
 import java.net.ConnectException;
 import java.net.Inet4Address;
@@ -249,57 +250,27 @@ public class ExtendedConnectionOperator implements HttpClientConnectionOperator 
       InetAddress[] addresses,
       int currentIndex
   ) {
-    StringBuilder builder = new StringBuilder();
-    builder.append("Encountered when opening a connection with the following details:");
+    DetailMessageBuilder builder = new DetailMessageBuilder();
+    builder.appendHeader("Encountered when opening a connection with the following details:");
 
-    appendField(builder, "host", host);
-    appendField(builder, "localAddress", localAddress);
-    appendField(builder, "remoteAddress", remoteAddress);
+    builder.appendField("host", host);
+    builder.appendField("localAddress", localAddress);
+    builder.appendField("remoteAddress", remoteAddress);
+    builder.appendField("connectTimeout", connectTimeout);
 
-    builder.append("\n  connectTimeout: ").append(connectTimeout);
-
-    appendAddresses(builder, "triedAddresses", addresses, index ->
+    builder.appendArray("triedAddresses", false, addresses, index ->
         index <= currentIndex && addressTypesMatch(localAddress, addresses[index])
     );
 
-    appendAddresses(builder, "untriedAddresses", addresses, index ->
+    builder.appendArray("untriedAddresses", false, addresses, index ->
         index > currentIndex && addressTypesMatch(localAddress, addresses[index])
     );
 
-    appendAddresses(builder, "unsuitableAddresses", addresses, index ->
+    builder.appendArray("unsuitableAddresses", false, addresses, index ->
         !addressTypesMatch(localAddress, addresses[index])
     );
 
     exception.addSuppressed(new AdditionalDetails(builder.toString()));
-  }
-
-  private void appendField(StringBuilder builder, String name, Object field) {
-    builder.append("\n  ").append(name).append(": ");
-
-    if (field == null) {
-      builder.append("<unspecified>");
-    } else {
-      builder.append(field.toString());
-    }
-  }
-
-  private void appendAddresses(StringBuilder builder, String label, InetAddress[] array, IntPredicate check) {
-    boolean started = false;
-
-    for (int i = 0; i < array.length; i++) {
-      if (check.test(i)) {
-        if (!started) {
-          builder.append("\n  ").append(label).append(": ");
-          started = true;
-        }
-
-        builder.append(array[i]).append(", ");
-      }
-    }
-
-    if (started) {
-      builder.setLength(builder.length() - 2);
-    }
   }
 
   private static class AdditionalDetails extends Exception {
