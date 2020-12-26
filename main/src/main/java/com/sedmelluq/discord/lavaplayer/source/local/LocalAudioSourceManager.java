@@ -1,11 +1,7 @@
 package com.sedmelluq.discord.lavaplayer.source.local;
 
-import com.sedmelluq.discord.lavaplayer.container.MediaContainerDetection;
-import com.sedmelluq.discord.lavaplayer.container.MediaContainerDetectionResult;
-import com.sedmelluq.discord.lavaplayer.container.MediaContainerHints;
-import com.sedmelluq.discord.lavaplayer.container.MediaContainerRegistry;
-import com.sedmelluq.discord.lavaplayer.container.MediaContainerDescriptor;
-import com.sedmelluq.discord.lavaplayer.player.DefaultAudioPlayerManager;
+import com.sedmelluq.discord.lavaplayer.container.*;
+import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.source.ProbingAudioSourceManager;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.track.AudioItem;
@@ -38,7 +34,7 @@ public class LocalAudioSourceManager extends ProbingAudioSourceManager {
   }
 
   @Override
-  public AudioItem loadItem(DefaultAudioPlayerManager manager, AudioReference reference) {
+  public AudioItem loadItem(AudioPlayerManager manager, AudioReference reference) {
     File file = new File(reference.identifier);
 
     if (file.exists() && file.isFile() && file.canRead()) {
