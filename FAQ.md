@@ -41,6 +41,23 @@ For `JsonParseException`, only applicable if the message starts with `Unexpected
 
 Your IP is being rate limited or blocked by YouTube. The most reliable way to get around this is to get an IPv6 block for your bot and then make use of the `youtube-rotator` plugin. For further details, you could ask in JDA Discord server (also check pins), as there are people around there who are using such a setup.   
 
+### Exception with last cause being `Read timed out` <sup><sup><sub><a name="63a9aae9" href="#63a9aae9">63a9aae9</a></sub></sup></sup>
+
+Could be a network issue on either side. If it happens rarely, then there is not much to do about it as it is unlikely to ever find out what caused the delay at that specific time.
+
+If this happens all the time, I would suspect your network is somehow adding some massive latency. You could try if changing the socket timeouts makes any difference:
+
+```
+manager.setHttpRequestConfigurator(config ->
+    RequestConfig.copy(config)
+        .setSocketTimeout(10000)
+        .setConnectTimeout(10000)
+        .build()
+);
+```
+
+For specific sources you can do the same thing by doing by calling `sourceManager.configureRequests` method, which is available for sources that make HTTP requests directly;
+
 ## Issues
 
 ### Everything triggers `noMatches`.
