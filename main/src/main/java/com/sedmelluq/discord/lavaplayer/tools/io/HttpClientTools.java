@@ -193,7 +193,7 @@ public class HttpClientTools {
         isRetriableNestedSslException(exception);
   }
 
-  private static boolean isConnectionResetException(Throwable exception) {
+  public static boolean isConnectionResetException(Throwable exception) {
     return (exception instanceof SocketException || exception instanceof SSLException)
         && "Connection reset".equals(exception.getMessage());
   }
