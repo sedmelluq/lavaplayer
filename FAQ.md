@@ -60,6 +60,19 @@ For specific sources you can do the same thing by doing by calling `sourceManage
 
 ## Issues
 
+### Does not work and no exceptions <sup><sup><sub><a name="a7c7989f" href="#a7c7989f">a7c7989f</a></sub></sup></sup>
+
+I don't believe you. Make sure you check, double check and triple check all the following things:
+
+* You have logging enabled and configured - you can verify by either seeing `INFO` logs about native libraries getting loaded, or when you have HTTP source enabled, you get a `WARN` log if you try to load `http://random.garbage.url`
+* You are handling `AudioLoadResultHandler#loadFailed` and outputting the exceptions in there or at least in some way reliably making sure you know when it gets called.
+* You are handling `AudioLoadResultHandler#noMatches` and making sure it is not getting called when you except a track/playlist.
+* You are handling both `AudioLoadResultHandler#trackLoaded` and `AudioLoadResultHandler#playlistLoaded` in case you got playlist when you expected a track or vice versa.
+* You are handling `AudioEventAdapter#onTrackException` (or `TrackExceptionEvent` in `AudioEventListener`) and outputting the exception or at least in some way reliably making sure you know when it gets called.
+* If the player appears to "do nothing", check with `AudioPlayer#getPlayingTrack` if it is aware of the track you provided.
+  * If true, check that you are actually calling `AudioPlayer#provide`, if you are running locally, set a breakpoint. If you are sure, take a thread dump and post it.
+  * If false, there was an end event sent to your event handler (assuming you actually called `playTrack` or `startTrack`). Log it, look at it, think about it, and if it makes no sense to you, post it.
+
 ### Everything triggers `noMatches`.
 
 Did you register source managers? For playing remote tracks (URLs including YouTube):
