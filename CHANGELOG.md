@@ -1,5 +1,9 @@
 # Change Log
 
+## [1.3.66] -- 2020-12-30
+### Changed
+- All YouTube requests are now retried once if they get a connection reset during connection establishment.
+
 ## [1.3.65] -- 2020-12-20
 ### Added
 - Attached LP, OS and JDK version information to all FriendlyExceptions as a suppressed exception.
