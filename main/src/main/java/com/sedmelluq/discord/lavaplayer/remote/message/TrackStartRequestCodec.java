@@ -6,7 +6,6 @@ import com.sedmelluq.discord.lavaplayer.format.Pcm16AudioDataFormat;
 import com.sedmelluq.discord.lavaplayer.format.StandardAudioDataFormats;
 import com.sedmelluq.discord.lavaplayer.player.AudioConfiguration;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo;
-
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;

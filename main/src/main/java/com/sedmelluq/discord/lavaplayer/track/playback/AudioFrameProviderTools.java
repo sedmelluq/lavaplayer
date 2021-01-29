@@ -1,7 +1,6 @@
 package com.sedmelluq.discord.lavaplayer.track.playback;
 
 import com.sedmelluq.discord.lavaplayer.tools.ExceptionTools;
-
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 

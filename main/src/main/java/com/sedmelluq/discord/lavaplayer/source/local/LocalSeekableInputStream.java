@@ -3,9 +3,6 @@ package com.sedmelluq.discord.lavaplayer.source.local;
 import com.sedmelluq.discord.lavaplayer.tools.io.ExtendedBufferedInputStream;
 import com.sedmelluq.discord.lavaplayer.tools.io.SeekableInputStream;
 import com.sedmelluq.discord.lavaplayer.track.info.AudioTrackInfoProvider;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -13,6 +10,8 @@ import java.io.IOException;
 import java.nio.channels.FileChannel;
 import java.util.Collections;
 import java.util.List;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Seekable input stream implementation for local files.

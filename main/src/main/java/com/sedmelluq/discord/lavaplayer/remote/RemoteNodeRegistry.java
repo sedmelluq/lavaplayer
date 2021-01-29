@@ -1,7 +1,6 @@
 package com.sedmelluq.discord.lavaplayer.remote;
 
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
-
 import java.util.List;
 
 /**

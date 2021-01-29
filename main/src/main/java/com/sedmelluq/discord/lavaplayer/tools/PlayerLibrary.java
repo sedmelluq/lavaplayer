@@ -1,9 +1,8 @@
 package com.sedmelluq.discord.lavaplayer.tools;
 
-import org.apache.commons.io.IOUtils;
-
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import org.apache.commons.io.IOUtils;
 
 /**
  * Contains constants with metadata about the library.

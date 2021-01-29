@@ -3,7 +3,6 @@ package com.sedmelluq.discord.lavaplayer.format;
 import com.sedmelluq.discord.lavaplayer.format.transcoder.AudioChunkDecoder;
 import com.sedmelluq.discord.lavaplayer.format.transcoder.AudioChunkEncoder;
 import com.sedmelluq.discord.lavaplayer.player.AudioConfiguration;
-
 import java.util.Objects;
 
 /**

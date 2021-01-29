@@ -3,7 +3,6 @@ package com.sedmelluq.discord.lavaplayer.tools.http;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.tools.io.TrustManagerBuilder;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Supplier;
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.X509TrustManager;

@@ -1,7 +1,6 @@
 package com.sedmelluq.discord.lavaplayer.filter;
 
 import com.sedmelluq.discord.lavaplayer.track.playback.AudioProcessingContext;
-
 import java.nio.ShortBuffer;
 import java.util.ArrayList;
 import java.util.Collections;

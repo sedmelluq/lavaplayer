@@ -1,7 +1,6 @@
 package com.sedmelluq.discord.lavaplayer.natives.mp3;
 
 import com.sedmelluq.discord.lavaplayer.natives.ConnectorNativeLibLoader;
-
 import java.nio.ByteBuffer;
 import java.nio.ShortBuffer;
 

@@ -1,39 +1,9 @@
 package com.sedmelluq.discord.lavaplayer.player;
 
 import com.sedmelluq.discord.lavaplayer.filter.PcmFilterFactory;
-import com.sedmelluq.discord.lavaplayer.player.event.AudioEvent;
 import com.sedmelluq.discord.lavaplayer.player.event.AudioEventListener;
-import com.sedmelluq.discord.lavaplayer.player.event.PlayerPauseEvent;
-import com.sedmelluq.discord.lavaplayer.player.event.PlayerResumeEvent;
-import com.sedmelluq.discord.lavaplayer.player.event.TrackEndEvent;
-import com.sedmelluq.discord.lavaplayer.player.event.TrackExceptionEvent;
-import com.sedmelluq.discord.lavaplayer.player.event.TrackStartEvent;
-import com.sedmelluq.discord.lavaplayer.player.event.TrackStuckEvent;
-import com.sedmelluq.discord.lavaplayer.tools.ExceptionTools;
-import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
-import com.sedmelluq.discord.lavaplayer.track.AudioTrackEndReason;
-import com.sedmelluq.discord.lavaplayer.track.InternalAudioTrack;
-import com.sedmelluq.discord.lavaplayer.track.TrackStateListener;
-import com.sedmelluq.discord.lavaplayer.track.playback.AudioFrame;
 import com.sedmelluq.discord.lavaplayer.track.playback.AudioFrameProvider;
-import com.sedmelluq.discord.lavaplayer.track.playback.AudioFrameProviderTools;
-import com.sedmelluq.discord.lavaplayer.track.playback.MutableAudioFrame;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicBoolean;
-
-import static com.sedmelluq.discord.lavaplayer.track.AudioTrackEndReason.CLEANUP;
-import static com.sedmelluq.discord.lavaplayer.track.AudioTrackEndReason.FINISHED;
-import static com.sedmelluq.discord.lavaplayer.track.AudioTrackEndReason.LOAD_FAILED;
-import static com.sedmelluq.discord.lavaplayer.track.AudioTrackEndReason.REPLACED;
-import static com.sedmelluq.discord.lavaplayer.track.AudioTrackEndReason.STOPPED;
 
 /**
  * An audio player that is capable of playing audio tracks and provides audio frames from the currently playing track.

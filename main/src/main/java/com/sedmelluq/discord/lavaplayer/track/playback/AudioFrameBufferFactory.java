@@ -1,7 +1,6 @@
 package com.sedmelluq.discord.lavaplayer.track.playback;
 
 import com.sedmelluq.discord.lavaplayer.format.AudioDataFormat;
-
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**

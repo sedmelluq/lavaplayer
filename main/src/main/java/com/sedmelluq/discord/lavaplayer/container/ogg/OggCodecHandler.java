@@ -1,7 +1,6 @@
 package com.sedmelluq.discord.lavaplayer.container.ogg;
 
 import com.sedmelluq.discord.lavaplayer.tools.io.DirectBufferStreamBroker;
-
 import java.io.IOException;
 
 public interface OggCodecHandler {

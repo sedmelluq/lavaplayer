@@ -2,7 +2,13 @@ package com.sedmelluq.discord.lavaplayer.source.youtube;
 
 import org.apache.http.entity.ContentType;
 
-import static com.sedmelluq.discord.lavaplayer.container.Formats.*;
+import static com.sedmelluq.discord.lavaplayer.container.Formats.CODEC_AAC_LC;
+import static com.sedmelluq.discord.lavaplayer.container.Formats.CODEC_OPUS;
+import static com.sedmelluq.discord.lavaplayer.container.Formats.CODEC_VORBIS;
+import static com.sedmelluq.discord.lavaplayer.container.Formats.MIME_AUDIO_MP4;
+import static com.sedmelluq.discord.lavaplayer.container.Formats.MIME_AUDIO_WEBM;
+import static com.sedmelluq.discord.lavaplayer.container.Formats.MIME_VIDEO_MP4;
+import static com.sedmelluq.discord.lavaplayer.container.Formats.MIME_VIDEO_WEBM;
 
 /**
  * The mime type and codec info of a Youtube track format.

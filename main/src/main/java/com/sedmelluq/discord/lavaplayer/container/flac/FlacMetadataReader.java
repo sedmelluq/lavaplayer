@@ -1,12 +1,11 @@
 package com.sedmelluq.discord.lavaplayer.container.flac;
 
-import org.apache.commons.io.IOUtils;
-
 import java.io.DataInput;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import org.apache.commons.io.IOUtils;
 
 import static com.sedmelluq.discord.lavaplayer.container.flac.FlacMetadataHeader.BLOCK_COMMENT;
 import static com.sedmelluq.discord.lavaplayer.container.flac.FlacMetadataHeader.BLOCK_SEEKTABLE;

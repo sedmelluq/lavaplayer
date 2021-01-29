@@ -1,9 +1,8 @@
 package com.sedmelluq.discord.lavaplayer.source.youtube;
 
-import org.apache.http.entity.ContentType;
-
 import java.net.URI;
 import java.net.URISyntaxException;
+import org.apache.http.entity.ContentType;
 
 /**
  * Describes an available media format for a track

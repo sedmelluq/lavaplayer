@@ -1,7 +1,6 @@
 package com.sedmelluq.discord.lavaplayer.filter.converter;
 
 import com.sedmelluq.discord.lavaplayer.filter.FloatPcmAudioFilter;
-
 import java.nio.ShortBuffer;
 
 /**

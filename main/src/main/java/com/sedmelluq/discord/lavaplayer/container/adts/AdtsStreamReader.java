@@ -1,7 +1,6 @@
 package com.sedmelluq.discord.lavaplayer.container.adts;
 
 import com.sedmelluq.discord.lavaplayer.tools.io.BitBufferReader;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;

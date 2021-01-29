@@ -1,7 +1,6 @@
 package com.sedmelluq.discord.lavaplayer.container.mpeg.reader;
 
 import com.sedmelluq.discord.lavaplayer.tools.io.SeekableInputStream;
-
 import java.io.ByteArrayOutputStream;
 import java.io.DataInput;
 import java.io.DataInputStream;

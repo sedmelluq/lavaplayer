@@ -2,11 +2,10 @@ package com.sedmelluq.discord.lavaplayer.container.mp3;
 
 import com.sedmelluq.discord.lavaplayer.natives.mp3.Mp3Decoder;
 import com.sedmelluq.discord.lavaplayer.tools.io.SeekableInputStream;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static com.sedmelluq.discord.lavaplayer.natives.mp3.Mp3Decoder.MPEG1_SAMPLES_PER_FRAME;
 

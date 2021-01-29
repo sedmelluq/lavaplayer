@@ -7,7 +7,6 @@ import com.sedmelluq.discord.lavaplayer.filter.AudioPipelineFactory;
 import com.sedmelluq.discord.lavaplayer.filter.PcmFormat;
 import com.sedmelluq.discord.lavaplayer.natives.vorbis.VorbisDecoder;
 import com.sedmelluq.discord.lavaplayer.track.playback.AudioProcessingContext;
-
 import java.nio.ByteBuffer;
 
 /**

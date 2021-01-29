@@ -2,10 +2,9 @@ package com.sedmelluq.discord.lavaplayer.source.youtube;
 
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterface;
 import com.sedmelluq.discord.lavaplayer.tools.io.PersistentHttpStream;
-import org.apache.http.client.utils.URIBuilder;
-
 import java.net.URI;
 import java.net.URISyntaxException;
+import org.apache.http.client.utils.URIBuilder;
 
 /**
  * A persistent HTTP stream implementation that uses the range parameter instead of HTTP headers for specifying

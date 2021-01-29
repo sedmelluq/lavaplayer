@@ -1,13 +1,12 @@
 package com.sedmelluq.discord.lavaplayer.tools.io;
 
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.io.input.BoundedInputStream;
-import org.apache.commons.io.input.CountingInputStream;
-
 import java.io.DataInput;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.input.BoundedInputStream;
+import org.apache.commons.io.input.CountingInputStream;
 
 /**
  * An input for messages with their size known so unknown messages can be skipped.

@@ -1,7 +1,6 @@
 package com.sedmelluq.discord.lavaplayer.remote.message;
 
 import com.sedmelluq.discord.lavaplayer.tools.ExceptionTools;
-
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
