@@ -1,15 +1,15 @@
 package com.sedmelluq.discord.lavaplayer.source.twitch;
 
-import com.sedmelluq.discord.lavaplayer.player.DefaultAudioPlayerManager;
+import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.source.AudioSourceManager;
 import com.sedmelluq.discord.lavaplayer.tools.ExceptionTools;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.tools.JsonBrowser;
 import com.sedmelluq.discord.lavaplayer.tools.Units;
+import com.sedmelluq.discord.lavaplayer.tools.io.HttpClientTools;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpConfigurable;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterface;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterfaceManager;
-import com.sedmelluq.discord.lavaplayer.tools.io.HttpClientTools;
 import com.sedmelluq.discord.lavaplayer.track.AudioItem;
 import com.sedmelluq.discord.lavaplayer.track.AudioReference;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
@@ -66,7 +66,7 @@ public class TwitchStreamAudioSourceManager implements AudioSourceManager, HttpC
   }
 
   @Override
-  public AudioItem loadItem(DefaultAudioPlayerManager manager, AudioReference reference) {
+  public AudioItem loadItem(AudioPlayerManager manager, AudioReference reference) {
     String streamName = getChannelIdentifierFromUrl(reference.identifier);
     if (streamName == null) {
       return null;
