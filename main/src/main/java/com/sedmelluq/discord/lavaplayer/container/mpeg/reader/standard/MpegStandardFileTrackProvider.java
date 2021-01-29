@@ -1,11 +1,10 @@
 package com.sedmelluq.discord.lavaplayer.container.mpeg.reader.standard;
 
+import com.sedmelluq.discord.lavaplayer.container.mpeg.MpegTrackConsumer;
 import com.sedmelluq.discord.lavaplayer.container.mpeg.reader.MpegFileTrackProvider;
 import com.sedmelluq.discord.lavaplayer.container.mpeg.reader.MpegReader;
-import com.sedmelluq.discord.lavaplayer.container.mpeg.MpegTrackConsumer;
 import com.sedmelluq.discord.lavaplayer.container.mpeg.reader.MpegVersionedSectionInfo;
 import com.sedmelluq.discord.lavaplayer.tools.io.DetachedByteChannel;
-
 import java.io.IOException;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;

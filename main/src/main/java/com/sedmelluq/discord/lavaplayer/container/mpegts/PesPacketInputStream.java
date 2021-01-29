@@ -1,7 +1,6 @@
 package com.sedmelluq.discord.lavaplayer.container.mpegts;
 
 import com.sedmelluq.discord.lavaplayer.tools.io.GreedyInputStream;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;

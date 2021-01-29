@@ -2,7 +2,6 @@ package com.sedmelluq.discord.lavaplayer.container.ogg;
 
 import com.sedmelluq.discord.lavaplayer.tools.io.SeekableInputStream;
 import com.sedmelluq.discord.lavaplayer.tools.io.StreamTools;
-
 import java.io.DataInput;
 import java.io.DataInputStream;
 import java.io.EOFException;

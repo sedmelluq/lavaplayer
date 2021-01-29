@@ -1,7 +1,6 @@
 package com.sedmelluq.discord.lavaplayer.container.flac;
 
 import com.sedmelluq.discord.lavaplayer.tools.io.BitBufferReader;
-
 import java.nio.ByteBuffer;
 
 /**

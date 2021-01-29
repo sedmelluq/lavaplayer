@@ -1,11 +1,5 @@
 package com.sedmelluq.discord.lavaplayer.container.matroska;
 
-import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
 import com.sedmelluq.discord.lavaplayer.container.matroska.format.MatroskaBlock;
 import com.sedmelluq.discord.lavaplayer.container.matroska.format.MatroskaCuePoint;
 import com.sedmelluq.discord.lavaplayer.container.matroska.format.MatroskaElement;
@@ -13,6 +7,11 @@ import com.sedmelluq.discord.lavaplayer.container.matroska.format.MatroskaElemen
 import com.sedmelluq.discord.lavaplayer.container.matroska.format.MatroskaFileReader;
 import com.sedmelluq.discord.lavaplayer.container.matroska.format.MatroskaFileTrack;
 import com.sedmelluq.discord.lavaplayer.tools.io.SeekableInputStream;
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * Handles processing an MKV/WEBM file for the purpose of streaming one specific track from it. Only performs seeks when

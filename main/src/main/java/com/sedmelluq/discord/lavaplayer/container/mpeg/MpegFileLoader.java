@@ -1,14 +1,13 @@
 package com.sedmelluq.discord.lavaplayer.container.mpeg;
 
-import com.sedmelluq.discord.lavaplayer.container.mpeg.reader.MpegParseStopChecker;
-import com.sedmelluq.discord.lavaplayer.container.mpeg.reader.MpegVersionedSectionInfo;
-import com.sedmelluq.discord.lavaplayer.container.mpeg.reader.fragmented.MpegFragmentedFileTrackProvider;
 import com.sedmelluq.discord.lavaplayer.container.mpeg.reader.MpegFileTrackProvider;
+import com.sedmelluq.discord.lavaplayer.container.mpeg.reader.MpegParseStopChecker;
 import com.sedmelluq.discord.lavaplayer.container.mpeg.reader.MpegReader;
 import com.sedmelluq.discord.lavaplayer.container.mpeg.reader.MpegSectionInfo;
+import com.sedmelluq.discord.lavaplayer.container.mpeg.reader.MpegVersionedSectionInfo;
+import com.sedmelluq.discord.lavaplayer.container.mpeg.reader.fragmented.MpegFragmentedFileTrackProvider;
 import com.sedmelluq.discord.lavaplayer.container.mpeg.reader.standard.MpegStandardFileTrackProvider;
 import com.sedmelluq.discord.lavaplayer.tools.io.SeekableInputStream;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;

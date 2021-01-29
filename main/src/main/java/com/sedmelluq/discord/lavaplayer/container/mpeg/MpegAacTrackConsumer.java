@@ -1,21 +1,15 @@
 package com.sedmelluq.discord.lavaplayer.container.mpeg;
 
 import com.sedmelluq.discord.lavaplayer.container.common.AacPacketRouter;
-import com.sedmelluq.discord.lavaplayer.filter.AudioPipeline;
-import com.sedmelluq.discord.lavaplayer.filter.AudioPipelineFactory;
-import com.sedmelluq.discord.lavaplayer.filter.PcmFormat;
 import com.sedmelluq.discord.lavaplayer.natives.aac.AacDecoder;
 import com.sedmelluq.discord.lavaplayer.track.playback.AudioProcessingContext;
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.channels.ClosedByInterruptException;
+import java.nio.channels.ReadableByteChannel;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.nio.ShortBuffer;
-import java.nio.channels.ClosedByInterruptException;
-import java.nio.channels.ReadableByteChannel;
 
 /**
  * Handles processing MP4 AAC frames. Passes the decoded frames to the specified frame consumer. Currently only AAC LC
