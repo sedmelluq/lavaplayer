@@ -42,6 +42,7 @@ public class YoutubeIpRotatorSetup {
   public YoutubeIpRotatorSetup forSource(YoutubeAudioSourceManager sourceManager) {
     forConfiguration(sourceManager.getMainHttpConfiguration(), false);
     forConfiguration(sourceManager.getSearchHttpConfiguration(), true);
+    forConfiguration(sourceManager.getSearchMusicHttpConfiguration(), true);
     return this;
   }
 

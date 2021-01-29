@@ -45,6 +45,7 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
   private final boolean allowSearch;
   private final YoutubeTrackDetailsLoader trackDetailsLoader;
   private final YoutubeSearchResultLoader searchResultLoader;
+  private final YoutubeSearchMusicResultLoader searchMusicResultLoader;
   private final YoutubePlaylistLoader playlistLoader;
   private final YoutubeLinkRouter linkRouter;
   private final LoadingRoutes loadingRoutes;
@@ -65,6 +66,7 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
         allowSearch,
         new DefaultYoutubeTrackDetailsLoader(),
         new YoutubeSearchProvider(),
+        new YoutubeSearchMusicProvider(),
         new YoutubeSignatureCipherManager(),
         new DefaultYoutubePlaylistLoader(),
         new DefaultYoutubeLinkRouter(),
@@ -76,6 +78,7 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
       boolean allowSearch,
       YoutubeTrackDetailsLoader trackDetailsLoader,
       YoutubeSearchResultLoader searchResultLoader,
+      YoutubeSearchMusicResultLoader searchMusicResultLoader,
       YoutubeSignatureResolver signatureResolver,
       YoutubePlaylistLoader playlistLoader,
       YoutubeLinkRouter linkRouter,
@@ -88,6 +91,7 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
     this.trackDetailsLoader = trackDetailsLoader;
     this.signatureResolver = signatureResolver;
     this.searchResultLoader = searchResultLoader;
+    this.searchMusicResultLoader = searchMusicResultLoader;
     this.playlistLoader = playlistLoader;
     this.linkRouter = linkRouter;
     this.mixLoader = mixLoader;
@@ -95,7 +99,8 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
 
     combinedHttpConfiguration = new MultiHttpConfigurable(Arrays.asList(
         httpInterfaceManager,
-        searchResultLoader.getHttpConfiguration()
+        searchResultLoader.getHttpConfiguration(),
+        searchMusicResultLoader.getHttpConfiguration()
     ));
   }
 
@@ -182,6 +187,10 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
     return searchResultLoader.getHttpConfiguration();
   }
 
+  public ExtendedHttpConfigurable getSearchMusicHttpConfiguration() {
+    return searchMusicResultLoader.getHttpConfiguration();
+  }
+
   private AudioItem loadItemOnce(AudioReference reference) {
     return linkRouter.route(reference.identifier, loadingRoutes);
   }
@@ -247,9 +256,14 @@ public class YoutubeAudioSourceManager implements AudioSourceManager, HttpConfig
     }
 
     @Override
-    public AudioItem search(String query) {
-      if (allowSearch) {
+    public AudioItem search(String query, Boolean ytMusic) {
+      if (allowSearch && !ytMusic) {
         return searchResultLoader.loadSearchResult(
+            query,
+            YoutubeAudioSourceManager.this::buildTrackFromInfo
+        );
+      } else if (allowSearch) {
+        return searchMusicResultLoader.loadSearchMusicResult(
             query,
             YoutubeAudioSourceManager.this::buildTrackFromInfo
         );
