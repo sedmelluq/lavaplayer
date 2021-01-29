@@ -25,25 +25,28 @@ import static com.sedmelluq.lavaplayer.core.tools.exception.FriendlyException.Se
 public class DefaultAudioInfoRequestHandler implements AudioInfoRequestHandler {
   private static final Logger log = LoggerFactory.getLogger(DefaultAudioInfoRequestHandler.class);
 
-  private static final int MAXIMUM_LOAD_REDIRECTS = 5;
   private static final int DEFAULT_LOADER_POOL_SIZE = 10;
   private static final int LOADER_QUEUE_CAPACITY = 5000;
 
-  private final AudioSourceRegistry sourceRegistry;
   private final ThreadPoolExecutor trackInfoExecutorService;
   private final OrderedExecutor orderedInfoExecutor;
+  private final SynchronousAudioInfoRequestHandler synchronousHandler;
 
   public DefaultAudioInfoRequestHandler(AudioSourceRegistry sourceRegistry) {
-    this.sourceRegistry = sourceRegistry;
     trackInfoExecutorService = ExecutorTools.createEagerlyScalingExecutor(1, DEFAULT_LOADER_POOL_SIZE,
         TimeUnit.SECONDS.toMillis(30), LOADER_QUEUE_CAPACITY, new DaemonThreadFactory("info-loader"));
     orderedInfoExecutor = new OrderedExecutor(trackInfoExecutorService);
+    synchronousHandler = new SynchronousAudioInfoRequestHandler(sourceRegistry);
   }
 
   @Override
   public Future<Void> request(AudioInfoRequest request) {
     try {
-      Callable<Void> loader = createItemLoader(request);
+      Callable<Void> loader = () -> {
+        synchronousHandler.processRequest(request);
+        return null;
+      };
+
       Object orderingKey = request.getOrderChannelKey();
 
       if (orderingKey != null) {
@@ -68,90 +71,5 @@ public class DefaultAudioInfoRequestHandler implements AudioInfoRequestHandler {
     request.getResponseHandler().loadFailed(exception);
 
     return ExecutorTools.COMPLETED_VOID;
-  }
-
-  protected Callable<Void> createItemLoader(AudioInfoRequest request) {
-    return () -> {
-      LookupContext context = new LookupContext(request.getResponseHandler());
-
-      try {
-        if (!checkSourcesForItem(request, context)) {
-          log.debug("No matches for track with identifier {}.", request.name());
-          request.getResponseHandler().noMatches();
-        }
-      } catch (Throwable throwable) {
-        if (context.reported) {
-          log.warn("Load result handler for {} threw an exception", request.name(), throwable);
-        } else {
-          dispatchItemLoadFailure(request, throwable);
-        }
-
-        ExceptionTools.rethrowErrors(throwable);
-      }
-
-      return null;
-    };
-  }
-
-  protected void dispatchItemLoadFailure(AudioInfoRequest request, Throwable throwable) {
-    FriendlyException exception = ExceptionTools
-        .wrapUnfriendlyExceptions("Something went wrong when looking up the track", FAULT, throwable);
-
-    ExceptionTools.log(log, exception, "loading item " + request.name());
-
-    request.getResponseHandler().loadFailed(exception);
-  }
-
-  protected boolean checkSourcesForItem(AudioInfoRequest request, LookupContext context) {
-    AudioInfoRequest currentRequest = request;
-
-    for (int redirects = 0; redirects < MAXIMUM_LOAD_REDIRECTS; redirects++) {
-      AudioInfoEntity item = checkSourcesForItemOnce(context, currentRequest);
-
-      if (item == null) {
-        return false;
-      } else if (!(item instanceof AudioInfoRequest)) {
-        return true;
-      }
-
-      currentRequest = (AudioInfoRequest) item;
-    }
-
-    return false;
-  }
-
-  protected AudioInfoEntity checkSourcesForItemOnce(LookupContext context, AudioInfoRequest request) {
-    for (AudioSource source : sourceRegistry.getAllSources()) {
-      if (!request.isSourceAllowed(source)) {
-        continue;
-      }
-
-      AudioInfoEntity item = source.loadItem(request);
-
-      if (item != null) {
-        if (item instanceof AudioTrackInfo) {
-          log.debug("Loaded a track with identifier {} using {}.", request.name(), source.getName());
-          context.reported = true;
-          context.responseHandler.trackLoaded((AudioTrackInfo) item);
-        } else if (item instanceof AudioPlaylist) {
-          log.debug("Loaded a playlist with identifier {} using {}.", request.name(), source.getName());
-          context.reported = true;
-          context.responseHandler.playlistLoaded((AudioPlaylist) item);
-        }
-
-        return item;
-      }
-    }
-
-    return null;
-  }
-
-  private static class LookupContext {
-    private final AudioInfoResponseHandler responseHandler;
-    private boolean reported;
-
-    private LookupContext(AudioInfoResponseHandler responseHandler) {
-      this.responseHandler = responseHandler;
-    }
   }
 }

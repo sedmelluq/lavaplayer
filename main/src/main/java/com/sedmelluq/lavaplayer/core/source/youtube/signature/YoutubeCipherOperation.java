@@ -1,4 +1,4 @@
-package com.sedmelluq.lavaplayer.core.source.youtube;
+package com.sedmelluq.lavaplayer.core.source.youtube.signature;
 
 /**
  * One cipher operation definition.

@@ -8,6 +8,7 @@ import com.sedmelluq.lavaplayer.core.source.youtube.format.LegacyDashMpdFormatsE
 import com.sedmelluq.lavaplayer.core.source.youtube.format.LegacyStreamMapFormatsExtractor;
 import com.sedmelluq.lavaplayer.core.source.youtube.format.StreamingDataFormatsExtractor;
 import com.sedmelluq.lavaplayer.core.source.youtube.format.YoutubeTrackFormatExtractor;
+import com.sedmelluq.lavaplayer.core.source.youtube.signature.YoutubeSignatureResolver;
 import com.sedmelluq.lavaplayer.core.tools.JsonBrowser;
 import com.sedmelluq.lavaplayer.core.tools.Units;
 import com.sedmelluq.lavaplayer.core.tools.exception.FriendlyException;

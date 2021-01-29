@@ -1,7 +1,8 @@
-package com.sedmelluq.lavaplayer.core.source.youtube;
+package com.sedmelluq.lavaplayer.core.source.youtube.signature;
 
 import com.sedmelluq.lavaplayer.core.http.HttpClientTools;
 import com.sedmelluq.lavaplayer.core.http.HttpInterface;
+import com.sedmelluq.lavaplayer.core.source.youtube.YoutubeTrackFormat;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;

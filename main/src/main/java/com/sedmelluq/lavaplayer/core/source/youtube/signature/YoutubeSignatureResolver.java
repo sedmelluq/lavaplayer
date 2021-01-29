@@ -1,6 +1,7 @@
-package com.sedmelluq.lavaplayer.core.source.youtube;
+package com.sedmelluq.lavaplayer.core.source.youtube.signature;
 
 import com.sedmelluq.lavaplayer.core.http.HttpInterface;
+import com.sedmelluq.lavaplayer.core.source.youtube.YoutubeTrackFormat;
 import java.net.URI;
 
 public interface YoutubeSignatureResolver {

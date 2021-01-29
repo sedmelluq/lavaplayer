@@ -1,5 +1,6 @@
-package com.sedmelluq.lavaplayer.core.source.youtube;
+package com.sedmelluq.lavaplayer.core.source.youtube.signature;
 
+import com.sedmelluq.lavaplayer.core.source.youtube.signature.YoutubeCipherOperation;
 import java.util.ArrayList;
 import java.util.List;
 

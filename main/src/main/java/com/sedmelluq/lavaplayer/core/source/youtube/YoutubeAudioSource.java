@@ -15,6 +15,8 @@ import com.sedmelluq.lavaplayer.core.info.track.AudioTrackInfoTemplate;
 import com.sedmelluq.lavaplayer.core.player.playback.AudioPlayback;
 import com.sedmelluq.lavaplayer.core.source.AudioSource;
 import com.sedmelluq.lavaplayer.core.source.youtube.request.YoutubeSearchRequest;
+import com.sedmelluq.lavaplayer.core.source.youtube.signature.DefaultYoutubeSignatureResolver;
+import com.sedmelluq.lavaplayer.core.source.youtube.signature.YoutubeSignatureResolver;
 import com.sedmelluq.lavaplayer.core.tools.exception.ExceptionTools;
 import com.sedmelluq.lavaplayer.core.tools.exception.FriendlyException;
 import java.io.IOException;
@@ -244,6 +246,11 @@ public class YoutubeAudioSource implements AudioSource, HttpConfigurable {
     @Override
     public AudioInfoEntity search(String query) {
       return searchResultLoader.loadSearchResult(query, request);
+    }
+
+    @Override
+    public AudioInfoEntity searchMusic(String query) {
+      return null;
     }
 
     @Override
