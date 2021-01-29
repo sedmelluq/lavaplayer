@@ -1,5 +1,12 @@
 # Change Log
 
+## [1.3.67] -- 2021-01-30
+### Added
+- Added support for `music.youtube.com` URLs (PR 562 by Walkyst).
+
+### Changed
+- Internal changes to allow custom `AudioPlayerManager` implementations (PR 572 by ToxicMushroom).
+
 ## [1.3.66] -- 2020-12-30
 ### Changed
 - All YouTube requests are now retried once if they get a connection reset during connection establishment.
