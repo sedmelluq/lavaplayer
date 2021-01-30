@@ -54,6 +54,7 @@ public class YoutubeAudioSource implements AudioSource, HttpConfigurable {
   private final DefaultYoutubeMixLoader mixProvider;
   private final YoutubeTrackDetailsLoader trackDetailsLoader;
   private final YoutubeSearchResultLoader searchResultLoader;
+  private final YoutubeSearchMusicResultLoader searchMusicResultLoader;
   private final YoutubePlaylistLoader playlistLoader;
   private final YoutubeLinkRouter linkRouter;
 
@@ -61,6 +62,7 @@ public class YoutubeAudioSource implements AudioSource, HttpConfigurable {
     return new YoutubeAudioSource(
         new DefaultYoutubeTrackDetailsLoader(),
         new DefaultYoutubeSearchResultLoader(),
+        new DefaultYoutubeSearchMusicResultLoader(),
         new DefaultYoutubeSignatureResolver(),
         new DefaultYoutubePlaylistLoader(),
         new DefaultYoutubeMixLoader(),
@@ -71,6 +73,7 @@ public class YoutubeAudioSource implements AudioSource, HttpConfigurable {
   public YoutubeAudioSource(
       YoutubeTrackDetailsLoader trackDetailsLoader,
       YoutubeSearchResultLoader searchResultLoader,
+      YoutubeSearchMusicResultLoader searchMusicResultLoader,
       YoutubeSignatureResolver signatureResolver,
       YoutubePlaylistLoader playlistLoader,
       DefaultYoutubeMixLoader mixProvider,
@@ -82,6 +85,7 @@ public class YoutubeAudioSource implements AudioSource, HttpConfigurable {
     this.trackDetailsLoader = trackDetailsLoader;
     this.signatureResolver = signatureResolver;
     this.searchResultLoader = searchResultLoader;
+    this.searchMusicResultLoader = searchMusicResultLoader;
     this.playlistLoader = playlistLoader;
     this.mixProvider = mixProvider;
     this.linkRouter = linkRouter;
@@ -180,6 +184,10 @@ public class YoutubeAudioSource implements AudioSource, HttpConfigurable {
     return searchResultLoader.getHttpConfiguration();
   }
 
+  public ExtendedHttpConfigurable getSearchMusicHttpConfiguration() {
+    return searchMusicResultLoader.getHttpConfiguration();
+  }
+
   private AudioInfoEntity loadItemOnce(AudioInfoRequest request) {
     if (request instanceof GenericAudioInfoRequest) {
       return linkRouter.route(((GenericAudioInfoRequest) request).getHint(), new LoadingRoutes(request));
@@ -250,18 +258,16 @@ public class YoutubeAudioSource implements AudioSource, HttpConfigurable {
 
     @Override
     public AudioInfoEntity searchMusic(String query) {
-      return null;
+      return searchMusicResultLoader.loadSearchMusicResult(query, request);
     }
 
     @Override
     public AudioInfoEntity anonymous(String videoIds) {
       try (HttpInterface httpInterface = getHttpInterface()) {
         try (CloseableHttpResponse response = httpInterface.execute(new HttpGet("https://www.youtube.com/watch_videos?video_ids=" + videoIds))) {
-          int statusCode = response.getStatusLine().getStatusCode();
+          HttpClientTools.assertSuccessWithContent(response, "playlist response");
           HttpClientContext context = httpInterface.getContext();
-          if (!HttpClientTools.isSuccessWithContent(statusCode)) {
-            throw new IOException("Invalid status code for playlist response: " + statusCode);
-          }
+
           // youtube currently transforms watch_video links into a link with a video id and a list id.
           // because thats what happens, we can simply re-process with the redirected link
           List<URI> redirects = context.getRedirectLocations();

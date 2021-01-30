@@ -1,5 +1,6 @@
 package com.sedmelluq.lavaplayer.core.player;
 
+import com.sedmelluq.lavaplayer.core.tools.collections.CopyOnUpdateIdentityList;
 import com.sedmelluq.lavaplayer.core.tools.exception.ExceptionTools;
 import com.sedmelluq.lavaplayer.core.tools.exception.FriendlyException;
 import com.sedmelluq.lavaplayer.core.player.track.AudioTrackEndReason;
@@ -50,7 +51,7 @@ public class DefaultAudioPlayer implements AudioPlayer, AudioTrackStateListener 
   private volatile boolean stuckEventSent;
   private volatile ExecutableAudioTrack shadowTrack;
   private final AtomicBoolean paused;
-  private final List<AudioPlayerEventListener> listeners;
+  private final CopyOnUpdateIdentityList<AudioPlayerEventListener> listeners;
   private final Object trackSwitchLock;
 
   public DefaultAudioPlayer(AudioTrackFactory trackFactory, AudioConfiguration configuration) {
@@ -58,7 +59,7 @@ public class DefaultAudioPlayer implements AudioPlayer, AudioTrackStateListener 
     this.configuration = new DefaultOverlayAudioConfiguration(configuration);
     activeTrack = null;
     paused = new AtomicBoolean();
-    listeners = new ArrayList<>();
+    listeners = new CopyOnUpdateIdentityList<>();
     trackSwitchLock = new Object();
   }
 
@@ -287,7 +288,7 @@ public class DefaultAudioPlayer implements AudioPlayer, AudioTrackStateListener 
   @Override
   public void removeListener(AudioPlayerEventListener listener) {
     synchronized (trackSwitchLock) {
-      listeners.removeIf(it -> it == listener);
+      listeners.remove(listener);
     }
   }
 
@@ -311,7 +312,7 @@ public class DefaultAudioPlayer implements AudioPlayer, AudioTrackStateListener 
     log.debug("Firing an event with class {}", event.getClass().getSimpleName());
 
     synchronized (trackSwitchLock) {
-      for (AudioPlayerEventListener listener : listeners) {
+      for (AudioPlayerEventListener listener : listeners.items) {
         try {
           listener.onEvent(event);
         } catch (Exception e) {

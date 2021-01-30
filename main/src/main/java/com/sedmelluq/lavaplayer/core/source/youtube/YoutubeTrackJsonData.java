@@ -5,7 +5,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static com.sedmelluq.lavaplayer.core.tools.JsonBrowser.NULL_BROWSER;
-import static com.sedmelluq.lavaplayer.core.tools.exception.ExceptionTools.throwWithLoggedPayload;
+import static com.sedmelluq.lavaplayer.core.tools.exception.ExceptionTools.throwWithDebugInfo;
 
 public class YoutubeTrackJsonData {
   private static final Logger log = LoggerFactory.getLogger(DefaultYoutubeTrackDetailsLoader.class);
@@ -47,10 +47,10 @@ public class YoutubeTrackJsonData {
         return new YoutubeTrackJsonData(playerResponse, NULL_BROWSER, null);
       }
     } catch (Exception e) {
-      throw throwWithLoggedPayload(log, e, "Error parsing result", "json", result.format());
+      throw throwWithDebugInfo(log, e, "Error parsing result", "json", result.format());
     }
 
-    throw throwWithLoggedPayload(log, null, "Neither player nor playerResponse in result", "json", result.format());
+    throw throwWithDebugInfo(log, null, "Neither player nor playerResponse in result", "json", result.format());
   }
 
   public static YoutubeTrackJsonData fromEmbedParts(JsonBrowser embedInfo, JsonBrowser videoInfo) {
@@ -84,7 +84,7 @@ public class YoutubeTrackJsonData {
     try {
       return JsonBrowser.parse(playerResponseText);
     } catch (Exception e) {
-      throw throwWithLoggedPayload(log, e, "Failed to parse player_response", "value", playerResponseText);
+      throw throwWithDebugInfo(log, e, "Failed to parse player_response", "value", playerResponseText);
     }
   }
 }

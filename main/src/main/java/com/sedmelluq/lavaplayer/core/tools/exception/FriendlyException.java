@@ -18,6 +18,8 @@ public class FriendlyException extends RuntimeException {
     super(friendlyMessage, cause);
 
     this.severity = severity;
+
+    addSuppressed(EnvironmentInformation.INSTANCE);
   }
 
   /**

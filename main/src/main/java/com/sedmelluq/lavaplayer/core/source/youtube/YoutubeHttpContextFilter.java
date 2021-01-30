@@ -1,13 +1,19 @@
 package com.sedmelluq.lavaplayer.core.source.youtube;
 
+import com.sedmelluq.lavaplayer.core.http.HttpClientTools;
 import com.sedmelluq.lavaplayer.core.http.HttpContextFilter;
+import com.sedmelluq.lavaplayer.core.tools.exception.FriendlyException;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.CookieStore;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.impl.client.BasicCookieStore;
 
+import static com.sedmelluq.lavaplayer.core.tools.exception.FriendlyException.Severity.COMMON;
+
 public class YoutubeHttpContextFilter implements HttpContextFilter {
+  private static final String ATTRIBUTE_RESET_RETRY = "isResetRetry";
+
   @Override
   public void onContextOpen(HttpClientContext context) {
     CookieStore cookieStore = context.getCookieStore();
@@ -28,6 +34,10 @@ public class YoutubeHttpContextFilter implements HttpContextFilter {
 
   @Override
   public void onRequest(HttpClientContext context, HttpUriRequest request, boolean isRepetition) {
+    if (!isRepetition) {
+      context.removeAttribute(ATTRIBUTE_RESET_RETRY);
+    }
+
     request.setHeader("user-agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) " +
         "Chrome/76.0.3809.100 Safari/537.36");
     request.setHeader("x-youtube-client-name", "1");
@@ -41,11 +51,23 @@ public class YoutubeHttpContextFilter implements HttpContextFilter {
 
   @Override
   public boolean onRequestResponse(HttpClientContext context, HttpUriRequest request, HttpResponse response) {
+    if (response.getStatusLine().getStatusCode() == 429) {
+      throw new FriendlyException("This IP address has been blocked by YouTube (429).", COMMON, null);
+    }
+
     return false;
   }
 
   @Override
   public boolean onRequestException(HttpClientContext context, HttpUriRequest request, Throwable error) {
+    // Always retry once in case of connection reset exception.
+    if (HttpClientTools.isConnectionResetException(error)) {
+      if (context.getAttribute(ATTRIBUTE_RESET_RETRY) == null) {
+        context.setAttribute(ATTRIBUTE_RESET_RETRY, true);
+        return true;
+      }
+    }
+
     return false;
   }
 }

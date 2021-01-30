@@ -22,6 +22,7 @@ public class OggPacketInputStream extends InputStream {
   private static final int LONG_SCAN = 65307;
 
   private final SeekableInputStream inputStream;
+  private final boolean closeDelegated;
   private final DataInput dataInput;
   private final int[] segmentSizes;
 
@@ -34,8 +35,9 @@ public class OggPacketInputStream extends InputStream {
   /**
    * @param inputStream Input stream to read in as OGG packets
    */
-  public OggPacketInputStream(SeekableInputStream inputStream) {
+  public OggPacketInputStream(SeekableInputStream inputStream, boolean closeDelegated) {
     this.inputStream = inputStream;
+    this.closeDelegated = closeDelegated;
     this.dataInput = new DataInputStream(inputStream);
     this.segmentSizes = new int[256];
     this.state = State.TRACK_BOUNDARY;
@@ -262,6 +264,13 @@ public class OggPacketInputStream extends InputStream {
     }
 
     return Math.min(inputStream.available(), bytesLeftInPacket);
+  }
+
+  @Override
+  public void close() throws IOException {
+    if (closeDelegated) {
+      inputStream.close();
+    }
   }
 
   /**

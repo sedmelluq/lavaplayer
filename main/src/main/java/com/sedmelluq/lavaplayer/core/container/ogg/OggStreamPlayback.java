@@ -24,7 +24,7 @@ public class OggStreamPlayback implements AudioPlayback {
 
   @Override
   public void process(AudioPlaybackController controller) {
-    OggPacketInputStream packetInputStream = new OggPacketInputStream(inputStream);
+    OggPacketInputStream packetInputStream = new OggPacketInputStream(inputStream, false);
 
     log.debug("Starting to play an OGG stream track {}", identifier);
 

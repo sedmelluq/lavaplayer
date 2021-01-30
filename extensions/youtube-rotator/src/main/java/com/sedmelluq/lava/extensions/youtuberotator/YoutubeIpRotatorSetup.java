@@ -1,7 +1,7 @@
 package com.sedmelluq.lava.extensions.youtuberotator;
 
-import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
-import com.sedmelluq.discord.lavaplayer.source.youtube.YoutubeAudioSourceManager;
+import com.sedmelluq.lavaplayer.core.manager.AudioPlayerManager;
+import com.sedmelluq.lavaplayer.core.source.youtube.YoutubeAudioSource;
 import com.sedmelluq.lavaplayer.core.source.youtube.YoutubeHttpContextFilter;
 import com.sedmelluq.lavaplayer.core.http.ExtendedHttpConfigurable;
 import com.sedmelluq.lavaplayer.core.http.HttpContextFilter;
@@ -37,14 +37,15 @@ public class YoutubeIpRotatorSetup {
     return this;
   }
 
-  public YoutubeIpRotatorSetup forSource(YoutubeAudioSourceManager sourceManager) {
-    forConfiguration(sourceManager.getMainHttpConfiguration(), false);
-    forConfiguration(sourceManager.getSearchHttpConfiguration(), true);
+  public YoutubeIpRotatorSetup forSource(YoutubeAudioSource source) {
+    forConfiguration(source.getMainHttpConfiguration(), false);
+    forConfiguration(source.getSearchHttpConfiguration(), true);
+    forConfiguration(source.getSearchMusicHttpConfiguration(), true);
     return this;
   }
 
   public YoutubeIpRotatorSetup forManager(AudioPlayerManager playerManager) {
-    YoutubeAudioSourceManager sourceManager = playerManager.source(YoutubeAudioSourceManager.class);
+    YoutubeAudioSource sourceManager = playerManager.getSourceRegistry().findSource(YoutubeAudioSource.class);
 
     if (sourceManager != null) {
       forSource(sourceManager);

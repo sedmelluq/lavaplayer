@@ -38,10 +38,10 @@ public class SoundCloudUrlPlayback implements AudioPlayback {
       boolean recursion,
       AudioPlaybackController controller
   ) throws Exception {
-    String opusLookupUrl = sourceManager.getFormatHandler().getOpusLookupUrl(identifier);
+    SoundCloudM3uInfo m3uInfo = sourceManager.getFormatHandler().getM3uInfo(identifier);
 
-    if (opusLookupUrl != null) {
-      new SoundCloudOpusM3uUrlPlayback(identifier, httpInterface, opusLookupUrl).process(controller);
+    if (m3uInfo != null) {
+      new SoundCloudOpusM3uUrlPlayback(identifier, httpInterface, m3uInfo).process(controller);
       return;
     }
 

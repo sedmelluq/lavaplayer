@@ -1,18 +1,15 @@
 package com.sedmelluq.lavaplayer.core.source.soundcloud;
 
-import com.sedmelluq.lavaplayer.core.container.ogg.OggPacketInputStream;
-import com.sedmelluq.lavaplayer.core.container.ogg.OggTrackBlueprint;
-import com.sedmelluq.lavaplayer.core.container.ogg.OggTrackHandler;
-import com.sedmelluq.lavaplayer.core.container.ogg.OggTrackLoader;
 import com.sedmelluq.lavaplayer.core.container.playlists.HlsStreamSegment;
 import com.sedmelluq.lavaplayer.core.container.playlists.HlsStreamSegmentParser;
+import com.sedmelluq.lavaplayer.core.http.HttpInterface;
 import com.sedmelluq.lavaplayer.core.http.HttpStreamTools;
 import com.sedmelluq.lavaplayer.core.player.playback.AudioPlayback;
 import com.sedmelluq.lavaplayer.core.player.playback.AudioPlaybackController;
 import com.sedmelluq.lavaplayer.core.tools.exception.ExceptionTools;
 import com.sedmelluq.lavaplayer.core.tools.io.ChainedInputStream;
-import com.sedmelluq.lavaplayer.core.http.HttpInterface;
 import com.sedmelluq.lavaplayer.core.tools.io.NonSeekableInputStream;
+import com.sedmelluq.lavaplayer.core.tools.io.SeekableInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
@@ -29,47 +26,39 @@ public class SoundCloudOpusM3uUrlPlayback implements AudioPlayback {
 
   private final String identifier;
   private final HttpInterface httpInterface;
-  private final String streamLoopupUrl;
+  private final SoundCloudM3uInfo m3uInfo;
 
-  public SoundCloudOpusM3uUrlPlayback(String identifier, HttpInterface httpInterface, String streamLoopupUrl) {
+  public SoundCloudOpusM3uUrlPlayback(String identifier, HttpInterface httpInterface, SoundCloudM3uInfo m3uInfo) {
     this.identifier = identifier;
     this.httpInterface = httpInterface;
-    this.streamLoopupUrl = streamLoopupUrl;
+    this.m3uInfo = m3uInfo;
   }
 
   @Override
   public void process(AudioPlaybackController controller) {
     try (SegmentTracker segmentTracker = createSegmentTracker()) {
-      OggTrackBlueprint blueprint = OggTrackLoader.loadTrackBlueprint(segmentTracker.getOggStream());
+      segmentTracker.decoder.prepareStream(true);
 
-      if (blueprint == null) {
-        throw new IOException("No OGG track detected in the stream.");
-      }
-
-      controller.executeProcessingLoop(() -> {
-        try (OggTrackHandler handler = blueprint.loadTrackHandler(segmentTracker.getOggStream())) {
-          handler.initialise(
-              controller.getContext(),
-              segmentTracker.streamStartPosition,
-              segmentTracker.desiredPosition
-          );
-
-          handler.provideFrames();
-        }
-      }, segmentTracker::seekToTimecode, true);
+      controller.executeProcessingLoop(() -> segmentTracker.decoder.playStream(
+          controller.getContext(),
+          segmentTracker.streamStartPosition,
+          segmentTracker.desiredPosition
+      ), segmentTracker::seekToTimecode, true);
     } catch (Exception e) {
       throw ExceptionTools.toRuntimeException(e);
     }
   }
 
   private List<HlsStreamSegment> loadSegments() throws IOException {
-    String playbackUrl = SoundCloudHelper.loadPlaybackUrl(httpInterface, streamLoopupUrl);
+    String playbackUrl = SoundCloudHelper.loadPlaybackUrl(httpInterface, m3uInfo.lookupUrl);
     return HlsStreamSegmentParser.parseFromUrl(httpInterface, playbackUrl);
   }
 
   private SegmentTracker createSegmentTracker() throws IOException {
     List<HlsStreamSegment> initialSegments = loadSegments();
-    return new SegmentTracker(initialSegments);
+    SegmentTracker tracker = new SegmentTracker(initialSegments);
+    tracker.setupDecoder(m3uInfo.decoderFactory);
+    return tracker;
   }
 
   private class SegmentTracker implements AutoCloseable {
@@ -77,7 +66,7 @@ public class SoundCloudOpusM3uUrlPlayback implements AudioPlayback {
     private long desiredPosition = 0;
     private long streamStartPosition = 0;
     private long lastUpdate;
-    private OggPacketInputStream lastJoinedStream;
+    private SoundCloudSegmentDecoder decoder;
     private int segmentIndex = 0;
 
     private SegmentTracker(List<HlsStreamSegment> segments) {
@@ -85,20 +74,12 @@ public class SoundCloudOpusM3uUrlPlayback implements AudioPlayback {
       this.lastUpdate = System.currentTimeMillis();
     }
 
-    private OggPacketInputStream getOggStream() {
-      if (lastJoinedStream == null) {
-        lastJoinedStream = new OggPacketInputStream(
-            new NonSeekableInputStream(new ChainedInputStream(this::getNextStream)));
-      }
-
-      return lastJoinedStream;
+    private void setupDecoder(SoundCloudSegmentDecoder.Factory factory) {
+      decoder = factory.create(this::createChainedStream);
     }
 
-    private void resetStream() throws IOException {
-      if (lastJoinedStream != null) {
-        lastJoinedStream.close();
-        lastJoinedStream = null;
-      }
+    private SeekableInputStream createChainedStream() {
+      return new NonSeekableInputStream(new ChainedInputStream(this::getNextStream));
     }
 
     private void seekToTimecode(long timecode) throws IOException {
@@ -125,23 +106,17 @@ public class SoundCloudOpusM3uUrlPlayback implements AudioPlayback {
     }
 
     private void seekToSegment(int index, long requestedTimecode, long segmentTimecode) throws IOException {
-      resetStream();
+      decoder.resetStream();
 
       segmentIndex = index;
       desiredPosition = requestedTimecode;
       streamStartPosition = segmentTimecode;
 
-      OggPacketInputStream nextStream = getOggStream();
-
-      if (streamStartPosition == 0) {
-        OggTrackLoader.loadTrackBlueprint(nextStream);
-      } else {
-        nextStream.startNewTrack();
-      }
+      decoder.prepareStream(streamStartPosition == 0);
     }
 
     private void seekToEnd() throws IOException {
-      resetStream();
+      decoder.resetStream();
 
       segmentIndex = segments.size();
     }
@@ -205,7 +180,7 @@ public class SoundCloudOpusM3uUrlPlayback implements AudioPlayback {
 
     @Override
     public void close() throws Exception {
-      resetStream();
+      decoder.resetStream();
     }
   }
 }

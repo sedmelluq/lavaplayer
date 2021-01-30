@@ -44,10 +44,7 @@ public class DefaultYoutubeMixLoader implements YoutubeMixLoader {
 
     try (HttpInterface httpInterface = httpInterfaceManager.getInterface()) {
       try (CloseableHttpResponse response = httpInterface.execute(new HttpGet(mixUrl))) {
-        int statusCode = response.getStatusLine().getStatusCode();
-        if (!HttpClientTools.isSuccessWithContent(statusCode)) {
-          throw new IOException("Invalid status code for mix response: " + statusCode);
-        }
+        HttpClientTools.assertSuccessWithContent(response, "mix response");
 
         JsonBrowser body = JsonBrowser.parse(response.getEntity().getContent());
         JsonBrowser playlist = body.index(3).get("response")

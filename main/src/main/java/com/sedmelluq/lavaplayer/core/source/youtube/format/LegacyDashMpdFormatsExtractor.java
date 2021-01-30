@@ -52,10 +52,7 @@ public class LegacyDashMpdFormatsExtractor implements YoutubeTrackFormatExtracto
     String resolvedDashUrl = signatureResolver.resolveDashUrl(httpInterface, playerScriptUrl, dashUrl);
 
     try (CloseableHttpResponse response = httpInterface.execute(new HttpGet(resolvedDashUrl))) {
-      int statusCode = response.getStatusLine().getStatusCode();
-      if (!HttpClientTools.isSuccessWithContent(statusCode)) {
-        throw new IOException("Invalid status code for track info page response: " + statusCode);
-      }
+      HttpClientTools.assertSuccessWithContent(response, "track info page response");
 
       Document document = Jsoup.parse(response.getEntity().getContent(), StandardCharsets.UTF_8.name(), "",
           Parser.xmlParser());

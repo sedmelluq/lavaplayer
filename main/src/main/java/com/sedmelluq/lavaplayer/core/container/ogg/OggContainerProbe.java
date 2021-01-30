@@ -63,7 +63,7 @@ public class OggContainerProbe implements MediaContainerProbe {
       SeekableInputStream stream,
       AudioTrackInfoBuilder infoBuilder
   ) throws IOException {
-    OggPacketInputStream packetInputStream = new OggPacketInputStream(stream);
+    OggPacketInputStream packetInputStream = new OggPacketInputStream(stream, false);
     OggMetadata metadata = OggTrackLoader.loadMetadata(packetInputStream);
 
     if (metadata != null) {

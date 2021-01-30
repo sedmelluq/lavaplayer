@@ -1,5 +1,6 @@
 package com.sedmelluq.lavaplayer.core.container.mpeg.reader.fragmented;
 
+import com.sedmelluq.lavaplayer.core.tools.Units;
 import com.sedmelluq.lavaplayer.core.tools.io.DetachedByteChannel;
 import com.sedmelluq.lavaplayer.core.container.mpeg.MpegTrackConsumer;
 import com.sedmelluq.lavaplayer.core.container.mpeg.reader.MpegFileTrackProvider;
@@ -36,7 +37,7 @@ public class MpegFragmentedFileTrackProvider implements MpegFileTrackProvider {
 
   @Override
   public boolean initialise(MpegTrackConsumer consumer) {
-    if (!isFragmented || globalSeekInfo == null) {
+    if (!isFragmented) {
       return false;
     }
 
@@ -76,6 +77,11 @@ public class MpegFragmentedFileTrackProvider implements MpegFileTrackProvider {
 
   @Override
   public void seekToTimecode(long timecode) {
+    if (globalSeekInfo == null) {
+      // Not seekable
+      return;
+    }
+
     minimumTimecode = timecode * globalSeekInfo.timescale / 1000;
     seeking = true;
 
@@ -96,6 +102,10 @@ public class MpegFragmentedFileTrackProvider implements MpegFileTrackProvider {
 
   @Override
   public long getDuration() {
+    if (globalSeekInfo == null) {
+      return Units.DURATION_MS_UNKNOWN;
+    }
+
     return totalDuration * 1000 / globalSeekInfo.timescale;
   }
 

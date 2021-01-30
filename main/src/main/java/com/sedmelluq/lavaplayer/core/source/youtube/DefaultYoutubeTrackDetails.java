@@ -11,6 +11,7 @@ import com.sedmelluq.lavaplayer.core.source.youtube.format.YoutubeTrackFormatExt
 import com.sedmelluq.lavaplayer.core.source.youtube.signature.YoutubeSignatureResolver;
 import com.sedmelluq.lavaplayer.core.tools.JsonBrowser;
 import com.sedmelluq.lavaplayer.core.tools.Units;
+import com.sedmelluq.lavaplayer.core.tools.exception.ExceptionTools;
 import com.sedmelluq.lavaplayer.core.tools.exception.FriendlyException;
 import java.util.List;
 import org.slf4j.Logger;
@@ -50,7 +51,7 @@ public class DefaultYoutubeTrackDetails implements YoutubeTrackDetails {
     try {
       return loadTrackFormats(httpInterface, signatureResolver);
     } catch (Exception e) {
-      throw new RuntimeException(e);
+      throw ExceptionTools.toRuntimeException(e);
     }
   }
 

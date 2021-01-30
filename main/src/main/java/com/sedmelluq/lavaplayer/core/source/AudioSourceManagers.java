@@ -1,12 +1,11 @@
 package com.sedmelluq.lavaplayer.core.source;
 
-import com.sedmelluq.lavaplayer.core.source.soundcloud.SoundCloudAudioSourceManager;
 import com.sedmelluq.lavaplayer.core.container.MediaContainerRegistry;
 import com.sedmelluq.lavaplayer.core.manager.AudioPlayerManager;
 import com.sedmelluq.lavaplayer.core.source.bandcamp.BandcampAudioSource;
-import com.sedmelluq.lavaplayer.core.source.beam.BeamAudioSource;
 import com.sedmelluq.lavaplayer.core.source.http.HttpAudioSource;
 import com.sedmelluq.lavaplayer.core.source.local.LocalAudioSource;
+import com.sedmelluq.lavaplayer.core.source.soundcloud.SoundCloudAudioSourceManager;
 import com.sedmelluq.lavaplayer.core.source.twitch.TwitchStreamAudioSource;
 import com.sedmelluq.lavaplayer.core.source.vimeo.VimeoAudioSource;
 import com.sedmelluq.lavaplayer.core.source.youtube.YoutubeAudioSource;
@@ -36,7 +35,6 @@ public class AudioSourceManagers {
     registry.registerSource(new BandcampAudioSource());
     registry.registerSource(new VimeoAudioSource());
     registry.registerSource(new TwitchStreamAudioSource());
-    registry.registerSource(new BeamAudioSource());
     registry.registerSource(new HttpAudioSource(containerRegistry));
   }
 
