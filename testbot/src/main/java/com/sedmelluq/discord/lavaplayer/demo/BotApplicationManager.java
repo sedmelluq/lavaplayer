@@ -9,6 +9,7 @@ import com.sedmelluq.lavaplayer.core.manager.AudioPlayerManager;
 import com.sedmelluq.lavaplayer.core.manager.DefaultAudioPlayerManager;
 import com.sedmelluq.lavaplayer.core.player.configuration.AudioConfiguration;
 import com.sedmelluq.lavaplayer.core.source.AudioSourceManagers;
+import com.sedmelluq.lavaplayer.core.source.twitch.TwitchVideoAudioSource;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Executors;
@@ -40,6 +41,7 @@ public class BotApplicationManager extends ListenerAdapter {
     playerManager = DefaultAudioPlayerManager.createDefault();
     //playerManager.useRemoteNodes("localhost:8080");
     playerManager.getConfiguration().setResamplingQuality(AudioConfiguration.ResamplingQuality.LOW);
+    playerManager.getSourceRegistry().registerSource(new TwitchVideoAudioSource());
     AudioSourceManagers.registerRemoteSources(playerManager);
     AudioSourceManagers.registerLocalSource(playerManager);
 

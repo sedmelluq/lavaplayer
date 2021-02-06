@@ -65,7 +65,7 @@ public class MusicScheduler extends AudioPlayerEventAdapter implements Runnable 
 
     if (next != null) {
       if (player.playTrack(new AudioTrackRequestBuilder(next)
-          .withReplaceExisting(!noInterrupt)) != null) {
+          .withReplaceExisting(!noInterrupt)) == null) {
         queue.addFirst(next);
       }
     } else {
