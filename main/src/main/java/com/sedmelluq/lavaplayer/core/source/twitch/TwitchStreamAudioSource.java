@@ -54,7 +54,9 @@ public class TwitchStreamAudioSource implements AudioSource, HttpConfigurable {
   /**
    * Create an instance.
    */
-  public TwitchStreamAudioSource() { this(DEFAULT_CLIENT_ID); }
+  public TwitchStreamAudioSource() {
+    this(DEFAULT_CLIENT_ID);
+  }
 
   /**
    * Create an instance.
@@ -189,7 +191,7 @@ public class TwitchStreamAudioSource implements AudioSource, HttpConfigurable {
     try (HttpInterface httpInterface = getHttpInterface()) {
       HttpUriRequest request = createGetRequest("https://api.twitch.tv/helix/streams?user_login=" + name);
 
-      return HttpClientTools.fetchResponseAsJson(httpInterface, request);
+      return HttpClientTools.fetchResponseAsJson(httpInterface, request, true);
     } catch (IOException e) {
       throw new FriendlyException("Loading Twitch channel information failed.", SUSPICIOUS, e);
     }

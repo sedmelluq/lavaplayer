@@ -280,11 +280,11 @@ public class HttpClientTools {
    * @return Response as a JsonBrowser instance. null in case of 404.
    * @throws IOException On network error or for non-200 response code.
    */
-  public static JsonBrowser fetchResponseAsJson(HttpInterface httpInterface, HttpUriRequest request) throws IOException {
+  public static JsonBrowser fetchResponseAsJson(HttpInterface httpInterface, HttpUriRequest request, boolean nullOn404) throws IOException {
     try (CloseableHttpResponse response = httpInterface.execute(request)) {
       int statusCode = response.getStatusLine().getStatusCode();
 
-      if (statusCode == HttpStatus.SC_NOT_FOUND) {
+      if (nullOn404 && statusCode == HttpStatus.SC_NOT_FOUND) {
         return null;
       } else if (!isSuccessWithContent(statusCode)) {
         throw new FriendlyException("Server responded with an error.", SUSPICIOUS,
