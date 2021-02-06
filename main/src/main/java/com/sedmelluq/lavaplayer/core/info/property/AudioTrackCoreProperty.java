@@ -4,7 +4,7 @@ import static com.sedmelluq.lavaplayer.core.info.property.AudioTrackProperty.Fla
 import static com.sedmelluq.lavaplayer.core.info.property.AudioTrackProperty.Flag.METADATA_EXTENDED;
 import static com.sedmelluq.lavaplayer.core.info.property.AudioTrackProperty.Flag.PLAYBACK_CORE;
 
-public enum  AudioTrackCoreProperty {
+public enum AudioTrackCoreProperty {
   SOURCE(1, "source", PLAYBACK_CORE.mask | METADATA_EXTENDED.mask),
   IDENTIFIER(2, "identifier", PLAYBACK_CORE.mask),
   IS_STREAM(3, "isStream", PLAYBACK_CORE.mask | METADATA_CORE.mask),

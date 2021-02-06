@@ -53,7 +53,7 @@ public class PlaybackAudioTrackFactory implements AudioTrackFactory {
     AudioTrackInfo trackInfo = request.getTrackInfo();
     AudioSource source = determineSource(request);
 
-    return new PlaybackAudioTrack(
+    PlaybackAudioTrack track = new PlaybackAudioTrack(
         trackInfo,
         source.createPlayback(trackInfo),
         configuration,
@@ -61,6 +61,18 @@ public class PlaybackAudioTrackFactory implements AudioTrackFactory {
         source,
         executorService
     );
+
+    if (request.getInitialPosition() > 0) {
+      track.setPosition(request.getInitialPosition());
+    }
+
+    if (request.getInitialMarker() != null) {
+      track.setMarker(request.getInitialMarker());
+    }
+
+    track.setUserData(request.getUserData());
+
+    return track;
   }
 
   @Override
