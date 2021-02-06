@@ -66,46 +66,47 @@ public class MpegTsElementaryInputStream extends InputStream implements AudioTra
 
   @Override
   public int read() throws IOException {
-    if (!findElementaryData()) {
+    if (!prepareElementaryDataRead()) {
       return -1;
     }
 
     int result = packetBuffer.get() & 0xFF;
-
-    checkElementaryDataEnd();
     return result;
   }
 
   @Override
   public int read(byte[] buffer, int offset, int length) throws IOException {
-    if (!findElementaryData()) {
+    if (!prepareElementaryDataRead()) {
       return -1;
     }
 
     int chunk = Math.min(length, packetBuffer.remaining());
     packetBuffer.get(buffer, offset, chunk);
 
-    checkElementaryDataEnd();
-
     return chunk;
   }
 
+  private boolean prepareElementaryDataRead() throws IOException {
+    if (elementaryDataInPacket) {
+      if (!packetBuffer.hasRemaining()) {
+        elementaryDataInPacket = false;
+        return findElementaryData();
+      } else {
+        return true;
+      }
+    } else {
+      return findElementaryData();
+    }
+  }
+
   private boolean findElementaryData() throws IOException {
-    if (!elementaryDataInPacket) {
-      while (processPacket()) {
-        if (elementaryDataInPacket) {
-          return true;
-        }
+    while (processPacket()) {
+      if (elementaryDataInPacket) {
+        return true;
       }
     }
 
-    return elementaryDataInPacket;
-  }
-
-  private void checkElementaryDataEnd() {
-    if (packetBuffer.remaining() == 0) {
-      elementaryDataInPacket = false;
-    }
+    return false;
   }
 
   private boolean processPacket() throws IOException {
@@ -136,7 +137,9 @@ public class MpegTsElementaryInputStream extends InputStream implements AudioTra
 
       processProgramPacket();
     } else if (identifier == elementaryStreamIdentifier) {
-      elementaryDataInPacket = true;
+      if (packetBuffer.hasRemaining()) {
+        elementaryDataInPacket = true;
+      }
     } else if (identifier == PACKET_IDENTIFIER_SDT) {
       try {
         parseSdtTable();
