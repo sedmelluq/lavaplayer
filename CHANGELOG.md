@@ -1,5 +1,9 @@
 # Change Log
 
+## [1.3.68] -- 2021-02-13
+### Added
+- Added support for AAC profiles other than AAC-LC in MP4 files.
+
 ## [1.3.67] -- 2021-01-30
 ### Added
 - Added support for `music.youtube.com` URLs (PR 562 by Walkyst).
