@@ -1,5 +1,9 @@
 # Change Log
 
+## [1.3.69] -- 2021-02-13
+### Fixed
+- Fixed YouTube age restricted videos which broke due to embed page content change.
+
 ## [1.3.68] -- 2021-02-13
 ### Added
 - Added support for AAC profiles other than AAC-LC in MP4 files.
