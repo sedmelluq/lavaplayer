@@ -113,6 +113,20 @@ public class MpegReader {
     return new String(bytes.toByteArray(), StandardCharsets.UTF_8);
   }
 
+  public int readCompressedInt() throws IOException {
+    int byteCount = 0;
+    int value = 0;
+    int currentByte;
+
+    do {
+      currentByte = data.readUnsignedByte();
+      byteCount++;
+      value = (value << 7) | (currentByte & 0x7F);
+    } while ((currentByte & 0x80) == 0x80 && byteCount < 4);
+
+    return value;
+  }
+
   /**
    * Parse the flags and version for the specified section
    * @param section The section where the flags and version should be parsed

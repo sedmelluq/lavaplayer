@@ -24,6 +24,7 @@ public class MpegTrackInfo {
    * Sample rate for audio
    */
   public final int sampleRate;
+  public final byte[] decoderConfig;
 
   /**
    * @param trackId ID of the track
@@ -31,13 +32,15 @@ public class MpegTrackInfo {
    * @param codecName Name of the codec
    * @param channelCount Number of audio channels
    * @param sampleRate Sample rate for audio
+   * @param decoderConfig
    */
-  public MpegTrackInfo(int trackId, String handler, String codecName, int channelCount, int sampleRate) {
+  public MpegTrackInfo(int trackId, String handler, String codecName, int channelCount, int sampleRate, byte[] decoderConfig) {
     this.trackId = trackId;
     this.handler = handler;
     this.codecName = codecName;
     this.channelCount = channelCount;
     this.sampleRate = sampleRate;
+    this.decoderConfig = decoderConfig;
   }
 
   /**
@@ -49,6 +52,7 @@ public class MpegTrackInfo {
     private String codecName;
     private int channelCount;
     private int sampleRate;
+    private byte[] decoderConfig;
 
     public void setTrackId(int trackId) {
       this.trackId = trackId;
@@ -78,11 +82,15 @@ public class MpegTrackInfo {
       this.sampleRate = sampleRate;
     }
 
+    public void setDecoderConfig(byte[] decoderConfig) {
+      this.decoderConfig = decoderConfig;
+    }
+
     /**
      * @return The final track info
      */
     public MpegTrackInfo build() {
-      return new MpegTrackInfo(trackId, handler, codecName, channelCount, sampleRate);
+      return new MpegTrackInfo(trackId, handler, codecName, channelCount, sampleRate, decoderConfig);
     }
   }
 }

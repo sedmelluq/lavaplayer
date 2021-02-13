@@ -217,6 +217,53 @@ public class MpegFileLoader {
     reader.data.readUnsignedShort(); // apple stuff
 
     trackInfo.setSampleRate(reader.data.readInt());
+    reader.data.readUnsignedShort();
+
+    MpegSectionInfo esds = reader.nextChild(codec);
+
+    if (esds != null && "esds".equals(esds.type)) {
+      trackInfo.setDecoderConfig(parseDecoderConfig(esds));
+    }
+  }
+
+  private byte[] parseDecoderConfig(MpegSectionInfo esds) throws IOException {
+    reader.parseFlags(esds);
+
+    int descriptorTag = reader.data.readUnsignedByte();
+
+    // ES_DescrTag
+    if (descriptorTag == 0x03) {
+      if (reader.readCompressedInt() < 5 + 15) {
+        return null;
+      }
+
+      reader.data.skipBytes(3);
+    } else {
+      reader.data.skipBytes(2);
+    }
+
+    // DecoderConfigDescrTab
+    if (reader.data.readUnsignedByte() != 0x04 || reader.readCompressedInt() < 15) {
+      return null;
+    }
+
+    reader.data.skipBytes(13);
+
+    // DecSpecificInfoTag
+    if (reader.data.readUnsignedByte() != 0x05) {
+      return null;
+    }
+
+    int decoderConfigLength = reader.readCompressedInt();
+
+    if (decoderConfigLength > 8) {
+      // Longer decoder config than 8 bytes should not be possible with supported formats.
+      return null;
+    }
+
+    byte[] decoderConfig = new byte[decoderConfigLength];
+    reader.data.readFully(decoderConfig);
+    return decoderConfig;
   }
 
   private void parseEventMessage(MpegSectionInfo emsg) throws IOException {
