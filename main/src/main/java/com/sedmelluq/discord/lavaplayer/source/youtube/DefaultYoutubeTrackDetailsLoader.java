@@ -26,15 +26,11 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 public class DefaultYoutubeTrackDetailsLoader implements YoutubeTrackDetailsLoader {
   private static final Logger log = LoggerFactory.getLogger(DefaultYoutubeTrackDetailsLoader.class);
 
-  private static final TextRange[] EMBED_CONFIG_RANGES = new TextRange[] {
-      new TextRange("'WEB_PLAYER_CONTEXT_CONFIGS':", "});writeEmbed();"),
-      new TextRange("'WEB_PLAYER_CONTEXT_CONFIGS':", "});yt.setConfig"),
-      new TextRange("\"WEB_PLAYER_CONTEXT_CONFIGS\":", "});writeEmbed();"),
-      new TextRange("\"WEB_PLAYER_CONTEXT_CONFIGS\":", "});yt.setConfig"),
-      new TextRange("'PLAYER_CONFIG':", "});writeEmbed();"),
-      new TextRange("'PLAYER_CONFIG':", "});yt.setConfig"),
-      new TextRange("\"PLAYER_CONFIG\":", "});writeEmbed();"),
-      new TextRange("\"PLAYER_CONFIG\":", "});yt.setConfig")
+  private static final String[] EMBED_CONFIG_PREFIXES = new String[] {
+      "'WEB_PLAYER_CONTEXT_CONFIGS':",
+      "WEB_PLAYER_CONTEXT_CONFIGS\":",
+      "'PLAYER_CONFIG':",
+      "\"PLAYER_CONFIG\":"
   };
 
   private volatile CachedPlayerScript cachedPlayerScript = null;
@@ -188,9 +184,10 @@ public class DefaultYoutubeTrackDetailsLoader implements YoutubeTrackDetailsLoad
       HttpClientTools.assertSuccessWithContent(response, "embed video page response");
 
       String html = EntityUtils.toString(response.getEntity(), UTF_8);
-      String configJson = DataFormatTools.extractBetween(html, EMBED_CONFIG_RANGES);
+      String configJson = DataFormatTools.extractAfter(html, EMBED_CONFIG_PREFIXES);
 
       if (configJson != null) {
+        // configJson is not pure JSON - it contains data after the object ends, but this does not break parsing.
         return JsonBrowser.parse(configJson);
       }
 
