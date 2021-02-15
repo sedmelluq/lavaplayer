@@ -132,7 +132,7 @@ public class DataFormatTools {
     int length = 0;
 
     for (String part : durationText.split("[:.]")) {
-      length = length * 60 + Integer.valueOf(part);
+      length = length * 60 + Integer.parseInt(part);
     }
 
     return length * 1000L;
