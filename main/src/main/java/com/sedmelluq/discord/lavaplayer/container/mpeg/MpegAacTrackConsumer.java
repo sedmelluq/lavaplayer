@@ -90,7 +90,7 @@ public class MpegAacTrackConsumer implements MpegTrackConsumer {
     if (track.decoderConfig != null) {
       decoder.configure(track.decoderConfig);
     } else {
-      decoder.configure(1, track.sampleRate, track.channelCount);
+      decoder.configure(AacDecoder.AAC_LC, track.sampleRate, track.channelCount);
     }
   }
 }
