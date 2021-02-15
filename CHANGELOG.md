@@ -1,5 +1,9 @@
 # Change Log
 
+## [1.3.71] -- 2021-02-15
+### Fixed
+- Fixed YouTube music search failing if some results did not include duration.
+
 ## [1.3.70] -- 2021-02-15
 ### Fixed
 - Fixed a bug with MP4 AAC decoding introduced in 1.3.68.
