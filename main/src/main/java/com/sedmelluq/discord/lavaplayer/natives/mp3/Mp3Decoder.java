@@ -105,7 +105,7 @@ public class Mp3Decoder extends NativeResourceHolder {
       case 10: return 96000;
       case 11: return 112000;
       case 12: return 128000;
-      case 13: return 140000;
+      case 13: return 144000;
       case 14: return 160000;
       default:
         throw new IllegalArgumentException("Not valid bitrate");
