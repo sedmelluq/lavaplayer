@@ -16,6 +16,8 @@ import java.util.Optional;
 import java.util.function.Function;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.StringEntity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,6 +26,8 @@ import static com.sedmelluq.discord.lavaplayer.tools.FriendlyException.Severity.
 public class DefaultYoutubePlaylistLoader implements YoutubePlaylistLoader {
   private static final Logger log = LoggerFactory.getLogger(DefaultYoutubePlaylistLoader.class);
 
+  private static final String REQUEST_URL = "https://www.youtube.com/youtubei/v1/browse?key=AIzaSyAO_FJ2SlqU8Q4STEHLGCilw_Y9_11qcW8";
+  private static final String REQUEST_PAYLOAD = "{\"context\":{\"client\":{\"clientName\":\"WEB\",\"clientVersion\":\"2.20210302.07.01\"}},\"continuation\":\"%s\"}";
   private volatile int playlistPageCount = 6;
 
   @Override
@@ -90,13 +94,16 @@ public class DefaultYoutubePlaylistLoader implements YoutubePlaylistLoader {
         .get("contents");
 
     List<AudioTrack> tracks = new ArrayList<>();
-    String loadMoreUrl = extractPlaylistTracks(playlistVideoList, tracks, trackFactory);
+    String continuationsToken = extractPlaylistTracks(playlistVideoList, tracks, trackFactory);
     int loadCount = 0;
     int pageCount = playlistPageCount;
 
     // Also load the next pages, each result gives us a JSON with separate values for list html and next page loader html
-    while (loadMoreUrl != null && ++loadCount < pageCount) {
-      try (CloseableHttpResponse response = httpInterface.execute(new HttpGet("https://www.youtube.com" + loadMoreUrl))) {
+    while (continuationsToken != null && ++loadCount < pageCount) {
+      HttpPost post = new HttpPost(REQUEST_URL);
+      StringEntity payload = new StringEntity(String.format(REQUEST_PAYLOAD, continuationsToken), "UTF-8");
+      post.setEntity(payload);
+      try (CloseableHttpResponse response = httpInterface.execute(post)) {
         HttpClientTools.assertSuccessWithContent(response, "playlist response");
 
         JsonBrowser continuationJson = JsonBrowser.parse(response.getEntity().getContent());
@@ -107,15 +114,13 @@ public class DefaultYoutubePlaylistLoader implements YoutubePlaylistLoader {
             .get("playlistVideoListContinuation");
 
         if (playlistVideoListPage.isNull()) {
-          playlistVideoListPage = continuationJson.index(1)
-              .get("response")
-              .get("onResponseReceivedActions")
-              .index(0)
-              .get("appendContinuationItemsAction")
-              .get("continuationItems");
+          playlistVideoListPage = continuationJson.get("onResponseReceivedActions")
+            .index(0)
+            .get("appendContinuationItemsAction")
+            .get("continuationItems");
         }
 
-        loadMoreUrl = extractPlaylistTracks(playlistVideoListPage, tracks, trackFactory);
+        continuationsToken = extractPlaylistTracks(playlistVideoListPage, tracks, trackFactory);
       }
     }
 
@@ -163,20 +168,15 @@ public class DefaultYoutubePlaylistLoader implements YoutubePlaylistLoader {
       }
     }
 
-    JsonBrowser continuations = playlistVideoList.get("continuations");
+    JsonBrowser continuations = playlistTrackEntries.get(playlistTrackEntries.size() - 1)
+        .get("continuationItemRenderer")
+        .get("continuationEndpoint")
+        .get("continuationCommand");
 
     String continuationsToken;
     if (!continuations.isNull()) {
-      continuationsToken = continuations.index(0).get("nextContinuationData").get("continuation").text();
-    } else {
-      continuations = playlistTrackEntries
-          .get(playlistTrackEntries.size() -1)
-          .get("continuationItemRenderer");
-      continuationsToken = continuations.get("continuationEndpoint").get("continuationCommand").get("token").text();
-    }
-
-    if (continuationsToken != null && !continuationsToken.isEmpty()) {
-      return "/browse_ajax?continuation=" + continuationsToken + "&ctoken=" + continuationsToken + "&hl=en";
+      continuationsToken = continuations.get("token").text();
+      return continuationsToken;
     }
 
     return null;
