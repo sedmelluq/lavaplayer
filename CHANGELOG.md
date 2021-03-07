@@ -1,5 +1,9 @@
 # Change Log
 
+## [1.3.73] -- 2021-03-07
+### Fixed
+- Fix for YouTube playlists with pagination not loading (PR #592 by Walkyst)
+
 ## [1.3.72] -- 2021-03-03
 ### Fixed
 - Fixed a specific MP3 frame type (version 2, layer 1, 144kbps) being decoded incorrectly.
