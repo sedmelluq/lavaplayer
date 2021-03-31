@@ -249,15 +249,6 @@ public class DefaultYoutubeTrackDetailsLoader implements YoutubeTrackDetailsLoad
       String encodedUrl = DataFormatTools.extractBetween(responseText, "\"PLAYER_JS_URL\":\"", "\"");
 
       if (encodedUrl == null) {
-        try (CloseableHttpResponse videoResponse = httpInterface.execute(new HttpGet("https://www.youtube.com/watch?v=" + videoId))) {
-          HttpClientTools.assertSuccessWithContent(videoResponse, "youtube video id");
-
-          responseText = EntityUtils.toString(videoResponse.getEntity());
-          encodedUrl = DataFormatTools.extractBetween(responseText, "\"PLAYER_JS_URL\":\"", "\"");
-        }
-      }
-
-      if (encodedUrl == null) {
         try (CloseableHttpResponse embedVideoResponse = httpInterface.execute(new HttpGet("https://www.youtube.com/embed/" + videoId))) {
           HttpClientTools.assertSuccessWithContent(embedVideoResponse, "youtube embed video id");
 
