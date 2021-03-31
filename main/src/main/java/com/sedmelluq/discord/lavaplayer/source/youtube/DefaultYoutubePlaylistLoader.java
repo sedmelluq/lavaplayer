@@ -57,10 +57,10 @@ public class DefaultYoutubePlaylistLoader implements YoutubePlaylistLoader {
 
     JsonBrowser jsonResponse = json.index(1).get("response");
 
-    JsonBrowser alerts = jsonResponse.get("alerts");
+    JsonBrowser alertRenderer = jsonResponse.get("alerts").index(0).get("alertRenderer");
 
-    if (!alerts.isNull()) {
-      throw new FriendlyException(alerts.index(0).get("alertRenderer").get("text").get("simpleText").text(), COMMON, null);
+    if (!alertRenderer.isNull()) {
+      throw new FriendlyException(alertRenderer.get("text").get("runs").index(0).get("text").text(), COMMON, null);
     }
 
     JsonBrowser info = jsonResponse
