@@ -66,11 +66,13 @@ public class DefaultYoutubePlaylistLoader implements YoutubePlaylistLoader {
 
         String type = alertInner.get("type").text();
         if("ERROR".equals(type)) {
+          JsonBrowser textObject = alertInner.get("text");
+
           String text;
-          if(!alertInner.get("simpleText").isNull()) {
-            text = alertInner.get("simpleText").text();
+          if(!textObject.get("simpleText").isNull()) {
+            text = textObject.get("simpleText").text();
           } else {
-            text = alertInner.get("runs").values().stream()
+            text = textObject.get("runs").values().stream()
               .map(run -> run.get("text").text())
               .collect(Collectors.joining());
           }
