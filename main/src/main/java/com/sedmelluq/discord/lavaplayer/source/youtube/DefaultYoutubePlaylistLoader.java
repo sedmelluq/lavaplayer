@@ -9,17 +9,19 @@ import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo;
 import com.sedmelluq.discord.lavaplayer.track.BasicAudioPlaylist;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.function.Function;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static com.sedmelluq.discord.lavaplayer.tools.FriendlyException.Severity.COMMON;
 
@@ -58,9 +60,24 @@ public class DefaultYoutubePlaylistLoader implements YoutubePlaylistLoader {
     JsonBrowser jsonResponse = json.index(1).get("response");
 
     JsonBrowser alerts = jsonResponse.get("alerts");
-
     if (!alerts.isNull()) {
-      throw new FriendlyException(alerts.index(0).get("alertRenderer").get("text").get("simpleText").text(), COMMON, null);
+      for(JsonBrowser alert : alerts.values()) {
+        JsonBrowser alertInner = alert.values().get(0);
+
+        String type = alertInner.get("type").text();
+        if("ERROR".equals(type)) {
+          String text;
+          if(!alertInner.get("simpleText").isNull()) {
+            text = alertInner.get("simpleText").text();
+          } else {
+            text = alertInner.get("runs").values().stream()
+              .map(run -> run.get("text").text())
+              .collect(Collectors.joining());
+          }
+
+          throw new FriendlyException(text, COMMON, null);
+        }
+      }
     }
 
     JsonBrowser info = jsonResponse
