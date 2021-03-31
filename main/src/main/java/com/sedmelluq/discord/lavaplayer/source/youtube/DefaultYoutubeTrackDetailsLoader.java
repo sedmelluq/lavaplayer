@@ -58,7 +58,7 @@ public class DefaultYoutubeTrackDetailsLoader implements YoutubeTrackDetailsLoad
         return null;
       }
 
-      YoutubeTrackJsonData finalData = augmentWithPlayerScript(initialData, httpInterface, requireFormats);
+      YoutubeTrackJsonData finalData = augmentWithPlayerScript(initialData, httpInterface, videoId, requireFormats);
       return new DefaultYoutubeTrackDetails(videoId, finalData);
     } catch (FriendlyException e) {
       throw e;
@@ -224,6 +224,7 @@ public class DefaultYoutubeTrackDetailsLoader implements YoutubeTrackDetailsLoad
   protected YoutubeTrackJsonData augmentWithPlayerScript(
       YoutubeTrackJsonData data,
       HttpInterface httpInterface,
+      String videoId,
       boolean requireFormats
   ) throws IOException {
     long now = System.currentTimeMillis();
@@ -248,7 +249,25 @@ public class DefaultYoutubeTrackDetailsLoader implements YoutubeTrackDetailsLoad
       String encodedUrl = DataFormatTools.extractBetween(responseText, "\"PLAYER_JS_URL\":\"", "\"");
 
       if (encodedUrl == null) {
-        throw throwWithDebugInfo(log, null, "no PLAYER_JS_URL in youtube root", "html", responseText);
+        try (CloseableHttpResponse videoResponse = httpInterface.execute(new HttpGet("https://www.youtube.com/watch?v=" + videoId))) {
+          HttpClientTools.assertSuccessWithContent(videoResponse, "youtube video id");
+
+          responseText = EntityUtils.toString(videoResponse.getEntity());
+          encodedUrl = DataFormatTools.extractBetween(responseText, "\"PLAYER_JS_URL\":\"", "\"");
+        }
+      }
+
+      if (encodedUrl == null) {
+        try (CloseableHttpResponse embedVideoResponse = httpInterface.execute(new HttpGet("https://www.youtube.com/embed/" + videoId))) {
+          HttpClientTools.assertSuccessWithContent(embedVideoResponse, "youtube embed video id");
+
+          responseText = EntityUtils.toString(embedVideoResponse.getEntity());
+          encodedUrl = DataFormatTools.extractBetween(responseText, "\"jsUrl\":\"", "\"");
+        }
+      }
+
+      if (encodedUrl == null) {
+        throw throwWithDebugInfo(log, null, "no PLAYER_JS_URL found", "html", responseText);
       }
 
       String fetchedPlayerScript = JsonBrowser.parse("{\"url\":\"" + encodedUrl + "\"}").get("url").text();
