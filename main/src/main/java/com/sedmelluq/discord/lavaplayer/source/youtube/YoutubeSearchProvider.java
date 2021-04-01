@@ -43,6 +43,7 @@ public class YoutubeSearchProvider implements YoutubeSearchResultLoader {
 
   public YoutubeSearchProvider() {
     this.httpInterfaceManager = HttpClientTools.createCookielessThreadLocalManager();
+    httpInterfaceManager.setHttpContextFilter(new BaseYoutubeHttpContextFilter());
   }
 
   public ExtendedHttpConfigurable getHttpConfiguration() {

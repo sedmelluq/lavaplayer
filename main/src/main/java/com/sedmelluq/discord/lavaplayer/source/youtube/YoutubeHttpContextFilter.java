@@ -11,7 +11,7 @@ import org.apache.http.impl.client.BasicCookieStore;
 
 import static com.sedmelluq.discord.lavaplayer.tools.FriendlyException.Severity.COMMON;
 
-public class YoutubeHttpContextFilter implements HttpContextFilter {
+public class YoutubeHttpContextFilter extends BaseYoutubeHttpContextFilter {
   private static final String ATTRIBUTE_RESET_RETRY = "isResetRetry";
 
   @Override
@@ -47,6 +47,8 @@ public class YoutubeHttpContextFilter implements HttpContextFilter {
     request.setHeader("x-youtube-utc-offset", "0");
     request.setHeader("x-youtube-variants-checksum", "7a1198276cf2b23fc8321fac72aa876b");
     request.setHeader("accept-language", "en");
+
+    super.onRequest(context, request, isRepetition);
   }
 
   @Override

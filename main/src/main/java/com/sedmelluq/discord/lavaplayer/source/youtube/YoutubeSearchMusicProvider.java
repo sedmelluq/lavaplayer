@@ -44,6 +44,7 @@ public class YoutubeSearchMusicProvider implements YoutubeSearchMusicResultLoade
 
   public YoutubeSearchMusicProvider() {
     this.httpInterfaceManager = HttpClientTools.createCookielessThreadLocalManager();
+    httpInterfaceManager.setHttpContextFilter(new BaseYoutubeHttpContextFilter());
   }
 
   public ExtendedHttpConfigurable getHttpConfiguration() {

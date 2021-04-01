@@ -131,7 +131,7 @@ public class ExceptionTools {
   ) {
     ErrorDebugInfo debugInfo = new ErrorDebugInfo(log, UUID.randomUUID().toString(), cause, message, name, value);
     debugInfoHandler.handle(debugInfo);
-    return new RuntimeException(message + " EID: " + debugInfo.errorId + ", " + name + "<redacted>", cause);
+    return new RuntimeException(message + " EID: " + debugInfo.errorId + ", " + name + " <redacted>", cause);
   }
 
   /**
