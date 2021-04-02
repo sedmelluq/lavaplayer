@@ -1,5 +1,9 @@
 # Change Log
 
+## [1.3.75] -- 2021-04-02
+### Fixed
+- Fix loading Youtube playlists not working due to non-error alerts.
+
 ## [1.3.74] -- 2021-04-01
 ### Fixed
 - Fix playing YouTube tracks by using a hardcoded consent cookie.
