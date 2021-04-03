@@ -1,7 +1,6 @@
 plugins {
   id 'java'
   id 'maven-publish'
-  id 'com.jfrog.bintray'
 }
 
 version = '1.3.13'
@@ -24,5 +23,3 @@ publishing {
     }
   }
 }
-
-apply from: "${rootDir}/gradle/bintray.gradle"

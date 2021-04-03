@@ -1,6 +1,5 @@
 plugins {
   id 'maven-publish'
-  id 'com.jfrog.bintray'
 }
 
 ext.moduleName = 'lavaplayer-test-samples'
@@ -19,5 +18,3 @@ publishing {
     }
   }
 }
-
-apply from: "${rootDir}/gradle/bintray.gradle"

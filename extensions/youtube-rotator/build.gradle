@@ -1,6 +1,5 @@
 plugins {
   id 'java'
-  id 'com.jfrog.bintray'
   id 'maven-publish'
 }
 
@@ -29,5 +28,3 @@ publishing {
     }
   }
 }
-
-apply from: "${rootDir}/gradle/bintray.gradle"

@@ -3,8 +3,6 @@ plugins {
   id 'maven-publish'
 }
 
-apply plugin: 'com.jfrog.bintray'
-
 ext.moduleName = 'lavaplayer-stream-merger'
 version = '0.1.0'
 
@@ -30,5 +28,3 @@ publishing {
     }
   }
 }
-
-apply from: "${rootDir}/gradle/bintray.gradle"

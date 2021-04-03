@@ -4,7 +4,10 @@ plugins {
 }
 
 repositories {
-  jcenter()
+  mavenCentral()
+  maven {
+    url 'https://m2.dv8tion.net/releases'
+  }
 }
 
 dependencies {
