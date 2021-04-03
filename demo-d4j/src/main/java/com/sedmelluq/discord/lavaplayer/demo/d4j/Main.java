@@ -8,16 +8,17 @@ import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import discord4j.core.DiscordClient;
-import discord4j.core.DiscordClientBuilder;
+import discord4j.core.GatewayDiscordClient;
 import discord4j.core.event.EventDispatcher;
 import discord4j.core.event.domain.message.MessageCreateEvent;
 import discord4j.core.object.entity.Guild;
 import discord4j.core.object.entity.Message;
-import discord4j.core.object.entity.MessageChannel;
-import discord4j.core.object.entity.TextChannel;
-import discord4j.core.object.entity.VoiceChannel;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+
+import discord4j.core.object.entity.channel.MessageChannel;
+import discord4j.core.object.entity.channel.TextChannel;
+import discord4j.core.object.entity.channel.VoiceChannel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,9 +26,9 @@ public class Main {
   private static final Logger log = LoggerFactory.getLogger(Main.class);
 
   public static void main(String[] args) {
-    DiscordClient client = new DiscordClientBuilder(System.getProperty("botToken")).build();
+    GatewayDiscordClient client = DiscordClient.create(System.getProperty("botToken")).login().block();
     new Main().registerListeners(client.getEventDispatcher());
-    client.login().block();
+    client.onDisconnect().block();
   }
 
   private final AudioPlayerManager playerManager;
@@ -59,20 +60,18 @@ public class Main {
 
   private void onMessageReceived(MessageCreateEvent event) {
     Message message = event.getMessage();
+    String content = message.getContent();
+    MessageChannel channel = message.getChannel().block();
 
-    message.getContent().ifPresent(it -> {
-      MessageChannel channel = message.getChannel().block();
+    if (channel instanceof TextChannel) {
+      String[] command = content.split(" ", 2);
 
-      if (channel instanceof TextChannel) {
-        String[] command = it.split(" ", 2);
-
-        if ("~play".equals(command[0]) && command.length == 2) {
-          loadAndPlay((TextChannel) channel, command[1]);
-        } else if ("~skip".equals(command[0])) {
-          skipTrack((TextChannel) channel);
-        }
+      if ("~play".equals(command[0]) && command.length == 2) {
+        loadAndPlay((TextChannel) channel, command[1]);
+      } else if ("~skip".equals(command[0])) {
+        skipTrack((TextChannel) channel);
       }
-    });
+    }
   }
 
   private void loadAndPlay(TextChannel channel, final String trackUrl) {
@@ -135,7 +134,7 @@ public class Main {
   private static void attachToFirstVoiceChannel(Guild guild, D4jAudioProvider provider) {
     VoiceChannel voiceChannel = guild.getChannels().ofType(VoiceChannel.class).blockFirst();
     boolean inVoiceChannel = guild.getVoiceStates() // Check if any VoiceState for this guild relates to bot
-        .any(voiceState -> guild.getClient().getSelfId().map(voiceState.getUserId()::equals).orElse(false))
+        .any(voiceState -> guild.getClient().getSelfId().equals(voiceState.getUserId()))
         .block();
 
     if (!inVoiceChannel) {
