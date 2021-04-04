@@ -17,6 +17,12 @@ ext.vorbisVersion = '1.3.6'
 ext.sampleRateVersion = '0.1.9'
 ext.fdkAacVersion = '2.0.0'
 
+jar {
+  manifest {
+    attributes('Automatic-Module-Name':'com.sedmelluq.lavaplayer.natives')
+  }
+}
+
 task load { doLast {
   if (!file("$projectDir/samplerate/src").exists()) {
     def downloadPath = "$buildDir/tmp/libsamplerate.tar.gz"

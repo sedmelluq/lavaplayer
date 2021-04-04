@@ -32,6 +32,9 @@ dependencies {
 
 jar {
   exclude("natives")
+  manifest {
+    attributes('Automatic-Module-Name':'com.sedmelluq.lavaplayer')
+  }
 }
 
 task updateVersion {
