@@ -1,2 +1,0 @@
-include 'main', 'testbot', 'node', 'demo-jda', 'demo-d4j', 'common', 'stream-merger', 'test-samples',
-    ':extensions:youtube-rotator', ':extensions:format-xm'

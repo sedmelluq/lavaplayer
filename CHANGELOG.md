@@ -1,5 +1,9 @@
 # Change Log
 
+## [1.3.76] -- 2021-04-05
+### Fixed
+- Fixed using natives dependency which may have had outdated files in the new repository.
+
 ## [1.3.75] -- 2021-04-02
 ### Fixed
 - Fix loading Youtube playlists not working due to non-error alerts.

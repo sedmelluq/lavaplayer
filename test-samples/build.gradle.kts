@@ -1,20 +1,19 @@
 plugins {
-  id 'maven-publish'
+  java
+  `maven-publish`
 }
 
-ext.moduleName = 'lavaplayer-test-samples'
-version = '1.3.11'
+val moduleName = "lavaplayer-test-samples"
+version = "1.3.11"
 
 // Sample files are not in repository, but must be present in src/main/resources during publish. Use previous samples
 // dependency JAR to obtain them.
 
 publishing {
   publications {
-    mavenJava(MavenPublication) {
-      groupId rootProject.group
-      artifactId moduleName
-
-      from components.java
+    create<MavenPublication>("mavenJava") {
+      from(components["java"])
+      artifactId = moduleName
     }
   }
 }
