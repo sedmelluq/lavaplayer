@@ -52,7 +52,7 @@ public class DefaultYoutubeTrackDetailsLoader implements YoutubeTrackDetailsLoad
       String videoId,
       boolean requireFormats
   ) throws IOException {
-    JsonBrowser mainInfo = loadTrackInfoFromMainPage(httpInterface, videoId, false);
+    JsonBrowser mainInfo = loadTrackInfoFromMainPage(httpInterface, videoId);
 
     try {
       YoutubeTrackJsonData initialData = loadBaseResponse(mainInfo, httpInterface, videoId, requireFormats);
@@ -171,13 +171,8 @@ public class DefaultYoutubeTrackDetailsLoader implements YoutubeTrackDetailsLoad
     return unplayableReason;
   }
 
-  protected JsonBrowser loadTrackInfoFromMainPage(HttpInterface httpInterface, String videoId, boolean requireContentVerify) throws IOException {
-    String url;
-    if (requireContentVerify) {
-      url = "https://www.youtube.com" + videoId + "&pbj=1&hl=en";
-    } else {
-      url = "https://www.youtube.com/watch?v=" + videoId + "&pbj=1&hl=en";
-    }
+  protected JsonBrowser loadTrackInfoFromMainPage(HttpInterface httpInterface, String videoId) throws IOException {
+    String url = "https://www.youtube.com/watch?v=" + videoId + "&pbj=1&hl=en";
 
     try (CloseableHttpResponse response = httpInterface.execute(new HttpGet(url))) {
       HttpClientTools.assertSuccessWithContent(response, "video page response");
@@ -254,7 +249,7 @@ public class DefaultYoutubeTrackDetailsLoader implements YoutubeTrackDetailsLoad
               .get("url")
               .text();
       if (fetchedContentVerifiedLink != null) {
-        return loadTrackInfoFromMainPage(httpInterface, fetchedContentVerifiedLink, true);
+        return loadTrackInfoFromMainPage(httpInterface, fetchedContentVerifiedLink.substring(9));
       }
 
       log.error("Did not receive requested content verified link on track {} response: {}", videoId, json);
