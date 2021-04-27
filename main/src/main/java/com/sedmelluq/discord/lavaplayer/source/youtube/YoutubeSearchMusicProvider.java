@@ -65,7 +65,7 @@ public class YoutubeSearchMusicProvider implements YoutubeSearchMusicResultLoade
           .addParameter("key", YT_MUSIC_KEY).build();
 
       HttpPost post = new HttpPost(url);
-      StringEntity payload = new StringEntity(String.format(YT_MUSIC_PAYLOAD, query), "UTF-8");
+      StringEntity payload = new StringEntity(String.format(YT_MUSIC_PAYLOAD, query.replace("\"", "\\\"")), "UTF-8");
       post.setHeader("Referer", "music.youtube.com");
       post.setEntity(payload);
       try (CloseableHttpResponse response = httpInterface.execute(post)) {
