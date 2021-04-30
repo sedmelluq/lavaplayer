@@ -4,6 +4,7 @@ import com.sedmelluq.discord.lavaplayer.remote.RemoteNodeRegistry;
 import com.sedmelluq.discord.lavaplayer.source.AudioSourceManager;
 import com.sedmelluq.discord.lavaplayer.tools.io.MessageInput;
 import com.sedmelluq.discord.lavaplayer.tools.io.MessageOutput;
+import com.sedmelluq.discord.lavaplayer.track.AudioReference;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.DecodedTrackHolder;
 import java.io.IOException;
@@ -60,8 +61,22 @@ public interface AudioPlayerManager {
    * @param resultHandler A handler to process the result of this operation. It can either end by finding a track,
    *                      finding a playlist, finding nothing or terminating with an exception.
    * @return A future for this operation
+   * @see #loadItem(AudioReference, AudioLoadResultHandler)
    */
-  Future<Void> loadItem(final String identifier, final AudioLoadResultHandler resultHandler);
+  default Future<Void> loadItem(final String identifier, final AudioLoadResultHandler resultHandler) {
+    return loadItem(new AudioReference(identifier, null), resultHandler);
+  }
+
+  /**
+   * Schedules loading a track or playlist with the specified identifier.
+   * @param reference     The audio reference that holds the identifier that a specific source manager
+   *                      should be able to find the track with.
+   * @param resultHandler A handler to process the result of this operation. It can either end by finding a track,
+   *                      finding a playlist, finding nothing or terminating with an exception.
+   * @return A future for this operation
+   * @see #loadItem(String, AudioLoadResultHandler)
+   */
+  Future<Void> loadItem(final AudioReference reference, final AudioLoadResultHandler resultHandler);
 
   /**
    * Schedules loading a track or playlist with the specified identifier with an ordering key so that items with the
@@ -72,8 +87,25 @@ public interface AudioPlayerManager {
    * @param resultHandler A handler to process the result of this operation. It can either end by finding a track,
    *                      finding a playlist, finding nothing or terminating with an exception.
    * @return A future for this operation
+   * @see #loadItemOrdered(Object, AudioReference, AudioLoadResultHandler)
    */
-  Future<Void> loadItemOrdered(Object orderingKey, final String identifier, final AudioLoadResultHandler resultHandler);
+  default Future<Void> loadItemOrdered(Object orderingKey, final String identifier, final AudioLoadResultHandler resultHandler) {
+    return loadItemOrdered(orderingKey, new AudioReference(identifier, null), resultHandler);
+  }
+
+  /**
+   * Schedules loading a track or playlist with the specified identifier with an ordering key so that items with the
+   * same ordering key are handled sequentially in the order of calls to this method.
+   *
+   * @param orderingKey   Object to use as the key for the ordering channel
+   * @param reference     The audio reference that holds the identifier that a specific source manager
+   *                      should be able to find the track with.
+   * @param resultHandler A handler to process the result of this operation. It can either end by finding a track,
+   *                      finding a playlist, finding nothing or terminating with an exception.
+   * @return A future for this operation
+   * @see #loadItemOrdered(Object, String, AudioLoadResultHandler)
+   */
+  Future<Void> loadItemOrdered(Object orderingKey, final AudioReference reference, final AudioLoadResultHandler resultHandler);
 
   /**
    * Encode a track into an output stream. If the decoder is not supposed to know the number of tracks in advance, then
