@@ -27,9 +27,10 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 public class DefaultYoutubeTrackDetailsLoader implements YoutubeTrackDetailsLoader {
   private static final Logger log = LoggerFactory.getLogger(DefaultYoutubeTrackDetailsLoader.class);
 
-  private static final String REQUEST_URL = "https://www.youtube.com/youtubei/v1/verify_age?key=AIzaSyAO_FJ2SlqU8Q4STEHLGCilw_Y9_11qcW8";
-  private static final String REQUEST_PAYLOAD = "{\"context\":{\"client\":{\"clientName\":\"WEB\",\"clientVersion\":\"2.20210302.07.01\"}},\"nextEndpoint\":{\"urlEndpoint\":{\"url\":\"%s\"}},\"setControvercy\":true}";
-  private static final String[] EMBED_CONFIG_PREFIXES = new String[] {
+  private static final String AGE_VERIFY_REQUEST_URL = "https://www.youtube.com/youtubei/v1/verify_age?key=AIzaSyAO_FJ2SlqU8Q4STEHLGCilw_Y9_11qcW8";
+  private static final String AGE_VERIFY_REQUEST_PAYLOAD = "{\"context\":{\"client\":{\"clientName\":\"WEB\",\"clientVersion\":\"2.20210302.07.01\"}},\"nextEndpoint\":{\"urlEndpoint\":{\"url\":\"%s\"}},\"setControvercy\":true}";
+
+  private static final String[] EMBED_CONFIG_PREFIXES = new String[]{
       "'WEB_PLAYER_CONTEXT_CONFIGS':",
       "WEB_PLAYER_CONTEXT_CONFIGS\":",
       "'PLAYER_CONFIG':",
@@ -126,10 +127,10 @@ public class DefaultYoutubeTrackDetailsLoader implements YoutubeTrackDetailsLoad
       throw new FriendlyException(unplayableReason, COMMON, null);
     } else if ("LOGIN_REQUIRED".equals(status)) {
       String errorReason = statusBlock.get("errorScreen")
-              .get("playerErrorMessageRenderer")
-              .get("reason")
-              .get("simpleText")
-              .text();
+          .get("playerErrorMessageRenderer")
+          .get("reason")
+          .get("simpleText")
+          .text();
 
       if ("Private video".equals(errorReason)) {
         throw new FriendlyException("This is a private video.", COMMON, null);
@@ -206,14 +207,14 @@ public class DefaultYoutubeTrackDetailsLoader implements YoutubeTrackDetailsLoad
     }
 
     throw new FriendlyException("Track information is unavailable.", SUSPICIOUS,
-            new IllegalStateException("Expected player config is not present in embed page."));
+        new IllegalStateException("Expected player config is not present in embed page."));
   }
 
   protected JsonBrowser loadTrackArgsFromVideoInfoPage(HttpInterface httpInterface, String videoId, String sts) throws IOException {
     String videoApiUrl = "https://youtube.googleapis.com/v/" + videoId;
     String encodedApiUrl = URLEncoder.encode(videoApiUrl, UTF_8.name());
     String url = "https://www.youtube.com/get_video_info?video_id=" + videoId + "&eurl=" + encodedApiUrl +
-            "hl=en_GB&html5=1";
+        "hl=en_GB&html5=1";
 
     if (sts != null) {
       url += "&sts=" + sts;
@@ -233,21 +234,21 @@ public class DefaultYoutubeTrackDetailsLoader implements YoutubeTrackDetailsLoad
   }
 
   protected JsonBrowser loadTrackInfoWithContentVerifyRequest(HttpInterface httpInterface, String videoId) throws IOException {
-    HttpPost post = new HttpPost(REQUEST_URL);
-    StringEntity payload = new StringEntity(String.format(REQUEST_PAYLOAD, "/watch?v=" + videoId), "UTF-8");
+    HttpPost post = new HttpPost(AGE_VERIFY_REQUEST_URL);
+    StringEntity payload = new StringEntity(String.format(AGE_VERIFY_REQUEST_PAYLOAD, "/watch?v=" + videoId), "UTF-8");
     post.setEntity(payload);
     try (CloseableHttpResponse response = httpInterface.execute(post)) {
       HttpClientTools.assertSuccessWithContent(response, "content verify response");
 
       String json = EntityUtils.toString(response.getEntity(), UTF_8);
       String fetchedContentVerifiedLink = JsonBrowser.parse(json)
-              .get("actions")
-              .index(0)
-              .get("navigateAction")
-              .get("endpoint")
-              .get("urlEndpoint")
-              .get("url")
-              .text();
+          .get("actions")
+          .index(0)
+          .get("navigateAction")
+          .get("endpoint")
+          .get("urlEndpoint")
+          .get("url")
+          .text();
       if (fetchedContentVerifiedLink != null) {
         return loadTrackInfoFromMainPage(httpInterface, fetchedContentVerifiedLink.substring(9));
       }
@@ -256,7 +257,7 @@ public class DefaultYoutubeTrackDetailsLoader implements YoutubeTrackDetailsLoad
     }
 
     throw new FriendlyException("Track requires content verification.", SUSPICIOUS,
-            new IllegalStateException("Expected response is not present."));
+        new IllegalStateException("Expected response is not present."));
   }
 
   protected YoutubeTrackJsonData augmentWithPlayerScript(
