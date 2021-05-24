@@ -183,20 +183,20 @@ public class DefaultAudioPlayerManager implements AudioPlayerManager {
   }
 
   @Override
-  public Future<Void> loadItem(final String identifier, final AudioLoadResultHandler resultHandler) {
+  public Future<Void> loadItem(final AudioReference reference, final AudioLoadResultHandler resultHandler) {
     try {
-      return trackInfoExecutorService.submit(createItemLoader(identifier, resultHandler));
+      return trackInfoExecutorService.submit(createItemLoader(reference, resultHandler));
     } catch (RejectedExecutionException e) {
-      return handleLoadRejected(identifier, resultHandler, e);
+      return handleLoadRejected(reference.identifier, resultHandler, e);
     }
   }
 
   @Override
-  public Future<Void> loadItemOrdered(Object orderingKey, final String identifier, final AudioLoadResultHandler resultHandler) {
+  public Future<Void> loadItemOrdered(Object orderingKey, final AudioReference reference, final AudioLoadResultHandler resultHandler) {
     try {
-      return orderedInfoExecutor.submit(orderingKey, createItemLoader(identifier, resultHandler));
+      return orderedInfoExecutor.submit(orderingKey, createItemLoader(reference, resultHandler));
     } catch (RejectedExecutionException e) {
-      return handleLoadRejected(identifier, resultHandler, e);
+      return handleLoadRejected(reference.identifier, resultHandler, e);
     }
   }
 
@@ -209,20 +209,20 @@ public class DefaultAudioPlayerManager implements AudioPlayerManager {
     return ExecutorTools.COMPLETED_VOID;
   }
 
-  private Callable<Void> createItemLoader(final String identifier, final AudioLoadResultHandler resultHandler) {
+  private Callable<Void> createItemLoader(final AudioReference reference, final AudioLoadResultHandler resultHandler) {
     return () -> {
       boolean[] reported = new boolean[1];
 
       try {
-        if (!checkSourcesForItem(new AudioReference(identifier, null), resultHandler, reported)) {
-          log.debug("No matches for track with identifier {}.", identifier);
+        if (!checkSourcesForItem(reference, resultHandler, reported)) {
+          log.debug("No matches for track with identifier {}.", reference.identifier);
           resultHandler.noMatches();
         }
       } catch (Throwable throwable) {
         if (reported[0]) {
-          log.warn("Load result handler for {} threw an exception", identifier, throwable);
+          log.warn("Load result handler for {} threw an exception", reference.identifier, throwable);
         } else {
-          dispatchItemLoadFailure(identifier, resultHandler, throwable);
+          dispatchItemLoadFailure(reference.identifier, resultHandler, throwable);
         }
 
         ExceptionTools.rethrowErrors(throwable);
