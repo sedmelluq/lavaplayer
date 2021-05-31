@@ -14,11 +14,7 @@ public class SystemType {
 
   public String formatSystemName() {
     if (osType.identifier() != null) {
-      if (osType == DefaultOperatingSystemTypes.DARWIN) {
-        return osType.identifier();
-      } else {
-        return osType.identifier() + "-" + architectureType.identifier();
-      }
+      return osType.identifier() + "-" + architectureType.identifier();
     } else {
       return architectureType.identifier();
     }
