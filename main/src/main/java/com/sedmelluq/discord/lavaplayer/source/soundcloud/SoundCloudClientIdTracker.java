@@ -86,7 +86,7 @@ public class SoundCloudClientIdTracker {
 
       String page = EntityUtils.toString(response.getEntity());
       Matcher scriptMatcher = pageAppScriptPattern.matcher(page);
-      String result = getLastMatchWithinLimit(scriptMatcher, 7);
+      String result = getLastMatchWithinLimit(scriptMatcher, 10);
 
       if (result != null) {
         return result;
