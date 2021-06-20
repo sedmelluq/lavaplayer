@@ -40,8 +40,8 @@ public class YoutubeHttpContextFilter extends BaseYoutubeHttpContextFilter {
 
     request.setHeader("user-agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) " +
         "Chrome/76.0.3809.100 Safari/537.36");
-    request.setHeader("x-youtube-client-name", "1");
-    request.setHeader("x-youtube-client-version", "2.20191008.04.01");
+    request.setHeader("x-youtube-client-name", "ANDROID");
+    request.setHeader("x-youtube-client-version", "16.24");
     request.setHeader("x-youtube-page-cl", "276511266");
     request.setHeader("x-youtube-page-label", "youtube.ytfe.desktop_20191024_3_RC0");
     request.setHeader("x-youtube-utc-offset", "0");
