@@ -6,6 +6,7 @@ import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.tools.JsonBrowser;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpClientTools;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterface;
+import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterfaceManager;
 import java.io.IOException;
 import java.net.URLEncoder;
 import org.apache.http.NameValuePair;
@@ -29,6 +30,12 @@ public class DefaultYoutubeTrackDetailsLoader implements YoutubeTrackDetailsLoad
 
   private static final String AGE_VERIFY_REQUEST_URL = "https://www.youtube.com/youtubei/v1/verify_age?key=AIzaSyAO_FJ2SlqU8Q4STEHLGCilw_Y9_11qcW8";
   private static final String AGE_VERIFY_REQUEST_PAYLOAD = "{\"context\":{\"client\":{\"clientName\":\"WEB\",\"clientVersion\":\"2.20210302.07.01\"}},\"nextEndpoint\":{\"urlEndpoint\":{\"url\":\"%s\"}},\"setControvercy\":true}";
+  private final HttpInterfaceManager httpInterfaceManager;
+
+  public DefaultYoutubeTrackDetailsLoader() {
+    this.httpInterfaceManager = HttpClientTools.createCookielessThreadLocalManager();
+    httpInterfaceManager.setHttpContextFilter(new BaseYoutubeHttpContextFilter());
+  }
 
   private static final String[] EMBED_CONFIG_PREFIXES = new String[]{
       "'WEB_PLAYER_CONTEXT_CONFIGS':",
@@ -94,7 +101,7 @@ public class DefaultYoutubeTrackDetailsLoader implements YoutubeTrackDetailsLoad
 
       return fromEmbedParts(
           basicInfo,
-          loadTrackArgsFromVideoInfoPage(httpInterface, videoId, basicInfo.get("sts").text())
+          loadTrackArgsFromVideoInfoPage(videoId, basicInfo.get("sts").text())
       );
     } else {
       return data;
@@ -210,7 +217,7 @@ public class DefaultYoutubeTrackDetailsLoader implements YoutubeTrackDetailsLoad
         new IllegalStateException("Expected player config is not present in embed page."));
   }
 
-  protected JsonBrowser loadTrackArgsFromVideoInfoPage(HttpInterface httpInterface, String videoId, String sts) throws IOException {
+  protected JsonBrowser loadTrackArgsFromVideoInfoPage(String videoId, String sts) throws IOException {
     String videoApiUrl = "https://youtube.googleapis.com/v/" + videoId;
     String encodedApiUrl = URLEncoder.encode(videoApiUrl, UTF_8.name());
     String url = "https://www.youtube.com/get_video_info?video_id=" + videoId + "&eurl=" + encodedApiUrl +
@@ -222,7 +229,7 @@ public class DefaultYoutubeTrackDetailsLoader implements YoutubeTrackDetailsLoad
 
     JsonBrowser values = JsonBrowser.newMap();
 
-    try (CloseableHttpResponse response = httpInterface.execute(new HttpGet(url))) {
+    try (CloseableHttpResponse response = httpInterfaceManager.getInterface().execute(new HttpGet(url))) {
       HttpClientTools.assertSuccessWithContent(response, "video info response");
 
       for (NameValuePair pair : URLEncodedUtils.parse(response.getEntity())) {
