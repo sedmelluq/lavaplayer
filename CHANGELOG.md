@@ -1,5 +1,10 @@
 # Change Log
 
+## [1.3.78] -- 2021-06-28
+### Fixed
+- Fixed loading YouTube tracks with age verification.
+- Fixed SoundCloud Client ID detection which broke loading SoundCloud tracks.
+
 ## [1.3.77] -- 2021-05-25
 ### Fixed
 - Fixed playing YouTube tracks which require a separate verification request (PR #615 by Walkyst).
@@ -16,7 +21,7 @@
 
 ## [1.3.75] -- 2021-04-02
 ### Fixed
-- Fix loading Youtube playlists not working due to non-error alerts.
+- Fix loading YouTube playlists not working due to non-error alerts.
 
 ## [1.3.74] -- 2021-04-01
 ### Fixed
