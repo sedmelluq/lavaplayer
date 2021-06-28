@@ -22,11 +22,10 @@ import org.apache.http.entity.StringEntity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static com.sedmelluq.discord.lavaplayer.source.youtube.YoutubeHttpContextFilter.PBJ_PARAMETER;
 import static com.sedmelluq.discord.lavaplayer.tools.FriendlyException.Severity.COMMON;
 
 public class DefaultYoutubePlaylistLoader implements YoutubePlaylistLoader {
-  private static final Logger log = LoggerFactory.getLogger(DefaultYoutubePlaylistLoader.class);
-
   private static final String REQUEST_URL = "https://www.youtube.com/youtubei/v1/browse?key=AIzaSyAO_FJ2SlqU8Q4STEHLGCilw_Y9_11qcW8";
   private static final String REQUEST_PAYLOAD = "{\"context\":{\"client\":{\"clientName\":\"WEB\",\"clientVersion\":\"2.20210302.07.01\"}},\"continuation\":\"%s\"}";
   private volatile int playlistPageCount = 6;
@@ -40,7 +39,7 @@ public class DefaultYoutubePlaylistLoader implements YoutubePlaylistLoader {
   public AudioPlaylist load(HttpInterface httpInterface, String playlistId, String selectedVideoId,
                             Function<AudioTrackInfo, AudioTrack> trackFactory) {
 
-    HttpGet request = new HttpGet(getPlaylistUrl(playlistId) + "&pbj=1&hl=en");
+    HttpGet request = new HttpGet(getPlaylistUrl(playlistId) + PBJ_PARAMETER + "&hl=en");
 
     try (CloseableHttpResponse response = httpInterface.execute(request)) {
       HttpClientTools.assertSuccessWithContent(response, "playlist response");

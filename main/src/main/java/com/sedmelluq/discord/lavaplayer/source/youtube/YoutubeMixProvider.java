@@ -16,6 +16,7 @@ import java.util.function.Function;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 
+import static com.sedmelluq.discord.lavaplayer.source.youtube.YoutubeHttpContextFilter.PBJ_PARAMETER;
 import static com.sedmelluq.discord.lavaplayer.tools.FriendlyException.Severity.SUSPICIOUS;
 
 /**
@@ -38,7 +39,7 @@ public class YoutubeMixProvider implements YoutubeMixLoader {
     String playlistTitle = "YouTube mix";
     List<AudioTrack> tracks = new ArrayList<>();
 
-    String mixUrl = "https://www.youtube.com/watch?v=" + selectedVideoId + "&list=" + mixId + "&pbj=1";
+    String mixUrl = "https://www.youtube.com/watch?v=" + selectedVideoId + "&list=" + mixId + PBJ_PARAMETER;
 
     try (CloseableHttpResponse response = httpInterface.execute(new HttpGet(mixUrl))) {
       HttpClientTools.assertSuccessWithContent(response, "mix response");
