@@ -4,6 +4,8 @@ import com.sedmelluq.discord.lavaplayer.tools.io.HttpClientTools;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterface;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterfaceManager;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -19,16 +21,18 @@ public class SoundCloudClientIdTracker {
 
   private static final String ID_FETCH_CONTEXT_ATTRIBUTE = "sc-raw";
   private static final long CLIENT_ID_REFRESH_INTERVAL = TimeUnit.HOURS.toMillis(1);
-  private static final String PAGE_APP_SCRIPT_REGEX = "https://[A-Za-z0-9-.]+/assets/[a-f0-9-]+\\.js";
-  private static final String APP_SCRIPT_CLIENT_ID_REGEX = ",client_id:\"([a-zA-Z0-9-_]+)\"";
 
+  private static final String PAGE_APP_SCRIPT_REGEX = "https://[A-Za-z0-9-.]+/assets/[a-f0-9-]+\\.js";
+  private static final String APP_SCRIPT_CLIENT_ID_REGEX = "[^_]client_id:\"([a-zA-Z0-9-_]+)\"";
   private static final Pattern pageAppScriptPattern = Pattern.compile(PAGE_APP_SCRIPT_REGEX);
   private static final Pattern appScriptClientIdPattern = Pattern.compile(APP_SCRIPT_CLIENT_ID_REGEX);
+  private static final int EXPECTED_CLIENT_SCRIPT_INDEX = 8;
 
   private final Object clientIdLock = new Object();
   private final HttpInterfaceManager httpInterfaceManager;
   private String clientId;
   private long lastClientIdUpdate;
+  private int lastClientScriptIndex = EXPECTED_CLIENT_SCRIPT_INDEX;
 
   public SoundCloudClientIdTracker(HttpInterfaceManager httpInterfaceManager) {
     this.httpInterfaceManager = httpInterfaceManager;
@@ -75,32 +79,43 @@ public class SoundCloudClientIdTracker {
     try (HttpInterface httpInterface = httpInterfaceManager.getInterface()) {
       httpInterface.getContext().setAttribute(ID_FETCH_CONTEXT_ATTRIBUTE, true);
 
-      String scriptUrl = findApplicationScriptUrl(httpInterface);
-      return findClientIdFromApplicationScript(httpInterface, scriptUrl);
+      List<String> scriptUrls = findScriptUrls(httpInterface);
+      return findClientIdFromScripts(httpInterface, scriptUrls);
     }
   }
 
-  private String findApplicationScriptUrl(HttpInterface httpInterface) throws IOException {
+  private List<String> findScriptUrls(HttpInterface httpInterface) throws IOException {
     try (CloseableHttpResponse response = httpInterface.execute(new HttpGet("https://soundcloud.com"))) {
       HttpClientTools.assertSuccessWithContent(response, "main page response");
 
       String page = EntityUtils.toString(response.getEntity());
-      Matcher scriptMatcher = pageAppScriptPattern.matcher(page);
-      String result = getLastMatchWithinLimit(scriptMatcher, 7);
+      Matcher matcher = pageAppScriptPattern.matcher(page);
+      List<String> scriptUrls = new ArrayList<>();
 
-      if (result != null) {
-        return result;
-      } else {
-        throw new IllegalStateException("Could not find application script from main page.");
+      while (matcher.find()) {
+        scriptUrls.add(matcher.group());
       }
+
+      return scriptUrls;
     }
   }
 
-  private String getLastMatchWithinLimit(Matcher m, int limit) {
-    String lastMatch = null;
-    for(int i = 0; m.find() && i < limit; ++i)
-      lastMatch = m.group();
-    return lastMatch;
+  private String findClientIdFromScripts(HttpInterface httpInterface, List<String> scriptUrls) throws IOException {
+    for (int index : getIndicesByDistance(lastClientScriptIndex, scriptUrls.size())) {
+      String url = scriptUrls.get(index);
+      String clientId = findClientIdFromApplicationScript(httpInterface, url);
+
+      if (clientId != null) {
+        if (index != lastClientScriptIndex) {
+          log.info("Last known client script index changed to {}, should update default for efficiency.", index);
+          lastClientScriptIndex = index;
+        }
+
+        return clientId;
+      }
+    }
+
+    throw new IllegalStateException("Could not find client ID from " + scriptUrls.size() + " script candidates.");
   }
 
   private String findClientIdFromApplicationScript(HttpInterface httpInterface, String scriptUrl) throws IOException {
@@ -113,8 +128,36 @@ public class SoundCloudClientIdTracker {
       if (clientIdMatcher.find()) {
         return clientIdMatcher.group(1);
       } else {
-        throw new IllegalStateException("Could not find client ID from application script.");
+        return null;
       }
     }
+  }
+
+  // Returns range [0, size) ordered by distance from center
+  private int[] getIndicesByDistance(int center, int size) {
+    int maximumOffset = Math.max(size, center);
+
+    int[] indices = new int[size];
+    int indicesFilled = 0;
+
+    for (int offset = 0; offset < maximumOffset; offset++) {
+      {
+        int forwardIndex = center + offset;
+
+        if (forwardIndex >= 0 && forwardIndex < size) {
+          indices[indicesFilled++] = forwardIndex;
+        }
+      }
+
+      if (offset > 0) {
+        int backwardsIndex = center - offset;
+
+        if (backwardsIndex >= 0 && backwardsIndex < size) {
+          indices[indicesFilled++] = backwardsIndex;
+        }
+      }
+    }
+
+    return indices;
   }
 }
