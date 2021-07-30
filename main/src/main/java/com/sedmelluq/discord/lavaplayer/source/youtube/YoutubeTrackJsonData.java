@@ -38,6 +38,10 @@ public class YoutubeTrackJsonData {
           if (playerResponse.isNull()) {
             playerResponse = child.get("playerResponse");
           }
+        } else {
+          if (playerResponse.isNull()) {
+            playerResponse = result;
+          }
         }
       }
 
@@ -51,18 +55,6 @@ public class YoutubeTrackJsonData {
     }
 
     throw throwWithDebugInfo(log, null, "Neither player nor playerResponse in result", "json", result.format());
-  }
-
-  public static YoutubeTrackJsonData fromEmbedParts(JsonBrowser embedInfo, JsonBrowser videoInfo) {
-    String playerScriptUrl = embedInfo.get("assets").get("js").text();
-    String playerResponseText = videoInfo.get("player_response").text();
-
-    if (playerResponseText == null) {
-      String embeddedPlayerResponseText = embedInfo.get("args").get("embedded_player_response").text();
-      return new YoutubeTrackJsonData(parsePlayerResponse(embeddedPlayerResponseText), videoInfo, playerScriptUrl);
-    }
-
-    return new YoutubeTrackJsonData(parsePlayerResponse(playerResponseText), videoInfo, playerScriptUrl);
   }
 
   private static YoutubeTrackJsonData fromPolymerPlayerInfo(JsonBrowser playerInfo, JsonBrowser playerResponse) {
