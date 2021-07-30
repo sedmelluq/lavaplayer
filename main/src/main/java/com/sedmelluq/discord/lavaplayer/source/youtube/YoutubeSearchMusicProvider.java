@@ -106,6 +106,11 @@ public class YoutubeSearchMusicProvider implements YoutubeSearchMusicResultLoade
     JsonBrowser jsonBrowser = JsonBrowser.parse(matcher.group(1));
     ArrayList<AudioTrack> list = new ArrayList<>();
     JsonBrowser tracks = jsonBrowser.get("contents")
+            .get("tabbedSearchResultsRenderer")
+            .get("tabs")
+            .index(0)
+            .get("tabRenderer")
+            .get("content")
             .get("sectionListRenderer")
             .get("contents")
             .index(0)
@@ -113,6 +118,11 @@ public class YoutubeSearchMusicProvider implements YoutubeSearchMusicResultLoade
             .get("contents");
     if (tracks == JsonBrowser.NULL_BROWSER) {
       tracks = jsonBrowser.get("contents")
+              .get("tabbedSearchResultsRenderer")
+              .get("tabs")
+              .index(0)
+              .get("tabRenderer")
+              .get("content")
               .get("sectionListRenderer")
               .get("contents")
               .index(1)
@@ -141,6 +151,10 @@ public class YoutubeSearchMusicProvider implements YoutubeSearchMusicResultLoade
     String videoId = firstColumn.get("navigationEndpoint")
             .get("watchEndpoint")
             .get("videoId").text();
+    if (videoId == null) {
+      // If track is not available on YouTube Music videoId will be empty
+      return null;
+    }
     List<JsonBrowser> secondColumn = columns.index(1)
             .get("musicResponsiveListItemFlexColumnRenderer")
             .get("text")
