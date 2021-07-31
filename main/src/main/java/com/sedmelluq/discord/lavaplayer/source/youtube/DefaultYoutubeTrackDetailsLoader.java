@@ -27,7 +27,7 @@ public class DefaultYoutubeTrackDetailsLoader implements YoutubeTrackDetailsLoad
   private static final String AGE_VERIFY_REQUEST_URL = "https://www.youtube.com/youtubei/v1/verify_age?key=AIzaSyAO_FJ2SlqU8Q4STEHLGCilw_Y9_11qcW8";
   private static final String AGE_VERIFY_REQUEST_PAYLOAD = "{\"context\":{\"client\":{\"clientName\":\"WEB\",\"clientVersion\":\"2.20210302.07.01\"}},\"nextEndpoint\":{\"urlEndpoint\":{\"url\":\"%s\"}},\"setControvercy\":true}";
   private static final String PLAYER_REQUEST_URL = "https://www.youtube.com/youtubei/v1/player?key=AIzaSyAO_FJ2SlqU8Q4STEHLGCilw_Y9_11qcW8";
-  private static final String PLAYER_REQUEST_PAYLOAD = "{\"context\":{\"client\":{\"clientName\":\"ANDROID\",\"clientVersion\":\"16.24\",\"clientScreen\":\"EMBED\"}},\"racyCheckOk\":true,\"contentCheckOk\":true,\"videoId\":\"%s\"}";
+  private static final String PLAYER_REQUEST_PAYLOAD = "{\"context\":{\"client\":{\"clientName\":\"ANDROID\",\"clientVersion\":\"16.24\",\"clientScreen\":\"EMBED\"},\"thirdParty\":{\"embedUrl\":\"https://www.youtube.com\"}},\"racyCheckOk\":true,\"contentCheckOk\":true,\"videoId\":\"%s\"}";
 
   private volatile CachedPlayerScript cachedPlayerScript = null;
 
@@ -187,12 +187,12 @@ public class DefaultYoutubeTrackDetailsLoader implements YoutubeTrackDetailsLoad
     try (CloseableHttpResponse response = httpInterface.execute(post)) {
       HttpClientTools.assertSuccessWithContent(response, "video info response");
 
-      String json = EntityUtils.toString(response.getEntity(), UTF_8);
+      JsonBrowser json = JsonBrowser.parse(EntityUtils.toString(response.getEntity(), UTF_8));
       if (json != null) {
-        return JsonBrowser.parse(json);
+        return json;
       }
 
-      log.error("Did not receive response from Innertube request on track {} response: {}", videoId, response);
+      log.error("Did not receive expected response from Innertube request on track {} response: {}", videoId, response);
     }
 
     throw new FriendlyException("Track requires age verification.", SUSPICIOUS,
