@@ -25,10 +25,10 @@ allprojects {
   publishing {
     repositories {
       maven {
-        setUrl("s3://m2.dv8tion.net/releases")
-        credentials(AwsCredentials::class) {
-          accessKey = project.findProperty("sedmelluqMavenS3AccessKey")?.toString()
-          secretKey = project.findProperty("sedmelluqMavenS3SecretKey")?.toString()
+        setUrl("https://dimensional.jfrog.io/artifactory/maven")
+        credentials {
+          username = System.getenv("JFROG_USERNAME")?.toString()
+          password = System.getenv("JFROG_PASSWORD")?.toString()
         }
       }
     }
