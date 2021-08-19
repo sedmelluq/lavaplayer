@@ -1,6 +1,5 @@
 package com.sedmelluq.discord.lavaplayer.player;
 
-import com.sedmelluq.discord.lavaplayer.remote.RemoteNodeRegistry;
 import com.sedmelluq.discord.lavaplayer.source.AudioSourceManager;
 import com.sedmelluq.discord.lavaplayer.tools.io.MessageInput;
 import com.sedmelluq.discord.lavaplayer.tools.io.MessageOutput;
@@ -28,14 +27,6 @@ public interface AudioPlayerManager {
    * manager any longer.
    */
   void shutdown();
-
-  /**
-   * Configure to use remote nodes for playback. On consecutive calls, the connections with previously used nodes will
-   * be severed and all remotely playing tracks will be stopped first.
-   *
-   * @param nodeAddresses The addresses of the remote nodes
-   */
-  void useRemoteNodes(String... nodeAddresses);
 
   /**
    * Enable reporting GC pause length statistics to log (warn level with lengths bad for latency, debug level otherwise)
@@ -183,11 +174,6 @@ public interface AudioPlayerManager {
    * @return New audio player.
    */
   AudioPlayer createPlayer();
-
-  /**
-   * @return Registry of remote nodes currently used.
-   */
-  RemoteNodeRegistry getRemoteNodeRegistry();
 
   /**
    * @param configurator Function used to reconfigure the request config of all sources which perform HTTP requests.

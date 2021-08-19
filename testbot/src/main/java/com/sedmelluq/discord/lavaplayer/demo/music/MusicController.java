@@ -10,8 +10,6 @@ import com.sedmelluq.discord.lavaplayer.filter.equalizer.EqualizerFactory;
 import com.sedmelluq.discord.lavaplayer.player.AudioLoadResultHandler;
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
-import com.sedmelluq.discord.lavaplayer.remote.RemoteNode;
-import com.sedmelluq.discord.lavaplayer.remote.message.NodeStatisticsMessage;
 import com.sedmelluq.discord.lavaplayer.source.youtube.YoutubeAudioSourceManager;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.tools.PlayerLibrary;
@@ -151,16 +149,6 @@ public class MusicController implements BotController {
   }
 
   @BotCommandHandler
-  private void nodes(Message message, String addressList) {
-    manager.useRemoteNodes(addressList.split(" "));
-  }
-
-  @BotCommandHandler
-  private void local(Message message) {
-    manager.useRemoteNodes();
-  }
-
-  @BotCommandHandler
   private void skip(Message message) {
     scheduler.skip();
   }
@@ -232,92 +220,8 @@ public class MusicController implements BotController {
   }
 
   @BotCommandHandler
-  private void nodeinfo(Message message) {
-    for (RemoteNode node : manager.getRemoteNodeRegistry().getNodes()) {
-      String report = buildReportForNode(node);
-      message.getChannel().sendMessage(report).queue();
-    }
-  }
-
-  @BotCommandHandler
-  private void provider(Message message) {
-    forPlayingTrack(track -> {
-      RemoteNode node = manager.getRemoteNodeRegistry().getNodeUsedForTrack(track);
-
-      if (node != null) {
-        message.getChannel().sendMessage("Node " + node.getAddress()).queue();
-      } else {
-        message.getChannel().sendMessage("Not played by a remote node.").queue();
-      }
-    });
-  }
-
-  @BotCommandHandler
   private void leave(Message message) {
     guild.getAudioManager().closeAudioConnection();
-  }
-
-  private String buildReportForNode(RemoteNode node) {
-    StringBuilder builder = new StringBuilder();
-    builder.append("--- ").append(node.getAddress()).append(" ---\n");
-    builder.append("Connection state: ").append(node.getConnectionState()).append("\n");
-
-    NodeStatisticsMessage statistics = node.getLastStatistics();
-    builder.append("Node global statistics: \n").append(statistics == null ? "unavailable" : "");
-
-    if (statistics != null) {
-      builder.append("   playing tracks: ").append(statistics.playingTrackCount).append("\n");
-      builder.append("   total tracks: ").append(statistics.totalTrackCount).append("\n");
-      builder.append("   system CPU usage: ").append(statistics.systemCpuUsage).append("\n");
-      builder.append("   process CPU usage: ").append(statistics.processCpuUsage).append("\n");
-    }
-
-    builder.append("Minimum tick interval: ").append(node.getTickMinimumInterval()).append("\n");
-    builder.append("Tick history capacity: ").append(node.getTickHistoryCapacity()).append("\n");
-
-    List<RemoteNode.Tick> ticks = node.getLastTicks(false);
-    builder.append("Number of ticks in history: ").append(ticks.size()).append("\n");
-
-    if (ticks.size() > 0) {
-      int tail = Math.min(ticks.size(), 3);
-      builder.append("Last ").append(tail).append(" ticks:\n");
-
-      for (int i = ticks.size() - tail; i < ticks.size(); i++) {
-        RemoteNode.Tick tick = ticks.get(i);
-
-        builder.append("   [duration ").append(tick.endTime - tick.startTime).append("]\n");
-        builder.append("   start time: ").append(tick.startTime).append("\n");
-        builder.append("   end time: ").append(tick.endTime).append("\n");
-        builder.append("   response code: ").append(tick.responseCode).append("\n");
-        builder.append("   request size: ").append(tick.requestSize).append("\n");
-        builder.append("   response size: ").append(tick.responseSize).append("\n");
-      }
-    }
-
-    List<AudioTrack> tracks = node.getPlayingTracks();
-
-    builder.append("Number of playing tracks: ").append(tracks.size()).append("\n");
-
-    if (tracks.size() > 0) {
-      int head = Math.min(tracks.size(), 3);
-      builder.append("First ").append(head).append(" tracks:\n");
-
-      for (int i = 0; i < head; i++) {
-        AudioTrack track = tracks.get(i);
-
-        builder.append("   [identifier ").append(track.getInfo().identifier).append("]\n");
-        builder.append("   name: ").append(track.getInfo().author).append(" - ").append(track.getInfo().title).append("\n");
-        builder.append("   progress: ").append(track.getPosition()).append(" / ").append(track.getDuration()).append("\n");
-      }
-    }
-
-    builder.append("Balancer penalties: ").append(tracks.size()).append("\n");
-
-    for (Map.Entry<String, Integer> penalty : node.getBalancerPenaltyDetails().entrySet()) {
-      builder.append("   ").append(penalty.getKey()).append(": ").append(penalty.getValue()).append("\n");
-    }
-
-    return builder.toString();
   }
 
   private void addTrack(final Message message, final String identifier, final boolean now) {

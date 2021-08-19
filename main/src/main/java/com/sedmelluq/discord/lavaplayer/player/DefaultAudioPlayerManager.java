@@ -1,8 +1,5 @@
 package com.sedmelluq.discord.lavaplayer.player;
 
-import com.sedmelluq.discord.lavaplayer.remote.RemoteAudioTrackExecutor;
-import com.sedmelluq.discord.lavaplayer.remote.RemoteNodeManager;
-import com.sedmelluq.discord.lavaplayer.remote.RemoteNodeRegistry;
 import com.sedmelluq.discord.lavaplayer.source.AudioSourceManager;
 import com.sedmelluq.discord.lavaplayer.source.ProbingAudioSourceManager;
 import com.sedmelluq.discord.lavaplayer.tools.DataFormatTools;
@@ -90,7 +87,6 @@ public class DefaultAudioPlayerManager implements AudioPlayerManager {
   private volatile boolean useSeekGhosting;
 
   // Additional services
-  private final RemoteNodeManager remoteNodeManager;
   private final GarbageCollectionMonitor garbageCollectionMonitor;
   private final AudioPlayerLifecycleManager lifecycleManager;
 
@@ -117,7 +113,6 @@ public class DefaultAudioPlayerManager implements AudioPlayerManager {
     useSeekGhosting = true;
 
     // Additional services
-    remoteNodeManager = new RemoteNodeManager(this);
     garbageCollectionMonitor = new GarbageCollectionMonitor(scheduledExecutorService);
     lifecycleManager = new AudioPlayerLifecycleManager(scheduledExecutorService, cleanupThreshold);
     lifecycleManager.initialise();
@@ -125,7 +120,6 @@ public class DefaultAudioPlayerManager implements AudioPlayerManager {
 
   @Override
   public void shutdown() {
-    remoteNodeManager.shutdown(true);
     garbageCollectionMonitor.disable();
     lifecycleManager.shutdown();
 
@@ -136,15 +130,6 @@ public class DefaultAudioPlayerManager implements AudioPlayerManager {
     ExecutorTools.shutdownExecutor(trackPlaybackExecutorService, "track playback");
     ExecutorTools.shutdownExecutor(trackInfoExecutorService, "track info");
     ExecutorTools.shutdownExecutor(scheduledExecutorService, "scheduled operations");
-  }
-
-  @Override
-  public void useRemoteNodes(String... nodeAddresses) {
-    if (nodeAddresses.length > 0) {
-      remoteNodeManager.initialise(Arrays.asList(nodeAddresses));
-    } else {
-      remoteNodeManager.shutdown(false);
-    }
   }
 
   @Override
@@ -351,19 +336,13 @@ public class DefaultAudioPlayerManager implements AudioPlayerManager {
   private AudioTrackExecutor createExecutorForTrack(InternalAudioTrack track, AudioConfiguration configuration,
                                                     AudioPlayerOptions playerOptions) {
 
-    AudioSourceManager sourceManager = track.getSourceManager();
+    AudioTrackExecutor customExecutor = track.createLocalExecutor(this);
 
-    if (remoteNodeManager.isEnabled() && sourceManager != null && sourceManager.isTrackEncodable(track)) {
-      return new RemoteAudioTrackExecutor(track, configuration, remoteNodeManager, playerOptions.volumeLevel);
+    if (customExecutor != null) {
+      return customExecutor;
     } else {
-      AudioTrackExecutor customExecutor = track.createLocalExecutor(this);
-
-      if (customExecutor != null) {
-        return customExecutor;
-      } else {
-        int bufferDuration = Optional.ofNullable(playerOptions.frameBufferDuration.get()).orElse(frameBufferDuration);
-        return new LocalAudioTrackExecutor(track, configuration, playerOptions, useSeekGhosting, bufferDuration);
-      }
+      int bufferDuration = Optional.ofNullable(playerOptions.frameBufferDuration.get()).orElse(frameBufferDuration);
+      return new LocalAudioTrackExecutor(track, configuration, playerOptions, useSeekGhosting, bufferDuration);
     }
   }
 
@@ -461,20 +440,11 @@ public class DefaultAudioPlayerManager implements AudioPlayerManager {
     AudioPlayer player = constructPlayer();
     player.addListener(lifecycleManager);
 
-    if (remoteNodeManager.isEnabled()) {
-      player.addListener(remoteNodeManager);
-    }
-
     return player;
   }
 
   protected AudioPlayer constructPlayer() {
     return new DefaultAudioPlayer(this);
-  }
-
-  @Override
-  public RemoteNodeRegistry getRemoteNodeRegistry() {
-    return remoteNodeManager;
   }
 
   @Override
