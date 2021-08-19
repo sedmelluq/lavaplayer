@@ -45,15 +45,17 @@ public class SoundCloudAudioSourceManager implements AudioSourceManager, HttpCon
   private static final int DEFAULT_SEARCH_RESULTS = 10;
   private static final int MAXIMUM_SEARCH_RESULTS = 200;
 
-  private static final String TRACK_URL_REGEX = "^(?:http://|https://|)(?:www\\.|)(?:m\\.|)soundcloud\\.com/([a-zA-Z0-9-_]+)/([a-zA-Z0-9-_]+)/?(?:\\?.*|)$";
+  private static final String TRACK_URL_REGEX = "^(?:https?://)?(?:www\\.)?(?:m\\.)?soundcloud\\.com/([a-zA-Z0-9-_]+)/([a-zA-Z0-9-_]+)/?(?:\\?.*|)$";
+  private static final String GOOGLE_TRACK_URL_REGEX = "^(?:https?://)?(?:www\\.)?(?:m\\.)?soundcloud\\.app\\.goo\\.gl/([a-zA-Z0-9-_]+)$";
   private static final String UNLISTED_URL_REGEX = "^(?:http://|https://|)(?:www\\.|)(?:m\\.|)soundcloud\\.com/([a-zA-Z0-9-_]+)/([a-zA-Z0-9-_]+)/s-([a-zA-Z0-9-_]+)(?:\\?.*|)$";
-  private static final String LIKED_URL_REGEX = "^(?:http://|https://|)(?:www\\.|)(?:m\\.|)soundcloud\\.com/([a-zA-Z0-9-_]+)/likes/?(?:\\?.*|)$";
+  private static final String LIKED_URL_REGEX = "^(?:https?://)?(?:www\\.)?(?:m\\.)?soundcloud\\.com/([a-zA-Z0-9-_]+)/likes/?(?:\\?.*|)$";
   private static final String LIKED_USER_URN_REGEX = "\"urn\":\"soundcloud:users:([0-9]+)\",\"username\":\"([^\"]+)\"";
   private static final String SEARCH_PREFIX = "scsearch";
   private static final String SEARCH_PREFIX_DEFAULT = "scsearch:";
   private static final String SEARCH_REGEX = SEARCH_PREFIX + "\\[([0-9]{1,9}),([0-9]{1,9})\\]:\\s*(.*)\\s*";
 
   private static final Pattern trackUrlPattern = Pattern.compile(TRACK_URL_REGEX);
+  private static final Pattern googleTrackUrlPattern = Pattern.compile(GOOGLE_TRACK_URL_REGEX);
   private static final Pattern unlistedUrlPattern = Pattern.compile(UNLISTED_URL_REGEX);
   private static final Pattern likedUrlPattern = Pattern.compile(LIKED_URL_REGEX);
   private static final Pattern likedUserUrnPattern = Pattern.compile(LIKED_USER_URN_REGEX);
@@ -176,6 +178,11 @@ public class SoundCloudAudioSourceManager implements AudioSourceManager, HttpCon
 
     Matcher trackUrlMatcher = trackUrlPattern.matcher(url);
     if (trackUrlMatcher.matches() && !"likes".equals(trackUrlMatcher.group(2))) {
+      return loadFromTrackPage(url);
+    }
+
+    Matcher googleTrackUrlMatcher = googleTrackUrlPattern.matcher(url);
+    if (googleTrackUrlMatcher.matches()) {
       return loadFromTrackPage(url);
     }
 
