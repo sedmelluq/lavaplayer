@@ -7,20 +7,7 @@ import com.sedmelluq.discord.lavaplayer.tools.http.ExtendedHttpConfigurable;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpClientTools;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterface;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterfaceManager;
-import com.sedmelluq.discord.lavaplayer.track.AudioItem;
-import com.sedmelluq.discord.lavaplayer.track.AudioReference;
-import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
-import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo;
-import com.sedmelluq.discord.lavaplayer.track.BasicAudioPlaylist;
-import java.io.IOException;
-import java.net.URI;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.function.Function;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import com.sedmelluq.discord.lavaplayer.track.*;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.utils.URIBuilder;
@@ -30,6 +17,18 @@ import org.jsoup.nodes.Document;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
+import java.net.URI;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
+import java.util.function.Function;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+
 /**
  * Handles processing YouTube Music searches.
  */
@@ -38,7 +37,7 @@ public class YoutubeSearchMusicProvider implements YoutubeSearchMusicResultLoade
 
   private static final String WATCH_URL_PREFIX = "https://www.youtube.com/watch?v=";
   private static final String YT_MUSIC_KEY = "AIzaSyC9XL3ZjWddXya6X74dJoCTL-WEYFDNX30";
-  private static final String YT_MUSIC_PAYLOAD = "{\"context\":{\"client\":{\"clientName\":\"WEB_REMIX\",\"clientVersion\":\"0.1\"}},\"query\":\"%s\",\"params\":\"Eg-KAQwIARAAGAAgACgAMABqChADEAQQCRAFEAo=\"}";
+  private static final String YT_MUSIC_PAYLOAD = "{\"context\":{\"client\":{\"clientName\":\"WEB_REMIX\",\"clientVersion\":\"1.20210726.00.01\"}},\"query\":\"%s\"}";
   private final HttpInterfaceManager httpInterfaceManager;
   private final Pattern ytMusicDataRegex = Pattern.compile("<body>\\s*(.*)\\s*</body>");
 
@@ -105,60 +104,73 @@ public class YoutubeSearchMusicProvider implements YoutubeSearchMusicResultLoade
 
     JsonBrowser jsonBrowser = JsonBrowser.parse(matcher.group(1));
     ArrayList<AudioTrack> list = new ArrayList<>();
-    JsonBrowser tracks = jsonBrowser.get("contents")
-            .get("sectionListRenderer")
-            .get("contents")
-            .index(0)
-            .get("musicShelfRenderer")
-            .get("contents");
-    if (tracks == JsonBrowser.NULL_BROWSER) {
-      tracks = jsonBrowser.get("contents")
-              .get("sectionListRenderer")
-              .get("contents")
-              .index(1)
-              .get("musicShelfRenderer")
-              .get("contents");
-    }
-    tracks.values().forEach(json -> {
-          AudioTrack track = extractMusicData(json, trackFactory);
-          if (track != null) list.add(track);
+    jsonBrowser.get("contents")
+        .get("tabbedSearchResultsRenderer")
+        .get("tabs")
+        .index(0)
+        .get("tabRenderer")
+        .get("content")
+        .get("sectionListRenderer")
+        .get("contents")
+        .values().forEach(json -> {
+          List<AudioTrack> tracks = extractMusicData(json, trackFactory);
+          if (!tracks.isEmpty()) list.addAll(tracks);
         });
     return list;
   }
 
-  private AudioTrack extractMusicData(JsonBrowser json, Function<AudioTrackInfo, AudioTrack> trackFactory) {
-    JsonBrowser columns = json.get("musicResponsiveListItemRenderer").get("flexColumns");
-    if (columns.isNull()) {
-      // Somehow don't get track info, ignore
-      return null;
+  private List<AudioTrack> extractMusicData(JsonBrowser json, Function<AudioTrackInfo, AudioTrack> trackFactory) {
+    List<JsonBrowser> contents = json.get("musicShelfRenderer").get("contents").values();
+    if (contents.isEmpty()) {
+      // Doesn't include essential info
+      return Collections.emptyList();
     }
-    JsonBrowser firstColumn = columns.index(0)
-            .get("musicResponsiveListItemFlexColumnRenderer")
+    return contents.stream().map(content -> extractTrackInfo(content, trackFactory))
+        .filter(Objects::nonNull)
+        .collect(Collectors.toList());
+  }
+
+  private AudioTrack extractTrackInfo(JsonBrowser content, Function<AudioTrackInfo, AudioTrack> trackFactory) {
+    List<List<JsonBrowser>> columns = content.get("musicResponsiveListItemRenderer")
+        .get("flexColumns")
+        .values()
+        .stream()
+        .map(column -> column.get("musicResponsiveListItemFlexColumnRenderer")
             .get("text")
             .get("runs")
-            .index(0);
-    String title = firstColumn.get("text").text();
-    String videoId = firstColumn.get("navigationEndpoint")
-            .get("watchEndpoint")
-            .get("videoId").text();
-    List<JsonBrowser> secondColumn = columns.index(1)
-            .get("musicResponsiveListItemFlexColumnRenderer")
-            .get("text")
-            .get("runs").values();
-    String author = secondColumn.get(0)
-            .get("text").text();
-    JsonBrowser lastElement = secondColumn.get(secondColumn.size() - 1);
+            .values())
+        .collect(Collectors.toList());
+    JsonBrowser firstColumn = columns.get(0).get(0);
+    List<JsonBrowser> secondColumn = columns.get(1);
 
-    if (!lastElement.get("navigationEndpoint").isNull()) {
-      // The duration element should not have this key, if it does, then duration is probably missing, so return
-      return null;
-    }
+    String type = secondColumn.get(0).get("text").text();
+    if (!"Song".equals(type) && !"Video".equals(type)) return null;
 
-    long duration = DataFormatTools.durationTextToMillis(lastElement.get("text").text());
+    String identifier = firstColumn.get("navigationEndpoint").get("watchEndpoint").get("videoId").text();
+    long duration = DataFormatTools.durationTextToMillis(secondColumn.get(secondColumn.size() - 1).get("text").text());
+    String artist = secondColumn.stream().filter(this::getIsArtist)
+        .map(column -> column.get("text").text())
+        .collect(Collectors.joining(" & "));
+    if (artist.isEmpty()) artist = "Unknown artist";
 
-    AudioTrackInfo info = new AudioTrackInfo(title, author, duration, videoId, false,
-        WATCH_URL_PREFIX + videoId);
-
+    AudioTrackInfo info = new AudioTrackInfo(firstColumn.get("text").text(),
+        artist,
+        duration,
+        identifier,
+        false,
+        WATCH_URL_PREFIX + identifier
+    );
     return trackFactory.apply(info);
+  }
+
+  private boolean getIsArtist(JsonBrowser browser) {
+    String type = browser.get("navigationEndpoint")
+        .get("browseEndpoint")
+        .get("browseEndpointContextSupportedConfigs")
+        .get("browseEndpointContextMusicConfig")
+        .get("pageType")
+        .text();
+    if (type == null) return false;
+    return type.equals("MUSIC_PAGE_TYPE_ARTIST") || type.equals("MUSIC_PAGE_TYPE_USER_CHANNEL");
   }
 }

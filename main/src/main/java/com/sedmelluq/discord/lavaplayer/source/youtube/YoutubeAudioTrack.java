@@ -80,7 +80,7 @@ public class YoutubeAudioTrack extends DelegatedAudioTrack {
       throw new FriendlyException("This video is not available", FriendlyException.Severity.COMMON, null);
     }
 
-    List<YoutubeTrackFormat> formats = details.getFormats(httpInterface, sourceManager.getSignatureResolver());;
+    List<YoutubeTrackFormat> formats = details.getFormats(httpInterface, sourceManager.getSignatureResolver());
 
     YoutubeTrackFormat format = findBestSupportedFormat(formats);
 
@@ -126,7 +126,7 @@ public class YoutubeAudioTrack extends DelegatedAudioTrack {
     if (bestFormat == null) {
       StringJoiner joiner = new StringJoiner(", ");
       formats.forEach(format -> joiner.add(format.getType().toString()));
-      throw new IllegalStateException("No supported audio streams available, available types: " + joiner.toString());
+      throw new IllegalStateException("No supported audio streams available, available types: " + joiner);
     }
 
     return bestFormat;
