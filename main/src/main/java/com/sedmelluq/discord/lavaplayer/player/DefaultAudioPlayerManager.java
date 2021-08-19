@@ -2,7 +2,6 @@ package com.sedmelluq.discord.lavaplayer.player;
 
 import com.sedmelluq.discord.lavaplayer.source.AudioSourceManager;
 import com.sedmelluq.discord.lavaplayer.source.ProbingAudioSourceManager;
-import com.sedmelluq.discord.lavaplayer.tools.DataFormatTools;
 import com.sedmelluq.discord.lavaplayer.tools.ExceptionTools;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.tools.GarbageCollectionMonitor;
@@ -30,7 +29,6 @@ import java.io.DataOutput;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.Callable;
@@ -57,8 +55,8 @@ import static com.sedmelluq.discord.lavaplayer.tools.FriendlyException.Severity.
  * The default implementation of audio player manager.
  */
 public class DefaultAudioPlayerManager implements AudioPlayerManager {
-  private static final int TRACK_INFO_VERSIONED = 1;
-  private static final int TRACK_INFO_VERSION = 2;
+  public static final int TRACK_INFO_VERSIONED = 1;
+  public static final int TRACK_INFO_VERSION = 2;
 
   private static final int DEFAULT_FRAME_BUFFER_DURATION = (int) TimeUnit.SECONDS.toMillis(5);
   private static final int DEFAULT_CLEANUP_THRESHOLD = (int) TimeUnit.MINUTES.toMillis(1);
@@ -229,14 +227,7 @@ public class DefaultAudioPlayerManager implements AudioPlayerManager {
     DataOutput output = stream.startMessage();
     output.write(TRACK_INFO_VERSION);
 
-    AudioTrackInfo trackInfo = track.getInfo();
-    output.writeUTF(trackInfo.title);
-    output.writeUTF(trackInfo.author);
-    output.writeLong(trackInfo.length);
-    output.writeUTF(trackInfo.identifier);
-    output.writeBoolean(trackInfo.isStream);
-    DataFormatTools.writeNullableText(output, trackInfo.uri);
-
+    AudioTrackInfo.encode(output, track.getInfo());
     encodeTrackDetails(track, output);
     output.writeLong(track.getPosition());
 
@@ -250,13 +241,10 @@ public class DefaultAudioPlayerManager implements AudioPlayerManager {
       return null;
     }
 
-    int version = (stream.getMessageFlags() & TRACK_INFO_VERSIONED) != 0 ? (input.readByte() & 0xFF) : 1;
-
-    AudioTrackInfo trackInfo = new AudioTrackInfo(input.readUTF(), input.readUTF(), input.readLong(), input.readUTF(),
-        input.readBoolean(), version >= 2 ? DataFormatTools.readNullableText(input) : null);
+    int version = AudioTrackInfo.getVersion(stream, input);
+    AudioTrackInfo trackInfo = AudioTrackInfo.decode(input, version);
     AudioTrack track = decodeTrackDetails(trackInfo, input);
     long position = input.readLong();
-
     if (track != null) {
       track.setPosition(position);
     }
