@@ -2,18 +2,14 @@ package com.sedmelluq.discord.lavaplayer.tools.exception;
 
 import java.util.function.IntPredicate;
 
-public class DetailMessageBuilder {
-    public final StringBuilder builder;
+class DetailMessageBuilder {
+    val builder = StringBuilder();
 
-    public DetailMessageBuilder() {
-        this.builder = new StringBuilder();
-    }
-
-    public void appendHeader(String header) {
+    fun appendHeader(header: String) {
         builder.append(header);
     }
 
-    public void appendField(String name, Object value) {
+    fun appendField(name: String, value: Any?) {
         builder.append("\n  ").append(name).append(": ");
 
         if (value == null) {
@@ -23,14 +19,10 @@ public class DetailMessageBuilder {
         }
     }
 
-    public void appendField(String name, int value) {
-        appendField(name, String.valueOf(value));
-    }
+    fun appendArray(label: String, alwaysPrint: Boolean, array: Array<*>, check: IntPredicate) {
+        var started = false;
 
-    public <T> void appendArray(String label, boolean alwaysPrint, T[] array, IntPredicate check) {
-        boolean started = false;
-
-        for (int i = 0; i < array.length; i++) {
+        for (i in array.indices) {
             if (check.test(i)) {
                 if (!started) {
                     builder.append("\n  ").append(label).append(": ");
@@ -42,14 +34,13 @@ public class DetailMessageBuilder {
         }
 
         if (started) {
-            builder.setLength(builder.length() - 2);
+            builder.setLength(builder.length - 2);
         } else if (alwaysPrint) {
             appendField(label, "NONE");
         }
     }
 
-    @Override
-    public String toString() {
+    override fun toString(): String {
         return builder.toString();
     }
 }
