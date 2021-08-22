@@ -11,6 +11,9 @@ class HttpContextRetryCounter(private val attributeName: String) {
         }
     }
 
+    fun retryCountFor(context: HttpClientContext) =
+        context.retryCount
+
     var HttpClientContext.retryCount
         get() = getAttribute(attributeName, RetryCount::class.java)?.value ?: 0
         set(value) = setAttribute(attributeName, RetryCount(value))

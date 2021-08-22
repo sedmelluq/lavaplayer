@@ -3,8 +3,8 @@ plugins {
     `maven-publish`
 }
 
-val moduleName = "lavaplayer-ext-youtube-rotator"
-version = "0.2.3"
+val moduleName = "lavaplayer-ext-ip-rotator"
+version = "0.2.4"
 
 dependencies {
     compileOnly(project(":main"))

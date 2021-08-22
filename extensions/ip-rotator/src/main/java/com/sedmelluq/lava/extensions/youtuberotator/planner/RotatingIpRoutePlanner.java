@@ -1,8 +1,8 @@
 package com.sedmelluq.lava.extensions.youtuberotator.planner;
 
-import com.sedmelluq.lava.extensions.youtuberotator.tools.Tuple;
 import com.sedmelluq.lava.extensions.youtuberotator.tools.ip.IpBlock;
 import com.sedmelluq.lava.extensions.youtuberotator.tools.ip.Ipv6Block;
+import kotlin.Pair;
 import org.apache.http.HttpException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -79,28 +79,28 @@ public final class RotatingIpRoutePlanner extends AbstractRoutePlanner {
     }
 
     @Override
-    protected Tuple<InetAddress, InetAddress> determineAddressPair(final Tuple<Inet4Address, Inet6Address> remoteAddresses) throws HttpException {
+    protected Pair<InetAddress, InetAddress> determineAddressPair(final Pair<Inet4Address, Inet6Address> remoteAddresses) throws HttpException {
         InetAddress currentAddress = null;
         InetAddress remoteAddress;
         if (ipBlock.getType() == Inet4Address.class) {
-            if (remoteAddresses.l != null) {
+            if (remoteAddresses.getFirst() != null) {
                 if (index.get().compareTo(BigInteger.ZERO) == 0 || next.get()) {
                     currentAddress = extractLocalAddress();
                     log.info("Selected " + currentAddress.toString() + " as new outgoing ip");
                 }
-                remoteAddress = remoteAddresses.l;
+                remoteAddress = remoteAddresses.getFirst();
             } else {
                 throw new HttpException("Could not resolve host");
             }
         } else if (ipBlock.getType() == Inet6Address.class) {
-            if (remoteAddresses.r != null) {
+            if (remoteAddresses.getSecond() != null) {
                 if (index.get().compareTo(BigInteger.ZERO) == 0 || next.get()) {
                     currentAddress = extractLocalAddress();
                     log.info("Selected " + currentAddress.toString() + " as new outgoing ip");
                 }
-                remoteAddress = remoteAddresses.r;
-            } else if (remoteAddresses.l != null) {
-                remoteAddress = remoteAddresses.l;
+                remoteAddress = remoteAddresses.getSecond();
+            } else if (remoteAddresses.getFirst() != null) {
+                remoteAddress = remoteAddresses.getFirst();
                 log.warn("Could not look up AAAA record for host. Falling back to unbalanced IPv4.");
             } else {
                 throw new HttpException("Could not resolve host");
@@ -113,7 +113,7 @@ public final class RotatingIpRoutePlanner extends AbstractRoutePlanner {
             currentAddress = ipBlock.getAddressAtIndex(index.get().subtract(BigInteger.ONE));
         }
         next.set(false);
-        return new Tuple<>(currentAddress, remoteAddress);
+        return new Pair<>(currentAddress, remoteAddress);
     }
 
     @Override

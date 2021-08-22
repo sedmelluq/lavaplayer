@@ -1,9 +1,9 @@
 package com.sedmelluq.lava.extensions.youtuberotator.planner;
 
 import com.sedmelluq.lava.extensions.youtuberotator.tools.BigRandom;
-import com.sedmelluq.lava.extensions.youtuberotator.tools.Tuple;
 import com.sedmelluq.lava.extensions.youtuberotator.tools.ip.IpBlock;
 import com.sedmelluq.lava.extensions.youtuberotator.tools.ip.Ipv6Block;
+import kotlin.Pair;
 import org.apache.http.HttpException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,24 +41,24 @@ public final class NanoIpRoutePlanner extends AbstractRoutePlanner {
     }
 
     @Override
-    protected Tuple<InetAddress, InetAddress> determineAddressPair(final Tuple<Inet4Address, Inet6Address> remoteAddresses) throws HttpException {
+    protected Pair<InetAddress, InetAddress> determineAddressPair(final Pair<Inet4Address, Inet6Address> remoteAddresses) throws HttpException {
         InetAddress currentAddress = null;
         InetAddress remoteAddress;
         if (ipBlock.getType() == Inet4Address.class) {
-            if (remoteAddresses.l != null) {
+            if (remoteAddresses.getFirst() != null) {
                 currentAddress = getAddress();
                 log.debug("Selected " + currentAddress.toString() + " as new outgoing ip");
-                remoteAddress = remoteAddresses.l;
+                remoteAddress = remoteAddresses.getFirst();
             } else {
                 throw new HttpException("Could not resolve host");
             }
         } else if (ipBlock.getType() == Inet6Address.class) {
-            if (remoteAddresses.r != null) {
+            if (remoteAddresses.getSecond() != null) {
                 currentAddress = getAddress();
                 log.debug("Selected " + currentAddress.toString() + " as new outgoing ip");
-                remoteAddress = remoteAddresses.r;
-            } else if (remoteAddresses.l != null) {
-                remoteAddress = remoteAddresses.l;
+                remoteAddress = remoteAddresses.getSecond();
+            } else if (remoteAddresses.getFirst() != null) {
+                remoteAddress = remoteAddresses.getFirst();
                 log.warn("Could not look up AAAA record for host. Falling back to unbalanced IPv4.");
             } else {
                 throw new HttpException("Could not resolve host");
@@ -66,7 +66,7 @@ public final class NanoIpRoutePlanner extends AbstractRoutePlanner {
         } else {
             throw new HttpException("Unknown IpBlock type: " + ipBlock.getType().getCanonicalName());
         }
-        return new Tuple<>(currentAddress, remoteAddress);
+        return new Pair<>(currentAddress, remoteAddress);
     }
 
     private InetAddress getAddress() {

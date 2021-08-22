@@ -15,7 +15,7 @@ import java.util.List;
 public class YoutubeIpRotatorSetup {
     private static final int DEFAULT_RETRY_LIMIT = 4;
     private static final HttpContextFilter DEFAULT_DELEGATE = new YoutubeHttpContextFilter();
-    private static final YoutubeIpRotatorRetryHandler RETRY_HANDLER = new YoutubeIpRotatorRetryHandler();
+    private static final IpRotatorRetryHandler RETRY_HANDLER = new IpRotatorRetryHandler();
 
     private final AbstractRoutePlanner routePlanner;
     private final List<ExtendedHttpConfigurable> mainConfiguration;
@@ -73,11 +73,11 @@ public class YoutubeIpRotatorSetup {
     }
 
     public void setup() {
-        apply(mainConfiguration, new YoutubeIpRotatorFilter(mainDelegate, false, routePlanner, retryLimit));
-        apply(searchConfiguration, new YoutubeIpRotatorFilter(searchDelegate, true, routePlanner, retryLimit));
+        apply(mainConfiguration, new IpRotatorFilter(mainDelegate, false, routePlanner, retryLimit));
+        apply(searchConfiguration, new IpRotatorFilter(searchDelegate, true, routePlanner, retryLimit));
     }
 
-    protected void apply(List<ExtendedHttpConfigurable> configurables, YoutubeIpRotatorFilter filter) {
+    protected void apply(List<ExtendedHttpConfigurable> configurables, IpRotatorFilter filter) {
         for (ExtendedHttpConfigurable configurable : configurables) {
             configurable.configureBuilder(builder ->
                 ((ExtendedHttpClientBuilder) builder).setConnectionManagerFactory(SimpleHttpClientConnectionManager::new)

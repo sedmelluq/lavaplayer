@@ -1,7 +1,7 @@
 package com.sedmelluq.lava.extensions.youtuberotator.planner;
 
-import com.sedmelluq.lava.extensions.youtuberotator.tools.Tuple;
 import com.sedmelluq.lava.extensions.youtuberotator.tools.ip.IpBlock;
+import kotlin.Pair;
 import org.apache.http.HttpException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,23 +48,23 @@ public class BalancingIpRoutePlanner extends AbstractRoutePlanner {
     }
 
     @Override
-    protected Tuple<InetAddress, InetAddress> determineAddressPair(Tuple<Inet4Address, Inet6Address> remoteAddresses) throws HttpException {
+    protected Pair<InetAddress, InetAddress> determineAddressPair(Pair<Inet4Address, Inet6Address> remoteAddresses) throws HttpException {
         InetAddress localAddress;
         final InetAddress remoteAddress;
         if (ipBlock.getType() == Inet4Address.class) {
-            if (remoteAddresses.l != null) {
+            if (remoteAddresses.getSecond() != null) {
                 localAddress = getRandomAddress(ipBlock);
-                remoteAddress = remoteAddresses.l;
+                remoteAddress = remoteAddresses.getFirst();
             } else {
                 throw new HttpException("Could not resolve host");
             }
         } else if (ipBlock.getType() == Inet6Address.class) {
-            if (remoteAddresses.r != null) {
+            if (remoteAddresses.getSecond() != null) {
                 localAddress = getRandomAddress(ipBlock);
-                remoteAddress = remoteAddresses.r;
-            } else if (remoteAddresses.l != null) {
+                remoteAddress = remoteAddresses.getSecond();
+            } else if (remoteAddresses.getFirst() != null) {
                 localAddress = null;
-                remoteAddress = remoteAddresses.l;
+                remoteAddress = remoteAddresses.getFirst();
                 log.warn("Could not look up AAAA record for host. Falling back to unbalanced IPv4.");
             } else {
                 throw new HttpException("Could not resolve host");
@@ -72,7 +72,7 @@ public class BalancingIpRoutePlanner extends AbstractRoutePlanner {
         } else {
             throw new HttpException("Unknown IpBlock type: " + ipBlock.getType().getCanonicalName());
         }
-        return new Tuple<>(localAddress, remoteAddress);
+        return new Pair<>(localAddress, remoteAddress);
     }
 
     private InetAddress getRandomAddress(final IpBlock ipBlock) {

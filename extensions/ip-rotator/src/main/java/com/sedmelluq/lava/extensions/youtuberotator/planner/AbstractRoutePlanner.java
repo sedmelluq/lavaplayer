@@ -1,9 +1,9 @@
 package com.sedmelluq.lava.extensions.youtuberotator.planner;
 
-import com.sedmelluq.lava.extensions.youtuberotator.tools.Tuple;
 import com.sedmelluq.lava.extensions.youtuberotator.tools.ip.CombinedIpBlock;
 import com.sedmelluq.lava.extensions.youtuberotator.tools.ip.IpAddressTools;
 import com.sedmelluq.lava.extensions.youtuberotator.tools.ip.IpBlock;
+import kotlin.Pair;
 import org.apache.http.HttpException;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpRequest;
@@ -116,18 +116,18 @@ public abstract class AbstractRoutePlanner implements HttpRoutePlanner {
             remotePort = host.getPort();
         }
 
-        final Tuple<Inet4Address, Inet6Address> remoteAddresses = IpAddressTools.getRandomAddressesFromHost(host);
-        final Tuple<InetAddress, InetAddress> addresses = determineAddressPair(remoteAddresses);
+        final Pair<Inet4Address, Inet6Address> remoteAddresses = IpAddressTools.getRandomAddressesFromHost(host);
+        final Pair<InetAddress, InetAddress> addresses = determineAddressPair(remoteAddresses);
 
-        final HttpHost target = new HttpHost(addresses.r, host.getHostName(), remotePort, host.getSchemeName());
+        final HttpHost target = new HttpHost(addresses.getSecond(), host.getHostName(), remotePort, host.getSchemeName());
         final HttpHost proxy = config.getProxy();
         final boolean secure = target.getSchemeName().equalsIgnoreCase("https");
-        clientContext.setAttribute(CHOSEN_IP_ATTRIBUTE, addresses.l);
-        log.debug("Setting route context attribute to {}", addresses.l);
+        clientContext.setAttribute(CHOSEN_IP_ATTRIBUTE, addresses.getFirst());
+        log.debug("Setting route context attribute to {}", addresses.getFirst());
         if (proxy == null) {
-            return new HttpRoute(target, addresses.l, secure);
+            return new HttpRoute(target, addresses.getFirst(), secure);
         } else {
-            return new HttpRoute(target, addresses.l, proxy, secure);
+            return new HttpRoute(target, addresses.getFirst(), proxy, secure);
         }
     }
 
@@ -153,8 +153,8 @@ public abstract class AbstractRoutePlanner implements HttpRoutePlanner {
      * Determines the local and remote address pair to use
      *
      * @param remoteAddresses The remote address pair containing IPv4 and IPv6 addresses - which can be null
-     * @return a {@link Tuple} which contains l = localAddress & r = remoteAddress
+     * @return a {@link Pair} which contains l = localAddress & r = remoteAddress
      * @throws HttpException when no route can be determined
      */
-    protected abstract Tuple<InetAddress, InetAddress> determineAddressPair(final Tuple<Inet4Address, Inet6Address> remoteAddresses) throws HttpException;
+    protected abstract Pair<InetAddress, InetAddress> determineAddressPair(final Pair<Inet4Address, Inet6Address> remoteAddresses) throws HttpException;
 }
