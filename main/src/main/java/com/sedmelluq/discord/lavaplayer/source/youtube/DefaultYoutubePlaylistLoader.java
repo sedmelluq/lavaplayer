@@ -2,6 +2,7 @@ package com.sedmelluq.discord.lavaplayer.source.youtube;
 
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.tools.JsonBrowser;
+import com.sedmelluq.discord.lavaplayer.tools.ThumbnailTools;
 import com.sedmelluq.discord.lavaplayer.tools.Units;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpClientTools;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterface;
@@ -19,8 +20,6 @@ import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import static com.sedmelluq.discord.lavaplayer.source.youtube.YoutubeHttpContextFilter.PBJ_PARAMETER;
 import static com.sedmelluq.discord.lavaplayer.tools.FriendlyException.Severity.COMMON;
@@ -181,7 +180,7 @@ public class DefaultYoutubePlaylistLoader implements YoutubePlaylistLoader {
       // If the isPlayable property does not exist, it means the video is removed or private
       // If the shortBylineText property does not exist, it means the Track is Region blocked
       if (!item.get("isPlayable").isNull() && !shortBylineText.isNull()) {
-        String videoId = item.get("videoId").text();
+        String videoId = item.get("videoId").safeText();
         JsonBrowser titleField = item.get("title");
         String title = Optional.ofNullable(titleField.get("simpleText").text())
                 .orElse(titleField.get("runs").index(0).get("text").text());
@@ -189,8 +188,15 @@ public class DefaultYoutubePlaylistLoader implements YoutubePlaylistLoader {
         JsonBrowser lengthSeconds = item.get("lengthSeconds");
         long duration = Units.secondsToMillis(lengthSeconds.asLong(Units.DURATION_SEC_UNKNOWN));
 
-        AudioTrackInfo info = new AudioTrackInfo(title, author, duration, videoId, false,
-            "https://www.youtube.com/watch?v=" + videoId);
+        AudioTrackInfo info = new AudioTrackInfo(
+            title,
+            author,
+            duration,
+            videoId,
+            false,
+            "https://www.youtube.com/watch?v=" + videoId,
+            ThumbnailTools.extractYouTube(item, videoId)
+        );
 
         tracks.add(trackFactory.apply(info));
       }

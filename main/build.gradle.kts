@@ -1,22 +1,25 @@
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+
 plugins {
   `java-library`
-  groovy
   `maven-publish`
+
+  kotlin("jvm") version "1.5.21"
+  kotlin("plugin.serialization") version "1.5.21"
 }
 
 val moduleName = "lavaplayer"
-version = "1.3.80"
+version = "1.3.81"
 
 dependencies {
   api("com.sedmelluq:lava-common:1.1.2")
   implementation("com.sedmelluq:lavaplayer-natives:1.3.14")
   implementation("org.slf4j:slf4j-api:1.7.25")
 
+  implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.2.2")
+
   api("org.apache.httpcomponents:httpclient:4.5.10")
   implementation("commons-io:commons-io:2.6")
-
-  api("com.fasterxml.jackson.core:jackson-core:2.10.0")
-  api("com.fasterxml.jackson.core:jackson-databind:2.10.0")
 
   implementation("org.jsoup:jsoup:1.12.1")
   implementation("net.iharder:base64:2.3.9")
@@ -55,4 +58,10 @@ publishing {
       artifact(sourcesJar)
     }
   }
+}
+
+tasks.withType<KotlinCompile> {
+  sourceCompatibility = "16"
+  targetCompatibility = "16"
+  kotlinOptions.jvmTarget = "16"
 }

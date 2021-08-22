@@ -26,6 +26,7 @@ public class Test {
                     System.out.println(track.getInfo().uri);
                     System.out.println(track.getInfo().length);
                     System.out.println(track.getSourceManager());
+                    System.out.println(track.getInfo().artworkUrl);
                 }
 
                 @Override
@@ -35,6 +36,7 @@ public class Test {
                         System.out.println(track.getInfo().author);
                         System.out.println(track.getInfo().uri);
                         System.out.println(track.getDuration());
+                        System.out.println(track.getInfo().artworkUrl);
                         System.out.println("-----");
                     }
                 }

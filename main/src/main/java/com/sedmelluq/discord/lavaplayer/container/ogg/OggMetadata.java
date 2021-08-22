@@ -47,4 +47,9 @@ public class OggMetadata implements AudioTrackInfoProvider {
   public String getUri() {
     return null;
   }
+
+  @Override
+  public String getArtworkUrl() {
+    return null;
+  }
 }

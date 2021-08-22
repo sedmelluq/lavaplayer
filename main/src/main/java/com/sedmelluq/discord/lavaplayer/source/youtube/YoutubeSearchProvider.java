@@ -3,6 +3,7 @@ package com.sedmelluq.discord.lavaplayer.source.youtube;
 import com.sedmelluq.discord.lavaplayer.tools.DataFormatTools;
 import com.sedmelluq.discord.lavaplayer.tools.ExceptionTools;
 import com.sedmelluq.discord.lavaplayer.tools.JsonBrowser;
+import com.sedmelluq.discord.lavaplayer.tools.ThumbnailTools;
 import com.sedmelluq.discord.lavaplayer.tools.http.ExtendedHttpConfigurable;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpClientTools;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterface;
@@ -37,6 +38,7 @@ import org.slf4j.LoggerFactory;
 public class YoutubeSearchProvider implements YoutubeSearchResultLoader {
   private static final Logger log = LoggerFactory.getLogger(YoutubeSearchProvider.class);
 
+  private static final String THUMBNAIL_FORMAT = "https://img.youtube.com/vi/%s/0.jpg";
   private static final String WATCH_URL_PREFIX = "https://www.youtube.com/watch?v=";
   private final HttpInterfaceManager httpInterfaceManager;
   private final Pattern polymerInitialDataRegex = Pattern.compile("(window\\[\"ytInitialData\"]|var ytInitialData)\\s*=\\s*(.*);");
@@ -120,8 +122,7 @@ public class YoutubeSearchProvider implements YoutubeSearchResultLoader {
     String title = contentElement.select(".yt-lockup-title > a").text();
     String author = contentElement.select(".yt-lockup-byline > a").text();
 
-    AudioTrackInfo info = new AudioTrackInfo(title, author, duration, videoId, false,
-        WATCH_URL_PREFIX + videoId);
+    AudioTrackInfo info = constructTrackInfo(title, author, duration, videoId, String.format(THUMBNAIL_FORMAT, videoId));
 
     tracks.add(trackFactory.apply(info));
   }
@@ -172,9 +173,12 @@ public class YoutubeSearchProvider implements YoutubeSearchResultLoader {
     long duration = DataFormatTools.durationTextToMillis(lengthText);
     String videoId = renderer.get("videoId").text();
 
-    AudioTrackInfo info = new AudioTrackInfo(title, author, duration, videoId, false,
-        WATCH_URL_PREFIX + videoId);
+    AudioTrackInfo info = constructTrackInfo(title, author, duration, videoId, ThumbnailTools.extractYouTube(renderer, videoId));
 
     return trackFactory.apply(info);
+  }
+
+  private AudioTrackInfo constructTrackInfo(String title, String author, long duration, String videoId, String artworkUrl) {
+    return new AudioTrackInfo(title, author, duration, videoId, false, WATCH_URL_PREFIX + videoId, artworkUrl);
   }
 }

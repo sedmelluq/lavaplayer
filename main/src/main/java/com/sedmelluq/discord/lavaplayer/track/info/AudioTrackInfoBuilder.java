@@ -20,6 +20,7 @@ public class AudioTrackInfoBuilder implements AudioTrackInfoProvider {
   private String identifier;
   private String uri;
   private Boolean isStream;
+  private String artworkUrl;
 
   private AudioTrackInfoBuilder() {
 
@@ -48,6 +49,11 @@ public class AudioTrackInfoBuilder implements AudioTrackInfoProvider {
   @Override
   public String getUri() {
     return uri;
+  }
+
+  @Override
+  public String getArtworkUrl() {
+    return artworkUrl;
   }
 
   public AudioTrackInfoBuilder setTitle(String value) {
@@ -80,6 +86,11 @@ public class AudioTrackInfoBuilder implements AudioTrackInfoProvider {
     return this;
   }
 
+  public AudioTrackInfoBuilder setArtworkUrl(String artworkUrl) {
+    this.artworkUrl = artworkUrl;
+    return this;
+  }
+
   /**
    * @param provider The track info provider to apply to the builder.
    * @return this
@@ -93,7 +104,8 @@ public class AudioTrackInfoBuilder implements AudioTrackInfoProvider {
         .setAuthor(provider.getAuthor())
         .setLength(provider.getLength())
         .setIdentifier(provider.getIdentifier())
-        .setUri(provider.getUri());
+        .setUri(provider.getUri())
+        .setArtworkUrl(provider.getArtworkUrl());
   }
 
   /**
@@ -108,7 +120,8 @@ public class AudioTrackInfoBuilder implements AudioTrackInfoProvider {
         finalLength,
         identifier,
         DataFormatTools.defaultOnNull(isStream, finalLength == DURATION_MS_UNKNOWN),
-        uri
+        uri,
+        artworkUrl
     );
   }
 
@@ -117,7 +130,7 @@ public class AudioTrackInfoBuilder implements AudioTrackInfoProvider {
    *
    * @param reference Audio reference to use as the starting point for the builder.
    * @param stream Stream to get additional data from.
-   * @return An instance of the builder with the reference and track info providers from the stream preapplied.
+   * @return An instance of the builder with the reference and track info providers from the stream pre-applied.
    */
   public static AudioTrackInfoBuilder create(AudioReference reference, SeekableInputStream stream) {
     AudioTrackInfoBuilder builder = new AudioTrackInfoBuilder()

@@ -44,14 +44,17 @@ public class WavContainerProbe implements MediaContainerProbe {
 
     WavFileInfo fileInfo = new WavFileLoader(inputStream).parseHeaders();
 
-    return supportedFormat(this, null, new AudioTrackInfo(
+    AudioTrackInfo trackInfo = new AudioTrackInfo(
         defaultOnNull(reference.title, UNKNOWN_TITLE),
         UNKNOWN_ARTIST,
         fileInfo.getDuration(),
         reference.identifier,
         false,
-        reference.identifier
-    ));
+        reference.identifier,
+        null
+    );
+
+    return supportedFormat(this, null, trackInfo);
   }
 
   @Override

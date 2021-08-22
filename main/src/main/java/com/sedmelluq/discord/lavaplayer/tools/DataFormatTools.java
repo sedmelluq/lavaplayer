@@ -15,10 +15,32 @@ import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URLEncodedUtils;
 
 /**
- * Helper methods related to strings and maps.
+ * Helper methods related to Strings, Maps, and Numbers.
  */
 public class DataFormatTools {
   private static final Pattern lineSplitPattern = Pattern.compile("[\\r\\n\\s]*\\n[\\r\\n\\s]*");
+
+  /**
+   * Parses a duration string into milliseconds
+   * @param duration The string duration
+   * @return The duration in milliseconds.
+   */
+  public static long parseDuration(String duration) {
+    String[] parts = duration.split(":");
+
+    if (parts.length == 3) { // hh::mm:ss
+      int hours = Integer.parseInt(parts[0]);
+      int minutes = Integer.parseInt(parts[1]);
+      int seconds = Integer.parseInt(parts[2]);
+      return (hours * 3_600_000L) + (minutes * 60_000L) + (seconds * 1_000L);
+    } else if (parts.length == 2) { // mm:ss
+      int minutes = Integer.parseInt(parts[0]);
+      int seconds = Integer.parseInt(parts[1]);
+      return (minutes * 60_000L) + (seconds * 1_000L);
+    } else {
+      return Units.DURATION_MS_UNKNOWN;
+    }
+  }
 
   /**
    * Extract text between the first subsequent occurrences of start and end in haystack

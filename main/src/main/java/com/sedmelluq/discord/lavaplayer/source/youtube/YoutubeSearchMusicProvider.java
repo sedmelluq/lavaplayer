@@ -3,6 +3,7 @@ package com.sedmelluq.discord.lavaplayer.source.youtube;
 import com.sedmelluq.discord.lavaplayer.tools.DataFormatTools;
 import com.sedmelluq.discord.lavaplayer.tools.ExceptionTools;
 import com.sedmelluq.discord.lavaplayer.tools.JsonBrowser;
+import com.sedmelluq.discord.lavaplayer.tools.ThumbnailTools;
 import com.sedmelluq.discord.lavaplayer.tools.http.ExtendedHttpConfigurable;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpClientTools;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterface;
@@ -153,13 +154,16 @@ public class YoutubeSearchMusicProvider implements YoutubeSearchMusicResultLoade
         .collect(Collectors.joining(" & "));
     if (artist.isEmpty()) artist = "Unknown artist";
 
-    AudioTrackInfo info = new AudioTrackInfo(firstColumn.get("text").text(),
+    AudioTrackInfo info = new AudioTrackInfo(
+        firstColumn.get("text").text(),
         artist,
         duration,
         identifier,
         false,
-        WATCH_URL_PREFIX + identifier
+        WATCH_URL_PREFIX + identifier,
+        ThumbnailTools.extractYouTubeMusic(content, identifier)
     );
+
     return trackFactory.apply(info);
   }
 

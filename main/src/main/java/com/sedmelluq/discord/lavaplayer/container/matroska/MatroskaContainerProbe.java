@@ -58,8 +58,17 @@ public class MatroskaContainerProbe implements MediaContainerProbe {
       return unsupportedFormat(this, "No supported audio tracks present in the file.");
     }
 
-    return supportedFormat(this, null, new AudioTrackInfo(UNKNOWN_TITLE, UNKNOWN_ARTIST,
-        (long) file.getDuration(), reference.identifier, false, reference.identifier));
+    AudioTrackInfo trackInfo = new AudioTrackInfo(
+        UNKNOWN_TITLE,
+        UNKNOWN_ARTIST,
+        (long) file.getDuration(),
+        reference.identifier,
+        false,
+        reference.identifier,
+        null
+    );
+
+    return supportedFormat(this, null, trackInfo);
   }
 
   private boolean hasSupportedAudioTrack(MatroskaStreamingFile file) {

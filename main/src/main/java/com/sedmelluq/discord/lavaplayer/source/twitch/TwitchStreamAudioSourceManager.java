@@ -107,6 +107,7 @@ public class TwitchStreamAudioSourceManager implements AudioSourceManager, HttpC
 
       JsonBrowser channelData = channelInfo.get("stream").get("channel");
       String status = channelData.get("status").text();
+      final String thumbnail = channelData.get("logo").text();
 
       return new TwitchStreamAudioTrack(new AudioTrackInfo(
               status,
@@ -114,7 +115,8 @@ public class TwitchStreamAudioSourceManager implements AudioSourceManager, HttpC
               Units.DURATION_MS_UNKNOWN,
               reference.identifier,
               true,
-              reference.identifier
+              reference.identifier,
+              thumbnail
       ), this);
     }
   }

@@ -64,7 +64,7 @@ public class TwitchStreamSegmentUrlProvider extends M3uStreamSegmentUrlProvider 
     log.debug("Chose stream with quality {} from url {}", stream.quality, stream.url);
     streamSegmentPlaylistUrl = stream.url;
 
-    long tokenServerExpirationTime = JsonBrowser.parse(token.get(TOKEN_PARAMETER).text()).get("expires").as(Long.class) * 1000L;
+    long tokenServerExpirationTime = JsonBrowser.parse(token.get(TOKEN_PARAMETER).text()).get("expires").asLong() * 1000L;
     tokenExpirationTime = System.currentTimeMillis() + (tokenServerExpirationTime - streams.serverTime) - 5000;
 
     return streamSegmentPlaylistUrl;
