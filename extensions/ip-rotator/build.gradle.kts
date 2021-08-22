@@ -7,7 +7,7 @@ val moduleName = "lavaplayer-ext-ip-rotator"
 version = "0.2.4"
 
 dependencies {
-    compileOnly(project(":main"))
+    api(project(":main"))
 }
 
 val sourcesJar by tasks.registering(Jar::class) {

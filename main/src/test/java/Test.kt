@@ -1,11 +1,11 @@
-import com.sedmelluq.discord.lavaplayer.player.AudioLoadResultHandler
-import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager
-import com.sedmelluq.discord.lavaplayer.player.DefaultAudioPlayerManager
-import com.sedmelluq.discord.lavaplayer.source.AudioSourceManagers
-import com.sedmelluq.discord.lavaplayer.tools.FriendlyException
-import com.sedmelluq.discord.lavaplayer.tools.extensions.isSearchResult
-import com.sedmelluq.discord.lavaplayer.track.AudioTrack
-import com.sedmelluq.discord.lavaplayer.track.AudioTrackCollection
+import lavaplayer.manager.AudioLoadResultHandler
+import lavaplayer.manager.AudioPlayerManager
+import lavaplayer.manager.DefaultAudioPlayerManager
+import lavaplayer.source.AudioSourceManagers
+import lavaplayer.tools.FriendlyException
+import lavaplayer.tools.extensions.isSearchResult
+import lavaplayer.track.AudioTrack
+import lavaplayer.track.AudioTrackCollection
 import java.util.concurrent.ExecutionException
 
 object Test {

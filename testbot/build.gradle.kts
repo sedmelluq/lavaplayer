@@ -11,5 +11,5 @@ dependencies {
 }
 
 application {
-    mainClass.set("com.sedmelluq.discord.lavaplayer.demo.Bootstrap")
+    mainClass.set("lavaplayer.demo.Bootstrap")
 }

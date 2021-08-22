@@ -29,7 +29,7 @@ tasks.jar {
 }
 
 val updateVersion by tasks.registering {
-    File("$projectDir/src/main/resources/com/sedmelluq/discord/lavaplayer/tools/version.txt").let {
+    File("$projectDir/src/main/resources/lavaplayer/tools/version.txt").let {
         it.parentFile.mkdirs()
         it.writeText(version.toString())
     }
