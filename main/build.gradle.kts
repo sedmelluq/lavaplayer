@@ -1,15 +1,12 @@
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-
 plugins {
     `java-library`
     `maven-publish`
 
-    kotlin("jvm") version "1.5.21"
     kotlin("plugin.serialization") version "1.5.21"
 }
 
 val moduleName = "lavaplayer"
-version = "1.3.83.2"
+version = "1.3.83.3"
 
 dependencies {
     api("com.sedmelluq:lava-common:1.1.2")
@@ -55,10 +52,4 @@ publishing {
             artifact(sourcesJar)
         }
     }
-}
-
-tasks.withType<KotlinCompile> {
-    sourceCompatibility = "16"
-    targetCompatibility = "16"
-    kotlinOptions.jvmTarget = "16"
 }

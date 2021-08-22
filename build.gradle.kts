@@ -1,6 +1,9 @@
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+
 plugins {
     java
     `maven-publish`
+    kotlin("jvm") version "1.5.21"
 }
 
 group = "com.sedmelluq"
@@ -14,6 +17,7 @@ allprojects {
         maven(url = "https://m2.dv8tion.net/releases")
     }
 
+    apply(plugin = "kotlin")
     apply(plugin = "java")
     apply(plugin = "maven-publish")
 
@@ -32,5 +36,11 @@ allprojects {
                 }
             }
         }
+    }
+
+    tasks.withType<KotlinCompile> {
+        sourceCompatibility = "16"
+        targetCompatibility = "16"
+        kotlinOptions.jvmTarget = "16"
     }
 }
