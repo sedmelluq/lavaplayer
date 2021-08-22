@@ -6,10 +6,11 @@ import com.sedmelluq.discord.lavaplayer.tools.JsonBrowser;
 import com.sedmelluq.discord.lavaplayer.tools.ThumbnailTools;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpClientTools;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterface;
-import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo;
-import com.sedmelluq.discord.lavaplayer.track.BasicAudioPlaylist;
+import com.sedmelluq.discord.lavaplayer.track.AudioTrackCollection;
+import com.sedmelluq.discord.lavaplayer.track.AudioTrackCollectionType;
+import com.sedmelluq.discord.lavaplayer.track.BasicAudioTrackCollection;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 
@@ -25,14 +26,17 @@ import static com.sedmelluq.discord.lavaplayer.tools.FriendlyException.Severity.
  * Handles loading of YouTube mixes.
  */
 public class YoutubeMixProvider implements YoutubeMixLoader {
+    public static final String YOUTUBE_MUSIC_MIX = "https://music.youtube.com/playlist?list=";
+    public static final String YOUTUBE_MUSIC_VIDEO = "https://music.youtube.com/watch?v=";
+
     /**
      * Loads tracks from mix in parallel into a playlist entry.
      *
      * @param mixId           ID of the mix
-     * @param selectedVideoId Selected track, {@link AudioPlaylist#getSelectedTrack()} will return this.
+     * @param selectedVideoId Selected track, {@link AudioTrackCollection#getSelectedTrack()} will return this.
      * @return Playlist of the tracks in the mix.
      */
-    public AudioPlaylist load(
+    public AudioTrackCollection load(
         HttpInterface httpInterface,
         String mixId,
         String selectedVideoId,
@@ -42,7 +46,6 @@ public class YoutubeMixProvider implements YoutubeMixLoader {
         List<AudioTrack> tracks = new ArrayList<>();
 
         String mixUrl = "https://www.youtube.com/watch?v=" + selectedVideoId + "&list=" + mixId + PBJ_PARAMETER;
-
         try (CloseableHttpResponse response = httpInterface.execute(new HttpGet(mixUrl))) {
             HttpClientTools.assertSuccessWithContent(response, "mix response");
 
@@ -69,7 +72,12 @@ public class YoutubeMixProvider implements YoutubeMixLoader {
         }
 
         AudioTrack selectedTrack = findSelectedTrack(tracks, selectedVideoId);
-        return new BasicAudioPlaylist(playlistTitle, tracks, selectedTrack, false);
+        return new BasicAudioTrackCollection(
+            playlistTitle,
+            AudioTrackCollectionType.Playlist.INSTANCE,
+            tracks,
+            selectedTrack
+        );
     }
 
     private void extractPlaylistTracks(

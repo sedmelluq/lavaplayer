@@ -5,10 +5,11 @@ import com.sedmelluq.discord.lavaplayer.tools.JsonBrowser;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpClientTools;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterface;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterfaceManager;
-import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo;
-import com.sedmelluq.discord.lavaplayer.track.BasicAudioPlaylist;
+import com.sedmelluq.discord.lavaplayer.track.AudioTrackCollection;
+import com.sedmelluq.discord.lavaplayer.track.AudioTrackCollectionType;
+import com.sedmelluq.discord.lavaplayer.track.BasicAudioTrackCollection;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.utils.URIBuilder;
@@ -44,7 +45,7 @@ public class DefaultSoundCloudPlaylistLoader implements SoundCloudPlaylistLoader
     }
 
     @Override
-    public AudioPlaylist load(
+    public AudioTrackCollection load(
         String identifier,
         HttpInterfaceManager httpInterfaceManager,
         Function<AudioTrackInfo, AudioTrack> trackFactory
@@ -58,7 +59,7 @@ public class DefaultSoundCloudPlaylistLoader implements SoundCloudPlaylistLoader
         }
     }
 
-    protected AudioPlaylist loadFromSet(
+    protected AudioTrackCollection loadFromSet(
         HttpInterfaceManager httpInterfaceManager,
         String playlistWebUrl,
         Function<AudioTrackInfo, AudioTrack> trackFactory
@@ -67,11 +68,11 @@ public class DefaultSoundCloudPlaylistLoader implements SoundCloudPlaylistLoader
             JsonBrowser rootData = htmlDataLoader.load(httpInterface, playlistWebUrl);
             JsonBrowser playlistData = dataReader.findPlaylistData(rootData);
 
-            return new BasicAudioPlaylist(
+            return new BasicAudioTrackCollection(
                 dataReader.readPlaylistName(playlistData),
+                AudioTrackCollectionType.Playlist.INSTANCE,
                 loadPlaylistTracks(httpInterface, playlistData, trackFactory),
-                null,
-                false
+                null
             );
         } catch (IOException e) {
             throw new FriendlyException("Loading playlist from SoundCloud failed.", SUSPICIOUS, e);

@@ -10,6 +10,7 @@ import com.sedmelluq.discord.lavaplayer.tools.io.HttpConfigurable;
 import com.sedmelluq.discord.lavaplayer.tools.io.MessageInput;
 import com.sedmelluq.discord.lavaplayer.tools.io.MessageOutput;
 import com.sedmelluq.discord.lavaplayer.track.*;
+import com.sedmelluq.discord.lavaplayer.track.AudioTrackCollection;
 import com.sedmelluq.discord.lavaplayer.track.playback.AudioTrackExecutor;
 import com.sedmelluq.discord.lavaplayer.track.playback.LocalAudioTrackExecutor;
 import com.sedmelluq.lava.common.tools.DaemonThreadFactory;
@@ -387,10 +388,10 @@ public class DefaultAudioPlayerManager implements AudioPlayerManager {
                     log.debug("Loaded a track with identifier {} using {}.", reference.identifier, sourceManager.getClass().getSimpleName());
                     reported[0] = true;
                     resultHandler.trackLoaded((AudioTrack) item);
-                } else if (item instanceof AudioPlaylist) {
-                    log.debug("Loaded a playlist with identifier {} using {}.", reference.identifier, sourceManager.getClass().getSimpleName());
+                } else if (item instanceof AudioTrackCollection) {
+                    log.debug("Loaded an audio track collection with identifier {} using {}.", reference.identifier, sourceManager.getClass().getSimpleName());
                     reported[0] = true;
-                    resultHandler.playlistLoaded((AudioPlaylist) item);
+                    resultHandler.collectionLoaded((AudioTrackCollection) item);
                 }
                 return item;
             }

@@ -9,6 +9,8 @@ import com.sedmelluq.discord.lavaplayer.tools.io.HttpClientTools;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterface;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterfaceManager;
 import com.sedmelluq.discord.lavaplayer.track.*;
+import com.sedmelluq.discord.lavaplayer.track.AudioTrackCollectionType;
+import com.sedmelluq.discord.lavaplayer.track.BasicAudioTrackCollection;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.utils.URIBuilder;
@@ -92,7 +94,12 @@ public class YoutubeSearchMusicProvider implements YoutubeSearchMusicResultLoade
         if (tracks.isEmpty()) {
             return AudioReference.NO_TRACK;
         } else {
-            return new BasicAudioPlaylist("Search music results for: " + query, tracks, null, true);
+            return new BasicAudioTrackCollection(
+                "Search music results for: " + query,
+                new AudioTrackCollectionType.SearchResult(query),
+                tracks,
+                null
+            );
         }
     }
 

@@ -1,8 +1,8 @@
 package com.sedmelluq.discord.lavaplayer.player;
 
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
-import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
+import com.sedmelluq.discord.lavaplayer.track.AudioTrackCollection;
 
 /**
  * Handles the result of loading an item from an audio player manager.
@@ -16,11 +16,11 @@ public interface AudioLoadResultHandler {
     void trackLoaded(AudioTrack track);
 
     /**
-     * Called when the requested item is a playlist and it was successfully loaded.
+     * Called when the requested item is a track collection and was successfully loaded.
      *
-     * @param playlist The loaded playlist
+     * @param collection The loaded collection.
      */
-    void playlistLoaded(AudioPlaylist playlist);
+    void collectionLoaded(AudioTrackCollection collection);
 
     /**
      * Called when there were no items found by the specified identifier.

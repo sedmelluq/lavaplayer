@@ -11,6 +11,8 @@ import com.sedmelluq.discord.lavaplayer.tools.io.HttpConfigurable;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterface;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterfaceManager;
 import com.sedmelluq.discord.lavaplayer.track.*;
+import com.sedmelluq.discord.lavaplayer.track.AudioTrackCollectionType;
+import com.sedmelluq.discord.lavaplayer.track.BasicAudioTrackCollection;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.config.RequestConfig;
@@ -92,7 +94,7 @@ public class BandcampAudioSourceManager implements AudioSourceManager, HttpConfi
     private AudioItem loadAlbum(UrlInfo urlInfo) {
         return extractFromPage(urlInfo.fullUrl, (httpClient, text) -> {
             JsonBrowser trackListInfo = readTrackListInformation(text);
-            String artist = trackListInfo.get("artist").text();
+            String artist = trackListInfo.get("artist").safeText();
             String artworkUrl = extractArtwork(trackListInfo);
 
             List<AudioTrack> tracks = new ArrayList<>();
@@ -101,7 +103,12 @@ public class BandcampAudioSourceManager implements AudioSourceManager, HttpConfi
             }
 
             JsonBrowser albumInfo = readAlbumInformation(text);
-            return new BasicAudioPlaylist(albumInfo.get("current").get("title").text(), tracks, null, false);
+            return new BasicAudioTrackCollection(
+                albumInfo.get("current").get("title").safeText(),
+                new AudioTrackCollectionType.Album(artist),
+                tracks,
+                null
+            );
         });
     }
 

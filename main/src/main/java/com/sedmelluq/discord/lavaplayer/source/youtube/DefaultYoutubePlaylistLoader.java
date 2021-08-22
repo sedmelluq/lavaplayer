@@ -6,10 +6,11 @@ import com.sedmelluq.discord.lavaplayer.tools.ThumbnailTools;
 import com.sedmelluq.discord.lavaplayer.tools.Units;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpClientTools;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterface;
-import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo;
-import com.sedmelluq.discord.lavaplayer.track.BasicAudioPlaylist;
+import com.sedmelluq.discord.lavaplayer.track.AudioTrackCollection;
+import com.sedmelluq.discord.lavaplayer.track.AudioTrackCollectionType;
+import com.sedmelluq.discord.lavaplayer.track.BasicAudioTrackCollection;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
@@ -40,8 +41,8 @@ public class DefaultYoutubePlaylistLoader implements YoutubePlaylistLoader {
     }
 
     @Override
-    public AudioPlaylist load(HttpInterface httpInterface, String playlistId, String selectedVideoId,
-                              Function<AudioTrackInfo, AudioTrack> trackFactory) {
+    public AudioTrackCollection load(HttpInterface httpInterface, String playlistId, String selectedVideoId,
+                                     Function<AudioTrackInfo, AudioTrack> trackFactory) {
 
         HttpGet request = new HttpGet(getPlaylistUrl(playlistId) + PBJ_PARAMETER + "&hl=en");
 
@@ -56,7 +57,7 @@ public class DefaultYoutubePlaylistLoader implements YoutubePlaylistLoader {
         }
     }
 
-    private AudioPlaylist buildPlaylist(HttpInterface httpInterface, JsonBrowser json, String selectedVideoId,
+    private AudioTrackCollection buildPlaylist(HttpInterface httpInterface, JsonBrowser json, String selectedVideoId,
                                         Function<AudioTrackInfo, AudioTrack> trackFactory) throws IOException {
 
         JsonBrowser jsonResponse = json.index(1).get("response");
@@ -128,7 +129,12 @@ public class DefaultYoutubePlaylistLoader implements YoutubePlaylistLoader {
             }
         }
 
-        return new BasicAudioPlaylist(playlistName, tracks, findSelectedTrack(tracks, selectedVideoId), false);
+        return new BasicAudioTrackCollection(
+            playlistName == null ? "Unknown" : playlistName,
+            AudioTrackCollectionType.Playlist.INSTANCE,
+            tracks,
+            findSelectedTrack(tracks, selectedVideoId)
+        );
     }
 
     private String findErrorAlert(JsonBrowser jsonResponse) {
