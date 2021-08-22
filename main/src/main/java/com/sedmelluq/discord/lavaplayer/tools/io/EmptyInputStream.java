@@ -6,15 +6,15 @@ import java.io.InputStream;
  * Represents an empty input stream.
  */
 public class EmptyInputStream extends InputStream {
-  public static final EmptyInputStream INSTANCE = new EmptyInputStream();
+    public static final EmptyInputStream INSTANCE = new EmptyInputStream();
 
-  @Override
-  public int available() {
-    return 0;
-  }
+    @Override
+    public int available() {
+        return 0;
+    }
 
-  @Override
-  public int read() {
-    return -1;
-  }
+    @Override
+    public int read() {
+        return -1;
+    }
 }

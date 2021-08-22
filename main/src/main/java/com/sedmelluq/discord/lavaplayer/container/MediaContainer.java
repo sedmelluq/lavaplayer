@@ -11,6 +11,7 @@ import com.sedmelluq.discord.lavaplayer.container.playlists.M3uPlaylistContainer
 import com.sedmelluq.discord.lavaplayer.container.playlists.PlainPlaylistContainerProbe;
 import com.sedmelluq.discord.lavaplayer.container.playlists.PlsPlaylistContainerProbe;
 import com.sedmelluq.discord.lavaplayer.container.wav.WavContainerProbe;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -18,34 +19,34 @@ import java.util.List;
  * Lists currently supported containers and their probes.
  */
 public enum MediaContainer {
-  WAV(new WavContainerProbe()),
-  MKV(new MatroskaContainerProbe()),
-  MP4(new MpegContainerProbe()),
-  FLAC(new FlacContainerProbe()),
-  OGG(new OggContainerProbe()),
-  M3U(new M3uPlaylistContainerProbe()),
-  PLS(new PlsPlaylistContainerProbe()),
-  PLAIN(new PlainPlaylistContainerProbe()),
-  MP3(new Mp3ContainerProbe()),
-  ADTS(new AdtsContainerProbe()),
-  MPEGADTS(new MpegAdtsContainerProbe());
+    WAV(new WavContainerProbe()),
+    MKV(new MatroskaContainerProbe()),
+    MP4(new MpegContainerProbe()),
+    FLAC(new FlacContainerProbe()),
+    OGG(new OggContainerProbe()),
+    M3U(new M3uPlaylistContainerProbe()),
+    PLS(new PlsPlaylistContainerProbe()),
+    PLAIN(new PlainPlaylistContainerProbe()),
+    MP3(new Mp3ContainerProbe()),
+    ADTS(new AdtsContainerProbe()),
+    MPEGADTS(new MpegAdtsContainerProbe());
 
-  /**
-   * The probe used to detect files using this container and create the audio tracks for them.
-   */
-  public final MediaContainerProbe probe;
+    /**
+     * The probe used to detect files using this container and create the audio tracks for them.
+     */
+    public final MediaContainerProbe probe;
 
-  MediaContainer(MediaContainerProbe probe) {
-    this.probe = probe;
-  }
-
-  public static List<MediaContainerProbe> asList() {
-    List<MediaContainerProbe> probes = new ArrayList<>();
-
-    for (MediaContainer container : MediaContainer.class.getEnumConstants()) {
-      probes.add(container.probe);
+    MediaContainer(MediaContainerProbe probe) {
+        this.probe = probe;
     }
 
-    return probes;
-  }
+    public static List<MediaContainerProbe> asList() {
+        List<MediaContainerProbe> probes = new ArrayList<>();
+
+        for (MediaContainer container : MediaContainer.class.getEnumConstants()) {
+            probes.add(container.probe);
+        }
+
+        return probes;
+    }
 }

@@ -32,106 +32,109 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 
 public class BotApplicationManager extends ListenerAdapter {
-  private static final Logger log = LoggerFactory.getLogger(BotApplicationManager.class);
+    private static final Logger log = LoggerFactory.getLogger(BotApplicationManager.class);
 
-  private final Map<Long, BotGuildContext> guildContexts;
-  private final BotControllerManager controllerManager;
-  private final AudioPlayerManager playerManager;
-  private final ScheduledExecutorService executorService;
+    private final Map<Long, BotGuildContext> guildContexts;
+    private final BotControllerManager controllerManager;
+    private final AudioPlayerManager playerManager;
+    private final ScheduledExecutorService executorService;
 
-  public BotApplicationManager() {
-    guildContexts = new HashMap<>();
-    controllerManager = new BotControllerManager();
+    public BotApplicationManager() {
+        guildContexts = new HashMap<>();
+        controllerManager = new BotControllerManager();
 
-    controllerManager.registerController(new MusicController.Factory());
+        controllerManager.registerController(new MusicController.Factory());
 
-    playerManager = new DefaultAudioPlayerManager();
-    //playerManager.useRemoteNodes("localhost:8080");
-    playerManager.getConfiguration().setResamplingQuality(AudioConfiguration.ResamplingQuality.LOW);
-    playerManager.registerSourceManager(new YoutubeAudioSourceManager());
-    playerManager.registerSourceManager(SoundCloudAudioSourceManager.createDefault());
-    playerManager.registerSourceManager(new BandcampAudioSourceManager());
-    playerManager.registerSourceManager(new VimeoAudioSourceManager());
-    playerManager.registerSourceManager(new TwitchStreamAudioSourceManager());
-    playerManager.registerSourceManager(new BeamAudioSourceManager());
-    playerManager.registerSourceManager(new HttpAudioSourceManager());
-    playerManager.registerSourceManager(new LocalAudioSourceManager());
+        playerManager = new DefaultAudioPlayerManager();
+        //playerManager.useRemoteNodes("localhost:8080");
+        playerManager.getConfiguration().setResamplingQuality(AudioConfiguration.ResamplingQuality.LOW);
+        playerManager.registerSourceManager(new YoutubeAudioSourceManager());
+        playerManager.registerSourceManager(SoundCloudAudioSourceManager.createDefault());
+        playerManager.registerSourceManager(new BandcampAudioSourceManager());
+        playerManager.registerSourceManager(new VimeoAudioSourceManager());
+        playerManager.registerSourceManager(new TwitchStreamAudioSourceManager());
+        playerManager.registerSourceManager(new BeamAudioSourceManager());
+        playerManager.registerSourceManager(new HttpAudioSourceManager());
+        playerManager.registerSourceManager(new LocalAudioSourceManager());
 
-    executorService = Executors.newScheduledThreadPool(1, new DaemonThreadFactory("bot"));
-  }
-
-  public ScheduledExecutorService getExecutorService() {
-    return executorService;
-  }
-
-  public AudioPlayerManager getPlayerManager() {
-    return playerManager;
-  }
-
-  private BotGuildContext createGuildState(long guildId, Guild guild) {
-    BotGuildContext context = new BotGuildContext(guildId);
-
-    for (BotController controller : controllerManager.createControllers(this, context, guild)) {
-      context.controllers.put(controller.getClass(), controller);
+        executorService = Executors.newScheduledThreadPool(1, new DaemonThreadFactory("bot"));
     }
 
-    return context;
-  }
-
-  private synchronized BotGuildContext getContext(Guild guild) {
-    long guildId = Long.parseLong(guild.getId());
-    BotGuildContext context = guildContexts.get(guildId);
-
-    if (context == null) {
-      context = createGuildState(guildId, guild);
-      guildContexts.put(guildId, context);
+    public ScheduledExecutorService getExecutorService() {
+        return executorService;
     }
 
-    return context;
-  }
-
-  @Override
-  public void onMessageReceived(final MessageReceivedEvent event) {
-    Member member = event.getMember();
-
-    if (!event.isFromType(ChannelType.TEXT) || member == null || member.getUser().isBot()) {
-      return;
+    public AudioPlayerManager getPlayerManager() {
+        return playerManager;
     }
 
-    BotGuildContext guildContext = getContext(event.getGuild());
+    private BotGuildContext createGuildState(long guildId, Guild guild) {
+        BotGuildContext context = new BotGuildContext(guildId);
 
-    controllerManager.dispatchMessage(guildContext.controllers, "!/", event.getMessage(), new BotCommandMappingHandler() {
-      @Override
-      public void commandNotFound(Message message, String name) {
+        for (BotController controller : controllerManager.createControllers(this, context, guild)) {
+            context.controllers.put(controller.getClass(), controller);
+        }
 
-      }
+        return context;
+    }
 
-      @Override
-      public void commandWrongParameterCount(Message message, String name, String usage, int given, int required) {
-        event.getTextChannel().sendMessage("Wrong argument count for command").queue();
-      }
+    private synchronized BotGuildContext getContext(Guild guild) {
+        long guildId = Long.parseLong(guild.getId());
+        BotGuildContext context = guildContexts.get(guildId);
 
-      @Override
-      public void commandWrongParameterType(Message message, String name, String usage, int index, String value, Class<?> expectedType) {
-        event.getTextChannel().sendMessage("Wrong argument type for command").queue();;
-      }
+        if (context == null) {
+            context = createGuildState(guildId, guild);
+            guildContexts.put(guildId, context);
+        }
 
-      @Override
-      public void commandRestricted(Message message, String name) {
-        event.getTextChannel().sendMessage("Command not permitted").queue();;
-      }
+        return context;
+    }
 
-      @Override
-      public void commandException(Message message, String name, Throwable throwable) {
-        event.getTextChannel().sendMessage("Command threw an exception").queue();;
+    @Override
+    public void onMessageReceived(final MessageReceivedEvent event) {
+        Member member = event.getMember();
 
-        log.error("Command with content {} threw an exception.", message.getContentDisplay(), throwable);
-      }
-    });
-  }
+        if (!event.isFromType(ChannelType.TEXT) || member == null || member.getUser().isBot()) {
+            return;
+        }
 
-  @Override
-  public void onGuildLeave(GuildLeaveEvent event) {
-    // do stuff
-  }
+        BotGuildContext guildContext = getContext(event.getGuild());
+
+        controllerManager.dispatchMessage(guildContext.controllers, "!/", event.getMessage(), new BotCommandMappingHandler() {
+            @Override
+            public void commandNotFound(Message message, String name) {
+
+            }
+
+            @Override
+            public void commandWrongParameterCount(Message message, String name, String usage, int given, int required) {
+                event.getTextChannel().sendMessage("Wrong argument count for command").queue();
+            }
+
+            @Override
+            public void commandWrongParameterType(Message message, String name, String usage, int index, String value, Class<?> expectedType) {
+                event.getTextChannel().sendMessage("Wrong argument type for command").queue();
+                ;
+            }
+
+            @Override
+            public void commandRestricted(Message message, String name) {
+                event.getTextChannel().sendMessage("Command not permitted").queue();
+                ;
+            }
+
+            @Override
+            public void commandException(Message message, String name, Throwable throwable) {
+                event.getTextChannel().sendMessage("Command threw an exception").queue();
+                ;
+
+                log.error("Command with content {} threw an exception.", message.getContentDisplay(), throwable);
+            }
+        });
+    }
+
+    @Override
+    public void onGuildLeave(GuildLeaveEvent event) {
+        // do stuff
+    }
 }

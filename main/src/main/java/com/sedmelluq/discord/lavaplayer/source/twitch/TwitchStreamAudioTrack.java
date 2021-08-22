@@ -16,53 +16,53 @@ import static com.sedmelluq.discord.lavaplayer.source.twitch.TwitchStreamAudioSo
  * Audio track that handles processing Twitch tracks.
  */
 public class TwitchStreamAudioTrack extends MpegTsM3uStreamAudioTrack {
-  private static final Logger log = LoggerFactory.getLogger(TwitchStreamAudioTrack.class);
+    private static final Logger log = LoggerFactory.getLogger(TwitchStreamAudioTrack.class);
 
-  private final TwitchStreamAudioSourceManager sourceManager;
-  private final M3uStreamSegmentUrlProvider segmentUrlProvider;
+    private final TwitchStreamAudioSourceManager sourceManager;
+    private final M3uStreamSegmentUrlProvider segmentUrlProvider;
 
-  /**
-   * @param trackInfo Track info
-   * @param sourceManager Source manager which was used to find this track
-   */
-  public TwitchStreamAudioTrack(AudioTrackInfo trackInfo, TwitchStreamAudioSourceManager sourceManager) {
-    super(trackInfo);
+    /**
+     * @param trackInfo     Track info
+     * @param sourceManager Source manager which was used to find this track
+     */
+    public TwitchStreamAudioTrack(AudioTrackInfo trackInfo, TwitchStreamAudioSourceManager sourceManager) {
+        super(trackInfo);
 
-    this.sourceManager = sourceManager;
-    this.segmentUrlProvider = new TwitchStreamSegmentUrlProvider(getChannelName(), sourceManager);
-  }
+        this.sourceManager = sourceManager;
+        this.segmentUrlProvider = new TwitchStreamSegmentUrlProvider(getChannelName(), sourceManager);
+    }
 
-  /**
-   * @return Name of the channel of the stream.
-   */
-  public String getChannelName() {
-    return getChannelIdentifierFromUrl(trackInfo.identifier);
-  }
+    /**
+     * @return Name of the channel of the stream.
+     */
+    public String getChannelName() {
+        return getChannelIdentifierFromUrl(trackInfo.identifier);
+    }
 
-  @Override
-  protected M3uStreamSegmentUrlProvider getSegmentUrlProvider() {
-    return segmentUrlProvider;
-  }
+    @Override
+    protected M3uStreamSegmentUrlProvider getSegmentUrlProvider() {
+        return segmentUrlProvider;
+    }
 
-  @Override
-  protected HttpInterface getHttpInterface() {
-    return sourceManager.getHttpInterface();
-  }
+    @Override
+    protected HttpInterface getHttpInterface() {
+        return sourceManager.getHttpInterface();
+    }
 
-  @Override
-  public void process(LocalAudioTrackExecutor localExecutor) throws Exception {
-    log.debug("Starting to play Twitch channel {}.", getChannelName());
+    @Override
+    public void process(LocalAudioTrackExecutor localExecutor) throws Exception {
+        log.debug("Starting to play Twitch channel {}.", getChannelName());
 
-    super.process(localExecutor);
-  }
+        super.process(localExecutor);
+    }
 
-  @Override
-  protected AudioTrack makeShallowClone() {
-    return new TwitchStreamAudioTrack(trackInfo, sourceManager);
-  }
+    @Override
+    protected AudioTrack makeShallowClone() {
+        return new TwitchStreamAudioTrack(trackInfo, sourceManager);
+    }
 
-  @Override
-  public AudioSourceManager getSourceManager() {
-    return sourceManager;
-  }
+    @Override
+    public AudioSourceManager getSourceManager() {
+        return sourceManager;
+    }
 }

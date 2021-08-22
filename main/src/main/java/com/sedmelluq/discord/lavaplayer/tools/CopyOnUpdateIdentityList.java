@@ -10,31 +10,31 @@ import java.util.List;
  * intended for. Not thread-safe.
  */
 public class CopyOnUpdateIdentityList<T> {
-  public List<T> items = Collections.emptyList();
+    public List<T> items = Collections.emptyList();
 
-  public void add(T item) {
-    for (T existingItem : items) {
-      if (existingItem == item) {
-        // No duplicates, do not add again.
-        return;
-      }
+    public void add(T item) {
+        for (T existingItem : items) {
+            if (existingItem == item) {
+                // No duplicates, do not add again.
+                return;
+            }
+        }
+
+        List<T> updated = new ArrayList<>(items.size() + 1);
+        updated.addAll(items);
+        updated.add(item);
+        items = updated;
     }
 
-    List<T> updated = new ArrayList<>(items.size() + 1);
-    updated.addAll(items);
-    updated.add(item);
-    items = updated;
-  }
+    public void remove(T item) {
+        List<T> updated = new ArrayList<>(items.size());
 
-  public void remove(T item) {
-    List<T> updated = new ArrayList<>(items.size());
+        for (T existingItem : items) {
+            if (existingItem != item) {
+                updated.add(existingItem);
+            }
+        }
 
-    for (T existingItem : items) {
-      if (existingItem != item) {
-        updated.add(existingItem);
-      }
+        items = updated;
     }
-
-    items = updated;
-  }
 }

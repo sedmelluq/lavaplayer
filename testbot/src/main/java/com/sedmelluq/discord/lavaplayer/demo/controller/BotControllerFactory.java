@@ -5,7 +5,7 @@ import com.sedmelluq.discord.lavaplayer.demo.BotGuildContext;
 import net.dv8tion.jda.api.entities.Guild;
 
 public interface BotControllerFactory<T extends BotController> {
-  Class<T> getControllerClass();
+    Class<T> getControllerClass();
 
-  T create(BotApplicationManager manager, BotGuildContext state, Guild guild);
+    T create(BotApplicationManager manager, BotGuildContext state, Guild guild);
 }

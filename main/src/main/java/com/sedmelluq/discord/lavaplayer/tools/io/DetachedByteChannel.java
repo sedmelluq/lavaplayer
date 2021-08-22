@@ -9,32 +9,32 @@ import java.nio.channels.ReadableByteChannel;
  * Creates a readable byte channel which can be closed without closing the underlying channel.
  */
 public class DetachedByteChannel implements ReadableByteChannel {
-  private final ReadableByteChannel delegate;
-  private boolean closed;
+    private final ReadableByteChannel delegate;
+    private boolean closed;
 
-  /**
-   * @param delegate The underlying channel
-   */
-  public DetachedByteChannel(ReadableByteChannel delegate) {
-    this.delegate = delegate;
-  }
-
-  @Override
-  public int read(ByteBuffer output) throws IOException {
-    if (closed) {
-      throw new ClosedChannelException();
+    /**
+     * @param delegate The underlying channel
+     */
+    public DetachedByteChannel(ReadableByteChannel delegate) {
+        this.delegate = delegate;
     }
 
-    return delegate.read(output);
-  }
+    @Override
+    public int read(ByteBuffer output) throws IOException {
+        if (closed) {
+            throw new ClosedChannelException();
+        }
 
-  @Override
-  public boolean isOpen() {
-    return !closed && delegate.isOpen();
-  }
+        return delegate.read(output);
+    }
 
-  @Override
-  public void close() throws IOException {
-    closed = true;
-  }
+    @Override
+    public boolean isOpen() {
+        return !closed && delegate.isOpen();
+    }
+
+    @Override
+    public void close() throws IOException {
+        closed = true;
+    }
 }

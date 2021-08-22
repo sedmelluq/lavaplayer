@@ -8,33 +8,33 @@ import java.io.InputStream;
  * discarding the buffer.
  */
 public class ExtendedBufferedInputStream extends BufferedInputStream {
-  /**
-   * @param in Underlying input stream
-   */
-  public ExtendedBufferedInputStream(InputStream in) {
-    super(in);
-  }
+    /**
+     * @param in Underlying input stream
+     */
+    public ExtendedBufferedInputStream(InputStream in) {
+        super(in);
+    }
 
-  /**
-   * @param in Underlying input stream
-   * @param size Size of the buffer
-   */
-  public ExtendedBufferedInputStream(InputStream in, int size) {
-    super(in, size);
-  }
+    /**
+     * @param in   Underlying input stream
+     * @param size Size of the buffer
+     */
+    public ExtendedBufferedInputStream(InputStream in, int size) {
+        super(in, size);
+    }
 
-  /**
-   * @return The number of bytes left in the buffer. This is useful for calculating the actual position in the buffer
-   *         if the position in the underlying buffer is known.
-   */
-  public int getBufferedByteCount() {
-    return count - pos;
-  }
+    /**
+     * @return The number of bytes left in the buffer. This is useful for calculating the actual position in the buffer
+     * if the position in the underlying buffer is known.
+     */
+    public int getBufferedByteCount() {
+        return count - pos;
+    }
 
-  /**
-   * Discard the remaining buffer. This should be called after seek has been performed on the underlying stream.
-   */
-  public void discardBuffer() {
-    pos = count;
-  }
+    /**
+     * Discard the remaining buffer. This should be called after seek has been performed on the underlying stream.
+     */
+    public void discardBuffer() {
+        pos = count;
+    }
 }

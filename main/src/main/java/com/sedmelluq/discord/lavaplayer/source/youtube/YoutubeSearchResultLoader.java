@@ -4,10 +4,11 @@ import com.sedmelluq.discord.lavaplayer.tools.http.ExtendedHttpConfigurable;
 import com.sedmelluq.discord.lavaplayer.track.AudioItem;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo;
+
 import java.util.function.Function;
 
 public interface YoutubeSearchResultLoader {
-  AudioItem loadSearchResult(String query, Function<AudioTrackInfo, AudioTrack> trackFactory);
+    AudioItem loadSearchResult(String query, Function<AudioTrackInfo, AudioTrack> trackFactory);
 
-  ExtendedHttpConfigurable getHttpConfiguration();
+    ExtendedHttpConfigurable getHttpConfiguration();
 }

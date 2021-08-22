@@ -8,26 +8,26 @@ import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
  * by the threshold set via AudioPlayerManager.setTrackStuckThreshold().
  */
 public class TrackStuckEvent extends AudioEvent {
-  /**
-   * Audio track where the exception occurred
-   */
-  public final AudioTrack track;
-  /**
-   * The wait threshold that was exceeded for this event to trigger
-   */
-  public final long thresholdMs;
+    /**
+     * Audio track where the exception occurred
+     */
+    public final AudioTrack track;
+    /**
+     * The wait threshold that was exceeded for this event to trigger
+     */
+    public final long thresholdMs;
 
-  public final StackTraceElement[] stackTrace;
+    public final StackTraceElement[] stackTrace;
 
-  /**
-   * @param player Audio player
-   * @param track Audio track where the exception occurred
-   * @param thresholdMs The wait threshold that was exceeded for this event to trigger
-   */
-  public TrackStuckEvent(AudioPlayer player, AudioTrack track, long thresholdMs, StackTraceElement[] stackTrace) {
-    super(player);
-    this.track = track;
-    this.thresholdMs = thresholdMs;
-    this.stackTrace = stackTrace;
-  }
+    /**
+     * @param player      Audio player
+     * @param track       Audio track where the exception occurred
+     * @param thresholdMs The wait threshold that was exceeded for this event to trigger
+     */
+    public TrackStuckEvent(AudioPlayer player, AudioTrack track, long thresholdMs, StackTraceElement[] stackTrace) {
+        super(player);
+        this.track = track;
+        this.thresholdMs = thresholdMs;
+        this.stackTrace = stackTrace;
+    }
 }

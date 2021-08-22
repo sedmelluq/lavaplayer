@@ -7,7 +7,6 @@ import kotlinx.serialization.json.*
 import kotlinx.serialization.serializer
 import java.io.IOException
 import java.io.InputStream
-import kotlin.jvm.Throws
 import kotlin.reflect.KClass
 
 class JsonBrowser(@get:JvmName("element") val element: JsonElement) {

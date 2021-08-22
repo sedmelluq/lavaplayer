@@ -16,7 +16,8 @@ object ThumbnailTools {
 
     @JvmStatic
     fun extractYouTubeMusic(jsonBrowser: JsonBrowser, videoId: String): String {
-        val thumbnails = jsonBrowser["musicResponsiveListItemRenderer"]["thumbnail"]["musicThumbnailRenderer"]["thumbnail"]["thumbnails"].values()
+        val thumbnails =
+            jsonBrowser["musicResponsiveListItemRenderer"]["thumbnail"]["musicThumbnailRenderer"]["thumbnail"]["thumbnails"].values()
         return thumbnails.maxByOrNull { it["width"].asLong(0) * it["height"].asLong(0) }
             ?.get("url")?.safeText
             ?: "https://img.youtube.com/vi/$videoId/0.jpg"

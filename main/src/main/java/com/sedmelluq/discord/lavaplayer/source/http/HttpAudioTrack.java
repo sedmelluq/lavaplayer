@@ -10,58 +10,59 @@ import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo;
 import com.sedmelluq.discord.lavaplayer.track.DelegatedAudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.InternalAudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.playback.LocalAudioTrackExecutor;
-import java.net.URI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.net.URI;
 
 /**
  * Audio track that handles processing HTTP addresses as audio tracks.
  */
 public class HttpAudioTrack extends DelegatedAudioTrack {
-  private static final Logger log = LoggerFactory.getLogger(HttpAudioTrack.class);
+    private static final Logger log = LoggerFactory.getLogger(HttpAudioTrack.class);
 
-  private final MediaContainerDescriptor containerTrackFactory;
-  private final HttpAudioSourceManager sourceManager;
+    private final MediaContainerDescriptor containerTrackFactory;
+    private final HttpAudioSourceManager sourceManager;
 
-  /**
-   * @param trackInfo Track info
-   * @param containerTrackFactory Container track factory - contains the probe with its parameters.
-   * @param sourceManager Source manager used to load this track
-   */
-  public HttpAudioTrack(AudioTrackInfo trackInfo, MediaContainerDescriptor containerTrackFactory,
-                        HttpAudioSourceManager sourceManager) {
+    /**
+     * @param trackInfo             Track info
+     * @param containerTrackFactory Container track factory - contains the probe with its parameters.
+     * @param sourceManager         Source manager used to load this track
+     */
+    public HttpAudioTrack(AudioTrackInfo trackInfo, MediaContainerDescriptor containerTrackFactory,
+                          HttpAudioSourceManager sourceManager) {
 
-    super(trackInfo);
+        super(trackInfo);
 
-    this.containerTrackFactory = containerTrackFactory;
-    this.sourceManager = sourceManager;
-  }
-
-  /**
-   * @return The media probe which handles creating a container-specific delegated track for this track.
-   */
-  public MediaContainerDescriptor getContainerTrackFactory() {
-    return containerTrackFactory;
-  }
-
-  @Override
-  public void process(LocalAudioTrackExecutor localExecutor) throws Exception {
-    try (HttpInterface httpInterface = sourceManager.getHttpInterface()) {
-      log.debug("Starting http track from URL: {}", trackInfo.identifier);
-
-      try (PersistentHttpStream inputStream = new PersistentHttpStream(httpInterface, new URI(trackInfo.identifier), Units.CONTENT_LENGTH_UNKNOWN)) {
-        processDelegate((InternalAudioTrack) containerTrackFactory.createTrack(trackInfo, inputStream), localExecutor);
-      }
+        this.containerTrackFactory = containerTrackFactory;
+        this.sourceManager = sourceManager;
     }
-  }
 
-  @Override
-  protected AudioTrack makeShallowClone() {
-    return new HttpAudioTrack(trackInfo, containerTrackFactory, sourceManager);
-  }
+    /**
+     * @return The media probe which handles creating a container-specific delegated track for this track.
+     */
+    public MediaContainerDescriptor getContainerTrackFactory() {
+        return containerTrackFactory;
+    }
 
-  @Override
-  public AudioSourceManager getSourceManager() {
-    return sourceManager;
-  }
+    @Override
+    public void process(LocalAudioTrackExecutor localExecutor) throws Exception {
+        try (HttpInterface httpInterface = sourceManager.getHttpInterface()) {
+            log.debug("Starting http track from URL: {}", trackInfo.identifier);
+
+            try (PersistentHttpStream inputStream = new PersistentHttpStream(httpInterface, new URI(trackInfo.identifier), Units.CONTENT_LENGTH_UNKNOWN)) {
+                processDelegate((InternalAudioTrack) containerTrackFactory.createTrack(trackInfo, inputStream), localExecutor);
+            }
+        }
+    }
+
+    @Override
+    protected AudioTrack makeShallowClone() {
+        return new HttpAudioTrack(trackInfo, containerTrackFactory, sourceManager);
+    }
+
+    @Override
+    public AudioSourceManager getSourceManager() {
+        return sourceManager;
+    }
 }

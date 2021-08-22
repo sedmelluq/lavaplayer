@@ -1,6 +1,6 @@
 plugins {
-  java
-  `maven-publish`
+    java
+    `maven-publish`
 }
 
 val moduleName = "lavaplayer-test-samples"
@@ -10,10 +10,10 @@ version = "1.3.11"
 // dependency JAR to obtain them.
 
 publishing {
-  publications {
-    create<MavenPublication>("mavenJava") {
-      from(components["java"])
-      artifactId = moduleName
+    publications {
+        create<MavenPublication>("mavenJava") {
+            from(components["java"])
+            artifactId = moduleName
+        }
     }
-  }
 }

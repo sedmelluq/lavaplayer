@@ -1,21 +1,21 @@
 package com.sedmelluq.discord.lavaplayer.source.youtube;
 
 public interface YoutubeLinkRouter {
-  <T> T route(String link, Routes<T> routes);
+    <T> T route(String link, Routes<T> routes);
 
-  interface Routes<T> {
-    T track(String videoId);
+    interface Routes<T> {
+        T track(String videoId);
 
-    T playlist(String playlistId, String selectedVideoId);
+        T playlist(String playlistId, String selectedVideoId);
 
-    T mix(String mixId, String selectedVideoId);
+        T mix(String mixId, String selectedVideoId);
 
-    T search(String query);
+        T search(String query);
 
-    T searchMusic(String query);
+        T searchMusic(String query);
 
-    T anonymous(String videoIds);
+        T anonymous(String videoIds);
 
-    T none();
-  }
+        T none();
+    }
 }

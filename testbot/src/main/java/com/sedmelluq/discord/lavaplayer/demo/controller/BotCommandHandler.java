@@ -8,6 +8,7 @@ import java.lang.annotation.Target;
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
 public @interface BotCommandHandler {
-  String name() default "";
-  String usage() default "";
+    String name() default "";
+
+    String usage() default "";
 }
