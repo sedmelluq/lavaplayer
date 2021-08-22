@@ -1,4 +1,4 @@
-package com.sedmelluq.lava.extensions.youtuberotator
+package com.sedmelluq.lava.extensions.iprotator
 
 import org.apache.http.client.HttpRequestRetryHandler
 import org.apache.http.impl.client.DefaultHttpRequestRetryHandler

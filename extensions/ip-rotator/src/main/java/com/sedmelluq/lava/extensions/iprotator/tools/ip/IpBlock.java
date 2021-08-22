@@ -1,4 +1,4 @@
-package com.sedmelluq.lava.extensions.youtuberotator.tools.ip;
+package com.sedmelluq.lava.extensions.iprotator.tools.ip;
 
 import java.math.BigInteger;
 import java.net.InetAddress;

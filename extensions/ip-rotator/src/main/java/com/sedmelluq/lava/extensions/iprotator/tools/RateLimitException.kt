@@ -1,4 +1,4 @@
-package com.sedmelluq.lava.extensions.youtuberotator.tools
+package com.sedmelluq.lava.extensions.iprotator.tools
 
 class RateLimitException : RuntimeException {
     constructor() : super()

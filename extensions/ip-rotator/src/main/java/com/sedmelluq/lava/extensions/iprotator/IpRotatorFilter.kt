@@ -1,10 +1,10 @@
-package com.sedmelluq.lava.extensions.youtuberotator
+package com.sedmelluq.lava.extensions.iprotator
 
 import com.sedmelluq.discord.lavaplayer.tools.http.AbstractHttpContextFilter
 import com.sedmelluq.discord.lavaplayer.tools.http.HttpContextFilter
 import com.sedmelluq.discord.lavaplayer.tools.http.HttpContextRetryCounter
-import com.sedmelluq.lava.extensions.youtuberotator.planner.AbstractRoutePlanner
-import com.sedmelluq.lava.extensions.youtuberotator.tools.RateLimitException
+import com.sedmelluq.lava.extensions.iprotator.planner.AbstractRoutePlanner
+import com.sedmelluq.lava.extensions.iprotator.tools.RateLimitException
 import org.apache.http.HttpResponse
 import org.apache.http.client.methods.HttpUriRequest
 import org.apache.http.client.protocol.HttpClientContext

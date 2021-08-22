@@ -1,4 +1,4 @@
-package com.sedmelluq.lava.extensions.youtuberotator.tools.ip;
+package com.sedmelluq.lava.extensions.iprotator.tools.ip;
 
 import kotlin.Pair;
 import org.apache.http.HttpException;
@@ -8,7 +8,6 @@ import java.net.Inet4Address;
 import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.util.*;
 import kotlin.jvm.Throws
 
 object IpAddressTools {

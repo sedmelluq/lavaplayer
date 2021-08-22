@@ -1,4 +1,4 @@
-package com.sedmelluq.lava.extensions.youtuberotator.tools;
+package com.sedmelluq.lava.extensions.iprotator.tools
 
 import java.math.BigInteger
 import java.util.*

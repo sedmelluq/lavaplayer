@@ -1,6 +1,6 @@
-package com.sedmelluq.lava.extensions.youtuberotator.tools.ip;
+package com.sedmelluq.lava.extensions.iprotator.tools.ip;
 
-import com.sedmelluq.lava.extensions.youtuberotator.tools.BigRandom;
+import com.sedmelluq.lava.extensions.iprotator.tools.BigRandom;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

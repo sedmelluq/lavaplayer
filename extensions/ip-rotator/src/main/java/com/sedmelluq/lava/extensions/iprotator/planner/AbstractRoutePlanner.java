@@ -1,8 +1,8 @@
-package com.sedmelluq.lava.extensions.youtuberotator.planner;
+package com.sedmelluq.lava.extensions.iprotator.planner;
 
-import com.sedmelluq.lava.extensions.youtuberotator.tools.ip.CombinedIpBlock;
-import com.sedmelluq.lava.extensions.youtuberotator.tools.ip.IpAddressTools;
-import com.sedmelluq.lava.extensions.youtuberotator.tools.ip.IpBlock;
+import com.sedmelluq.lava.extensions.iprotator.tools.ip.CombinedIpBlock;
+import com.sedmelluq.lava.extensions.iprotator.tools.ip.IpAddressTools;
+import com.sedmelluq.lava.extensions.iprotator.tools.ip.IpBlock;
 import kotlin.Pair;
 import org.apache.http.HttpException;
 import org.apache.http.HttpHost;

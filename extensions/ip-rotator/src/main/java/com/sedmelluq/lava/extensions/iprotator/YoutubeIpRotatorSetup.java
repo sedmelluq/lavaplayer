@@ -1,4 +1,4 @@
-package com.sedmelluq.lava.extensions.youtuberotator;
+package com.sedmelluq.lava.extensions.iprotator;
 
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.source.youtube.YoutubeAudioSourceManager;
@@ -7,7 +7,7 @@ import com.sedmelluq.discord.lavaplayer.tools.http.ExtendedHttpClientBuilder;
 import com.sedmelluq.discord.lavaplayer.tools.http.ExtendedHttpConfigurable;
 import com.sedmelluq.discord.lavaplayer.tools.http.HttpContextFilter;
 import com.sedmelluq.discord.lavaplayer.tools.http.SimpleHttpClientConnectionManager;
-import com.sedmelluq.lava.extensions.youtuberotator.planner.AbstractRoutePlanner;
+import com.sedmelluq.lava.extensions.iprotator.planner.AbstractRoutePlanner;
 
 import java.util.ArrayList;
 import java.util.List;
