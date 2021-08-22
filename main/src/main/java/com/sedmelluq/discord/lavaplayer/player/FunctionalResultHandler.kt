@@ -15,12 +15,11 @@ import java.util.function.Consumer;
  * @param exceptionConsumer  Consumer for an exception when loading the item fails
  */
 class FunctionalResultHandler(
-    val trackConsumer: Consumer<AudioTrack>?,
-    val emptyResultHandler: Runnable?,
-    val exceptionConsumer: Consumer<FriendlyException>?,
-    val collectionConsumer: Consumer<AudioTrackCollection>? = null,
+    private val trackConsumer: Consumer<AudioTrack>?,
+    private val collectionConsumer: Consumer<AudioTrackCollection>?,
+    private val emptyResultHandler: Runnable?,
+    private val exceptionConsumer: Consumer<FriendlyException>?,
 ) : AudioLoadResultHandler {
-
     override fun trackLoaded(track: AudioTrack) {
         trackConsumer?.accept(track)
     }

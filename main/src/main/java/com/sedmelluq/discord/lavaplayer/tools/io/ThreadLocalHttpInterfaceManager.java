@@ -2,10 +2,12 @@ package com.sedmelluq.discord.lavaplayer.tools.io;
 
 import com.sedmelluq.discord.lavaplayer.tools.http.HttpContextFilter;
 import com.sedmelluq.discord.lavaplayer.tools.http.SettableHttpRequestFilter;
+import kotlin.jvm.functions.Function1;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * HTTP interface manager which reuses an HttpContext by keeping it as a thread local. In case a new interface is

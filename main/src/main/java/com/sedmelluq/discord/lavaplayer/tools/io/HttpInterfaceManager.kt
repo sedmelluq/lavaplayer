@@ -7,9 +7,9 @@ import java.io.Closeable;
 /**
  * A thread-safe manager for HTTP interfaces.
  */
-public interface HttpInterfaceManager extends ExtendedHttpConfigurable, Closeable {
+interface HttpInterfaceManager : ExtendedHttpConfigurable, Closeable {
     /**
      * @return An HTTP interface for use by the current thread.
      */
-    HttpInterface getInterface();
+    fun getInterface(): HttpInterface;
 }

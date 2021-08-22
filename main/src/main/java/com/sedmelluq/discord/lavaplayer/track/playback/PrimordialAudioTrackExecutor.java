@@ -15,7 +15,7 @@ public class PrimordialAudioTrackExecutor implements AudioTrackExecutor {
     private static final Logger log = LoggerFactory.getLogger(LocalAudioTrackExecutor.class);
 
     private final AudioTrackInfo trackInfo;
-    private final TrackMarkerTracker markerTracker;
+    private final TrackMarkerManager markerTracker;
 
     private volatile long position;
 
@@ -24,7 +24,7 @@ public class PrimordialAudioTrackExecutor implements AudioTrackExecutor {
      */
     public PrimordialAudioTrackExecutor(AudioTrackInfo trackInfo) {
         this.trackInfo = trackInfo;
-        this.markerTracker = new TrackMarkerTracker();
+        this.markerTracker = new TrackMarkerManager();
     }
 
     @Override

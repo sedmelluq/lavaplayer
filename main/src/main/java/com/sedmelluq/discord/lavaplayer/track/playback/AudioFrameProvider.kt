@@ -1,16 +1,17 @@
 package com.sedmelluq.discord.lavaplayer.track.playback;
 
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.TimeoutException
+import kotlin.jvm.Throws
 
 /**
  * A provider for audio frames
  */
-public interface AudioFrameProvider {
+interface AudioFrameProvider {
     /**
      * @return Provided frame, or null if none available
      */
-    AudioFrame provide();
+    fun provide(): AudioFrame;
 
     /**
      * @param timeout Specifies the maximum time to wait for data. Pass 0 for non-blocking mode.
@@ -20,22 +21,23 @@ public interface AudioFrameProvider {
      * @throws TimeoutException     When wait time is above zero, but no track info is found in that time.
      * @throws InterruptedException When interrupted externally (or for seek/stop).
      */
-    AudioFrame provide(long timeout, TimeUnit unit) throws TimeoutException, InterruptedException;
+    @Throws(TimeoutException::class, InterruptedException::class)
+    fun provide(timeout: Long, unit: TimeUnit): AudioFrame;
 
     /**
      * @param targetFrame Frame to update with the details and data of the provided frame.
-     * @return <code>true</code> if a frame was provided.
+     * @return `true` if a frame was provided.
      */
-    boolean provide(MutableAudioFrame targetFrame);
+    fun provide(targetFrame: MutableAudioFrame): Boolean;
 
     /**
      * @param targetFrame Frame to update with the details and data of the provided frame.
      * @param timeout     Timeout.
      * @param unit        Time unit for the timeout value.
-     * @return <code>true</code> if a frame was provided.
+     * @return `true` if a frame was provided.
      * @throws TimeoutException     If no frame became available within the timeout.
      * @throws InterruptedException When interrupted externally (or for seek/stop).
      */
-    boolean provide(MutableAudioFrame targetFrame, long timeout, TimeUnit unit)
-        throws TimeoutException, InterruptedException;
+    @Throws(TimeoutException::class, InterruptedException::class)
+    fun provide(targetFrame: MutableAudioFrame, timeout: Long, unit: TimeUnit): Boolean
 }

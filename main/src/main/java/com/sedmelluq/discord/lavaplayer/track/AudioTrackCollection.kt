@@ -1,7 +1,6 @@
 package com.sedmelluq.discord.lavaplayer.track
 
 interface AudioTrackCollection : AudioItem {
-
     /**
      * The name of this audio track collection.
      */
@@ -15,11 +14,10 @@ interface AudioTrackCollection : AudioItem {
     /**
      * List of tracks in this collection
      */
-    val tracks: List<AudioTrack>
+    val tracks: MutableList<AudioTrack>
 
     /**
      * The track that is explicitly selected, may be null. This same instance occurs in the track list.
      */
     val selectedTrack: AudioTrack?
-
 }

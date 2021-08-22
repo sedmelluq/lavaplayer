@@ -6,7 +6,7 @@ import com.sedmelluq.discord.lavaplayer.track.playback.AudioTrackExecutor;
 import com.sedmelluq.discord.lavaplayer.track.playback.LocalAudioTrackExecutor;
 
 /**
- * Methods of an audio track that should not be visible outside of the library
+ * Methods of an audio track that should not be visible outside the library
  */
 public interface InternalAudioTrack extends AudioTrack, AudioFrameProvider {
     /**

@@ -7,7 +7,7 @@ import static com.sedmelluq.discord.lavaplayer.track.TrackMarkerHandler.MarkerSt
 /**
  * Tracks the state of a track position marker.
  */
-public class TrackMarkerTracker {
+public class TrackMarkerManager {
     private final AtomicReference<TrackMarker> current = new AtomicReference<>();
 
     /**

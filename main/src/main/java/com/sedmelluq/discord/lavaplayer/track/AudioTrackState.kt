@@ -1,9 +1,9 @@
-package com.sedmelluq.discord.lavaplayer.track;
+package com.sedmelluq.discord.lavaplayer.track
 
 /**
  * The execution state of an audio track
  */
-public enum AudioTrackState {
+enum class AudioTrackState {
     INACTIVE,
     LOADING,
     PLAYING,

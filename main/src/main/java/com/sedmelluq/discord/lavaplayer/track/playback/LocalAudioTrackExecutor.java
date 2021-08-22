@@ -38,7 +38,7 @@ public class LocalAudioTrackExecutor implements AudioTrackExecutor {
     private final AtomicLong lastFrameTimecode = new AtomicLong(0);
     private final AtomicReference<AudioTrackState> state = new AtomicReference<>(AudioTrackState.INACTIVE);
     private final Object actionSynchronizer = new Object();
-    private final TrackMarkerTracker markerTracker = new TrackMarkerTracker();
+    private final TrackMarkerManager markerTracker = new TrackMarkerManager();
     private long externalSeekPosition = -1;
     private boolean interruptibleForSeek = false;
     private volatile Throwable trackException;
