@@ -9,24 +9,21 @@ plugins {
 }
 
 val moduleName = "lavaplayer"
-version = "1.3.81"
+version = "1.3.82"
 
 dependencies {
   api("com.sedmelluq:lava-common:1.1.2")
   implementation("com.sedmelluq:lavaplayer-natives:1.3.14")
-  implementation("org.slf4j:slf4j-api:1.7.25")
+  implementation("org.slf4j:slf4j-api:1.7.32")
 
   implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.2.2")
 
-  api("org.apache.httpcomponents:httpclient:4.5.10")
-  implementation("commons-io:commons-io:2.6")
+  api("org.apache.httpcomponents:httpclient:4.5.13")
+  implementation("commons-io:commons-io:2.11.0")
 
-  implementation("org.jsoup:jsoup:1.12.1")
-  implementation("net.iharder:base64:2.3.9")
+  implementation("org.jsoup:jsoup:1.14.2")
 
-  testImplementation("org.codehaus.groovy:groovy:2.5.5")
-  testImplementation("org.spockframework:spock-core:1.2-groovy-2.5")
-  testImplementation("ch.qos.logback:logback-classic:1.2.3")
+  testImplementation("ch.qos.logback:logback-classic:1.2.5")
   testImplementation("com.sedmelluq:lavaplayer-test-samples:1.3.11")
 }
 
