@@ -21,7 +21,7 @@ public class LocalPlayerDemo {
 
         AudioPlayer player = manager.createPlayer();
 
-        manager.loadItem("ytsearch: epic soundtracks", new FunctionalResultHandler(null, playlist -> {
+        manager.loadItem("ytsearch:DHL frank ocean", new FunctionalResultHandler(null, playlist -> {
             player.playTrack(playlist.getTracks().get(0));
         }, null, null));
 

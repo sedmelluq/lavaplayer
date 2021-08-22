@@ -16,9 +16,9 @@ import com.sedmelluq.discord.lavaplayer.tools.PlayerLibrary;
 import com.sedmelluq.discord.lavaplayer.tools.io.MessageInput;
 import com.sedmelluq.discord.lavaplayer.tools.io.MessageOutput;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
+import com.sedmelluq.discord.lavaplayer.track.AudioTrackCollection;
 import com.sedmelluq.discord.lavaplayer.track.DecodedTrackHolder;
 import com.sedmelluq.discord.lavaplayer.track.TrackMarker;
-import com.sedmelluq.discord.lavaplayer.track.AudioTrackCollection;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.TextChannel;
@@ -41,7 +41,6 @@ public class MusicController implements BotController {
     private final AudioPlayer player;
     private final AtomicReference<TextChannel> outputChannel;
     private final MusicScheduler scheduler;
-    private final MessageDispatcher messageDispatcher;
     private final Guild guild;
     private final EqualizerFactory equalizer;
 
@@ -55,7 +54,7 @@ public class MusicController implements BotController {
 
         outputChannel = new AtomicReference<>();
 
-        messageDispatcher = new GlobalDispatcher();
+        MessageDispatcher messageDispatcher = new GlobalDispatcher();
         scheduler = new MusicScheduler(player, messageDispatcher, manager.getExecutorService());
 
         player.addListener(scheduler);
@@ -117,9 +116,7 @@ public class MusicController implements BotController {
         DecodedTrackHolder holder;
 
         while ((holder = manager.decodeTrack(inputStream)) != null) {
-            if (holder.decodedTrack != null) {
-                scheduler.addToQueue(holder.decodedTrack);
-            }
+            scheduler.addToQueue(holder.decodedTrack);
         }
     }
 
@@ -170,16 +167,12 @@ public class MusicController implements BotController {
 
     @BotCommandHandler
     private void forward(Message message, int duration) {
-        forPlayingTrack(track -> {
-            track.setPosition(track.getPosition() + duration);
-        });
+        forPlayingTrack(track -> track.setPosition(track.getPosition() + duration));
     }
 
     @BotCommandHandler
     private void back(Message message, int duration) {
-        forPlayingTrack(track -> {
-            track.setPosition(Math.max(0, track.getPosition() - duration));
-        });
+        forPlayingTrack(track -> track.setPosition(Math.max(0, track.getPosition() - duration)));
     }
 
     @BotCommandHandler
@@ -194,39 +187,27 @@ public class MusicController implements BotController {
 
     @BotCommandHandler
     private void duration(Message message) {
-        forPlayingTrack(track -> {
-            message.getChannel().sendMessage("Duration is " + track.getDuration()).queue();
-        });
+        forPlayingTrack(track -> message.getChannel().sendMessage("Duration is " + track.getDuration()).queue());
     }
 
     @BotCommandHandler
     private void seek(Message message, long position) {
-        forPlayingTrack(track -> {
-            track.setPosition(position);
-        });
+        forPlayingTrack(track -> track.setPosition(position));
     }
 
     @BotCommandHandler
     private void pos(Message message) {
-        forPlayingTrack(track -> {
-            message.getChannel().sendMessage("Position is " + track.getPosition()).queue();
-        });
+        forPlayingTrack(track -> message.getChannel().sendMessage("Position is " + track.getPosition()).queue());
     }
 
     @BotCommandHandler
     private void marker(final Message message, long position, final String text) {
-        forPlayingTrack(track -> {
-            track.setMarker(new TrackMarker(position, state -> {
-                message.getChannel().sendMessage("Trigger [" + text + "] cause [" + state.name() + "]").queue();
-            }));
-        });
+        forPlayingTrack(track -> track.setMarker(new TrackMarker(position, state -> message.getChannel().sendMessage("Trigger [" + text + "] cause [" + state.name() + "]").queue())));
     }
 
     @BotCommandHandler
     private void unmark(Message message) {
-        forPlayingTrack(track -> {
-            track.setMarker(null);
-        });
+        forPlayingTrack(track -> track.setMarker(null));
     }
 
     @BotCommandHandler
@@ -338,24 +319,6 @@ public class MusicController implements BotController {
             if (channel != null) {
                 channel.sendMessage(message).queue();
             }
-        }
-    }
-
-    private final class FixedDispatcher implements MessageDispatcher {
-        private final TextChannel channel;
-
-        private FixedDispatcher(TextChannel channel) {
-            this.channel = channel;
-        }
-
-        @Override
-        public void sendMessage(String message, Consumer<Message> success, Consumer<Throwable> failure) {
-            channel.sendMessage(message).queue(success, failure);
-        }
-
-        @Override
-        public void sendMessage(String message) {
-            channel.sendMessage(message).queue();
         }
     }
 }
