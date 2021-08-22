@@ -1,11 +1,8 @@
 package com.sedmelluq.discord.lavaplayer.player;
 
-import com.sedmelluq.discord.lavaplayer.source.AudioSourceManager;
-import com.sedmelluq.discord.lavaplayer.tools.io.MessageInput;
-import com.sedmelluq.discord.lavaplayer.tools.io.MessageOutput;
+import com.sedmelluq.discord.lavaplayer.source.Sources;
 import com.sedmelluq.discord.lavaplayer.track.AudioReference;
-import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
-import com.sedmelluq.discord.lavaplayer.track.DecodedTrackHolder;
+import com.sedmelluq.discord.lavaplayer.track.TrackEncoder;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.impl.client.HttpClientBuilder;
 
@@ -17,7 +14,7 @@ import java.util.function.Function;
 /**
  * Audio player manager which is used for creating audio players and loading tracks and playlists.
  */
-public interface AudioPlayerManager {
+public interface AudioPlayerManager extends TrackEncoder, Sources {
 
     /**
      * Shut down the manager. All threads will be stopped, the manager cannot be used any further. All players created
@@ -33,20 +30,6 @@ public interface AudioPlayerManager {
      * Enable reporting GC pause length statistics to log (warn level with lengths bad for latency, debug level otherwise)
      */
     void enableGcMonitoring();
-
-    /**
-     * @param sourceManager The source manager to register, which will be used for subsequent loadItem calls
-     */
-    void registerSourceManager(AudioSourceManager sourceManager);
-
-    /**
-     * Shortcut for accessing a source manager of a certain class.
-     *
-     * @param klass The class of the source manager to return.
-     * @param <T>   The class of the source manager.
-     * @return The source manager of the specified class, or null if not registered.
-     */
-    <T extends AudioSourceManager> T source(Class<T> klass);
 
     /**
      * Schedules loading a track or playlist with the specified identifier.
@@ -101,27 +84,6 @@ public interface AudioPlayerManager {
      * @see #loadItemOrdered(Object, String, AudioLoadResultHandler)
      */
     Future<Void> loadItemOrdered(Object orderingKey, final AudioReference reference, final AudioLoadResultHandler resultHandler);
-
-    /**
-     * Encode a track into an output stream. If the decoder is not supposed to know the number of tracks in advance, then
-     * the encoder should call MessageOutput#finish() after all the tracks it wanted to write have been written. This will
-     * make decodeTrack() return null at that position
-     *
-     * @param stream The message stream to write it to.
-     * @param track  The track to encode.
-     * @throws IOException On IO error.
-     */
-    void encodeTrack(MessageOutput stream, AudioTrack track) throws IOException;
-
-    /**
-     * Decode a track from an input stream. Null returns value indicates reaching the position where the decoder had
-     * called MessageOutput#finish().
-     *
-     * @param stream The message stream to read it from.
-     * @return Holder containing the track if it was successfully decoded.
-     * @throws IOException On IO error.
-     */
-    DecodedTrackHolder decodeTrack(MessageInput stream) throws IOException;
 
     /**
      * @return Audio processing configuration used for tracks executed by this manager.

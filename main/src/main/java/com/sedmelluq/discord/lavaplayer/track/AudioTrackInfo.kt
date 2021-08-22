@@ -1,6 +1,5 @@
 package com.sedmelluq.discord.lavaplayer.track
 
-import com.sedmelluq.discord.lavaplayer.player.DefaultAudioPlayerManager
 import com.sedmelluq.discord.lavaplayer.tools.DataFormatTools
 import com.sedmelluq.discord.lavaplayer.tools.io.MessageInput
 import kotlinx.serialization.Serializable
@@ -59,7 +58,7 @@ class AudioTrackInfo(
     companion object {
         @JvmStatic
         fun getVersion(stream: MessageInput, input: DataInput): Int =
-            if ((stream.messageFlags and DefaultAudioPlayerManager.TRACK_INFO_VERSIONED) != 0) {
+            if ((stream.messageFlags and TrackEncoder.TRACK_INFO_VERSIONED) != 0) {
                 (input.readByte() and 0xFF.toByte()).toInt()
             } else {
                 1

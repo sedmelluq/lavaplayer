@@ -11,5 +11,5 @@ class DecodedTrackHolder(
      * of an older serialization version or because the track source it used is not loaded.
      */
     @JvmField
-    val decodedTrack: AudioTrack
+    val decodedTrack: AudioTrack?
 )
