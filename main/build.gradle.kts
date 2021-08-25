@@ -6,22 +6,25 @@ plugins {
 }
 
 val moduleName = "lavaplayer"
-version = "1.3.83.3"
+version = "1.4.1"
 
 dependencies {
-    api("com.sedmelluq:lava-common:1.1.2")
-    implementation("com.sedmelluq:lavaplayer-natives:1.3.14")
-    implementation("org.slf4j:slf4j-api:1.7.32")
+    /* kotlin */
+    implementation("org.jetbrains.kotlin:kotlin-reflect:1.5.21")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.5.1")
 
+    /* other */
+    implementation("com.sedmelluq:lavaplayer-natives:1.3.15")
+    implementation("org.slf4j:slf4j-api:1.7.32")
+    implementation("commons-io:commons-io:2.11.0")
+    implementation("org.jsoup:jsoup:1.14.2")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.2.2")
 
+    api("com.sedmelluq:lava-common:1.1.4")
     api("org.apache.httpcomponents:httpclient:4.5.13")
-    implementation("commons-io:commons-io:2.11.0")
 
-    implementation("org.jsoup:jsoup:1.14.2")
-
-    testImplementation("ch.qos.logback:logback-classic:1.2.5")
-    testImplementation("com.sedmelluq:lavaplayer-test-samples:1.3.11")
+    /* test */
+    testImplementation("ch.qos.logback:logback-classic:1.1.8")
 }
 
 tasks.jar {

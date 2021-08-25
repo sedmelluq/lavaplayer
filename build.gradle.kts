@@ -12,9 +12,10 @@ allprojects {
     group = rootProject.group
 
     repositories {
+        maven("https://dimensional.jfrog.io/artifactory/maven")
         mavenLocal()
         mavenCentral()
-        maven(url = "https://m2.dv8tion.net/releases")
+        maven("https://m2.dv8tion.net/releases")
     }
 
     apply(plugin = "kotlin")
