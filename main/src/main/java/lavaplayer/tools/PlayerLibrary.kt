@@ -1,30 +1,28 @@
-package lavaplayer.tools;
+package lavaplayer.tools
 
-import org.apache.commons.io.IOUtils;
-
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
+import org.apache.commons.io.IOUtils
+import java.lang.Exception
+import java.nio.charset.StandardCharsets
 
 /**
  * Contains constants with metadata about the library.
  */
-public class PlayerLibrary {
+object PlayerLibrary {
     /**
      * The currently loaded version of the library.
      */
-    public static final String VERSION = readVersion();
+    @JvmField
+    val VERSION = readVersion()
 
-    private static String readVersion() {
-        InputStream stream = PlayerLibrary.class.getResourceAsStream("version.txt");
-
+    private fun readVersion(): String {
+        val stream = PlayerLibrary::class.java.getResourceAsStream("version.txt")
         try {
             if (stream != null) {
-                return IOUtils.toString(stream, StandardCharsets.UTF_8);
+                return IOUtils.toString(stream, StandardCharsets.UTF_8)
             }
-        } catch (Exception e) {
+        } catch (e: Exception) {
             // Something went wrong.
         }
-
-        return "UNKNOWN";
+        return "UNKNOWN"
     }
 }

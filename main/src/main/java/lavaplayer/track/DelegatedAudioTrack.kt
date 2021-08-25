@@ -11,15 +11,13 @@ import lavaplayer.track.playback.LocalAudioTrackExecutor
 abstract class DelegatedAudioTrack(trackInfo: AudioTrackInfo) : BaseAudioTrack(trackInfo) {
     private var delegate: InternalAudioTrack? = null
 
-    fun processDelegate(delegate: InternalAudioTrack, localExecutor: LocalAudioTrackExecutor) = synchronized(this) {
+    override val duration: Long
+        get() = delegate?.duration ?: synchronized(this) { delegate?.duration ?: super.duration }
 
+    fun processDelegate(delegate: InternalAudioTrack, localExecutor: LocalAudioTrackExecutor) = synchronized(this) {
         this.delegate = delegate
 
         delegate.assignExecutor(localExecutor, false)
         delegate.process(localExecutor)
-    }
-
-    override fun getDuration(): Long = delegate?.duration ?: synchronized(this) {
-        delegate?.duration ?: super.getDuration()
     }
 }

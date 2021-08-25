@@ -1,9 +1,13 @@
-package lavaplayer.filter;
+package lavaplayer.filter
+
+import java.io.Closeable
+import kotlin.Throws
+import java.lang.InterruptedException
 
 /**
  * A filter for audio samples
  */
-public interface AudioFilter {
+interface AudioFilter : Closeable {
     /**
      * Indicates that the next samples are not a continuation from the previous ones and gives the timecode for the
      * next incoming sample.
@@ -11,17 +15,18 @@ public interface AudioFilter {
      * @param requestedTime Timecode in milliseconds to which the seek was requested to
      * @param providedTime  Timecode in milliseconds to which the seek was actually performed to
      */
-    void seekPerformed(long requestedTime, long providedTime);
+    fun seekPerformed(requestedTime: Long, providedTime: Long)
 
     /**
      * Flush everything to output.
      *
      * @throws InterruptedException When interrupted externally (or for seek/stop).
      */
-    void flush() throws InterruptedException;
+    @Throws(InterruptedException::class)
+    fun flush()
 
     /**
      * Free all resources. No more input is expected.
      */
-    void close();
+    override fun close()
 }

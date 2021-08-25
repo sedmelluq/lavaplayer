@@ -1,32 +1,30 @@
-package lavaplayer.tools.exception;
+package lavaplayer.tools.exception
 
-import lavaplayer.tools.PlayerLibrary;
+import lavaplayer.tools.PlayerLibrary
+import java.lang.Exception
 
-public class EnvironmentInformation extends Exception {
-    private static final String[] PROPERTIES = new String[]{
-        "os.arch",
-        "os.name",
-        "os.version",
-        "java.vendor",
-        "java.version",
-        "java.runtime.version",
-        "java.vm.version"
-    };
+class EnvironmentInformation private constructor(message: String) : Exception(message, null, false, false) {
+    companion object {
+        private val PROPERTIES = arrayOf(
+            "os.arch",
+            "os.name",
+            "os.version",
+            "java.vendor",
+            "java.version",
+            "java.runtime.version",
+            "java.vm.version"
+        )
 
-    public static final EnvironmentInformation INSTANCE = create();
+        val INSTANCE = create()
 
-    private EnvironmentInformation(String message) {
-        super(message, null, false, false);
-    }
+        private fun create(): EnvironmentInformation {
+            val builder = DetailMessageBuilder()
+            builder.appendField("lavaplayer.version", PlayerLibrary.VERSION)
+            for (property in PROPERTIES) {
+                builder.appendField(property, System.getProperty(property))
+            }
 
-    private static EnvironmentInformation create() {
-        DetailMessageBuilder builder = new DetailMessageBuilder();
-        builder.appendField("lavaplayer.version", PlayerLibrary.VERSION);
-
-        for (String property : PROPERTIES) {
-            builder.appendField(property, System.getProperty(property));
+            return EnvironmentInformation(builder.toString())
         }
-
-        return new EnvironmentInformation(builder.toString());
     }
 }

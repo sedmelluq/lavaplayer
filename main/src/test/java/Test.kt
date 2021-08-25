@@ -27,7 +27,7 @@ object Test {
         /* old item loading. */
         try {
             playerManager.loadItem(query, object : ItemLoadResultAdapter() {
-                override suspend fun onTrack(track: AudioTrack) {
+                override fun onTrack(track: AudioTrack) {
                     println("""
                          ----------------------------------------
                               class:    ${track.javaClass.name}
@@ -39,7 +39,7 @@ object Test {
                         """.trimIndent())
                 }
 
-                override suspend fun onTrackCollection(trackCollection: AudioTrackCollection) {
+                override fun onTrackCollection(trackCollection: AudioTrackCollection) {
                     println("search result? ${if (trackCollection.isSearchResult) "yes" else "no"}")
                     for (track in trackCollection.tracks) {
                         println("""
@@ -53,11 +53,11 @@ object Test {
                     }
                 }
 
-                override suspend fun onNoMatches() {
+                override fun onNoMatches() {
                     println("No matching items found")
                 }
 
-                override suspend fun onLoadFailed(exception: FriendlyException) {
+                override fun onLoadFailed(exception: FriendlyException) {
                     exception.printStackTrace()
                 }
             }).get()

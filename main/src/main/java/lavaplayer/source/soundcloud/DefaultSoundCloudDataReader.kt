@@ -1,103 +1,88 @@
-package lavaplayer.source.soundcloud;
+package lavaplayer.source.soundcloud
 
-import lavaplayer.tools.JsonBrowser;
-import lavaplayer.tools.ThumbnailTools;
-import lavaplayer.track.AudioTrackInfo;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lavaplayer.tools.ThumbnailTools.extractSoundCloud
+import lavaplayer.tools.JsonBrowser
+import lavaplayer.track.AudioTrackInfo
+import org.slf4j.LoggerFactory
 
-import java.util.ArrayList;
-import java.util.List;
-
-public class DefaultSoundCloudDataReader implements SoundCloudDataReader {
-    private static final Logger log = LoggerFactory.getLogger(DefaultSoundCloudDataReader.class);
-
-    @Override
-    public JsonBrowser findTrackData(JsonBrowser rootData) {
-        return findEntryOfKind(rootData, "track");
+class DefaultSoundCloudDataReader : SoundCloudDataReader {
+    companion object {
+        private val log = LoggerFactory.getLogger(DefaultSoundCloudDataReader::class.java)
     }
 
-    @Override
-    public String readTrackId(JsonBrowser trackData) {
-        return trackData.get("id").safeText();
+    override fun findTrackData(rootData: JsonBrowser): JsonBrowser {
+        return findEntryOfKind(rootData, "track")!!
     }
 
-    @Override
-    public boolean isTrackBlocked(JsonBrowser trackData) {
-        return "BLOCK".equals(trackData.get("policy").safeText());
+    override fun readTrackId(trackData: JsonBrowser): String {
+        return trackData["id"].safeText
     }
 
-    @Override
-    public AudioTrackInfo readTrackInfo(JsonBrowser trackData, String identifier) {
-        return new AudioTrackInfo(
-            trackData.get("title").safeText(),
-            trackData.get("user").get("username").safeText(),
-            trackData.get("duration").asInt(),
+    override fun isTrackBlocked(trackData: JsonBrowser): Boolean {
+        return "BLOCK" == trackData["policy"].safeText
+    }
+
+    override fun readTrackInfo(trackData: JsonBrowser, identifier: String): AudioTrackInfo {
+        return AudioTrackInfo(
+            trackData["title"].safeText,
+            trackData["user"]["username"].safeText,
+            trackData["duration"].asInt().toLong(),
             identifier,
             false,
-            trackData.get("permalink_url").text(),
-            ThumbnailTools.extractSoundCloud(trackData)
-        );
+            trackData["permalink_url"].text,
+            extractSoundCloud(trackData)
+        )
     }
 
-    @Override
-    public List<SoundCloudTrackFormat> readTrackFormats(JsonBrowser trackData) {
-        List<SoundCloudTrackFormat> formats = new ArrayList<>();
-        String trackId = readTrackId(trackData);
-
+    override fun readTrackFormats(trackData: JsonBrowser): List<SoundCloudTrackFormat> {
+        val formats = mutableListOf<SoundCloudTrackFormat>()
+        val trackId = readTrackId(trackData)
         if (trackId.isEmpty()) {
-            log.warn("Track data {} missing track ID: {}.", trackId, trackData.format());
+            log.warn("Track data {} missing track ID: {}.", trackId, trackData.format())
         }
 
-        for (JsonBrowser transcoding : trackData.get("media").get("transcodings").values()) {
-            JsonBrowser format = transcoding.get("format");
-
-            String protocol = format.get("protocol").safeText();
-            String mimeType = format.get("mime_type").safeText();
-
-            if (!protocol.isEmpty() && !mimeType.isEmpty()) {
-                String lookupUrl = transcoding.get("url").safeText();
-
-                if (!lookupUrl.isEmpty()) {
-                    formats.add(new DefaultSoundCloudTrackFormat(trackId, protocol, mimeType, lookupUrl));
+        for (transcoding in trackData["media"]["transcodings"].values()) {
+            val format = transcoding["format"]
+            val protocol = format["protocol"].safeText
+            val mimeType = format["mime_type"].safeText
+            if (protocol.isNotEmpty() && mimeType.isNotEmpty()) {
+                val lookupUrl = transcoding["url"].safeText
+                if (lookupUrl.isNotEmpty()) {
+                    formats.add(DefaultSoundCloudTrackFormat(trackId, protocol, mimeType, lookupUrl))
                 } else {
-                    log.warn("Transcoding of {} missing url: {}.", trackId, transcoding.format());
+                    log.warn("Transcoding of {} missing url: {}.", trackId, transcoding.format())
                 }
             } else {
-                log.warn("Transcoding of {} missing protocol/mimetype: {}.", trackId, transcoding.format());
+                log.warn("Transcoding of {} missing protocol/mimetype: {}.", trackId, transcoding.format())
             }
         }
 
-        return formats;
+        return formats
     }
 
-    @Override
-    public JsonBrowser findPlaylistData(JsonBrowser rootData) {
-        return findEntryOfKind(rootData, "playlist");
+    override fun findPlaylistData(rootData: JsonBrowser): JsonBrowser {
+        return findEntryOfKind(rootData, "playlist")!!
     }
 
-    @Override
-    public String readPlaylistName(JsonBrowser playlistData) {
-        return playlistData.get("title").safeText();
+    override fun readPlaylistName(playlistData: JsonBrowser): String {
+        return playlistData["title"].safeText
     }
 
-    @Override
-    public String readPlaylistIdentifier(JsonBrowser playlistData) {
-        return playlistData.get("permalink").safeText();
+    override fun readPlaylistIdentifier(playlistData: JsonBrowser): String {
+        return playlistData["permalink"].safeText
     }
 
-    @Override
-    public List<JsonBrowser> readPlaylistTracks(JsonBrowser playlistData) {
-        return playlistData.get("tracks").values();
+    override fun readPlaylistTracks(playlistData: JsonBrowser): List<JsonBrowser> {
+        return playlistData["tracks"].values()
     }
 
-    protected JsonBrowser findEntryOfKind(JsonBrowser data, String kind) {
-        for (JsonBrowser value : data.values()) {
-            if (value.isMap() && kind.equals(value.get("data").get("kind").safeText())) {
-                return value.get("data");
+    private fun findEntryOfKind(data: JsonBrowser, kind: String): JsonBrowser? {
+        for (value in data.values()) {
+            if (value.isMap && kind == value["data"]["kind"].safeText) {
+                return value["data"]
             }
         }
 
-        return null;
+        return null
     }
 }

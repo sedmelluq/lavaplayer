@@ -1,24 +1,18 @@
-package lavaplayer.filter;
+package lavaplayer.filter
 
 /**
  * Describes the properties of PCM data.
+ *
+ * @param channelCount See [.channelCount].
+ * @param sampleRate   See [.sampleRate].
  */
-public class PcmFormat {
+class PcmFormat(
     /**
      * Number of channels.
      */
-    public final int channelCount;
+    @JvmField val channelCount: Int,
     /**
      * Sample rate (frequency).
      */
-    public final int sampleRate;
-
-    /**
-     * @param channelCount See {@link #channelCount}.
-     * @param sampleRate   See {@link #sampleRate}.
-     */
-    public PcmFormat(int channelCount, int sampleRate) {
-        this.channelCount = channelCount;
-        this.sampleRate = sampleRate;
-    }
-}
+    @JvmField val sampleRate: Int
+)

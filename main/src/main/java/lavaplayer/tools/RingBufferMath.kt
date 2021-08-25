@@ -1,51 +1,40 @@
-package lavaplayer.tools;
+package lavaplayer.tools
 
-import java.util.function.Function;
+import java.util.function.Function
 
 /**
  * Utility class for calculating averages on the last N values, with input and output transformers.
+ *
+ * @param size            Maximum number of values to remember.
+ * @param inputProcessor  Input transformer.
+ * @param outputProcessor Output transformer.
  */
-public class RingBufferMath {
-    private final double[] values;
-    private final Function<Double, Double> inputProcessor;
-    private final Function<Double, Double> outputProcessor;
-    private double sum;
-    private int position;
-    private int size;
-
-    /**
-     * @param size            Maximum number of values to remember.
-     * @param inputProcessor  Input transformer.
-     * @param outputProcessor Output transformer.
-     */
-    public RingBufferMath(int size, Function<Double, Double> inputProcessor, Function<Double, Double> outputProcessor) {
-        this.values = new double[size];
-        this.inputProcessor = inputProcessor;
-        this.outputProcessor = outputProcessor;
-    }
+class RingBufferMath(
+    private var size: Int,
+    private val inputProcessor: Function<Double, Double>,
+    private val outputProcessor: Function<Double, Double>
+) {
+    private val values = DoubleArray(size)
+    private var sum = 0.0
+    private var position = 0
 
     /**
      * @param value Original value to add (before transformation)
      */
-    public void add(double value) {
-        value = inputProcessor.apply(value);
-
-        sum -= values[position];
-        values[position] = value;
-        sum += values[position];
-
-        position = (position + 1) == values.length ? 0 : position + 1;
-        size = Math.min(values.length, size + 1);
+    fun add(value: Double) {
+        var value = value
+        value = inputProcessor.apply(value)
+        sum -= values[position]
+        values[position] = value
+        sum += values[position]
+        position = if (position + 1 == values.size) 0 else position + 1
+        size = values.size.coerceAtMost(size + 1)
     }
 
     /**
      * @return Transformed mean of the internal values.
      */
-    public double mean() {
-        if (size == 0) {
-            return outputProcessor.apply(0.0);
-        } else {
-            return outputProcessor.apply(sum / size);
-        }
+    fun mean(): Double {
+        return outputProcessor.apply(if (size == 0) 0.0 else sum / size)
     }
 }

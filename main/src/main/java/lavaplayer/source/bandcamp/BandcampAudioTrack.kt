@@ -1,75 +1,59 @@
-package lavaplayer.source.bandcamp;
+package lavaplayer.source.bandcamp
 
-import lavaplayer.container.mp3.Mp3AudioTrack;
-import lavaplayer.source.ItemSourceManager;
-import lavaplayer.tools.JsonBrowser;
-import lavaplayer.tools.io.HttpClientTools;
-import lavaplayer.tools.io.HttpInterface;
-import lavaplayer.tools.io.PersistentHttpStream;
-import lavaplayer.track.AudioTrack;
-import lavaplayer.track.AudioTrackInfo;
-import lavaplayer.track.DelegatedAudioTrack;
-import lavaplayer.track.playback.LocalAudioTrackExecutor;
-import org.apache.commons.io.IOUtils;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpGet;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.io.IOException;
-import java.net.URI;
-import java.nio.charset.StandardCharsets;
+import lavaplayer.track.AudioTrackInfo
+import lavaplayer.track.DelegatedAudioTrack
+import kotlin.Throws
+import lavaplayer.track.playback.LocalAudioTrackExecutor
+import lavaplayer.tools.io.PersistentHttpStream
+import lavaplayer.container.mp3.Mp3AudioTrack
+import java.io.IOException
+import lavaplayer.tools.io.HttpInterface
+import org.apache.http.client.methods.HttpGet
+import lavaplayer.tools.io.HttpClientTools
+import lavaplayer.track.AudioTrack
+import org.apache.commons.io.IOUtils
+import org.slf4j.LoggerFactory
+import java.lang.Exception
+import java.net.URI
+import java.nio.charset.StandardCharsets
 
 /**
  * Audio track that handles processing Bandcamp tracks.
+ *
+ * @param trackInfo     Track info
+ * @param sourceManager Source manager which was used to find this track
  */
-public class BandcampAudioTrack extends DelegatedAudioTrack {
-    private static final Logger log = LoggerFactory.getLogger(BandcampAudioTrack.class);
-
-    private final BandcampItemSourceManager sourceManager;
-
-    /**
-     * @param trackInfo     Track info
-     * @param sourceManager Source manager which was used to find this track
-     */
-    public BandcampAudioTrack(AudioTrackInfo trackInfo, BandcampItemSourceManager sourceManager) {
-        super(trackInfo);
-
-        this.sourceManager = sourceManager;
+class BandcampAudioTrack(
+    trackInfo: AudioTrackInfo,
+    override val sourceManager: BandcampItemSourceManager
+) : DelegatedAudioTrack(trackInfo) {
+    companion object {
+        private val log = LoggerFactory.getLogger(BandcampAudioTrack::class.java)
     }
 
-    @Override
-    public void process(LocalAudioTrackExecutor localExecutor) throws Exception {
-        try (HttpInterface httpInterface = sourceManager.getHttpInterface()) {
-            log.debug("Loading Bandcamp track page from URL: {}", trackInfo.identifier);
+    @Throws(Exception::class)
+    override fun process(executor: LocalAudioTrackExecutor) {
+        sourceManager.httpInterface.use { httpInterface ->
+            log.debug("Loading Bandcamp track page from URL: {}", info.identifier)
 
-            String trackMediaUrl = getTrackMediaUrl(httpInterface);
-            log.debug("Starting Bandcamp track from URL: {}", trackMediaUrl);
-
-            try (PersistentHttpStream stream = new PersistentHttpStream(httpInterface, new URI(trackMediaUrl), null)) {
-                processDelegate(new Mp3AudioTrack(trackInfo, stream), localExecutor);
+            val trackMediaUrl = getTrackMediaUrl(httpInterface)
+            PersistentHttpStream(httpInterface, URI(trackMediaUrl), null).use { stream ->
+                log.debug("Starting Bandcamp track from URL: {}", trackMediaUrl)
+                processDelegate(Mp3AudioTrack(info, stream), executor)
             }
         }
     }
 
-    private String getTrackMediaUrl(HttpInterface httpInterface) throws IOException {
-        try (CloseableHttpResponse response = httpInterface.execute(new HttpGet(trackInfo.identifier))) {
-            HttpClientTools.assertSuccessWithContent(response, "track page");
-
-            String responseText = IOUtils.toString(response.getEntity().getContent(), StandardCharsets.UTF_8);
-            JsonBrowser trackInfo = sourceManager.readTrackListInformation(responseText);
-
-            return trackInfo.get("trackinfo").index(0).get("file").get("mp3-128").text();
+    @Throws(IOException::class)
+    private fun getTrackMediaUrl(httpInterface: HttpInterface): String {
+        httpInterface.execute(HttpGet(info.identifier)).use { response ->
+            HttpClientTools.assertSuccessWithContent(response, "track page")
+            val responseText = IOUtils.toString(response.entity.content, StandardCharsets.UTF_8)
+            val trackInfo = sourceManager.readTrackListInformation(responseText)
+            return trackInfo["trackinfo"].index(0)["file"]["mp3-128"].safeText
         }
     }
 
-    @Override
-    protected AudioTrack makeShallowClone() {
-        return new BandcampAudioTrack(trackInfo, sourceManager);
-    }
-
-    @Override
-    public ItemSourceManager getSourceManager() {
-        return sourceManager;
-    }
+    override fun makeShallowClone(): AudioTrack =
+        BandcampAudioTrack(info, sourceManager)
 }

@@ -5,12 +5,12 @@ import java.util.*
 
 class BigRandom : Random() {
 
-    fun nextBigInt(bits: Int): BigInteger {
-        if (bits < 32) {
+    fun nextBigInt(size: Int): BigInteger {
+        if (size < 32) {
             return next(31).toBigInteger();
         }
 
-        var bits = bits
+        var bits = size
         var value = BigInteger.ZERO
         var index = 0
         while (bits >= 32) {

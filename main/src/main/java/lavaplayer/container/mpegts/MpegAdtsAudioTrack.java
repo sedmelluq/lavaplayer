@@ -25,6 +25,6 @@ public class MpegAdtsAudioTrack extends DelegatedAudioTrack {
     public void process(LocalAudioTrackExecutor executor) throws Exception {
         MpegTsElementaryInputStream elementaryInputStream = new MpegTsElementaryInputStream(inputStream, ADTS_ELEMENTARY_STREAM);
         PesPacketInputStream pesPacketInputStream = new PesPacketInputStream(elementaryInputStream);
-        processDelegate(new AdtsAudioTrack(trackInfo, pesPacketInputStream), executor);
+        processDelegate(new AdtsAudioTrack(getInfo(), pesPacketInputStream), executor);
     }
 }

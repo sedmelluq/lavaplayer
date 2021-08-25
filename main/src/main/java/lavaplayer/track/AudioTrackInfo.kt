@@ -18,7 +18,7 @@ import kotlin.experimental.and
  * @param uri        URL of the track or path to its file.
  */
 @Serializable
-class AudioTrackInfo(
+data class AudioTrackInfo(
     /**
      * Track title
      */

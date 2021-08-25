@@ -1,104 +1,100 @@
-package lavaplayer.source.vimeo;
+package lavaplayer.source.vimeo
 
-import lavaplayer.container.mpeg.MpegAudioTrack;
-import lavaplayer.source.ItemSourceManager;
-import lavaplayer.tools.FriendlyException;
-import lavaplayer.tools.JsonBrowser;
-import lavaplayer.tools.io.HttpClientTools;
-import lavaplayer.tools.io.HttpInterface;
-import lavaplayer.tools.io.PersistentHttpStream;
-import lavaplayer.track.AudioTrack;
-import lavaplayer.track.AudioTrackInfo;
-import lavaplayer.track.DelegatedAudioTrack;
-import lavaplayer.track.playback.LocalAudioTrackExecutor;
-import org.apache.commons.io.IOUtils;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpGet;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.io.IOException;
-import java.net.URI;
-import java.nio.charset.StandardCharsets;
-
-import static lavaplayer.tools.FriendlyException.Severity.SUSPICIOUS;
+import lavaplayer.tools.JsonBrowser.Companion.parse
+import lavaplayer.track.AudioTrackInfo
+import lavaplayer.track.DelegatedAudioTrack
+import kotlin.Throws
+import lavaplayer.track.playback.LocalAudioTrackExecutor
+import lavaplayer.tools.io.PersistentHttpStream
+import lavaplayer.container.mpeg.MpegAudioTrack
+import java.io.IOException
+import lavaplayer.tools.io.HttpInterface
+import lavaplayer.tools.JsonBrowser
+import lavaplayer.tools.FriendlyException
+import org.apache.http.client.methods.HttpGet
+import lavaplayer.tools.io.HttpClientTools
+import java.lang.IllegalStateException
+import lavaplayer.track.AudioTrack
+import org.apache.commons.io.IOUtils
+import org.slf4j.LoggerFactory
+import java.lang.Exception
+import java.net.URI
+import java.nio.charset.StandardCharsets
 
 /**
  * Audio track that handles processing Vimeo tracks.
+ *
+ * @param trackInfo     Track info
+ * @param sourceManager Source manager which was used to find this track
  */
-public class VimeoAudioTrack extends DelegatedAudioTrack {
-    private static final Logger log = LoggerFactory.getLogger(VimeoAudioTrack.class);
-
-    private final VimeoItemSourceManager sourceManager;
-
-    /**
-     * @param trackInfo     Track info
-     * @param sourceManager Source manager which was used to find this track
-     */
-    public VimeoAudioTrack(AudioTrackInfo trackInfo, VimeoItemSourceManager sourceManager) {
-        super(trackInfo);
-
-        this.sourceManager = sourceManager;
+class VimeoAudioTrack(
+    trackInfo: AudioTrackInfo,
+    override val sourceManager: VimeoItemSourceManager
+) : DelegatedAudioTrack(trackInfo) {
+    companion object {
+        private val log = LoggerFactory.getLogger(VimeoAudioTrack::class.java)
     }
 
-    @Override
-    public void process(LocalAudioTrackExecutor localExecutor) throws Exception {
-        try (HttpInterface httpInterface = sourceManager.getHttpInterface()) {
-            String playbackUrl = loadPlaybackUrl(httpInterface);
-
-            log.debug("Starting Vimeo track from URL: {}", playbackUrl);
-
-            try (PersistentHttpStream stream = new PersistentHttpStream(httpInterface, new URI(playbackUrl), null)) {
-                processDelegate(new MpegAudioTrack(trackInfo, stream), localExecutor);
+    @Throws(Exception::class)
+    override fun process(executor: LocalAudioTrackExecutor) {
+        sourceManager.httpInterface.use { httpInterface ->
+            val playbackUrl = loadPlaybackUrl(httpInterface)
+            PersistentHttpStream(httpInterface, URI(playbackUrl), null).use { stream ->
+                log.debug("Starting Vimeo track from URL: {}", playbackUrl)
+                processDelegate(MpegAudioTrack(info, stream), executor)
             }
         }
     }
 
-    private String loadPlaybackUrl(HttpInterface httpInterface) throws IOException {
-        JsonBrowser config = loadPlayerConfig(httpInterface);
-        if (config == null) {
-            throw new FriendlyException("Track information not present on the page.", SUSPICIOUS, null);
-        }
+    @Throws(IOException::class)
+    private fun loadPlaybackUrl(httpInterface: HttpInterface): String? {
+        val config = loadPlayerConfig(httpInterface)
+            ?: throw FriendlyException(
+                "Track information not present on the page.",
+                FriendlyException.Severity.SUSPICIOUS,
+                null
+            )
 
-        String trackConfigUrl = config.get("player").get("config_url").text();
-        JsonBrowser trackConfig = loadTrackConfig(httpInterface, trackConfigUrl);
-
-        return trackConfig.get("request").get("files").get("progressive").index(0).get("url").text();
+        val trackConfigUrl = config["player"]["config_url"].text
+        val trackConfig = loadTrackConfig(httpInterface, trackConfigUrl)
+        return trackConfig["request"]["files"]["progressive"].index(0)["url"].text
     }
 
-    private JsonBrowser loadPlayerConfig(HttpInterface httpInterface) throws IOException {
-        try (CloseableHttpResponse response = httpInterface.execute(new HttpGet(trackInfo.identifier))) {
-            int statusCode = response.getStatusLine().getStatusCode();
-
+    @Throws(IOException::class)
+    private fun loadPlayerConfig(httpInterface: HttpInterface): JsonBrowser? {
+        httpInterface.execute(HttpGet(info.identifier)).use { response ->
+            val statusCode = response.statusLine.statusCode
             if (!HttpClientTools.isSuccessWithContent(statusCode)) {
-                throw new FriendlyException("Server responded with an error.", SUSPICIOUS,
-                    new IllegalStateException("Response code for player config is " + statusCode));
+                throw FriendlyException(
+                    "Server responded with an error.", FriendlyException.Severity.SUSPICIOUS,
+                    IllegalStateException("Response code for player config is $statusCode")
+                )
             }
 
-            return sourceManager.loadConfigJsonFromPageContent(IOUtils.toString(response.getEntity().getContent(), StandardCharsets.UTF_8));
+            return sourceManager.loadConfigJsonFromPageContent(
+                IOUtils.toString(
+                    response.entity.content,
+                    StandardCharsets.UTF_8
+                )
+            )
         }
     }
 
-    private JsonBrowser loadTrackConfig(HttpInterface httpInterface, String trackAccessInfoUrl) throws IOException {
-        try (CloseableHttpResponse response = httpInterface.execute(new HttpGet(trackAccessInfoUrl))) {
-            int statusCode = response.getStatusLine().getStatusCode();
-
+    @Throws(IOException::class)
+    private fun loadTrackConfig(httpInterface: HttpInterface, trackAccessInfoUrl: String?): JsonBrowser {
+        httpInterface.execute(HttpGet(trackAccessInfoUrl)).use { response ->
+            val statusCode = response.statusLine.statusCode
             if (!HttpClientTools.isSuccessWithContent(statusCode)) {
-                throw new FriendlyException("Server responded with an error.", SUSPICIOUS,
-                    new IllegalStateException("Response code for track access info is " + statusCode));
+                throw FriendlyException(
+                    "Server responded with an error.", FriendlyException.Severity.SUSPICIOUS,
+                    IllegalStateException("Response code for track access info is $statusCode")
+                )
             }
 
-            return JsonBrowser.parse(response.getEntity().getContent());
+            return parse(response.entity.content)
         }
     }
 
-    @Override
-    protected AudioTrack makeShallowClone() {
-        return new VimeoAudioTrack(trackInfo, sourceManager);
-    }
-
-    @Override
-    public ItemSourceManager getSourceManager() {
-        return sourceManager;
-    }
+    override fun makeShallowClone(): AudioTrack =
+        VimeoAudioTrack(info, sourceManager)
 }

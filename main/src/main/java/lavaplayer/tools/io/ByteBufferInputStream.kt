@@ -1,44 +1,35 @@
-package lavaplayer.tools.io;
+package lavaplayer.tools.io
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.ByteBuffer;
+import java.io.IOException
+import java.io.InputStream
+import java.nio.ByteBuffer
+import kotlin.experimental.and
 
 /**
  * A byte buffer exposed as an input stream.
+ *
+ * @param buffer The buffer to read from.
  */
-public class ByteBufferInputStream extends InputStream {
-    private final ByteBuffer buffer;
-
-    /**
-     * @param buffer The buffer to read from.
-     */
-    public ByteBufferInputStream(ByteBuffer buffer) {
-        this.buffer = buffer;
-    }
-
-    @Override
-    public int read() throws IOException {
-        if (buffer.hasRemaining()) {
-            return buffer.get() & 0xFF;
+class ByteBufferInputStream(private val buffer: ByteBuffer) : InputStream() {
+    @Throws(IOException::class)
+    override fun read(): Int {
+        return if (buffer.hasRemaining()) {
+            (buffer.get() and 0xFF.toByte()).toInt()
         } else {
-            return -1;
+            -1
         }
     }
 
-    @Override
-    public int read(byte[] array, int offset, int length) throws IOException {
-        if (buffer.hasRemaining()) {
-            int chunk = Math.min(buffer.remaining(), length);
-            buffer.get(array, offset, length);
-            return chunk;
-        } else {
-            return -1;
-        }
+    @Throws(IOException::class)
+    override fun read(array: ByteArray, offset: Int, length: Int) = if (buffer.hasRemaining()) {
+        val chunk = buffer.remaining().coerceAtMost(length)
+        buffer[array, offset, length]
+        chunk
+    } else {
+        -1
     }
 
-    @Override
-    public int available() throws IOException {
-        return buffer.remaining();
-    }
+    @Throws(IOException::class)
+    override fun available(): Int =
+        buffer.remaining()
 }

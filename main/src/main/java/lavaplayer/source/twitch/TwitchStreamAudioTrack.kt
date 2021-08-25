@@ -1,68 +1,52 @@
-package lavaplayer.source.twitch;
+package lavaplayer.source.twitch
 
-import lavaplayer.source.ItemSourceManager;
-import lavaplayer.source.stream.M3uStreamSegmentUrlProvider;
-import lavaplayer.source.stream.MpegTsM3uStreamAudioTrack;
-import lavaplayer.tools.io.HttpInterface;
-import lavaplayer.track.AudioTrack;
-import lavaplayer.track.AudioTrackInfo;
-import lavaplayer.track.playback.LocalAudioTrackExecutor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import static lavaplayer.source.twitch.TwitchStreamItemSourceManager.getChannelIdentifierFromUrl;
+import lavaplayer.track.AudioTrackInfo
+import lavaplayer.source.stream.MpegTsM3uStreamAudioTrack
+import lavaplayer.source.stream.M3uStreamSegmentUrlProvider
+import lavaplayer.tools.io.HttpInterface
+import kotlin.Throws
+import lavaplayer.track.playback.LocalAudioTrackExecutor
+import lavaplayer.track.AudioTrack
+import org.slf4j.LoggerFactory
+import java.lang.Exception
 
 /**
  * Audio track that handles processing Twitch tracks.
+ *
+ * @param trackInfo     Track info
+ * @param sourceManager Source manager which was used to find this track
  */
-public class TwitchStreamAudioTrack extends MpegTsM3uStreamAudioTrack {
-    private static final Logger log = LoggerFactory.getLogger(TwitchStreamAudioTrack.class);
-
-    private final TwitchStreamItemSourceManager sourceManager;
-    private final M3uStreamSegmentUrlProvider segmentUrlProvider;
-
-    /**
-     * @param trackInfo     Track info
-     * @param sourceManager Source manager which was used to find this track
-     */
-    public TwitchStreamAudioTrack(AudioTrackInfo trackInfo, TwitchStreamItemSourceManager sourceManager) {
-        super(trackInfo);
-
-        this.sourceManager = sourceManager;
-        this.segmentUrlProvider = new TwitchStreamSegmentUrlProvider(getChannelName(), sourceManager);
+class TwitchStreamAudioTrack(
+    trackInfo: AudioTrackInfo?,
+    override val sourceManager: TwitchStreamItemSourceManager
+) : MpegTsM3uStreamAudioTrack(trackInfo) {
+    companion object {
+        private val log = LoggerFactory.getLogger(TwitchStreamAudioTrack::class.java)
     }
+
+    private val segmentUrlProvider = TwitchStreamSegmentUrlProvider(channelName, sourceManager)
 
     /**
      * @return Name of the channel of the stream.
      */
-    public String getChannelName() {
-        return getChannelIdentifierFromUrl(trackInfo.identifier);
+    val channelName: String
+        get() = TwitchStreamItemSourceManager.getChannelIdentifierFromUrl(info.identifier)
+
+    override fun getSegmentUrlProvider(): M3uStreamSegmentUrlProvider {
+        return segmentUrlProvider
     }
 
-    @Override
-    protected M3uStreamSegmentUrlProvider getSegmentUrlProvider() {
-        return segmentUrlProvider;
+    override fun getHttpInterface(): HttpInterface {
+        return sourceManager.httpInterface
     }
 
-    @Override
-    protected HttpInterface getHttpInterface() {
-        return sourceManager.getHttpInterface();
+    @Throws(Exception::class)
+    override fun process(executor: LocalAudioTrackExecutor) {
+        log.debug("Starting to play Twitch channel {}.", channelName)
+        super.process(executor)
     }
 
-    @Override
-    public void process(LocalAudioTrackExecutor localExecutor) throws Exception {
-        log.debug("Starting to play Twitch channel {}.", getChannelName());
+    override fun makeShallowClone(): AudioTrack =
+        TwitchStreamAudioTrack(info, sourceManager)
 
-        super.process(localExecutor);
-    }
-
-    @Override
-    protected AudioTrack makeShallowClone() {
-        return new TwitchStreamAudioTrack(trackInfo, sourceManager);
-    }
-
-    @Override
-    public ItemSourceManager getSourceManager() {
-        return sourceManager;
-    }
 }

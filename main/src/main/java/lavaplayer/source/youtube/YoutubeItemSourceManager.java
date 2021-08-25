@@ -1,6 +1,10 @@
 package lavaplayer.source.youtube;
 
 import lavaplayer.source.ItemSourceManager;
+import lavaplayer.source.youtube.music.YoutubeMixLoader;
+import lavaplayer.source.youtube.music.YoutubeMixProvider;
+import lavaplayer.source.youtube.music.YoutubeSearchMusicProvider;
+import lavaplayer.source.youtube.music.YoutubeSearchMusicResultLoader;
 import lavaplayer.tools.ExceptionTools;
 import lavaplayer.tools.FriendlyException;
 import lavaplayer.tools.http.ExtendedHttpConfigurable;

@@ -38,14 +38,11 @@ public class MpegFileLoader {
     }
 
     private static String getMetadataName(String code) {
-        switch (code.toLowerCase()) {
-            case "\u00a9art":
-                return "Artist";
-            case "\u00a9nam":
-                return "Title";
-            default:
-                return null;
-        }
+        return switch (code.toLowerCase()) {
+            case "\u00a9art" -> "Artist";
+            case "\u00a9nam" -> "Title";
+            default -> null;
+        };
     }
 
     /**

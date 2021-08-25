@@ -1,29 +1,30 @@
-package lavaplayer.filter.converter;
+package lavaplayer.filter.converter
 
-import lavaplayer.filter.UniversalPcmAudioFilter;
+import lavaplayer.filter.UniversalPcmAudioFilter
 
 /**
  * Base class for converter filters which have no internal state.
  */
-public abstract class ConverterAudioFilter implements UniversalPcmAudioFilter {
-    protected static final int BUFFER_SIZE = 4096;
-
-    protected static short floatToShort(float value) {
-        return (short) (value * 32768.0f);
-    }
-
-    @Override
-    public void seekPerformed(long requestedTime, long providedTime) {
+abstract class ConverterAudioFilter : UniversalPcmAudioFilter {
+    override fun seekPerformed(requestedTime: Long, providedTime: Long) {
         // Nothing to do.
     }
 
-    @Override
-    public void flush() throws InterruptedException {
+    @Throws(InterruptedException::class)
+    override fun flush() {
         // Nothing to do.
     }
 
-    @Override
-    public void close() {
+    override fun close() {
         // Nothing to do.
+    }
+
+    companion object {
+        protected const val BUFFER_SIZE = 4096
+
+        @JvmStatic
+        protected fun floatToShort(value: Float): Short {
+            return (value * 32768.0f).toInt().toShort()
+        }
     }
 }

@@ -16,7 +16,7 @@ import java.util.Map;
 import static lavaplayer.tools.DataFormatTools.decodeUrlEncodedItems;
 import static lavaplayer.tools.Units.CONTENT_LENGTH_UNKNOWN;
 
-public class StreamingDataFormatsExtractor implements OfflineYoutubeTrackFormatExtractor {
+public class StreamingDataFormatsExtractor extends OfflineYoutubeTrackFormatExtractor {
     private static final Logger log = LoggerFactory.getLogger(StreamingDataFormatsExtractor.class);
 
     @Override

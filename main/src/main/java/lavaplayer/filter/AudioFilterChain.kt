@@ -1,35 +1,24 @@
-package lavaplayer.filter;
-
-import java.util.List;
+package lavaplayer.filter
 
 /**
  * A chain of audio filters.
+ *
+ * @param input   See [.input].
+ * @param filters See [.filters].
+ * @param context See [.context].
  */
-public class AudioFilterChain {
+data class AudioFilterChain(
     /**
      * The first filter in the stream. Separate field as unlike other filters, this must be an instance of
-     * {@link UniversalPcmAudioFilter} as the input data may be in any representation.
+     * [UniversalPcmAudioFilter] as the input data may be in any representation.
      */
-    public final UniversalPcmAudioFilter input;
-
+    @JvmField val input: UniversalPcmAudioFilter,
     /**
      * All filters in this chain.
      */
-    public final List<AudioFilter> filters;
-
+    @JvmField val filters: List<AudioFilter>,
     /**
-     * Immutable context/configuration instance that this filter was generated from. May be <code>null</code>.
+     * Immutable context/configuration instance that this filter was generated from. May be `null`.
      */
-    public final Object context;
-
-    /**
-     * @param input   See {@link #input}.
-     * @param filters See {@link #filters}.
-     * @param context See {@link #context}.
-     */
-    public AudioFilterChain(UniversalPcmAudioFilter input, List<AudioFilter> filters, Object context) {
-        this.input = input;
-        this.filters = filters;
-        this.context = context;
-    }
-}
+    @JvmField val context: Any?
+)

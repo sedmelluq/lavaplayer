@@ -1,170 +1,111 @@
-package lavaplayer.track;
+package lavaplayer.track
 
-import lavaplayer.manager.AudioPlayerManager;
-import lavaplayer.source.ItemSourceManager;
-import lavaplayer.track.playback.AudioFrame;
-import lavaplayer.track.playback.AudioTrackExecutor;
-import lavaplayer.track.playback.MutableAudioFrame;
-import lavaplayer.track.playback.PrimordialAudioTrackExecutor;
-
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicLong;
+import lavaplayer.manager.AudioPlayerManager
+import lavaplayer.source.ItemSourceManager
+import lavaplayer.track.playback.AudioFrame
+import lavaplayer.track.playback.AudioTrackExecutor
+import lavaplayer.track.playback.MutableAudioFrame
+import lavaplayer.track.playback.PrimordialAudioTrackExecutor
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.TimeoutException
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicLong
 
 /**
  * Abstract base for all audio tracks with an executor
+ *
+ * @param info Track info
  */
-public abstract class BaseAudioTrack implements InternalAudioTrack {
-    protected final AudioTrackInfo trackInfo;
-    protected final AtomicLong accurateDuration;
-    private final PrimordialAudioTrackExecutor initialExecutor;
-    private final AtomicBoolean executorAssigned;
-    private volatile AudioTrackExecutor activeExecutor;
-    private volatile Object userData;
+abstract class BaseAudioTrack(final override val info: AudioTrackInfo) : InternalAudioTrack {
+    @JvmField
+    protected val accurateDuration = AtomicLong()
 
-    /**
-     * @param trackInfo Track info
-     */
-    public BaseAudioTrack(AudioTrackInfo trackInfo) {
-        this.initialExecutor = new PrimordialAudioTrackExecutor(trackInfo);
-        this.executorAssigned = new AtomicBoolean();
-        this.activeExecutor = null;
-        this.trackInfo = trackInfo;
-        this.accurateDuration = new AtomicLong();
-    }
+    private val initialExecutor = PrimordialAudioTrackExecutor(info)
+    private val executorAssigned = AtomicBoolean()
+    @Volatile private var _activeExecutor: AudioTrackExecutor? = null
+    @Volatile override var userData: Any? = null
 
-    @Override
-    public void assignExecutor(AudioTrackExecutor executor, boolean applyPrimordialState) {
-        if (executorAssigned.compareAndSet(false, true)) {
+    override val activeExecutor: AudioTrackExecutor
+        get() = _activeExecutor ?: initialExecutor
+
+    override val sourceManager: ItemSourceManager?
+        get() = null
+
+    override val state: AudioTrackState
+        get() = activeExecutor.state
+
+    override val identifier: String
+        get() = info.identifier
+
+    override val isSeekable: Boolean
+        get() = !info.isStream
+
+    override var position: Long
+        get() = activeExecutor.position
+        set(position) {
+            activeExecutor.position = position
+        }
+
+    override val duration: Long
+        get() {
+            val accurate = accurateDuration.get()
+            return if (accurate == 0L) info.length else accurate
+        }
+
+    override fun assignExecutor(executor: AudioTrackExecutor?, applyPrimordialState: Boolean) {
+        _activeExecutor = if (executorAssigned.compareAndSet(false, true)) {
             if (applyPrimordialState) {
-                initialExecutor.applyStateToExecutor(executor);
+                initialExecutor.applyStateToExecutor(executor)
             }
-            activeExecutor = executor;
+
+            executor
         } else {
-            throw new IllegalStateException("Cannot play the same instance of a track twice, use track.makeClone().");
+            throw IllegalStateException("Cannot play the same instance of a track twice, use track.makeClone().")
         }
     }
 
-    @Override
-    public AudioTrackExecutor getActiveExecutor() {
-        AudioTrackExecutor executor = activeExecutor;
-        return executor != null ? executor : initialExecutor;
+    override fun stop() {
+        activeExecutor.stop()
     }
 
-    @Override
-    public void stop() {
-        getActiveExecutor().stop();
+    override fun setMarker(marker: TrackMarker?) {
+        activeExecutor.setMarker(marker)
     }
 
-    @Override
-    public AudioTrackState getState() {
-        return getActiveExecutor().getState();
+    override fun provide(): AudioFrame? {
+        return activeExecutor.provide()
     }
 
-    @Override
-    public String getIdentifier() {
-        return trackInfo.identifier;
+    @Throws(TimeoutException::class, InterruptedException::class)
+    override fun provide(timeout: Long, unit: TimeUnit): AudioFrame? {
+        return activeExecutor.provide(timeout, unit)
     }
 
-    @Override
-    public boolean isSeekable() {
-        return !trackInfo.isStream;
+    override fun provide(targetFrame: MutableAudioFrame): Boolean {
+        return activeExecutor.provide(targetFrame)
     }
 
-    @Override
-    public long getPosition() {
-        return getActiveExecutor().getPosition();
+    @Throws(TimeoutException::class, InterruptedException::class)
+    override fun provide(targetFrame: MutableAudioFrame, timeout: Long, unit: TimeUnit): Boolean {
+        return activeExecutor.provide(targetFrame, timeout, unit)
     }
 
-    @Override
-    public void setPosition(long position) {
-        getActiveExecutor().setPosition(position);
+    override fun makeClone(): AudioTrack? {
+        val track = makeShallowClone()
+        track.userData = userData
+        return track
     }
 
-    @Override
-    public void setMarker(TrackMarker marker) {
-        getActiveExecutor().setMarker(marker);
+    override fun createLocalExecutor(playerManager: AudioPlayerManager?): AudioTrackExecutor? {
+        return null
     }
 
-    @Override
-    public AudioFrame provide() {
-        return getActiveExecutor().provide();
+    override fun <T> getUserData(klass: Class<T>?): T? {
+        val data = userData
+        return if (data != null && klass!!.isAssignableFrom(data.javaClass)) data as? T else null
     }
 
-    @Override
-    public AudioFrame provide(long timeout, TimeUnit unit) throws TimeoutException, InterruptedException {
-        return getActiveExecutor().provide(timeout, unit);
-    }
-
-    @Override
-    public boolean provide(MutableAudioFrame targetFrame) {
-        return getActiveExecutor().provide(targetFrame);
-    }
-
-    @Override
-    public boolean provide(MutableAudioFrame targetFrame, long timeout, TimeUnit unit)
-        throws TimeoutException, InterruptedException {
-
-        return getActiveExecutor().provide(targetFrame, timeout, unit);
-    }
-
-    @Override
-    public AudioTrackInfo getInfo() {
-        return trackInfo;
-    }
-
-    @Override
-    public long getDuration() {
-        long accurate = accurateDuration.get();
-
-        if (accurate == 0) {
-            return trackInfo.length;
-        } else {
-            return accurate;
-        }
-    }
-
-    @Override
-    public AudioTrack makeClone() {
-        AudioTrack track = makeShallowClone();
-        track.setUserData(userData);
-        return track;
-    }
-
-    @Override
-    public ItemSourceManager getSourceManager() {
-        return null;
-    }
-
-    @Override
-    public AudioTrackExecutor createLocalExecutor(AudioPlayerManager playerManager) {
-        return null;
-    }
-
-    @Override
-    public Object getUserData() {
-        return userData;
-    }
-
-    @Override
-    public void setUserData(Object userData) {
-        this.userData = userData;
-    }
-
-    @Override
-    @SuppressWarnings("unchecked")
-    public <T> T getUserData(Class<T> klass) {
-        Object data = userData;
-
-        if (data != null && klass.isAssignableFrom(data.getClass())) {
-            return (T) data;
-        } else {
-            return null;
-        }
-    }
-
-    protected AudioTrack makeShallowClone() {
-        throw new UnsupportedOperationException();
+    protected open fun makeShallowClone(): AudioTrack {
+        throw UnsupportedOperationException()
     }
 }

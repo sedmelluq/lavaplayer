@@ -186,12 +186,7 @@ class DefaultAudioPlayer(private val manager: DefaultAudioPlayerManager) : Audio
     }
 
     override fun setFrameBufferDuration(duration: Int?) {
-        var duration = duration
-        if (duration != null) {
-            duration = 200.coerceAtLeast(duration)
-        }
-
-        resources.frameBufferDuration.set(duration)
+        resources.frameBufferDuration.set(duration?.let { 200.coerceAtLeast(it) })
     }
 
     /**

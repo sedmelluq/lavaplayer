@@ -1,6 +1,7 @@
 package lavaplayer.source.soundcloud;
 
 import lavaplayer.source.ItemSourceManager;
+import lavaplayer.source.TrackCollectionLoader;
 import lavaplayer.tools.FriendlyException;
 import lavaplayer.tools.JsonBrowser;
 import lavaplayer.tools.io.HttpClientTools;
@@ -61,7 +62,7 @@ public class SoundCloudItemSourceManager implements ItemSourceManager, HttpConfi
     private final SoundCloudDataReader dataReader;
     private final SoundCloudHtmlDataLoader htmlDataLoader;
     private final SoundCloudFormatHandler formatHandler;
-    private final SoundCloudPlaylistLoader playlistLoader;
+    private final TrackCollectionLoader playlistLoader;
     private final HttpInterfaceManager httpInterfaceManager;
     private final SoundCloudClientIdTracker clientIdTracker;
     private final boolean allowSearch;
@@ -76,7 +77,7 @@ public class SoundCloudItemSourceManager implements ItemSourceManager, HttpConfi
         SoundCloudDataReader dataReader,
         SoundCloudHtmlDataLoader htmlDataLoader,
         SoundCloudFormatHandler formatHandler,
-        SoundCloudPlaylistLoader playlistLoader
+        TrackCollectionLoader playlistLoader
     ) {
         this.allowSearch = allowSearch;
         this.dataReader = dataReader;
@@ -364,7 +365,7 @@ public class SoundCloudItemSourceManager implements ItemSourceManager, HttpConfi
         private SoundCloudDataReader dataReader;
         private SoundCloudHtmlDataLoader htmlDataLoader;
         private SoundCloudFormatHandler formatHandler;
-        private SoundCloudPlaylistLoader playlistLoader;
+        private TrackCollectionLoader playlistLoader;
         private PlaylistLoaderFactory playlistLoaderFactory;
 
         public Builder withAllowSearch(boolean allowSearch) {
@@ -387,7 +388,7 @@ public class SoundCloudItemSourceManager implements ItemSourceManager, HttpConfi
             return this;
         }
 
-        public Builder withPlaylistLoader(SoundCloudPlaylistLoader playlistLoader) {
+        public Builder withPlaylistLoader(TrackCollectionLoader playlistLoader) {
             this.playlistLoader = playlistLoader;
             return this;
         }
@@ -416,7 +417,7 @@ public class SoundCloudItemSourceManager implements ItemSourceManager, HttpConfi
                 usedFormatHandler = new DefaultSoundCloudFormatHandler();
             }
 
-            SoundCloudPlaylistLoader usedPlaylistLoader = playlistLoader;
+            TrackCollectionLoader usedPlaylistLoader = playlistLoader;
 
             if (usedPlaylistLoader == null) {
                 PlaylistLoaderFactory factory = playlistLoaderFactory;
@@ -441,7 +442,7 @@ public class SoundCloudItemSourceManager implements ItemSourceManager, HttpConfi
 
         @FunctionalInterface
         interface PlaylistLoaderFactory {
-            SoundCloudPlaylistLoader create(
+            TrackCollectionLoader create(
                 SoundCloudDataReader dataReader,
                 SoundCloudHtmlDataLoader htmlDataLoader,
                 SoundCloudFormatHandler formatHandler

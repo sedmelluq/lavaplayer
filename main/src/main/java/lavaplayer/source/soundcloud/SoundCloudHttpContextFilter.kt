@@ -1,77 +1,61 @@
-package lavaplayer.source.soundcloud;
+package lavaplayer.source.soundcloud
 
-import lavaplayer.tools.http.HttpContextFilter;
-import lavaplayer.tools.http.HttpContextRetryCounter;
-import org.apache.http.HttpResponse;
-import org.apache.http.HttpStatus;
-import org.apache.http.client.methods.HttpRequestBase;
-import org.apache.http.client.methods.HttpUriRequest;
-import org.apache.http.client.protocol.HttpClientContext;
-import org.apache.http.client.utils.URIBuilder;
+import lavaplayer.tools.http.HttpContextFilter
+import lavaplayer.tools.http.HttpContextRetryCounter
+import org.apache.http.HttpResponse
+import org.apache.http.HttpStatus
+import org.apache.http.client.methods.HttpRequestBase
+import org.apache.http.client.methods.HttpUriRequest
+import org.apache.http.client.protocol.HttpClientContext
+import org.apache.http.client.utils.URIBuilder
+import java.net.URISyntaxException
 
-import java.net.URI;
-import java.net.URISyntaxException;
+class SoundCloudHttpContextFilter(private val clientIdTracker: SoundCloudClientIdTracker) : HttpContextFilter {
+    override fun onContextOpen(context: HttpClientContext) {}
 
-public class SoundCloudHttpContextFilter implements HttpContextFilter {
-    private static final HttpContextRetryCounter retryCounter = new HttpContextRetryCounter("sc-id-retry");
+    override fun onContextClose(context: HttpClientContext) {}
 
-    private final SoundCloudClientIdTracker clientIdTracker;
-
-    public SoundCloudHttpContextFilter(SoundCloudClientIdTracker clientIdTracker) {
-        this.clientIdTracker = clientIdTracker;
-    }
-
-    @Override
-    public void onContextOpen(HttpClientContext context) {
-
-    }
-
-    @Override
-    public void onContextClose(HttpClientContext context) {
-
-    }
-
-    @Override
-    public void onRequest(HttpClientContext context, HttpUriRequest request, boolean isRepetition) {
-        retryCounter.handleUpdate(context, isRepetition);
-
+    override fun onRequest(context: HttpClientContext, request: HttpUriRequest, isRepetition: Boolean) {
+        retryCounter.handleUpdate(context, isRepetition)
         if (clientIdTracker.isIdFetchContext(context)) {
             // Used for fetching client ID, let's not recurse.
-            return;
-        } else if (request.getURI().getHost().contains("sndcdn.com")) {
+            return
+        } else if (request.uri.host.contains("sndcdn.com")) {
             // CDN urls do not require client ID (it actually breaks them)
-            return;
+            return
         }
 
         try {
-            URI uri = new URIBuilder(request.getURI())
-                .setParameter("client_id", clientIdTracker.getClientId())
-                .build();
+            val uri = URIBuilder(request.uri)
+                .setParameter("client_id", clientIdTracker.clientId)
+                .build()
 
-            if (request instanceof HttpRequestBase) {
-                ((HttpRequestBase) request).setURI(uri);
+            if (request is HttpRequestBase) {
+                request.uri = uri
             } else {
-                throw new IllegalStateException("Cannot update request URI.");
+                throw IllegalStateException("Cannot update request URI.")
             }
-        } catch (URISyntaxException e) {
-            throw new RuntimeException(e);
+        } catch (e: URISyntaxException) {
+            throw RuntimeException(e)
         }
     }
 
-    @Override
-    public boolean onRequestResponse(HttpClientContext context, HttpUriRequest request, HttpResponse response) {
-        if (clientIdTracker.isIdFetchContext(context) || retryCounter.getRetryCount(context) >= 1) {
-            return false;
-        } else if (response.getStatusLine().getStatusCode() == HttpStatus.SC_UNAUTHORIZED) {
-            clientIdTracker.updateClientId();
-            return true;
+    override fun onRequestResponse(context: HttpClientContext, request: HttpUriRequest, response: HttpResponse): Boolean {
+        return if (clientIdTracker.isIdFetchContext(context) || retryCounter.retryCountFor(context) >= 1) {
+            false
+        } else if (response.statusLine.statusCode == HttpStatus.SC_UNAUTHORIZED) {
+            clientIdTracker.updateClientId()
+            true
         } else {
-            return false;
+            false
         }
     }
 
-    @Override
-    public boolean onRequestException(HttpClientContext context, HttpUriRequest request, Throwable error) {
-        return false;
+    override fun onRequestException(context: HttpClientContext, request: HttpUriRequest, error: Throwable): Boolean {
+        return false
+    }
+
+    companion object {
+        private val retryCounter = HttpContextRetryCounter("sc-id-retry")
     }
 }

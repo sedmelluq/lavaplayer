@@ -1,49 +1,36 @@
-package lavaplayer.source.soundcloud;
+package lavaplayer.source.soundcloud
 
-import lavaplayer.container.mp3.Mp3TrackProvider;
-import lavaplayer.tools.io.SeekableInputStream;
-import lavaplayer.track.playback.AudioProcessingContext;
+import lavaplayer.container.mp3.Mp3TrackProvider
+import lavaplayer.tools.io.SeekableInputStream
+import lavaplayer.track.playback.AudioProcessingContext
+import java.io.IOException
+import java.util.function.Supplier
 
-import java.io.IOException;
-import java.util.function.Supplier;
-
-public class SoundCloudMp3SegmentDecoder implements SoundCloudSegmentDecoder {
-    private final Supplier<SeekableInputStream> nextStreamProvider;
-
-    public SoundCloudMp3SegmentDecoder(Supplier<SeekableInputStream> nextStreamProvider) {
-        this.nextStreamProvider = nextStreamProvider;
-    }
-
-    @Override
-    public void prepareStream(boolean beginning) {
+class SoundCloudMp3SegmentDecoder(
+    private val nextStreamProvider: Supplier<SeekableInputStream>
+) : SoundCloudSegmentDecoder {
+    override fun prepareStream(beginning: Boolean) {
         // Nothing to do.
     }
 
-    @Override
-    public void resetStream() {
+    override fun resetStream() {
         // Nothing to do.
     }
 
-    @Override
-    public void playStream(
-        AudioProcessingContext context,
-        long startPosition,
-        long desiredPosition
-    ) throws InterruptedException, IOException {
-        try (SeekableInputStream stream = nextStreamProvider.get()) {
-            Mp3TrackProvider trackProvider = new Mp3TrackProvider(context, stream);
-
+    @Throws(InterruptedException::class, IOException::class)
+    override fun playStream(context: AudioProcessingContext, startPosition: Long, desiredPosition: Long) {
+        nextStreamProvider.get().use { stream ->
+            val trackProvider = Mp3TrackProvider(context, stream)
             try {
-                trackProvider.parseHeaders();
-                trackProvider.provideFrames();
+                trackProvider.parseHeaders()
+                trackProvider.provideFrames()
             } finally {
-                trackProvider.close();
+                trackProvider.close()
             }
         }
     }
 
-    @Override
-    public void close() {
+    override fun close() {
         // Nothing to do.
     }
 }

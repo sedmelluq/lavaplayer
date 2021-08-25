@@ -23,6 +23,6 @@ public abstract class MpegTsM3uStreamAudioTrack extends M3uStreamAudioTrack {
         MpegTsElementaryInputStream elementaryInputStream = new MpegTsElementaryInputStream(stream, ADTS_ELEMENTARY_STREAM);
         PesPacketInputStream pesPacketInputStream = new PesPacketInputStream(elementaryInputStream);
 
-        processDelegate(new AdtsAudioTrack(trackInfo, pesPacketInputStream), localExecutor);
+        processDelegate(new AdtsAudioTrack(getInfo(), pesPacketInputStream), localExecutor);
     }
 }

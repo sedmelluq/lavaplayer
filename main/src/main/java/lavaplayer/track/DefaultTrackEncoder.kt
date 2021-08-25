@@ -77,6 +77,8 @@ abstract class DefaultTrackEncoder : TrackEncoder {
     @Throws(IOException::class)
     protected open fun encodeTrackDetails(track: AudioTrack, output: DataOutput) {
         val sourceManager = track.sourceManager
+            ?: return
+
         output.writeUTF(sourceManager.sourceName)
         sourceManager.encodeTrack(track, output)
     }

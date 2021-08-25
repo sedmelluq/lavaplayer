@@ -42,6 +42,9 @@ allprojects {
     tasks.withType<KotlinCompile> {
         sourceCompatibility = "16"
         targetCompatibility = "16"
-        kotlinOptions.jvmTarget = "16"
+        kotlinOptions {
+            jvmTarget = "16"
+            freeCompilerArgs = listOf("-Xopt-in=kotlin.RequiresOptIn")
+        }
     }
 }

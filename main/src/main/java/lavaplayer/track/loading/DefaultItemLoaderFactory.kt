@@ -12,7 +12,7 @@ class DefaultItemLoaderFactory(internal val sources: Sources) : ItemLoaderFactor
         private const val LOADER_QUEUE_CAPACITY = 5000
     }
 
-    internal val trackInfoExecutor = ExecutorTools.createEagerlyScalingExecutor(1, DEFAULT_LOADER_POOL_SIZE, 30 * 60000, LOADER_QUEUE_CAPACITY, DaemonThreadFactory("lp item-loader"))
+    internal val trackInfoExecutor = ExecutorTools.createEagerlyScalingExecutor(1, DEFAULT_LOADER_POOL_SIZE, 30L * 60000L, LOADER_QUEUE_CAPACITY, DaemonThreadFactory("lp item-loader"))
     internal val orderedInfoExecutor = OrderedExecutor(trackInfoExecutor)
 
     override var itemLoaderPoolSize: Int

@@ -138,7 +138,7 @@ class JsonBrowser(@get:JvmName("element") val element: JsonElement) {
         safeCast() ?: default
 
     override fun equals(other: Any?): Boolean {
-        return element.equals(other)
+        return element == other
     }
 
     @OptIn(InternalSerializationApi::class)

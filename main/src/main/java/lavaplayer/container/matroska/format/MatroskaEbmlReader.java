@@ -87,33 +87,24 @@ public class MatroskaEbmlReader {
 
     private static long applyType(long code, int codeLength, Type type) {
         if (type != null) {
-            switch (type) {
-                case SIGNED:
-                    return signEbmlInteger(code, codeLength);
-                case LACE_SIGNED:
-                    return laceSignEbmlInteger(code, codeLength);
-                case UNSIGNED:
-                default:
-                    return code;
-            }
+            return switch (type) {
+                case SIGNED -> signEbmlInteger(code, codeLength);
+                case LACE_SIGNED -> laceSignEbmlInteger(code, codeLength);
+                default -> code;
+            };
         } else {
             return code;
         }
     }
 
     private static long laceSignEbmlInteger(long code, int codeLength) {
-        switch (codeLength) {
-            case 1:
-                return code - 63;
-            case 2:
-                return code - 8191;
-            case 3:
-                return code - 1048575;
-            case 4:
-                return code - 134217727;
-            default:
-                throw new IllegalStateException("Code length out of bounds.");
-        }
+        return switch (codeLength) {
+            case 1 -> code - 63;
+            case 2 -> code - 8191;
+            case 3 -> code - 1048575;
+            case 4 -> code - 134217727;
+            default -> throw new IllegalStateException("Code length out of bounds.");
+        };
     }
 
     private static long signEbmlInteger(long code, int codeLength) {
@@ -127,26 +118,17 @@ public class MatroskaEbmlReader {
     }
 
     private static long getSignMask(int codeLength) {
-        switch (codeLength) {
-            case 1:
-                return ~0x000000000000003FL;
-            case 2:
-                return ~0x0000000000001FFFL;
-            case 3:
-                return ~0x00000000000FFFFFL;
-            case 4:
-                return ~0x0000000007FFFFFFL;
-            case 5:
-                return ~0x00000003FFFFFFFFL;
-            case 6:
-                return ~0x000001FFFFFFFFFFL;
-            case 7:
-                return ~0x0000FFFFFFFFFFFFL;
-            case 8:
-                return ~0x007FFFFFFFFFFFFFL;
-            default:
-                throw new IllegalStateException("Code length out of bounds.");
-        }
+        return switch (codeLength) {
+            case 1 -> ~0x000000000000003FL;
+            case 2 -> ~0x0000000000001FFFL;
+            case 3 -> ~0x00000000000FFFFFL;
+            case 4 -> ~0x0000000007FFFFFFL;
+            case 5 -> ~0x00000003FFFFFFFFL;
+            case 6 -> ~0x000001FFFFFFFFFFL;
+            case 7 -> ~0x0000FFFFFFFFFFFFL;
+            case 8 -> ~0x007FFFFFFFFFFFFFL;
+            default -> throw new IllegalStateException("Code length out of bounds.");
+        };
     }
 
     /**

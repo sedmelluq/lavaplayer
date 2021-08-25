@@ -101,15 +101,10 @@ public class HttpClientTools {
     }
 
     private static boolean isRedirectStatus(int statusCode) {
-        switch (statusCode) {
-            case HttpStatus.SC_MOVED_PERMANENTLY:
-            case HttpStatus.SC_MOVED_TEMPORARILY:
-            case HttpStatus.SC_SEE_OTHER:
-            case HttpStatus.SC_TEMPORARY_REDIRECT:
-                return true;
-            default:
-                return false;
-        }
+        return switch (statusCode) {
+            case HttpStatus.SC_MOVED_PERMANENTLY, HttpStatus.SC_MOVED_TEMPORARILY, HttpStatus.SC_SEE_OTHER, HttpStatus.SC_TEMPORARY_REDIRECT -> true;
+            default -> false;
+        };
     }
 
     /**

@@ -1,40 +1,34 @@
-package lavaplayer.tools.io;
+package lavaplayer.tools.io
 
-import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.channels.ClosedChannelException;
-import java.nio.channels.ReadableByteChannel;
+import java.nio.channels.ReadableByteChannel
+import kotlin.Throws
+import java.io.IOException
+import java.nio.ByteBuffer
+import java.nio.channels.ClosedChannelException
 
 /**
  * Creates a readable byte channel which can be closed without closing the underlying channel.
+ *
+ * @param delegate The underlying channel
  */
-public class DetachedByteChannel implements ReadableByteChannel {
-    private final ReadableByteChannel delegate;
-    private boolean closed;
+class DetachedByteChannel(private val delegate: ReadableByteChannel) : ReadableByteChannel {
+    private var closed = false
 
-    /**
-     * @param delegate The underlying channel
-     */
-    public DetachedByteChannel(ReadableByteChannel delegate) {
-        this.delegate = delegate;
-    }
-
-    @Override
-    public int read(ByteBuffer output) throws IOException {
+    @Throws(IOException::class)
+    override fun read(output: ByteBuffer): Int {
         if (closed) {
-            throw new ClosedChannelException();
+            throw ClosedChannelException()
         }
 
-        return delegate.read(output);
+        return delegate.read(output)
     }
 
-    @Override
-    public boolean isOpen() {
-        return !closed && delegate.isOpen();
+    override fun isOpen(): Boolean {
+        return !closed && delegate.isOpen
     }
 
-    @Override
-    public void close() throws IOException {
-        closed = true;
+    @Throws(IOException::class)
+    override fun close() {
+        closed = true
     }
 }

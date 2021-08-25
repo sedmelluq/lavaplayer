@@ -56,14 +56,11 @@ public class OpusDecoder extends NativeResourceHolder {
     }
 
     private static int getPacketFrameCount(byte[] buffer, int offset, int length) {
-        switch (buffer[offset] & 0x03) {
-            case 0:
-                return 1;
-            case 3:
-                return length < 2 ? -1 : buffer[offset + 1] & 0x3F;
-            default:
-                return 2;
-        }
+        return switch (buffer[offset] & 0x03) {
+            case 0 -> 1;
+            case 3 -> length < 2 ? -1 : buffer[offset + 1] & 0x3F;
+            default -> 2;
+        };
     }
 
     private static int getPacketSamplesPerFrame(int frequency, int firstByte) {

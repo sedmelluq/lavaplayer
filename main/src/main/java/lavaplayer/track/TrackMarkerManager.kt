@@ -1,14 +1,13 @@
-package lavaplayer.track;
+package lavaplayer.track
 
-import java.util.concurrent.atomic.AtomicReference;
-
-import static lavaplayer.track.TrackMarkerHandler.MarkerState.*;
+import java.util.concurrent.atomic.AtomicReference
+import lavaplayer.track.TrackMarkerHandler.MarkerState
 
 /**
  * Tracks the state of a track position marker.
  */
-public class TrackMarkerManager {
-    private final AtomicReference<TrackMarker> current = new AtomicReference<>();
+class TrackMarkerManager {
+    private val current = AtomicReference<TrackMarker?>()
 
     /**
      * Set a new track position marker.
@@ -16,15 +15,11 @@ public class TrackMarkerManager {
      * @param marker          Marker
      * @param currentTimecode Current timecode of the track when this marker is set
      */
-    public void set(TrackMarker marker, long currentTimecode) {
-        TrackMarker previous = current.getAndSet(marker);
-
-        if (previous != null) {
-            previous.handler.handle(marker != null ? OVERWRITTEN : REMOVED);
-        }
-
+    operator fun set(marker: TrackMarker?, currentTimecode: Long) {
+        val previous = current.getAndSet(marker)
+        previous?.handler?.handle(if (marker != null) MarkerState.OVERWRITTEN else MarkerState.REMOVED)
         if (marker != null && currentTimecode >= marker.timecode) {
-            trigger(marker, LATE);
+            trigger(marker, MarkerState.LATE)
         }
     }
 
@@ -33,8 +28,8 @@ public class TrackMarkerManager {
      *
      * @return The removed marker.
      */
-    public TrackMarker remove() {
-        return current.getAndSet(null);
+    fun remove(): TrackMarker? {
+        return current.getAndSet(null)
     }
 
     /**
@@ -42,12 +37,9 @@ public class TrackMarkerManager {
      *
      * @param state The state of the marker to pass to the handler.
      */
-    public void trigger(TrackMarkerHandler.MarkerState state) {
-        TrackMarker marker = current.getAndSet(null);
-
-        if (marker != null) {
-            marker.handler.handle(state);
-        }
+    fun trigger(state: MarkerState?) {
+        val marker = current.getAndSet(null)
+        marker?.handler?.handle(state!!)
     }
 
     /**
@@ -55,11 +47,10 @@ public class TrackMarkerManager {
      *
      * @param timecode Timecode which was reached by normal playback.
      */
-    public void checkPlaybackTimecode(long timecode) {
-        TrackMarker marker = current.get();
-
+    fun checkPlaybackTimecode(timecode: Long) {
+        val marker = current.get()
         if (marker != null && timecode >= marker.timecode) {
-            trigger(marker, REACHED);
+            trigger(marker, MarkerState.REACHED)
         }
     }
 
@@ -68,17 +59,16 @@ public class TrackMarkerManager {
      *
      * @param timecode Timecode which was reached by seeking.
      */
-    public void checkSeekTimecode(long timecode) {
-        TrackMarker marker = current.get();
-
+    fun checkSeekTimecode(timecode: Long) {
+        val marker = current.get()
         if (marker != null && timecode >= marker.timecode) {
-            trigger(marker, BYPASSED);
+            trigger(marker, MarkerState.BYPASSED)
         }
     }
 
-    private void trigger(TrackMarker marker, TrackMarkerHandler.MarkerState state) {
+    private fun trigger(marker: TrackMarker, state: MarkerState) {
         if (current.compareAndSet(marker, null)) {
-            marker.handler.handle(state);
+            marker.handler.handle(state)
         }
     }
 }

@@ -31,7 +31,7 @@ class DefaultYoutubeTrackDetails(
     override fun getTrackInfo(): AudioTrackInfo =
         loadTrackInfo()
 
-    override fun getPlayerScript(): String =
+    override fun getPlayerScript(): String? =
         data.playerScriptUrl
 
     override fun getFormats(

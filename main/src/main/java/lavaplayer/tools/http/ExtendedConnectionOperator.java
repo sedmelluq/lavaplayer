@@ -237,25 +237,15 @@ public class ExtendedConnectionOperator implements HttpClientConnectionOperator 
         InetAddress[] addresses,
         int currentIndex
     ) {
-        DetailMessageBuilder builder = new DetailMessageBuilder();
-        builder.appendHeader("Encountered when opening a connection with the following details:");
-
-        builder.appendField("host", host);
-        builder.appendField("localAddress", localAddress);
-        builder.appendField("remoteAddress", remoteAddress);
-        builder.appendField("connectTimeout", connectTimeout);
-
-        builder.appendArray("triedAddresses", false, addresses, index ->
-            index <= currentIndex && addressTypesMatch(localAddress, addresses[index])
-        );
-
-        builder.appendArray("untriedAddresses", false, addresses, index ->
-            index > currentIndex && addressTypesMatch(localAddress, addresses[index])
-        );
-
-        builder.appendArray("unsuitableAddresses", false, addresses, index ->
-            !addressTypesMatch(localAddress, addresses[index])
-        );
+        DetailMessageBuilder builder = new DetailMessageBuilder()
+            .appendHeader("Encountered when opening a connection with the following details:")
+            .appendField("host", host)
+            .appendField("localAddress", localAddress)
+            .appendField("remoteAddress", remoteAddress)
+            .appendField("connectTimeout", connectTimeout)
+            .appendArray("triedAddresses", false, addresses, index -> index <= currentIndex && addressTypesMatch(localAddress, addresses[index]))
+            .appendArray("untriedAddresses", false, addresses, index -> index > currentIndex && addressTypesMatch(localAddress, addresses[index]))
+            .appendArray("unsuitableAddresses", false, addresses, index -> !addressTypesMatch(localAddress, addresses[index]));
 
         exception.addSuppressed(new AdditionalDetails(builder.toString()));
     }
@@ -266,13 +256,6 @@ public class ExtendedConnectionOperator implements HttpClientConnectionOperator 
         }
     }
 
-    private static class ResolvedAddresses {
-        private final HttpHost host;
-        private final InetAddress[] addresses;
-
-        private ResolvedAddresses(HttpHost host, InetAddress[] addresses) {
-            this.host = host;
-            this.addresses = addresses;
-        }
+    private record ResolvedAddresses(HttpHost host, InetAddress[] addresses) {
     }
 }

@@ -14,7 +14,7 @@ import java.util.Map;
 
 import static lavaplayer.tools.DataFormatTools.decodeUrlEncodedItems;
 
-public class LegacyStreamMapFormatsExtractor implements OfflineYoutubeTrackFormatExtractor {
+public class LegacyStreamMapFormatsExtractor extends OfflineYoutubeTrackFormatExtractor {
     private static final Logger log = LoggerFactory.getLogger(LegacyStreamMapFormatsExtractor.class);
 
     @Override

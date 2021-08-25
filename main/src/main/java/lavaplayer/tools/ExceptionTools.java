@@ -108,16 +108,9 @@ public class ExceptionTools {
      */
     public static void log(Logger log, FriendlyException exception, Object context) {
         switch (exception.severity) {
-            case COMMON:
-                log.debug("Common failure for {}: {}", context, exception.getMessage());
-                break;
-            case SUSPICIOUS:
-                log.warn("Suspicious exception for {}", context, exception);
-                break;
-            case FAULT:
-            default:
-                log.error("Error in {}", context, exception);
-                break;
+            case COMMON -> log.debug("Common failure for {}: {}", context, exception.getMessage());
+            case SUSPICIOUS -> log.warn("Suspicious exception for {}", context, exception);
+            default -> log.error("Error in {}", context, exception);
         }
     }
 

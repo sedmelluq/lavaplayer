@@ -1,59 +1,45 @@
-package lavaplayer.source.local;
+package lavaplayer.source.local
 
-import lavaplayer.container.MediaContainerDescriptor;
-import lavaplayer.source.ItemSourceManager;
-import lavaplayer.track.AudioTrack;
-import lavaplayer.track.AudioTrackInfo;
-import lavaplayer.track.DelegatedAudioTrack;
-import lavaplayer.track.InternalAudioTrack;
-import lavaplayer.track.playback.LocalAudioTrackExecutor;
-
-import java.io.File;
+import lavaplayer.track.AudioTrackInfo
+import lavaplayer.container.MediaContainerDescriptor
+import lavaplayer.track.DelegatedAudioTrack
+import java.io.File
+import kotlin.Throws
+import lavaplayer.track.playback.LocalAudioTrackExecutor
+import lavaplayer.track.InternalAudioTrack
+import lavaplayer.track.AudioTrack
+import java.lang.Exception
 
 /**
  * Audio track that handles processing local files as audio tracks.
+ *
+ * @param trackInfo             Track info
+ * @param containerTrackFactory Probe track factory - contains the probe with its parameters.
+ * @param sourceManager         Source manager used to load this track
  */
-public class LocalAudioTrack extends DelegatedAudioTrack {
-    private final File file;
-    private final MediaContainerDescriptor containerTrackFactory;
-    private final LocalItemSourceManager sourceManager;
-
+class LocalAudioTrack(
+    trackInfo: AudioTrackInfo,
     /**
-     * @param trackInfo             Track info
-     * @param containerTrackFactory Probe track factory - contains the probe with its parameters.
-     * @param sourceManager         Source manager used to load this track
+     * The media probe which handles creating a container-specific delegated track for this track.
      */
-    public LocalAudioTrack(AudioTrackInfo trackInfo, MediaContainerDescriptor containerTrackFactory,
-                           LocalItemSourceManager sourceManager) {
+    val containerTrackFactory: MediaContainerDescriptor,
+    override val sourceManager: LocalItemSourceManager
+) : DelegatedAudioTrack(trackInfo) {
+    private val file = File(trackInfo.identifier)
 
-        super(trackInfo);
-
-        this.file = new File(trackInfo.identifier);
-        this.containerTrackFactory = containerTrackFactory;
-        this.sourceManager = sourceManager;
-    }
-
-    /**
-     * @return The media probe which handles creating a container-specific delegated track for this track.
-     */
-    public MediaContainerDescriptor getContainerTrackFactory() {
-        return containerTrackFactory;
-    }
-
-    @Override
-    public void process(LocalAudioTrackExecutor localExecutor) throws Exception {
-        try (LocalSeekableInputStream inputStream = new LocalSeekableInputStream(file)) {
-            processDelegate((InternalAudioTrack) containerTrackFactory.createTrack(trackInfo, inputStream), localExecutor);
+    @Throws(Exception::class)
+    override fun process(executor: LocalAudioTrackExecutor) {
+        LocalSeekableInputStream(file).use { inputStream ->
+            processDelegate(
+                (containerTrackFactory.createTrack(
+                    info,
+                    inputStream
+                ) as InternalAudioTrack), executor
+            )
         }
     }
 
-    @Override
-    protected AudioTrack makeShallowClone() {
-        return new LocalAudioTrack(trackInfo, containerTrackFactory, sourceManager);
-    }
-
-    @Override
-    public ItemSourceManager getSourceManager() {
-        return sourceManager;
+    override fun makeShallowClone(): AudioTrack {
+        return LocalAudioTrack(info, containerTrackFactory, sourceManager)
     }
 }

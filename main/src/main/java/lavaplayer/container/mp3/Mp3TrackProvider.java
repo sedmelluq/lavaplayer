@@ -274,18 +274,13 @@ public class Mp3TrackProvider implements AudioTrackInfoProvider {
         boolean shortTerminator = data.length > 0 && data[data.length - 1] == 0;
         boolean wideTerminator = data.length > 1 && data[data.length - 2] == 0 && shortTerminator;
 
-        switch (encoding) {
-            case 0:
-                return new String(data, 0, size - (shortTerminator ? 2 : 1), "ISO-8859-1");
-            case 1:
-                return new String(data, 0, size - (wideTerminator ? 3 : 1), "UTF-16");
-            case 2:
-                return new String(data, 0, size - (wideTerminator ? 3 : 1), "UTF-16BE");
-            case 3:
-                return new String(data, 0, size - (shortTerminator ? 2 : 1), "UTF-8");
-            default:
-                return null;
-        }
+        return switch (encoding) {
+            case 0 -> new String(data, 0, size - (shortTerminator ? 2 : 1), "ISO-8859-1");
+            case 1 -> new String(data, 0, size - (wideTerminator ? 3 : 1), "UTF-16");
+            case 2 -> new String(data, 0, size - (wideTerminator ? 3 : 1), "UTF-16BE");
+            case 3 -> new String(data, 0, size - (shortTerminator ? 2 : 1), "UTF-8");
+            default -> null;
+        };
     }
 
     private String readId3v22TagName() throws IOException {

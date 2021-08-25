@@ -1,48 +1,45 @@
-package lavaplayer.filter;
+package lavaplayer.filter
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.util.List;
+import org.slf4j.LoggerFactory
 
 /**
  * An audio filter which may consist of a number of other filters.
  */
-public abstract class CompositeAudioFilter implements UniversalPcmAudioFilter {
-    private static final Logger log = LoggerFactory.getLogger(CompositeAudioFilter.class);
+abstract class CompositeAudioFilter : UniversalPcmAudioFilter {
+    companion object {
+        private val log = LoggerFactory.getLogger(CompositeAudioFilter::class.java)
+    }
 
-    @Override
-    public void seekPerformed(long requestedTime, long providedTime) {
-        for (AudioFilter filter : getFilters()) {
+    protected abstract val filters: List<AudioFilter>
+
+    override fun seekPerformed(requestedTime: Long, providedTime: Long) {
+        for (filter in filters) {
             try {
-                filter.seekPerformed(requestedTime, providedTime);
-            } catch (Exception e) {
-                log.error("Notifying filter {} of seek failed with exception.", filter.getClass(), e);
+                filter.seekPerformed(requestedTime, providedTime)
+            } catch (e: Exception) {
+                log.error("Notifying filter {} of seek failed with exception.", filter.javaClass, e)
             }
         }
     }
 
-    @Override
-    public void flush() throws InterruptedException {
-        for (AudioFilter filter : getFilters()) {
+    @Throws(InterruptedException::class)
+    override fun flush() {
+        for (filter in filters) {
             try {
-                filter.flush();
-            } catch (Exception e) {
-                log.error("Flushing filter {} failed with exception.", filter.getClass(), e);
+                filter.flush()
+            } catch (e: Exception) {
+                log.error("Flushing filter {} failed with exception.", filter.javaClass, e)
             }
         }
     }
 
-    @Override
-    public void close() {
-        for (AudioFilter filter : getFilters()) {
+    override fun close() {
+        for (filter in filters) {
             try {
-                filter.close();
-            } catch (Exception e) {
-                log.error("Closing filter {} failed with exception.", filter.getClass(), e);
+                filter.close()
+            } catch (e: Exception) {
+                log.error("Closing filter {} failed with exception.", filter.javaClass, e)
             }
         }
     }
-
-    protected abstract List<AudioFilter> getFilters();
 }

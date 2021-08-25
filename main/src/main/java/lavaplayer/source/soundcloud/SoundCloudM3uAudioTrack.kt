@@ -1,184 +1,165 @@
-package lavaplayer.source.soundcloud;
+package lavaplayer.source.soundcloud
 
-import lavaplayer.container.playlists.HlsStreamSegment;
-import lavaplayer.container.playlists.HlsStreamSegmentParser;
-import lavaplayer.tools.http.HttpStreamTools;
-import lavaplayer.tools.io.ChainedInputStream;
-import lavaplayer.tools.io.HttpInterface;
-import lavaplayer.tools.io.NonSeekableInputStream;
-import lavaplayer.tools.io.SeekableInputStream;
-import lavaplayer.track.AudioTrackInfo;
-import lavaplayer.track.DelegatedAudioTrack;
-import lavaplayer.track.playback.LocalAudioTrackExecutor;
-import org.apache.http.client.methods.HttpGet;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lavaplayer.container.playlists.HlsStreamSegment
+import lavaplayer.container.playlists.HlsStreamSegmentParser
+import lavaplayer.source.soundcloud.SoundCloudHelper.loadPlaybackUrl
+import lavaplayer.tools.http.HttpStreamTools.streamContent
+import lavaplayer.tools.io.ChainedInputStream
+import lavaplayer.tools.io.HttpInterface
+import lavaplayer.tools.io.NonSeekableInputStream
+import lavaplayer.tools.io.SeekableInputStream
+import lavaplayer.track.AudioTrackInfo
+import lavaplayer.track.DelegatedAudioTrack
+import lavaplayer.track.playback.LocalAudioTrackExecutor
+import org.apache.http.client.methods.HttpGet
+import org.slf4j.LoggerFactory
+import java.io.IOException
+import java.io.InputStream
+import java.util.concurrent.TimeUnit
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.List;
-import java.util.Objects;
-import java.util.concurrent.TimeUnit;
-
-public class SoundCloudM3uAudioTrack extends DelegatedAudioTrack {
-    private static final Logger log = LoggerFactory.getLogger(SoundCloudM3uAudioTrack.class);
-
-    private static final long SEGMENT_UPDATE_INTERVAL = TimeUnit.MINUTES.toMillis(10);
-
-    private final HttpInterface httpInterface;
-    private final SoundCloudM3uInfo m3uInfo;
-
-    public SoundCloudM3uAudioTrack(AudioTrackInfo trackInfo, HttpInterface httpInterface, SoundCloudM3uInfo m3uInfo) {
-        super(trackInfo);
-        this.httpInterface = httpInterface;
-        this.m3uInfo = m3uInfo;
+class SoundCloudM3uAudioTrack(
+    trackInfo: AudioTrackInfo,
+    private val httpInterface: HttpInterface,
+    private val m3uInfo: SoundCloudM3uInfo
+) : DelegatedAudioTrack(trackInfo) {
+    companion object {
+        private val log = LoggerFactory.getLogger(SoundCloudM3uAudioTrack::class.java)
+        private val SEGMENT_UPDATE_INTERVAL = TimeUnit.MINUTES.toMillis(10)
     }
 
-    @Override
-    public void process(LocalAudioTrackExecutor localExecutor) throws Exception {
-        try (SegmentTracker segmentTracker = createSegmentTracker()) {
-            segmentTracker.decoder.prepareStream(true);
-
-            localExecutor.executeProcessingLoop(() -> segmentTracker.decoder.playStream(
-                localExecutor.getProcessingContext(),
-                segmentTracker.streamStartPosition,
-                segmentTracker.desiredPosition
-            ), segmentTracker::seekToTimecode, true);
+    @Throws(Exception::class)
+    override fun process(executor: LocalAudioTrackExecutor) {
+        createSegmentTracker().use { segmentTracker ->
+            segmentTracker.decoder!!.prepareStream(true)
+            executor.executeProcessingLoop({
+                segmentTracker.decoder!!.playStream(
+                    executor.processingContext,
+                    segmentTracker.streamStartPosition,
+                    segmentTracker.desiredPosition
+                )
+            }, { timecode: Long -> segmentTracker.seekToTimecode(timecode) }, true)
         }
     }
 
-    private List<HlsStreamSegment> loadSegments() throws IOException {
-        String playbackUrl = SoundCloudHelper.loadPlaybackUrl(httpInterface, m3uInfo.lookupUrl);
-        return HlsStreamSegmentParser.parseFromUrl(httpInterface, playbackUrl);
+    @Throws(IOException::class)
+    private fun loadSegments(): MutableList<HlsStreamSegment> {
+        val playbackUrl = loadPlaybackUrl(httpInterface, m3uInfo.lookupUrl)
+        return HlsStreamSegmentParser.parseFromUrl(httpInterface, playbackUrl)
     }
 
-    private SegmentTracker createSegmentTracker() throws IOException {
-        List<HlsStreamSegment> initialSegments = loadSegments();
-        SegmentTracker tracker = new SegmentTracker(initialSegments);
-        tracker.setupDecoder(m3uInfo.decoderFactory);
-        return tracker;
+    @Throws(IOException::class)
+    private fun createSegmentTracker(): SegmentTracker {
+        val initialSegments = loadSegments()
+        val tracker = SegmentTracker(initialSegments)
+        tracker.setupDecoder(m3uInfo.decoderFactory)
+        return tracker
     }
 
-    private class SegmentTracker implements AutoCloseable {
-        private final List<HlsStreamSegment> segments;
-        private long desiredPosition = 0;
-        private long streamStartPosition = 0;
-        private long lastUpdate;
-        private SoundCloudSegmentDecoder decoder;
-        private int segmentIndex = 0;
+    private inner class SegmentTracker(private val segments: MutableList<HlsStreamSegment>) : AutoCloseable {
+        var desiredPosition: Long = 0
+        var streamStartPosition: Long = 0
+        var decoder: SoundCloudSegmentDecoder? = null
 
-        private SegmentTracker(List<HlsStreamSegment> segments) {
-            this.segments = segments;
-            this.lastUpdate = System.currentTimeMillis();
-        }
+        private var lastUpdate: Long
+        private var segmentIndex = 0
+        private val nextStream: InputStream?
+            get() {
+                val segment = nextSegment
+                    ?: return null
 
-        private void setupDecoder(SoundCloudSegmentDecoder.Factory factory) {
-            decoder = factory.create(this::createChainedStream);
-        }
-
-        private SeekableInputStream createChainedStream() {
-            return new NonSeekableInputStream(new ChainedInputStream(this::getNextStream));
-        }
-
-        private void seekToTimecode(long timecode) throws IOException {
-            long segmentTimecode = 0;
-
-            for (int i = 0; i < segments.size(); i++) {
-                Long duration = segments.get(i).duration;
-
-                if (duration == null) {
-                    break;
+                return streamContent(httpInterface, HttpGet(segment.url))
+            }
+        private val nextSegment: HlsStreamSegment?
+            get() {
+                val current = segmentIndex++
+                return if (current < segments.size) {
+                    checkSegmentListUpdate()
+                    segments[current]
+                } else {
+                    null
                 }
-
-                long nextTimecode = segmentTimecode + duration;
-
-                if (timecode >= segmentTimecode && timecode < nextTimecode) {
-                    seekToSegment(i, timecode, segmentTimecode);
-                    return;
-                }
-
-                segmentTimecode = nextTimecode;
             }
 
-            seekToEnd();
+        init {
+            lastUpdate = System.currentTimeMillis()
         }
 
-        private void seekToSegment(int index, long requestedTimecode, long segmentTimecode) throws IOException {
-            decoder.resetStream();
-
-            segmentIndex = index;
-            desiredPosition = requestedTimecode;
-            streamStartPosition = segmentTimecode;
-
-            decoder.prepareStream(streamStartPosition == 0);
+        fun setupDecoder(factory: SoundCloudSegmentDecoder.Factory) {
+            decoder = factory.create { createChainedStream() }
         }
 
-        private void seekToEnd() throws IOException {
-            decoder.resetStream();
+        @Throws(IOException::class)
+        fun seekToTimecode(timecode: Long) {
+            var segmentTimecode: Long = 0
+            for (i in segments.indices) {
+                val duration = segments[i].duration ?: break
+                val nextTimecode = segmentTimecode + duration
+                if (timecode in segmentTimecode until nextTimecode) {
+                    seekToSegment(i, timecode, segmentTimecode)
+                    return
+                }
 
-            segmentIndex = segments.size();
-        }
-
-        private InputStream getNextStream() {
-            HlsStreamSegment segment = getNextSegment();
-
-            if (segment == null) {
-                return null;
+                segmentTimecode = nextTimecode
             }
 
-            return HttpStreamTools.streamContent(httpInterface, new HttpGet(segment.url));
+            seekToEnd()
         }
 
-        private void updateSegmentList() {
+        @Throws(Exception::class)
+        override fun close() {
+            decoder!!.resetStream()
+        }
+
+        @Throws(IOException::class)
+        private fun seekToSegment(index: Int, requestedTimecode: Long, segmentTimecode: Long) {
+            decoder!!.resetStream()
+            segmentIndex = index
+            desiredPosition = requestedTimecode
+            streamStartPosition = segmentTimecode
+            decoder!!.prepareStream(streamStartPosition == 0L)
+        }
+
+        @Throws(IOException::class)
+        private fun seekToEnd() {
+            decoder!!.resetStream()
+            segmentIndex = segments.size
+        }
+
+        private fun updateSegmentList() {
             try {
-                List<HlsStreamSegment> newSegments = loadSegments();
-
-                if (newSegments.size() != segments.size()) {
-                    log.error("For {}, received different number of segments on update, skipping.", trackInfo.identifier);
-                    return;
+                val newSegments: List<HlsStreamSegment> = loadSegments()
+                if (newSegments.size != segments.size) {
+                    log.error("For ${info.identifier}, received different number of segments on update, skipping.")
+                    return
                 }
 
-                for (int i = 0; i < segments.size(); i++) {
-                    if (!Objects.equals(newSegments.get(i).duration, segments.get(i).duration)) {
-                        log.error("For {}, segment {} has different length than previously on update.", trackInfo.identifier, i);
-                        return;
+                for (i in segments.indices) {
+                    if (newSegments[i].duration != segments[i].duration) {
+                        log.error("For ${info.identifier}, segment $i has different length than previously on update.")
+                        return
                     }
                 }
 
-                for (int i = 0; i < segments.size(); i++) {
-                    segments.set(i, newSegments.get(i));
+                for (i in segments.indices) {
+                    segments[i] = newSegments[i]
                 }
-            } catch (Exception e) {
-                log.error("For {}, failed to update segment list, skipping.", trackInfo.identifier, e);
+            } catch (e: Exception) {
+                log.error("For ${info.identifier}, failed to update segment list, skipping.", e)
             }
         }
 
-        private void checkSegmentListUpdate() {
-            long now = System.currentTimeMillis();
-            long delta = now - lastUpdate;
-
+        private fun checkSegmentListUpdate() {
+            val now = System.currentTimeMillis()
+            val delta = now - lastUpdate
             if (delta > SEGMENT_UPDATE_INTERVAL) {
-                log.debug("For {}, {}ms has passed since last segment update, updating", trackInfo.identifier, delta);
-
-                updateSegmentList();
-                lastUpdate = now;
+                log.debug("For {}, {}ms has passed since last segment update, updating", info.identifier, delta)
+                updateSegmentList()
+                lastUpdate = now
             }
         }
 
-        private HlsStreamSegment getNextSegment() {
-            int current = segmentIndex++;
-
-            if (current < segments.size()) {
-                checkSegmentListUpdate();
-                return segments.get(current);
-            } else {
-                return null;
-            }
-        }
-
-        @Override
-        public void close() throws Exception {
-            decoder.resetStream();
+        private fun createChainedStream(): SeekableInputStream {
+            return NonSeekableInputStream(ChainedInputStream { nextStream })
         }
     }
 }

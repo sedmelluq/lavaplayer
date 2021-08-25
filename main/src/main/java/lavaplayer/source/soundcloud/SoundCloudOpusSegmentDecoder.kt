@@ -1,78 +1,67 @@
-package lavaplayer.source.soundcloud;
+package lavaplayer.source.soundcloud
 
-import lavaplayer.container.ogg.OggPacketInputStream;
-import lavaplayer.container.ogg.OggTrackBlueprint;
-import lavaplayer.container.ogg.OggTrackHandler;
-import lavaplayer.container.ogg.OggTrackLoader;
-import lavaplayer.tools.io.SeekableInputStream;
-import lavaplayer.track.playback.AudioProcessingContext;
+import java.util.function.Supplier
+import lavaplayer.tools.io.SeekableInputStream
+import lavaplayer.source.soundcloud.SoundCloudSegmentDecoder
+import lavaplayer.container.ogg.OggPacketInputStream
+import lavaplayer.container.ogg.OggTrackBlueprint
+import kotlin.Throws
+import java.io.IOException
+import lavaplayer.container.ogg.OggTrackLoader
+import java.lang.InterruptedException
+import lavaplayer.track.playback.AudioProcessingContext
+import java.lang.Exception
 
-import java.io.IOException;
-import java.util.function.Supplier;
+class SoundCloudOpusSegmentDecoder(private val nextStreamProvider: Supplier<SeekableInputStream>) : SoundCloudSegmentDecoder {
+    private var lastJoinedStream: OggPacketInputStream? = null
+    private var blueprint: OggTrackBlueprint? = null
 
-public class SoundCloudOpusSegmentDecoder implements SoundCloudSegmentDecoder {
-    private final Supplier<SeekableInputStream> nextStreamProvider;
-    private OggPacketInputStream lastJoinedStream;
-    private OggTrackBlueprint blueprint;
-
-    public SoundCloudOpusSegmentDecoder(Supplier<SeekableInputStream> nextStreamProvider) {
-        this.nextStreamProvider = nextStreamProvider;
-    }
-
-    @Override
-    public void prepareStream(boolean beginning) throws IOException {
-        OggPacketInputStream stream = obtainStream();
-
+    @Throws(IOException::class)
+    override fun prepareStream(beginning: Boolean) {
+        val stream = obtainStream()
         if (beginning) {
-            OggTrackBlueprint newBlueprint = OggTrackLoader.loadTrackBlueprint(stream);
-
+            val newBlueprint = OggTrackLoader.loadTrackBlueprint(stream)
             if (blueprint == null) {
                 if (newBlueprint == null) {
-                    throw new IOException("No OGG track detected in the stream.");
+                    throw IOException("No OGG track detected in the stream.")
                 }
-
-                blueprint = newBlueprint;
+                blueprint = newBlueprint
             }
         } else {
-            stream.startNewTrack();
+            stream.startNewTrack()
         }
     }
 
-    @Override
-    public void resetStream() throws IOException {
+    @Throws(IOException::class)
+    override fun resetStream() {
         if (lastJoinedStream != null) {
-            lastJoinedStream.close();
-            lastJoinedStream = null;
+            lastJoinedStream!!.close()
+            lastJoinedStream = null
         }
     }
 
-    @Override
-    public void playStream(
-        AudioProcessingContext context,
-        long startPosition,
-        long desiredPosition
-    ) throws InterruptedException, IOException {
-        try (OggTrackHandler handler = blueprint.loadTrackHandler(obtainStream())) {
+    @Throws(InterruptedException::class, IOException::class)
+    override fun playStream(context: AudioProcessingContext, startPosition: Long, desiredPosition: Long) {
+        blueprint!!.loadTrackHandler(obtainStream()).use { handler ->
             handler.initialise(
                 context,
                 startPosition,
                 desiredPosition
-            );
-
-            handler.provideFrames();
+            )
+            handler.provideFrames()
         }
     }
 
-    @Override
-    public void close() throws Exception {
-        resetStream();
+    @Throws(Exception::class)
+    override fun close() {
+        resetStream()
     }
 
-    private OggPacketInputStream obtainStream() {
+    private fun obtainStream(): OggPacketInputStream {
         if (lastJoinedStream == null) {
-            lastJoinedStream = new OggPacketInputStream(nextStreamProvider.get(), true);
+            lastJoinedStream = OggPacketInputStream(nextStreamProvider.get(), true)
         }
 
-        return lastJoinedStream;
+        return lastJoinedStream as OggPacketInputStream
     }
 }

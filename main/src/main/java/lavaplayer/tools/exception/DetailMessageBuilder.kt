@@ -1,46 +1,51 @@
-package lavaplayer.tools.exception;
+package lavaplayer.tools.exception
 
-import java.util.function.IntPredicate;
+import java.util.function.IntPredicate
 
 class DetailMessageBuilder {
-    val builder = StringBuilder();
+    val builder = StringBuilder()
 
-    fun appendHeader(header: String) {
-        builder.append(header);
+    fun appendHeader(header: String): DetailMessageBuilder {
+        builder.append(header)
+        return this
     }
 
-    fun appendField(name: String, value: Any?) {
-        builder.append("\n  ").append(name).append(": ");
+    fun appendField(name: String, value: Any?): DetailMessageBuilder {
+        builder.append("\n  ").append(name).append(": ")
 
         if (value == null) {
-            builder.append("<unspecified>");
+            builder.append("<unspecified>")
         } else {
-            builder.append(value.toString());
+            builder.append(value.toString())
         }
+
+        return this
     }
 
-    fun appendArray(label: String, alwaysPrint: Boolean, array: Array<*>, check: IntPredicate) {
-        var started = false;
+    fun appendArray(label: String, alwaysPrint: Boolean, array: Array<*>, check: IntPredicate): DetailMessageBuilder {
+        var started = false
 
         for (i in array.indices) {
             if (check.test(i)) {
                 if (!started) {
-                    builder.append("\n  ").append(label).append(": ");
-                    started = true;
+                    builder.append("\n  ").append(label).append(": ")
+                    started = true
                 }
 
-                builder.append(array[i]).append(", ");
+                builder.append(array[i]).append(", ")
             }
         }
 
         if (started) {
-            builder.setLength(builder.length - 2);
+            builder.setLength(builder.length - 2)
         } else if (alwaysPrint) {
-            appendField(label, "NONE");
+            appendField(label, "NONE")
         }
+
+        return this
     }
 
     override fun toString(): String {
-        return builder.toString();
+        return builder.toString()
     }
 }

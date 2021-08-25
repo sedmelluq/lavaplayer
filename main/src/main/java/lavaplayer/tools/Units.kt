@@ -1,24 +1,26 @@
-package lavaplayer.tools;
+package lavaplayer.tools
 
-public class Units {
+import java.lang.RuntimeException
+
+object Units {
     /**
      * Not a negative number, so that we would not need to test for it separately when comparing.
      */
-    public static final long CONTENT_LENGTH_UNKNOWN = Long.MAX_VALUE;
-    public static final long DURATION_MS_UNKNOWN = Long.MAX_VALUE;
-    public static final long DURATION_SEC_UNKNOWN = Long.MAX_VALUE;
+    const val CONTENT_LENGTH_UNKNOWN = Long.MAX_VALUE
+    const val DURATION_MS_UNKNOWN = Long.MAX_VALUE
+    const val DURATION_SEC_UNKNOWN = Long.MAX_VALUE
+    const val BITRATE_UNKNOWN: Long = -1
 
-    public static final long BITRATE_UNKNOWN = -1;
+    private const val SECONDS_MAXIMUM = DURATION_SEC_UNKNOWN / 1000
 
-    private static final long SECONDS_MAXIMUM = DURATION_SEC_UNKNOWN / 1000;
-
-    public static long secondsToMillis(long seconds) {
-        if (seconds == DURATION_SEC_UNKNOWN) {
-            return DURATION_MS_UNKNOWN;
+    @JvmStatic
+    fun secondsToMillis(seconds: Long): Long {
+        return if (seconds == DURATION_SEC_UNKNOWN) {
+            DURATION_MS_UNKNOWN
         } else if (seconds > SECONDS_MAXIMUM) {
-            throw new RuntimeException("Cannot convert " + seconds + " to millis - would overflow.");
+            throw RuntimeException("Cannot convert $seconds to millis - would overflow.")
         } else {
-            return seconds * 1000;
+            seconds * 1000
         }
     }
 }

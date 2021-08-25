@@ -36,73 +36,43 @@ public class Mp3Decoder extends NativeResourceHolder {
     }
 
     private static int getFrameBitRateV1(byte[] buffer, int offset) {
-        switch ((buffer[offset + 2] & 0xF0) >>> 4) {
-            case 1:
-                return 32000;
-            case 2:
-                return 40000;
-            case 3:
-                return 48000;
-            case 4:
-                return 56000;
-            case 5:
-                return 64000;
-            case 6:
-                return 80000;
-            case 7:
-                return 96000;
-            case 8:
-                return 112000;
-            case 9:
-                return 128000;
-            case 10:
-                return 160000;
-            case 11:
-                return 192000;
-            case 12:
-                return 224000;
-            case 13:
-                return 256000;
-            case 14:
-                return 320000;
-            default:
-                throw new IllegalArgumentException("Not valid bitrate");
-        }
+        return switch ((buffer[offset + 2] & 0xF0) >>> 4) {
+            case 1 -> 32000;
+            case 2 -> 40000;
+            case 3 -> 48000;
+            case 4 -> 56000;
+            case 5 -> 64000;
+            case 6 -> 80000;
+            case 7 -> 96000;
+            case 8 -> 112000;
+            case 9 -> 128000;
+            case 10 -> 160000;
+            case 11 -> 192000;
+            case 12 -> 224000;
+            case 13 -> 256000;
+            case 14 -> 320000;
+            default -> throw new IllegalArgumentException("Not valid bitrate");
+        };
     }
 
     private static int getFrameBitRateV2(byte[] buffer, int offset) {
-        switch ((buffer[offset + 2] & 0xF0) >>> 4) {
-            case 1:
-                return 8000;
-            case 2:
-                return 16000;
-            case 3:
-                return 24000;
-            case 4:
-                return 32000;
-            case 5:
-                return 40000;
-            case 6:
-                return 48000;
-            case 7:
-                return 56000;
-            case 8:
-                return 64000;
-            case 9:
-                return 80000;
-            case 10:
-                return 96000;
-            case 11:
-                return 112000;
-            case 12:
-                return 128000;
-            case 13:
-                return 144000;
-            case 14:
-                return 160000;
-            default:
-                throw new IllegalArgumentException("Not valid bitrate");
-        }
+        return switch ((buffer[offset + 2] & 0xF0) >>> 4) {
+            case 1 -> 8000;
+            case 2 -> 16000;
+            case 3 -> 24000;
+            case 4 -> 32000;
+            case 5 -> 40000;
+            case 6 -> 48000;
+            case 7 -> 56000;
+            case 8 -> 64000;
+            case 9 -> 80000;
+            case 10 -> 96000;
+            case 11 -> 112000;
+            case 12 -> 128000;
+            case 13 -> 144000;
+            case 14 -> 160000;
+            default -> throw new IllegalArgumentException("Not valid bitrate");
+        };
     }
 
     private static int calculateFrameSize(boolean isVersionOne, int bitRate, int sampleRate, boolean hasPadding) {
@@ -132,29 +102,21 @@ public class Mp3Decoder extends NativeResourceHolder {
     }
 
     private static int getFrameSampleRateV1(byte[] buffer, int offset) {
-        switch ((buffer[offset + 2] & 0x0C) >>> 2) {
-            case 0:
-                return 44100;
-            case 1:
-                return 48000;
-            case 2:
-                return 32000;
-            default:
-                throw new IllegalArgumentException("Not valid sample rate");
-        }
+        return switch ((buffer[offset + 2] & 0x0C) >>> 2) {
+            case 0 -> 44100;
+            case 1 -> 48000;
+            case 2 -> 32000;
+            default -> throw new IllegalArgumentException("Not valid sample rate");
+        };
     }
 
     private static int getFrameSampleRateV2(byte[] buffer, int offset) {
-        switch ((buffer[offset + 2] & 0x0C) >>> 2) {
-            case 0:
-                return 22050;
-            case 1:
-                return 24000;
-            case 2:
-                return 16000;
-            default:
-                throw new IllegalArgumentException("Not valid sample rate");
-        }
+        return switch ((buffer[offset + 2] & 0x0C) >>> 2) {
+            case 0 -> 22050;
+            case 1 -> 24000;
+            case 2 -> 16000;
+            default -> throw new IllegalArgumentException("Not valid sample rate");
+        };
     }
 
     /**

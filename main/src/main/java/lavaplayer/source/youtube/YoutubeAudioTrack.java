@@ -76,7 +76,7 @@ public class YoutubeAudioTrack extends DelegatedAudioTrack {
 
             log.debug("Starting track from URL: {}", format.signedUrl);
 
-            if (trackInfo.isStream) {
+            if (getInfo().isStream) {
                 processStream(localExecutor, format);
             } else {
                 processStatic(localExecutor, httpInterface, format);
@@ -87,9 +87,9 @@ public class YoutubeAudioTrack extends DelegatedAudioTrack {
     private void processStatic(LocalAudioTrackExecutor localExecutor, HttpInterface httpInterface, FormatWithUrl format) throws Exception {
         try (YoutubePersistentHttpStream stream = new YoutubePersistentHttpStream(httpInterface, format.signedUrl, format.details.getContentLength())) {
             if (format.details.getType().getMimeType().endsWith("/webm")) {
-                processDelegate(new MatroskaAudioTrack(trackInfo, stream), localExecutor);
+                processDelegate(new MatroskaAudioTrack(getInfo(), stream), localExecutor);
             } else {
-                processDelegate(new MpegAudioTrack(trackInfo, stream), localExecutor);
+                processDelegate(new MpegAudioTrack(getInfo(), stream), localExecutor);
             }
         }
     }
@@ -99,7 +99,7 @@ public class YoutubeAudioTrack extends DelegatedAudioTrack {
             throw new FriendlyException("YouTube WebM streams are currently not supported.", COMMON, null);
         } else {
             try (HttpInterface streamingInterface = sourceManager.getHttpInterface()) {
-                processDelegate(new YoutubeMpegStreamAudioTrack(trackInfo, streamingInterface, format.signedUrl), localExecutor);
+                processDelegate(new YoutubeMpegStreamAudioTrack(getInfo(), streamingInterface, format.signedUrl), localExecutor);
             }
         }
     }
@@ -125,7 +125,7 @@ public class YoutubeAudioTrack extends DelegatedAudioTrack {
 
     @Override
     protected AudioTrack makeShallowClone() {
-        return new YoutubeAudioTrack(trackInfo, sourceManager);
+        return new YoutubeAudioTrack(getInfo(), sourceManager);
     }
 
     @Override

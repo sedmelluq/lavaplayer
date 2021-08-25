@@ -152,7 +152,6 @@ public class SoundCloudClientIdTracker {
 
             if (offset > 0) {
                 int backwardsIndex = center - offset;
-
                 if (backwardsIndex >= 0 && backwardsIndex < size) {
                     indices[indicesFilled++] = backwardsIndex;
                 }

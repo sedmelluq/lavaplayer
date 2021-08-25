@@ -1,40 +1,35 @@
-package lavaplayer.tools.io;
+package lavaplayer.tools.io
 
-import java.io.BufferedInputStream;
-import java.io.InputStream;
+import java.io.BufferedInputStream
+import java.io.InputStream
 
 /**
  * A buffered input stream that gives with the ability to get the number of bytes left in the buffer and a method for
  * discarding the buffer.
  */
-public class ExtendedBufferedInputStream extends BufferedInputStream {
+class ExtendedBufferedInputStream : BufferedInputStream {
     /**
-     * @param in Underlying input stream
+     * @param `in` Underlying input stream
      */
-    public ExtendedBufferedInputStream(InputStream in) {
-        super(in);
-    }
+    constructor(input: InputStream) : super(input)
 
     /**
-     * @param in   Underlying input stream
+     * @param `in`   Underlying input stream
      * @param size Size of the buffer
      */
-    public ExtendedBufferedInputStream(InputStream in, int size) {
-        super(in, size);
-    }
+    constructor(input: InputStream, size: Int) : super(input, size)
 
     /**
      * @return The number of bytes left in the buffer. This is useful for calculating the actual position in the buffer
      * if the position in the underlying buffer is known.
      */
-    public int getBufferedByteCount() {
-        return count - pos;
-    }
+    val bufferedByteCount: Int
+        get() = count - pos
 
     /**
      * Discard the remaining buffer. This should be called after seek has been performed on the underlying stream.
      */
-    public void discardBuffer() {
-        pos = count;
+    fun discardBuffer() {
+        pos = count
     }
 }

@@ -1,20 +1,21 @@
-package lavaplayer.tools.io;
+package lavaplayer.tools.io
 
-import java.io.InputStream;
+import java.io.InputStream
 
 /**
  * Represents an empty input stream.
  */
-public class EmptyInputStream extends InputStream {
-    public static final EmptyInputStream INSTANCE = new EmptyInputStream();
-
-    @Override
-    public int available() {
-        return 0;
+class EmptyInputStream : InputStream() {
+    companion object {
+        @JvmField
+        val INSTANCE = EmptyInputStream()
     }
 
-    @Override
-    public int read() {
-        return -1;
+    override fun available(): Int {
+        return 0
+    }
+
+    override fun read(): Int {
+        return -1
     }
 }

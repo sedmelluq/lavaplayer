@@ -1,11 +1,14 @@
-package lavaplayer.filter;
+package lavaplayer.filter
 
-import java.nio.ShortBuffer;
+import java.io.Closeable
+import kotlin.Throws
+import java.lang.InterruptedException
+import java.nio.ShortBuffer
 
 /**
  * Audio chunk post processor.
  */
-public interface AudioPostProcessor {
+interface AudioPostProcessor : Closeable {
     /**
      * Receives chunk buffer in its final PCM format with the sample count, sample rate and channel count matching that of
      * the output format.
@@ -14,10 +17,11 @@ public interface AudioPostProcessor {
      * @param buffer   PCM buffer of samples in the chunk
      * @throws InterruptedException When interrupted externally (or for seek/stop).
      */
-    void process(long timecode, ShortBuffer buffer) throws InterruptedException;
+    @Throws(InterruptedException::class)
+    fun process(timecode: Long, buffer: ShortBuffer?)
 
     /**
      * Frees up all resources this processor is holding internally.
      */
-    void close();
+    override fun close()
 }

@@ -1,5 +1,6 @@
 package lavaplayer.source.soundcloud;
 
+import lavaplayer.source.TrackCollectionLoader;
 import lavaplayer.tools.FriendlyException;
 import lavaplayer.tools.JsonBrowser;
 import lavaplayer.tools.io.HttpClientTools;
@@ -26,7 +27,7 @@ import java.util.stream.Collectors;
 
 import static lavaplayer.tools.FriendlyException.Severity.SUSPICIOUS;
 
-public class DefaultSoundCloudPlaylistLoader implements SoundCloudPlaylistLoader {
+public class DefaultSoundCloudPlaylistLoader implements TrackCollectionLoader {
     protected static final String PLAYLIST_URL_REGEX = "^(?:http://|https://|)(?:www\\.|)(?:m\\.|)soundcloud\\.com/([a-zA-Z0-9-_]+)/sets/([a-zA-Z0-9-_]+)(?:\\?.*|)$";
     protected static final Pattern playlistUrlPattern = Pattern.compile(PLAYLIST_URL_REGEX);
     private static final Logger log = LoggerFactory.getLogger(DefaultSoundCloudPlaylistLoader.class);
@@ -117,9 +118,7 @@ public class DefaultSoundCloudPlaylistLoader implements SoundCloudPlaylistLoader
                 try {
                     tracks.add(trackFactory.apply(dataReader.readTrackInfo(
                         trackData,
-                        formatHandler.buildFormatIdentifier(
-                            formatHandler.chooseBestFormat(dataReader.readTrackFormats(trackData))
-                        )
+                        formatHandler.buildFormatIdentifier(formatHandler.chooseBestFormat(dataReader.readTrackFormats(trackData)))
                     )));
                 } catch (Exception e) {
                     log.error("In soundcloud playlist {}, failed to load track", playlistId, e);
