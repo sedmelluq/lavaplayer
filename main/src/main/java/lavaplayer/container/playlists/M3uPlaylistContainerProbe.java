@@ -4,7 +4,7 @@ import lavaplayer.container.MediaContainerDescriptor;
 import lavaplayer.container.MediaContainerDetectionResult;
 import lavaplayer.container.MediaContainerHints;
 import lavaplayer.container.MediaContainerProbe;
-import lavaplayer.source.http.HttpAudioSourceManager;
+import lavaplayer.source.http.HttpItemSourceManager;
 import lavaplayer.tools.DataFormatTools;
 import lavaplayer.tools.io.HttpClientTools;
 import lavaplayer.tools.io.HttpInterfaceManager;
@@ -65,7 +65,7 @@ public class M3uPlaylistContainerProbe implements MediaContainerProbe {
 
         if (hlsStreamUrl != null) {
             AudioTrackInfoBuilder infoBuilder = AudioTrackInfoBuilder.create(reference, inputStream);
-            AudioReference httpReference = HttpAudioSourceManager.getAsHttpReference(reference);
+            AudioReference httpReference = HttpItemSourceManager.getAsHttpReference(reference);
 
             if (httpReference != null) {
                 return supportedFormat(this, TYPE_HLS_OUTER, infoBuilder.setIdentifier(httpReference.identifier).build());

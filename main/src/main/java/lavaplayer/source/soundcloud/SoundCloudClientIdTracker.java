@@ -77,7 +77,7 @@ public class SoundCloudClientIdTracker {
     }
 
     private String findClientIdFromSite() throws IOException {
-        try (HttpInterface httpInterface = httpInterfaceManager.getInterface()) {
+        try (HttpInterface httpInterface = httpInterfaceManager.get()) {
             httpInterface.getContext().setAttribute(ID_FETCH_CONTEXT_ATTRIBUTE, true);
 
             List<String> scriptUrls = findScriptUrls(httpInterface);

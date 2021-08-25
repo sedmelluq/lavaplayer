@@ -1,8 +1,7 @@
-package lavaplayer.track.playback;
+package lavaplayer.track.playback
 
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException
-import kotlin.jvm.Throws
 
 /**
  * A provider for audio frames
@@ -11,7 +10,7 @@ interface AudioFrameProvider {
     /**
      * @return Provided frame, or null if none available
      */
-    fun provide(): AudioFrame;
+    fun provide(): AudioFrame?
 
     /**
      * @param timeout Specifies the maximum time to wait for data. Pass 0 for non-blocking mode.
@@ -22,13 +21,13 @@ interface AudioFrameProvider {
      * @throws InterruptedException When interrupted externally (or for seek/stop).
      */
     @Throws(TimeoutException::class, InterruptedException::class)
-    fun provide(timeout: Long, unit: TimeUnit): AudioFrame;
+    fun provide(timeout: Long, unit: TimeUnit): AudioFrame?
 
     /**
      * @param targetFrame Frame to update with the details and data of the provided frame.
      * @return `true` if a frame was provided.
      */
-    fun provide(targetFrame: MutableAudioFrame): Boolean;
+    fun provide(targetFrame: MutableAudioFrame): Boolean
 
     /**
      * @param targetFrame Frame to update with the details and data of the provided frame.

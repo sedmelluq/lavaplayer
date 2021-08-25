@@ -1,12 +1,11 @@
 package lavaplayer.manager;
 
 import lavaplayer.source.Sources;
-import lavaplayer.track.AudioReference;
 import lavaplayer.track.TrackEncoder;
+import lavaplayer.track.loading.ItemLoaderFactory;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.impl.client.HttpClientBuilder;
 
-import java.util.concurrent.Future;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -31,60 +30,6 @@ public interface AudioPlayerManager extends TrackEncoder, Sources {
     void enableGcMonitoring();
 
     /**
-     * Schedules loading a track or playlist with the specified identifier.
-     *
-     * @param identifier    The identifier that a specific source manager should be able to find the track with.
-     * @param resultHandler A handler to process the result of this operation. It can either end by finding a track,
-     *                      finding a playlist, finding nothing or terminating with an exception.
-     * @return A future for this operation
-     * @see #loadItem(AudioReference, AudioLoadResultHandler)
-     */
-    default Future<Void> loadItem(final String identifier, final AudioLoadResultHandler resultHandler) {
-        return loadItem(new AudioReference(identifier, null), resultHandler);
-    }
-
-    /**
-     * Schedules loading a track or playlist with the specified identifier.
-     *
-     * @param reference     The audio reference that holds the identifier that a specific source manager
-     *                      should be able to find the track with.
-     * @param resultHandler A handler to process the result of this operation. It can either end by finding a track,
-     *                      finding a playlist, finding nothing or terminating with an exception.
-     * @return A future for this operation
-     * @see #loadItem(String, AudioLoadResultHandler)
-     */
-    Future<Void> loadItem(final AudioReference reference, final AudioLoadResultHandler resultHandler);
-
-    /**
-     * Schedules loading a track or playlist with the specified identifier with an ordering key so that items with the
-     * same ordering key are handled sequentially in the order of calls to this method.
-     *
-     * @param orderingKey   Object to use as the key for the ordering channel
-     * @param identifier    The identifier that a specific source manager should be able to find the track with.
-     * @param resultHandler A handler to process the result of this operation. It can either end by finding a track,
-     *                      finding a playlist, finding nothing or terminating with an exception.
-     * @return A future for this operation
-     * @see #loadItemOrdered(Object, AudioReference, AudioLoadResultHandler)
-     */
-    default Future<Void> loadItemOrdered(Object orderingKey, final String identifier, final AudioLoadResultHandler resultHandler) {
-        return loadItemOrdered(orderingKey, new AudioReference(identifier, null), resultHandler);
-    }
-
-    /**
-     * Schedules loading a track or playlist with the specified identifier with an ordering key so that items with the
-     * same ordering key are handled sequentially in the order of calls to this method.
-     *
-     * @param orderingKey   Object to use as the key for the ordering channel
-     * @param reference     The audio reference that holds the identifier that a specific source manager
-     *                      should be able to find the track with.
-     * @param resultHandler A handler to process the result of this operation. It can either end by finding a track,
-     *                      finding a playlist, finding nothing or terminating with an exception.
-     * @return A future for this operation
-     * @see #loadItemOrdered(Object, String, AudioLoadResultHandler)
-     */
-    Future<Void> loadItemOrdered(Object orderingKey, final AudioReference reference, final AudioLoadResultHandler resultHandler);
-
-    /**
      * @return Audio processing configuration used for tracks executed by this manager.
      */
     AudioConfiguration getConfiguration();
@@ -101,6 +46,11 @@ public interface AudioPlayerManager extends TrackEncoder, Sources {
      * @param useSeekGhosting The new state of seek ghosting
      */
     void setUseSeekGhosting(boolean useSeekGhosting);
+
+    /**
+     * @return The item loader factory for this player manager.
+     */
+    ItemLoaderFactory getItemLoaders();
 
     /**
      * @return The length of the internal buffer for audio in milliseconds.
@@ -129,13 +79,6 @@ public interface AudioPlayerManager extends TrackEncoder, Sources {
     void setPlayerCleanupThreshold(long cleanupThreshold);
 
     /**
-     * Sets the number of threads used for loading processing item load requests.
-     *
-     * @param poolSize Maximum number of concurrent threads used for loading items.
-     */
-    void setItemLoaderThreadPoolSize(int poolSize);
-
-    /**
      * @return New audio player.
      */
     AudioPlayer createPlayer();
@@ -155,4 +98,5 @@ public interface AudioPlayerManager extends TrackEncoder, Sources {
      *                     used.
      */
     void setHttpBuilderConfigurator(Consumer<HttpClientBuilder> configurator);
+
 }

@@ -1,7 +1,7 @@
 package lavaplayer.source.vimeo;
 
 import lavaplayer.container.mpeg.MpegAudioTrack;
-import lavaplayer.source.AudioSourceManager;
+import lavaplayer.source.ItemSourceManager;
 import lavaplayer.tools.FriendlyException;
 import lavaplayer.tools.JsonBrowser;
 import lavaplayer.tools.io.HttpClientTools;
@@ -29,13 +29,13 @@ import static lavaplayer.tools.FriendlyException.Severity.SUSPICIOUS;
 public class VimeoAudioTrack extends DelegatedAudioTrack {
     private static final Logger log = LoggerFactory.getLogger(VimeoAudioTrack.class);
 
-    private final VimeoAudioSourceManager sourceManager;
+    private final VimeoItemSourceManager sourceManager;
 
     /**
      * @param trackInfo     Track info
      * @param sourceManager Source manager which was used to find this track
      */
-    public VimeoAudioTrack(AudioTrackInfo trackInfo, VimeoAudioSourceManager sourceManager) {
+    public VimeoAudioTrack(AudioTrackInfo trackInfo, VimeoItemSourceManager sourceManager) {
         super(trackInfo);
 
         this.sourceManager = sourceManager;
@@ -98,7 +98,7 @@ public class VimeoAudioTrack extends DelegatedAudioTrack {
     }
 
     @Override
-    public AudioSourceManager getSourceManager() {
+    public ItemSourceManager getSourceManager() {
         return sourceManager;
     }
 }

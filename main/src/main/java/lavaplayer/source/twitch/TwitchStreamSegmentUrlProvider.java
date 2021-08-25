@@ -26,7 +26,7 @@ public class TwitchStreamSegmentUrlProvider extends M3uStreamSegmentUrlProvider 
     private static final Logger log = LoggerFactory.getLogger(TwitchStreamSegmentUrlProvider.class);
 
     private final String channelName;
-    private final TwitchStreamAudioSourceManager manager;
+    private final TwitchStreamItemSourceManager manager;
 
     private String streamSegmentPlaylistUrl;
     private long tokenExpirationTime;
@@ -35,7 +35,7 @@ public class TwitchStreamSegmentUrlProvider extends M3uStreamSegmentUrlProvider 
      * @param channelName Channel identifier.
      * @param manager     Twitch source manager.
      */
-    public TwitchStreamSegmentUrlProvider(String channelName, TwitchStreamAudioSourceManager manager) {
+    public TwitchStreamSegmentUrlProvider(String channelName, TwitchStreamItemSourceManager manager) {
         this.channelName = channelName;
         this.manager = manager;
         this.tokenExpirationTime = -1;

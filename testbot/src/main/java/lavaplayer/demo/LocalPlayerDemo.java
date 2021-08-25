@@ -5,8 +5,8 @@ import lavaplayer.format.AudioPlayerInputStream;
 import lavaplayer.manager.AudioPlayer;
 import lavaplayer.manager.AudioPlayerManager;
 import lavaplayer.manager.DefaultAudioPlayerManager;
-import lavaplayer.manager.FunctionalResultHandler;
-import lavaplayer.source.AudioSourceManagers;
+import lavaplayer.source.ItemSourceManagers;
+import lavaplayer.track.loading.DelegatedItemLoadResultHandler;
 
 import javax.sound.sampled.*;
 import java.io.IOException;
@@ -16,15 +16,23 @@ import static lavaplayer.format.StandardAudioDataFormats.COMMON_PCM_S16_BE;
 public class LocalPlayerDemo {
     public static void main(String[] args) throws LineUnavailableException, IOException {
         AudioPlayerManager manager = new DefaultAudioPlayerManager();
-        AudioSourceManagers.registerRemoteSources(manager);
+        ItemSourceManagers.registerRemoteSources(manager);
         manager.getConfiguration().setOutputFormat(COMMON_PCM_S16_BE);
 
         AudioPlayer player = manager.createPlayer();
 
-        manager.loadItem("ytsearch:DHL frank ocean", new FunctionalResultHandler(null, playlist -> {
-            player.playTrack(playlist.getTracks().get(0));
-        }, null, null));
+        /* load items. */
+        var itemLoader = manager.getItemLoaders().createItemLoader("ytsearch:DHL frank ocean");
+        itemLoader.setResultHandler(new DelegatedItemLoadResultHandler(
+            null,
+            playlist -> player.playTrack(playlist.getTracks().get(0)),
+            null,
+            null
+        ));
 
+        itemLoader.load();
+
+        /* do some more bullshit lol */
         AudioDataFormat format = manager.getConfiguration().getOutputFormat();
         AudioInputStream stream = AudioPlayerInputStream.createStream(player, format, 10000L, false);
         SourceDataLine.Info info = new DataLine.Info(SourceDataLine.class, stream.getFormat());

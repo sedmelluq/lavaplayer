@@ -125,12 +125,6 @@ class JsonBrowser(@get:JvmName("element") val element: JsonElement) {
     fun asDouble(): Double =
         cast()
 
-    fun asDouble(default: Double): Double =
-        safeCast() ?: default
-
-    fun asFloat(): Float =
-        cast()
-
     fun asInt(): Int =
         cast()
 
@@ -142,9 +136,6 @@ class JsonBrowser(@get:JvmName("element") val element: JsonElement) {
 
     fun asBoolean(default: Boolean): Boolean =
         safeCast() ?: default
-
-    fun asBoolean(): Boolean =
-        cast()
 
     override fun equals(other: Any?): Boolean {
         return element.equals(other)

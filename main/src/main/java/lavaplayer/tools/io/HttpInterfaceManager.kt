@@ -11,5 +11,5 @@ interface HttpInterfaceManager : ExtendedHttpConfigurable, Closeable {
     /**
      * @return An HTTP interface for use by the current thread.
      */
-    fun getInterface(): HttpInterface;
+    fun get(): HttpInterface;
 }

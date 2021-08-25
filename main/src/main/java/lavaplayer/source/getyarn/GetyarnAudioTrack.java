@@ -15,9 +15,9 @@ import java.net.URI;
 
 public class GetyarnAudioTrack extends DelegatedAudioTrack {
     private static final Logger log = LoggerFactory.getLogger(DelegatedAudioTrack.class);
-    private final GetyarnAudioSourceManager sourceManager;
+    private final GetyarnItemSourceManager sourceManager;
 
-    public GetyarnAudioTrack(AudioTrackInfo trackInfo, GetyarnAudioSourceManager sourceManager) {
+    public GetyarnAudioTrack(AudioTrackInfo trackInfo, GetyarnItemSourceManager sourceManager) {
         super(trackInfo);
 
         this.sourceManager = sourceManager;

@@ -2,7 +2,7 @@ package lavaplayer.track.playback;
 
 import lavaplayer.format.AudioDataFormat;
 import lavaplayer.manager.AudioConfiguration;
-import lavaplayer.manager.AudioPlayerOptions;
+import lavaplayer.manager.AudioPlayerResources;
 import lavaplayer.tools.ExceptionTools;
 import lavaplayer.tools.FriendlyException;
 import lavaplayer.track.*;
@@ -52,7 +52,7 @@ public class LocalAudioTrackExecutor implements AudioTrackExecutor {
      * @param bufferDuration  The size of the frame buffer in milliseconds
      */
     public LocalAudioTrackExecutor(InternalAudioTrack audioTrack, AudioConfiguration configuration,
-                                   AudioPlayerOptions playerOptions, boolean useSeekGhosting, int bufferDuration) {
+                                   AudioPlayerResources playerOptions, boolean useSeekGhosting, int bufferDuration) {
 
         this.audioTrack = audioTrack;
         AudioDataFormat currentFormat = configuration.getOutputFormat();

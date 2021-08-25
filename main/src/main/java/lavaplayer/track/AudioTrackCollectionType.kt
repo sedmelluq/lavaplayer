@@ -2,6 +2,8 @@ package lavaplayer.track
 
 import kotlinx.serialization.Serializable
 
+// TODO: think of a better way of doing this...
+
 @Serializable
 open class AudioTrackCollectionType {
     /**

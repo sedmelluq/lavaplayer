@@ -1,6 +1,6 @@
 package lavaplayer.track
 
-import lavaplayer.source.AudioSourceManager
+import lavaplayer.source.ItemSourceManager
 import lavaplayer.tools.io.MessageInput
 import lavaplayer.tools.io.MessageOutput
 import java.io.*
@@ -9,7 +9,7 @@ abstract class DefaultTrackEncoder : TrackEncoder {
     /**
      * The list of enabled source managers.
      */
-    abstract val sourceManagers: List<AudioSourceManager>
+    abstract val sourceManagers: List<ItemSourceManager>
 
     @Throws(IOException::class)
     override fun encodeTrack(stream: MessageOutput, track: AudioTrack) {

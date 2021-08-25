@@ -64,7 +64,7 @@ public class DefaultSoundCloudPlaylistLoader implements SoundCloudPlaylistLoader
         String playlistWebUrl,
         Function<AudioTrackInfo, AudioTrack> trackFactory
     ) {
-        try (HttpInterface httpInterface = httpInterfaceManager.getInterface()) {
+        try (HttpInterface httpInterface = httpInterfaceManager.get()) {
             JsonBrowser rootData = htmlDataLoader.load(httpInterface, playlistWebUrl);
             JsonBrowser playlistData = dataReader.findPlaylistData(rootData);
 

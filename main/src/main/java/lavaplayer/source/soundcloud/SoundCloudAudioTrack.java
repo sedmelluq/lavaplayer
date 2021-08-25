@@ -1,7 +1,7 @@
 package lavaplayer.source.soundcloud;
 
 import lavaplayer.container.mp3.Mp3AudioTrack;
-import lavaplayer.source.AudioSourceManager;
+import lavaplayer.source.ItemSourceManager;
 import lavaplayer.tools.io.HttpClientTools;
 import lavaplayer.tools.io.HttpInterface;
 import lavaplayer.tools.io.PersistentHttpStream;
@@ -21,13 +21,13 @@ import java.net.URI;
 public class SoundCloudAudioTrack extends DelegatedAudioTrack {
     private static final Logger log = LoggerFactory.getLogger(SoundCloudAudioTrack.class);
 
-    private final SoundCloudAudioSourceManager sourceManager;
+    private final SoundCloudItemSourceManager sourceManager;
 
     /**
      * @param trackInfo     Track info
      * @param sourceManager Source manager which was used to find this track
      */
-    public SoundCloudAudioTrack(AudioTrackInfo trackInfo, SoundCloudAudioSourceManager sourceManager) {
+    public SoundCloudAudioTrack(AudioTrackInfo trackInfo, SoundCloudItemSourceManager sourceManager) {
         super(trackInfo);
 
         this.sourceManager = sourceManager;
@@ -90,7 +90,7 @@ public class SoundCloudAudioTrack extends DelegatedAudioTrack {
     }
 
     @Override
-    public AudioSourceManager getSourceManager() {
+    public ItemSourceManager getSourceManager() {
         return sourceManager;
     }
 }

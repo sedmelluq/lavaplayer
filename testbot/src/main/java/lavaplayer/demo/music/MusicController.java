@@ -7,10 +7,9 @@ import lavaplayer.demo.controller.BotCommandHandler;
 import lavaplayer.demo.controller.BotController;
 import lavaplayer.demo.controller.BotControllerFactory;
 import lavaplayer.filter.equalizer.EqualizerFactory;
-import lavaplayer.manager.AudioLoadResultHandler;
 import lavaplayer.manager.AudioPlayer;
 import lavaplayer.manager.AudioPlayerManager;
-import lavaplayer.source.youtube.YoutubeAudioSourceManager;
+import lavaplayer.source.youtube.YoutubeItemSourceManager;
 import lavaplayer.tools.FriendlyException;
 import lavaplayer.tools.PlayerLibrary;
 import lavaplayer.tools.io.MessageInput;
@@ -19,6 +18,7 @@ import lavaplayer.track.AudioTrack;
 import lavaplayer.track.AudioTrackCollection;
 import lavaplayer.track.DecodedTrackHolder;
 import lavaplayer.track.TrackMarker;
+import lavaplayer.track.loading.ItemLoadResultAdapter;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.TextChannel;
@@ -88,7 +88,7 @@ public class MusicController implements BotController {
 
     @BotCommandHandler
     private void hex(Message message, int pageCount) {
-        manager.source(YoutubeAudioSourceManager.class).setPlaylistPageCount(pageCount);
+        manager.source(YoutubeItemSourceManager.class).setPlaylistPageCount(pageCount);
     }
 
     @BotCommandHandler
@@ -223,13 +223,14 @@ public class MusicController implements BotController {
     private void addTrack(final Message message, final String identifier, final boolean now) {
         outputChannel.set((TextChannel) message.getChannel());
 
-        manager.loadItemOrdered(this, identifier, new AudioLoadResultHandler() {
+        var itemLoader = manager.getItemLoaders().createItemLoader(identifier);
+
+        itemLoader.setResultHandler(new ItemLoadResultAdapter() {
             @Override
-            public void trackLoaded(AudioTrack track) {
+            public void onTrack(AudioTrack track) {
                 connectToFirstVoiceChannel(guild.getAudioManager());
 
                 message.getChannel().sendMessage("Starting now: " + track.getInfo().title + " (length " + track.getDuration() + ")").queue();
-
                 if (now) {
                     scheduler.playNow(track, true);
                 } else {
@@ -238,7 +239,7 @@ public class MusicController implements BotController {
             }
 
             @Override
-            public void collectionLoaded(AudioTrackCollection playlist) {
+            public void onTrackCollection(AudioTrackCollection playlist) {
                 List<AudioTrack> tracks = playlist.getTracks();
                 message.getChannel().sendMessage("Loaded playlist: " + playlist.getName() + " (" + tracks.size() + ")").queue();
 
@@ -267,15 +268,17 @@ public class MusicController implements BotController {
             }
 
             @Override
-            public void noMatches() {
+            public void onNoMatches() {
                 message.getChannel().sendMessage("Nothing found for " + identifier).queue();
             }
 
             @Override
-            public void loadFailed(FriendlyException throwable) {
+            public void onLoadFailed(FriendlyException throwable) {
                 message.getChannel().sendMessage("Failed with message: " + throwable.getMessage() + " (" + throwable.getClass().getSimpleName() + ")").queue();
             }
         });
+
+        itemLoader.load();
     }
 
     private void forPlayingTrack(TrackOperation operation) {

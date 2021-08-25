@@ -4,6 +4,7 @@ import lavaplayer.manager.event.AudioEvent;
 import lavaplayer.manager.event.AudioEventListener;
 import lavaplayer.manager.event.TrackEndEvent;
 import lavaplayer.manager.event.TrackStartEvent;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
@@ -52,11 +53,11 @@ public class AudioPlayerLifecycleManager implements Runnable, AudioEventListener
     }
 
     @Override
-    public void onEvent(AudioEvent event) {
-        if (event instanceof TrackStartEvent) {
-            activePlayers.put(event.player, event.player);
-        } else if (event instanceof TrackEndEvent) {
-            activePlayers.remove(event.player);
+    public void onEvent(@NotNull AudioEvent event) {
+        if (event instanceof TrackStartEvent startEvent) {
+            activePlayers.put(startEvent.getPlayer(), startEvent.getPlayer());
+        } else if (event instanceof TrackEndEvent endEvent) {
+            activePlayers.remove(endEvent.getPlayer());
         }
     }
 

@@ -1,7 +1,7 @@
 package lavaplayer.source.http;
 
 import lavaplayer.container.MediaContainerDescriptor;
-import lavaplayer.source.AudioSourceManager;
+import lavaplayer.source.ItemSourceManager;
 import lavaplayer.tools.Units;
 import lavaplayer.tools.io.HttpInterface;
 import lavaplayer.tools.io.PersistentHttpStream;
@@ -22,7 +22,7 @@ public class HttpAudioTrack extends DelegatedAudioTrack {
     private static final Logger log = LoggerFactory.getLogger(HttpAudioTrack.class);
 
     private final MediaContainerDescriptor containerTrackFactory;
-    private final HttpAudioSourceManager sourceManager;
+    private final HttpItemSourceManager sourceManager;
 
     /**
      * @param trackInfo             Track info
@@ -30,7 +30,7 @@ public class HttpAudioTrack extends DelegatedAudioTrack {
      * @param sourceManager         Source manager used to load this track
      */
     public HttpAudioTrack(AudioTrackInfo trackInfo, MediaContainerDescriptor containerTrackFactory,
-                          HttpAudioSourceManager sourceManager) {
+                          HttpItemSourceManager sourceManager) {
 
         super(trackInfo);
 
@@ -62,7 +62,7 @@ public class HttpAudioTrack extends DelegatedAudioTrack {
     }
 
     @Override
-    public AudioSourceManager getSourceManager() {
+    public ItemSourceManager getSourceManager() {
         return sourceManager;
     }
 }

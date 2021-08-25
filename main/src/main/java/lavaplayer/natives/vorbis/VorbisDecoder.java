@@ -1,6 +1,6 @@
 package lavaplayer.natives.vorbis;
 
-import com.sedmelluq.lava.common.natives.NativeResourceHolder;
+import lavaplayer.common.natives.NativeResourceHolder;
 
 import java.nio.ByteBuffer;
 

@@ -1,23 +1,33 @@
-import lavaplayer.manager.AudioLoadResultHandler
 import lavaplayer.manager.AudioPlayerManager
 import lavaplayer.manager.DefaultAudioPlayerManager
-import lavaplayer.source.AudioSourceManagers
+import lavaplayer.source.ItemSourceManagers
 import lavaplayer.tools.FriendlyException
 import lavaplayer.tools.extensions.isSearchResult
+import lavaplayer.tools.extensions.loadItem
 import lavaplayer.track.AudioTrack
 import lavaplayer.track.AudioTrackCollection
+import lavaplayer.track.loading.ItemLoadResultAdapter
 import java.util.concurrent.ExecutionException
 
 object Test {
     @JvmStatic
     fun main(args: Array<String>) {
         val playerManager: AudioPlayerManager = DefaultAudioPlayerManager()
-        AudioSourceManagers.registerRemoteSources(playerManager)
-        val query = "https://music.youtube.com/playlist?list=PLaHN2HRhxJFeq7IgXL5mQnn2pA0VI0oYu"
-//        val query = "ytmsearch:resume jenevieve"
+        ItemSourceManagers.registerRemoteSources(playerManager)
+
+        val query = "ytsearch:hey hi hyd glaive"
+
+        /* new item loading */
+//        val itemLoaderFactory = DefaultItemLoaderFactory(playerManager)
+//        val result = itemLoaderFactory
+//            .createItemLoader(query)
+//            .load()
+//            .get()
+
+        /* old item loading. */
         try {
-            playerManager.loadItem(query, object : AudioLoadResultHandler {
-                override fun trackLoaded(track: AudioTrack) {
+            playerManager.loadItem(query, object : ItemLoadResultAdapter() {
+                override suspend fun onTrack(track: AudioTrack) {
                     println("""
                          ----------------------------------------
                               class:    ${track.javaClass.name}
@@ -25,29 +35,29 @@ object Test {
                               author:   ${track.info.author}
                               uri:      ${track.info.uri}
                               duration: ${track.duration}
-                              artwork:  ${track.info.artworkUrl}  
+                              artwork:  ${track.info.artworkUrl}
                         """.trimIndent())
                 }
 
-                override fun collectionLoaded(playlist: AudioTrackCollection) {
-                    println("search result? ${if (playlist.isSearchResult) "yes" else "no"}")
-                    for (track in playlist.tracks) {
+                override suspend fun onTrackCollection(trackCollection: AudioTrackCollection) {
+                    println("search result? ${if (trackCollection.isSearchResult) "yes" else "no"}")
+                    for (track in trackCollection.tracks) {
                         println("""
                          ----------------------------------------
                               title:    ${track.info.title}
                               author:   ${track.info.author}
                               uri:      ${track.info.uri}
                               duration: ${track.duration}
-                              artwork:  ${track.info.artworkUrl}  
+                              artwork:  ${track.info.artworkUrl}
                         """.trimIndent())
                     }
                 }
 
-                override fun noMatches() {
+                override suspend fun onNoMatches() {
                     println("No matching items found")
                 }
 
-                override fun loadFailed(exception: FriendlyException) {
+                override suspend fun onLoadFailed(exception: FriendlyException) {
                     exception.printStackTrace()
                 }
             }).get()

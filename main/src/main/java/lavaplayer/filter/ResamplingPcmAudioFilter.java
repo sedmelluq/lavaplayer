@@ -3,16 +3,27 @@ package lavaplayer.filter;
 import lavaplayer.natives.samplerate.SampleRateConverter;
 import lavaplayer.manager.AudioConfiguration;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * Filter which resamples audio to the specified sample rate
  */
 public class ResamplingPcmAudioFilter implements FloatPcmAudioFilter {
+    public static final Map<AudioConfiguration.ResamplingQuality, SampleRateConverter.ResamplingType> RESAMPLING_VALUES = new HashMap<>();
+
     private static final int BUFFER_SIZE = 4096;
 
     private final FloatPcmAudioFilter downstream;
     private final SampleRateConverter[] converters;
     private final SampleRateConverter.Progress progress = new SampleRateConverter.Progress();
     private final float[][] outputSegments;
+
+    static {
+        RESAMPLING_VALUES.put(AudioConfiguration.ResamplingQuality.HIGH, SampleRateConverter.ResamplingType.SINC_MEDIUM_QUALITY);
+        RESAMPLING_VALUES.put(AudioConfiguration.ResamplingQuality.MEDIUM, SampleRateConverter.ResamplingType.SINC_FASTEST);
+        RESAMPLING_VALUES.put(AudioConfiguration.ResamplingQuality.LOW, SampleRateConverter.ResamplingType.LINEAR);
+    }
 
     /**
      * @param configuration Configuration to use
@@ -37,15 +48,7 @@ public class ResamplingPcmAudioFilter implements FloatPcmAudioFilter {
     }
 
     private static SampleRateConverter.ResamplingType getResamplingType(AudioConfiguration.ResamplingQuality quality) {
-        switch (quality) {
-            case HIGH:
-                return SampleRateConverter.ResamplingType.SINC_MEDIUM_QUALITY;
-            case MEDIUM:
-                return SampleRateConverter.ResamplingType.SINC_FASTEST;
-            case LOW:
-            default:
-                return SampleRateConverter.ResamplingType.LINEAR;
-        }
+        return RESAMPLING_VALUES.get(quality);
     }
 
     @Override

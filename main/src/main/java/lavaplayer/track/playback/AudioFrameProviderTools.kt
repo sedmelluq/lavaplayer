@@ -14,7 +14,7 @@ object AudioFrameProviderTools {
      * @return The audio frame from provide method.
      */
     @JvmStatic
-    fun delegateToTimedProvide(provider: AudioFrameProvider): AudioFrame {
+    fun delegateToTimedProvide(provider: AudioFrameProvider): AudioFrame? {
         try {
             return provider.provide(0, TimeUnit.MILLISECONDS)
         } catch (e: TimeoutException) {

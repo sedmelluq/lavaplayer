@@ -1,6 +1,6 @@
 package lavaplayer.natives.opus;
 
-import com.sedmelluq.lava.common.natives.NativeResourceHolder;
+import lavaplayer.common.natives.NativeResourceHolder;
 
 import java.nio.ByteBuffer;
 import java.nio.ShortBuffer;

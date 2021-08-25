@@ -14,7 +14,7 @@ import java.util.List;
 
 /**
  * An HTTP interface for performing HTTP requests in one specific thread. This also means it is not thread safe and should
- * not be used in a thread it was not obtained in. For multi-thread use {@link HttpInterfaceManager#getInterface()},
+ * not be used in a thread it was not obtained in. For multi-thread use {@link HttpInterfaceManager#get()},
  * should be called in each thread separately.
  */
 public class HttpInterface implements Closeable {

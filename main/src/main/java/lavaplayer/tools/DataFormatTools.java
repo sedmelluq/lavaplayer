@@ -30,17 +30,22 @@ public class DataFormatTools {
     public static long parseDuration(String duration) {
         String[] parts = duration.split(":");
 
-        if (parts.length == 3) { // hh::mm:ss
-            int hours = Integer.parseInt(parts[0]);
-            int minutes = Integer.parseInt(parts[1]);
-            int seconds = Integer.parseInt(parts[2]);
-            return (hours * 3_600_000L) + (minutes * 60_000L) + (seconds * 1_000L);
-        } else if (parts.length == 2) { // mm:ss
-            int minutes = Integer.parseInt(parts[0]);
-            int seconds = Integer.parseInt(parts[1]);
-            return (minutes * 60_000L) + (seconds * 1_000L);
-        } else {
-            return Units.DURATION_MS_UNKNOWN;
+        switch (parts.length) {
+            // hh:mm:ss
+            case 3: {
+                int hours = Integer.parseInt(parts[0]);
+                int minutes = Integer.parseInt(parts[1]);
+                int seconds = Integer.parseInt(parts[2]);
+                return (hours * 3_600_000L) + (minutes * 60_000L) + (seconds * 1_000L);
+            }
+            // mm:ss
+            case 2: {
+                int minutes = Integer.parseInt(parts[0]);
+                int seconds = Integer.parseInt(parts[1]);
+                return (minutes * 60_000L) + (seconds * 1_000L);
+            }
+            default:
+                return Units.DURATION_MS_UNKNOWN;
         }
     }
 
@@ -70,7 +75,6 @@ public class DataFormatTools {
     public static String extractBetween(String haystack, TextRange[] candidates) {
         for (TextRange candidate : candidates) {
             String result = extractBetween(haystack, candidate.start, candidate.end);
-
             if (result != null) {
                 return result;
             }
@@ -207,13 +211,5 @@ public class DataFormatTools {
         return true;
     }
 
-    public static class TextRange {
-        public final String start;
-        public final String end;
-
-        public TextRange(String start, String end) {
-            this.start = start;
-            this.end = end;
-        }
-    }
+    public record TextRange(String start, String end) {}
 }

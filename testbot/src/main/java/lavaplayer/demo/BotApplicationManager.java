@@ -4,17 +4,19 @@ import lavaplayer.demo.controller.BotCommandMappingHandler;
 import lavaplayer.demo.controller.BotController;
 import lavaplayer.demo.controller.BotControllerManager;
 import lavaplayer.demo.music.MusicController;
+import lavaplayer.filter.ResamplingPcmAudioFilter;
 import lavaplayer.manager.AudioConfiguration;
 import lavaplayer.manager.AudioPlayerManager;
 import lavaplayer.manager.DefaultAudioPlayerManager;
-import lavaplayer.source.bandcamp.BandcampAudioSourceManager;
-import lavaplayer.source.http.HttpAudioSourceManager;
-import lavaplayer.source.local.LocalAudioSourceManager;
-import lavaplayer.source.soundcloud.SoundCloudAudioSourceManager;
-import lavaplayer.source.twitch.TwitchStreamAudioSourceManager;
-import lavaplayer.source.vimeo.VimeoAudioSourceManager;
-import lavaplayer.source.youtube.YoutubeAudioSourceManager;
-import com.sedmelluq.lava.common.tools.DaemonThreadFactory;
+import lavaplayer.natives.samplerate.SampleRateConverter;
+import lavaplayer.source.bandcamp.BandcampItemSourceManager;
+import lavaplayer.source.http.HttpItemSourceManager;
+import lavaplayer.source.local.LocalItemSourceManager;
+import lavaplayer.source.soundcloud.SoundCloudItemSourceManager;
+import lavaplayer.source.twitch.TwitchStreamItemSourceManager;
+import lavaplayer.source.vimeo.VimeoItemSourceManager;
+import lavaplayer.source.youtube.YoutubeItemSourceManager;
+import lavaplayer.common.tools.DaemonThreadFactory;
 import net.dv8tion.jda.api.entities.ChannelType;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
@@ -44,16 +46,18 @@ public class BotApplicationManager extends ListenerAdapter {
 
         controllerManager.registerController(new MusicController.Factory());
 
+        ResamplingPcmAudioFilter.RESAMPLING_VALUES.replace(AudioConfiguration.ResamplingQuality.HIGH, SampleRateConverter.ResamplingType.SINC_BEST_QUALITY);
+
         playerManager = new DefaultAudioPlayerManager();
         //playerManager.useRemoteNodes("localhost:8080");
-        playerManager.getConfiguration().setResamplingQuality(AudioConfiguration.ResamplingQuality.LOW);
-        playerManager.registerSourceManager(new YoutubeAudioSourceManager());
-        playerManager.registerSourceManager(SoundCloudAudioSourceManager.createDefault());
-        playerManager.registerSourceManager(new BandcampAudioSourceManager());
-        playerManager.registerSourceManager(new VimeoAudioSourceManager());
-        playerManager.registerSourceManager(new TwitchStreamAudioSourceManager());
-        playerManager.registerSourceManager(new HttpAudioSourceManager());
-        playerManager.registerSourceManager(new LocalAudioSourceManager());
+        playerManager.getConfiguration().setResamplingQuality(AudioConfiguration.ResamplingQuality.HIGH);
+        playerManager.registerSourceManager(new YoutubeItemSourceManager());
+        playerManager.registerSourceManager(SoundCloudItemSourceManager.createDefault());
+        playerManager.registerSourceManager(new BandcampItemSourceManager());
+        playerManager.registerSourceManager(new VimeoItemSourceManager());
+        playerManager.registerSourceManager(new TwitchStreamItemSourceManager());
+        playerManager.registerSourceManager(new HttpItemSourceManager());
+        playerManager.registerSourceManager(new LocalItemSourceManager());
 
         executorService = Executors.newScheduledThreadPool(1, new DaemonThreadFactory("bot"));
     }
@@ -95,8 +99,6 @@ public class BotApplicationManager extends ListenerAdapter {
         if (!event.isFromType(ChannelType.TEXT) || member == null || member.getUser().isBot()) {
             return;
         }
-
-        System.out.println("hello?!??!!?");
 
         BotGuildContext guildContext = getContext(event.getGuild());
 

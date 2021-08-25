@@ -1,6 +1,6 @@
 package lavaplayer.track;
 
-import lavaplayer.source.AudioSourceManager;
+import lavaplayer.source.ItemSourceManager;
 
 /**
  * A playable audio track
@@ -61,7 +61,7 @@ public interface AudioTrack extends AudioItem {
     /**
      * @return The source manager which created this track. Null if not created by a source manager directly.
      */
-    AudioSourceManager getSourceManager();
+    ItemSourceManager getSourceManager();
 
     /**
      * @return Object previously stored with {@link #setUserData(Object)}

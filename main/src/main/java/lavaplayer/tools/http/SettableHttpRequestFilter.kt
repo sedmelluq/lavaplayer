@@ -4,7 +4,7 @@ import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.protocol.HttpClientContext;
 
-class SettableHttpRequestFilter : HttpContextFilter {
+open class SettableHttpRequestFilter : HttpContextFilter {
     private var filter: HttpContextFilter? = null
 
     fun get(): HttpContextFilter? {

@@ -30,7 +30,7 @@ public class ThreadLocalHttpInterfaceManager extends AbstractHttpInterfaceManage
     }
 
     @Override
-    public HttpInterface getInterface() {
+    public HttpInterface get() {
         CloseableHttpClient client = getSharedClient();
 
         HttpInterface httpInterface = httpInterfaces.get();

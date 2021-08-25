@@ -1,6 +1,6 @@
 package lavaplayer.natives.samplerate;
 
-import com.sedmelluq.lava.common.natives.NativeResourceHolder;
+import lavaplayer.common.natives.NativeResourceHolder;
 
 /**
  * Sample rate converter backed by libsamplerate

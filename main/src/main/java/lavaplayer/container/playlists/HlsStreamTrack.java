@@ -19,9 +19,9 @@ public class HlsStreamTrack extends MpegTsM3uStreamAudioTrack {
 
         super(trackInfo);
 
-        segmentUrlProvider = isInnerUrl ?
-            new HlsStreamSegmentUrlProvider(null, streamUrl) :
-            new HlsStreamSegmentUrlProvider(streamUrl, null);
+        segmentUrlProvider = isInnerUrl
+            ? new HlsStreamSegmentUrlProvider(null, streamUrl)
+            : new HlsStreamSegmentUrlProvider(streamUrl, null);
 
         this.httpInterfaceManager = httpInterfaceManager;
     }
@@ -33,6 +33,6 @@ public class HlsStreamTrack extends MpegTsM3uStreamAudioTrack {
 
     @Override
     protected HttpInterface getHttpInterface() {
-        return httpInterfaceManager.getInterface();
+        return httpInterfaceManager.get();
     }
 }

@@ -1,6 +1,6 @@
 package lavaplayer.source.twitch;
 
-import lavaplayer.source.AudioSourceManager;
+import lavaplayer.source.ItemSourceManager;
 import lavaplayer.source.stream.M3uStreamSegmentUrlProvider;
 import lavaplayer.source.stream.MpegTsM3uStreamAudioTrack;
 import lavaplayer.tools.io.HttpInterface;
@@ -10,7 +10,7 @@ import lavaplayer.track.playback.LocalAudioTrackExecutor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static lavaplayer.source.twitch.TwitchStreamAudioSourceManager.getChannelIdentifierFromUrl;
+import static lavaplayer.source.twitch.TwitchStreamItemSourceManager.getChannelIdentifierFromUrl;
 
 /**
  * Audio track that handles processing Twitch tracks.
@@ -18,14 +18,14 @@ import static lavaplayer.source.twitch.TwitchStreamAudioSourceManager.getChannel
 public class TwitchStreamAudioTrack extends MpegTsM3uStreamAudioTrack {
     private static final Logger log = LoggerFactory.getLogger(TwitchStreamAudioTrack.class);
 
-    private final TwitchStreamAudioSourceManager sourceManager;
+    private final TwitchStreamItemSourceManager sourceManager;
     private final M3uStreamSegmentUrlProvider segmentUrlProvider;
 
     /**
      * @param trackInfo     Track info
      * @param sourceManager Source manager which was used to find this track
      */
-    public TwitchStreamAudioTrack(AudioTrackInfo trackInfo, TwitchStreamAudioSourceManager sourceManager) {
+    public TwitchStreamAudioTrack(AudioTrackInfo trackInfo, TwitchStreamItemSourceManager sourceManager) {
         super(trackInfo);
 
         this.sourceManager = sourceManager;
@@ -62,7 +62,7 @@ public class TwitchStreamAudioTrack extends MpegTsM3uStreamAudioTrack {
     }
 
     @Override
-    public AudioSourceManager getSourceManager() {
+    public ItemSourceManager getSourceManager() {
         return sourceManager;
     }
 }

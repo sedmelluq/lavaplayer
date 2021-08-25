@@ -1,7 +1,7 @@
 package lavaplayer.track;
 
 import lavaplayer.manager.AudioPlayerManager;
-import lavaplayer.source.AudioSourceManager;
+import lavaplayer.source.ItemSourceManager;
 import lavaplayer.track.playback.AudioFrame;
 import lavaplayer.track.playback.AudioTrackExecutor;
 import lavaplayer.track.playback.MutableAudioFrame;
@@ -133,7 +133,7 @@ public abstract class BaseAudioTrack implements InternalAudioTrack {
     }
 
     @Override
-    public AudioSourceManager getSourceManager() {
+    public ItemSourceManager getSourceManager() {
         return null;
     }
 

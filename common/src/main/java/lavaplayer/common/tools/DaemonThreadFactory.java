@@ -1,5 +1,6 @@
 package lavaplayer.common.tools;
 
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -11,8 +12,10 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class DaemonThreadFactory implements ThreadFactory {
     private static final Logger log = LoggerFactory.getLogger(DaemonThreadFactory.class);
-
     private static final AtomicInteger poolNumber = new AtomicInteger(1);
+
+    public static String DEFAULT_NAME_FORMAT = "lava-daemon-pool-%s-%d-thread-";
+
     private final ThreadGroup group;
     private final AtomicInteger threadNumber = new AtomicInteger(1);
     private final String namePrefix;
@@ -22,23 +25,24 @@ public class DaemonThreadFactory implements ThreadFactory {
      * @param name Name that will be included in thread names.
      */
     public DaemonThreadFactory(String name) {
-        this(name, null);
+        this(name, null, DEFAULT_NAME_FORMAT);
     }
 
     /**
      * @param name         Name that will be included in thread names.
      * @param exitCallback Runnable to be executed when the thread exits.
+     * @param nameFormat   Runnable to be executed when the thread exits.
      */
-    public DaemonThreadFactory(String name, Runnable exitCallback) {
+    public DaemonThreadFactory(String name, Runnable exitCallback, String nameFormat) {
         SecurityManager securityManager = System.getSecurityManager();
 
         group = (securityManager != null) ? securityManager.getThreadGroup() : Thread.currentThread().getThreadGroup();
-        namePrefix = "lava-daemon-pool-" + name + "-" + poolNumber.getAndIncrement() + "-thread-";
+        namePrefix = String.format(nameFormat, name, poolNumber.getAndIncrement());
         this.exitCallback = exitCallback;
     }
 
     @Override
-    public Thread newThread(Runnable runnable) {
+    public Thread newThread(@NotNull Runnable runnable) {
         Thread thread = new Thread(group, getThreadRunnable(runnable), namePrefix + threadNumber.getAndIncrement(), 0);
         thread.setDaemon(true);
         thread.setPriority(Thread.NORM_PRIORITY);

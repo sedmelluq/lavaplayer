@@ -61,7 +61,7 @@ public class YoutubeSearchMusicProvider implements YoutubeSearchMusicResultLoade
     public AudioItem loadSearchMusicResult(String query, Function<AudioTrackInfo, AudioTrack> trackFactory) {
         log.debug("Performing a search music with query {}", query);
 
-        try (HttpInterface httpInterface = httpInterfaceManager.getInterface()) {
+        try (HttpInterface httpInterface = httpInterfaceManager.get()) {
             URI url = new URIBuilder("https://music.youtube.com/youtubei/v1/search")
                 .addParameter("alt", "json")
                 .addParameter("key", YT_MUSIC_KEY).build();

@@ -1,7 +1,7 @@
 package lavaplayer.source.bandcamp;
 
 import lavaplayer.container.mp3.Mp3AudioTrack;
-import lavaplayer.source.AudioSourceManager;
+import lavaplayer.source.ItemSourceManager;
 import lavaplayer.tools.JsonBrowser;
 import lavaplayer.tools.io.HttpClientTools;
 import lavaplayer.tools.io.HttpInterface;
@@ -26,13 +26,13 @@ import java.nio.charset.StandardCharsets;
 public class BandcampAudioTrack extends DelegatedAudioTrack {
     private static final Logger log = LoggerFactory.getLogger(BandcampAudioTrack.class);
 
-    private final BandcampAudioSourceManager sourceManager;
+    private final BandcampItemSourceManager sourceManager;
 
     /**
      * @param trackInfo     Track info
      * @param sourceManager Source manager which was used to find this track
      */
-    public BandcampAudioTrack(AudioTrackInfo trackInfo, BandcampAudioSourceManager sourceManager) {
+    public BandcampAudioTrack(AudioTrackInfo trackInfo, BandcampItemSourceManager sourceManager) {
         super(trackInfo);
 
         this.sourceManager = sourceManager;
@@ -69,7 +69,7 @@ public class BandcampAudioTrack extends DelegatedAudioTrack {
     }
 
     @Override
-    public AudioSourceManager getSourceManager() {
+    public ItemSourceManager getSourceManager() {
         return sourceManager;
     }
 }

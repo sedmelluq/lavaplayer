@@ -1,7 +1,7 @@
 package lavaplayer.source.local;
 
 import lavaplayer.container.MediaContainerDescriptor;
-import lavaplayer.source.AudioSourceManager;
+import lavaplayer.source.ItemSourceManager;
 import lavaplayer.track.AudioTrack;
 import lavaplayer.track.AudioTrackInfo;
 import lavaplayer.track.DelegatedAudioTrack;
@@ -16,7 +16,7 @@ import java.io.File;
 public class LocalAudioTrack extends DelegatedAudioTrack {
     private final File file;
     private final MediaContainerDescriptor containerTrackFactory;
-    private final LocalAudioSourceManager sourceManager;
+    private final LocalItemSourceManager sourceManager;
 
     /**
      * @param trackInfo             Track info
@@ -24,7 +24,7 @@ public class LocalAudioTrack extends DelegatedAudioTrack {
      * @param sourceManager         Source manager used to load this track
      */
     public LocalAudioTrack(AudioTrackInfo trackInfo, MediaContainerDescriptor containerTrackFactory,
-                           LocalAudioSourceManager sourceManager) {
+                           LocalItemSourceManager sourceManager) {
 
         super(trackInfo);
 
@@ -53,7 +53,7 @@ public class LocalAudioTrack extends DelegatedAudioTrack {
     }
 
     @Override
-    public AudioSourceManager getSourceManager() {
+    public ItemSourceManager getSourceManager() {
         return sourceManager;
     }
 }

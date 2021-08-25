@@ -1,7 +1,7 @@
 package lavaplayer.natives;
 
-import com.sedmelluq.lava.common.natives.NativeLibraryLoader;
-import com.sedmelluq.lava.common.natives.architecture.DefaultOperatingSystemTypes;
+import lavaplayer.common.natives.NativeLibraryLoader;
+import lavaplayer.common.natives.architecture.DefaultOperatingSystemTypes;
 
 /**
  * Methods for loading the connector library.

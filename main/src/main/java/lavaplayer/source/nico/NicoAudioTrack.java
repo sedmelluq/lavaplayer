@@ -1,7 +1,7 @@
 package lavaplayer.source.nico;
 
 import lavaplayer.container.mpeg.MpegAudioTrack;
-import lavaplayer.source.AudioSourceManager;
+import lavaplayer.source.ItemSourceManager;
 import lavaplayer.tools.io.HttpClientTools;
 import lavaplayer.tools.io.HttpInterface;
 import lavaplayer.tools.io.PersistentHttpStream;
@@ -29,13 +29,13 @@ import static lavaplayer.tools.DataFormatTools.convertToMapLayout;
 public class NicoAudioTrack extends DelegatedAudioTrack {
     private static final Logger log = LoggerFactory.getLogger(NicoAudioTrack.class);
 
-    private final NicoAudioSourceManager sourceManager;
+    private final NicoItemSourceManager sourceManager;
 
     /**
      * @param trackInfo     Track info
      * @param sourceManager Source manager which was used to find this track
      */
-    public NicoAudioTrack(AudioTrackInfo trackInfo, NicoAudioSourceManager sourceManager) {
+    public NicoAudioTrack(AudioTrackInfo trackInfo, NicoItemSourceManager sourceManager) {
         super(trackInfo);
 
         this.sourceManager = sourceManager;
@@ -92,7 +92,7 @@ public class NicoAudioTrack extends DelegatedAudioTrack {
     }
 
     @Override
-    public AudioSourceManager getSourceManager() {
+    public ItemSourceManager getSourceManager() {
         return sourceManager;
     }
 }

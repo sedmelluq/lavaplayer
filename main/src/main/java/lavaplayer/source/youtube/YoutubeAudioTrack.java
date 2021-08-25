@@ -2,7 +2,7 @@ package lavaplayer.source.youtube;
 
 import lavaplayer.container.matroska.MatroskaAudioTrack;
 import lavaplayer.container.mpeg.MpegAudioTrack;
-import lavaplayer.source.AudioSourceManager;
+import lavaplayer.source.ItemSourceManager;
 import lavaplayer.tools.FriendlyException;
 import lavaplayer.tools.io.HttpInterface;
 import lavaplayer.track.AudioTrack;
@@ -25,13 +25,13 @@ import static lavaplayer.tools.FriendlyException.Severity.COMMON;
 public class YoutubeAudioTrack extends DelegatedAudioTrack {
     private static final Logger log = LoggerFactory.getLogger(YoutubeAudioTrack.class);
 
-    private final YoutubeAudioSourceManager sourceManager;
+    private final YoutubeItemSourceManager sourceManager;
 
     /**
      * @param trackInfo     Track info
      * @param sourceManager Source manager which was used to find this track
      */
-    public YoutubeAudioTrack(AudioTrackInfo trackInfo, YoutubeAudioSourceManager sourceManager) {
+    public YoutubeAudioTrack(AudioTrackInfo trackInfo, YoutubeItemSourceManager sourceManager) {
         super(trackInfo);
 
         this.sourceManager = sourceManager;
@@ -129,7 +129,7 @@ public class YoutubeAudioTrack extends DelegatedAudioTrack {
     }
 
     @Override
-    public AudioSourceManager getSourceManager() {
+    public ItemSourceManager getSourceManager() {
         return sourceManager;
     }
 
