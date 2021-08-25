@@ -2,7 +2,7 @@ package lavaplayer.extensions.iprotator;
 
 import lavaplayer.extensions.iprotator.planner.AbstractRoutePlanner;
 import lavaplayer.manager.AudioPlayerManager;
-import lavaplayer.source.youtube.YoutubeAudioSourceManager;
+import lavaplayer.source.youtube.YoutubeItemSourceManager;
 import lavaplayer.source.youtube.YoutubeHttpContextFilter;
 import lavaplayer.tools.http.ExtendedHttpClientBuilder;
 import lavaplayer.tools.http.ExtendedHttpConfigurable;
@@ -40,7 +40,7 @@ public class YoutubeIpRotatorSetup {
         return this;
     }
 
-    public YoutubeIpRotatorSetup forSource(YoutubeAudioSourceManager sourceManager) {
+    public YoutubeIpRotatorSetup forSource(YoutubeItemSourceManager sourceManager) {
         forConfiguration(sourceManager.getMainHttpConfiguration(), false);
         forConfiguration(sourceManager.getSearchHttpConfiguration(), true);
         forConfiguration(sourceManager.getSearchMusicHttpConfiguration(), true);
@@ -48,7 +48,7 @@ public class YoutubeIpRotatorSetup {
     }
 
     public YoutubeIpRotatorSetup forManager(AudioPlayerManager playerManager) {
-        YoutubeAudioSourceManager sourceManager = playerManager.source(YoutubeAudioSourceManager.class);
+        YoutubeItemSourceManager sourceManager = playerManager.source(YoutubeItemSourceManager.class);
 
         if (sourceManager != null) {
             forSource(sourceManager);
@@ -88,7 +88,7 @@ public class YoutubeIpRotatorSetup {
                 // No retry for some exceptions we know are hopeless for retry.
                 it.setRetryHandler(RETRY_HANDLER);
                 // Regularly cleans up per-route connection pool which gets huge due to many routes caused by
-                // each request having an unique route.
+                // each request having a unique route.
                 it.evictExpiredConnections();
             });
 

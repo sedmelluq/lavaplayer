@@ -1,10 +1,10 @@
 package lavaplayer.extensions.iprotator
 
+import lavaplayer.extensions.iprotator.planner.AbstractRoutePlanner
+import lavaplayer.extensions.iprotator.tools.RateLimitException
 import lavaplayer.tools.http.AbstractHttpContextFilter
 import lavaplayer.tools.http.HttpContextFilter
 import lavaplayer.tools.http.HttpContextRetryCounter
-import lavaplayer.extensions.iprotator.planner.AbstractRoutePlanner
-import lavaplayer.extensions.iprotator.tools.RateLimitException
 import org.apache.http.HttpResponse
 import org.apache.http.client.methods.HttpUriRequest
 import org.apache.http.client.protocol.HttpClientContext
@@ -18,7 +18,12 @@ class IpRotatorFilter(
     private val retryLimit: Int,
     retryCountAttribute: String = RETRY_COUNT_ATTRIBUTE
 ) : AbstractHttpContextFilter(delegate) {
-    constructor(mainDelegate: HttpContextFilter, isSearch: Boolean, routePlanner: AbstractRoutePlanner, retryLimit: Int) : this(mainDelegate, isSearch, routePlanner, retryLimit, RETRY_COUNT_ATTRIBUTE)
+    constructor(
+        mainDelegate: HttpContextFilter?,
+        isSearch: Boolean,
+        routePlanner: AbstractRoutePlanner,
+        retryLimit: Int
+    ) : this(mainDelegate, isSearch, routePlanner, retryLimit, RETRY_COUNT_ATTRIBUTE)
 
     companion object {
         const val RETRY_COUNT_ATTRIBUTE = "retry-counter"
@@ -26,7 +31,7 @@ class IpRotatorFilter(
         private val log = LoggerFactory.getLogger(IpRotatorFilter::class.java)
     }
 
-    val retryCounter = HttpContextRetryCounter(retryCountAttribute)
+    private val retryCounter = HttpContextRetryCounter(retryCountAttribute)
 
     override fun onRequest(context: HttpClientContext, request: HttpUriRequest, isRepetition: Boolean) {
         retryCounter.handleUpdate(context, isRepetition)
