@@ -1,69 +1,57 @@
-package lavaplayer.source;
+package lavaplayer.source
 
-import lavaplayer.container.MediaContainerDescriptor;
-import lavaplayer.container.MediaContainerDetectionResult;
-import lavaplayer.container.MediaContainerProbe;
-import lavaplayer.container.MediaContainerRegistry;
-import lavaplayer.tools.FriendlyException;
-import lavaplayer.track.AudioItem;
-import lavaplayer.track.AudioTrack;
-import lavaplayer.track.AudioTrackInfo;
-
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
-
-import static lavaplayer.tools.FriendlyException.Severity.COMMON;
+import lavaplayer.container.MediaContainerRegistry
+import lavaplayer.source.ItemSourceManager
+import lavaplayer.container.MediaContainerDetectionResult
+import lavaplayer.track.AudioItem
+import lavaplayer.tools.FriendlyException
+import lavaplayer.track.AudioTrackInfo
+import lavaplayer.container.MediaContainerDescriptor
+import lavaplayer.track.AudioTrack
+import kotlin.Throws
+import java.io.IOException
+import java.io.DataOutput
+import lavaplayer.source.ProbingItemSourceManager
+import java.io.DataInput
+import lavaplayer.container.MediaContainerProbe
 
 /**
  * The base class for audio sources which use probing to detect container type.
  */
-public abstract class ProbingItemSourceManager implements ItemSourceManager {
-    private static final char PARAMETERS_SEPARATOR = '|';
-
-    protected final MediaContainerRegistry containerRegistry;
-
-    protected ProbingItemSourceManager(MediaContainerRegistry containerRegistry) {
-        this.containerRegistry = containerRegistry;
+abstract class ProbingItemSourceManager protected constructor(@JvmField protected val containerRegistry: MediaContainerRegistry) : ItemSourceManager {
+    companion object {
+        private const val PARAMETERS_SEPARATOR = '|'
     }
 
-    protected AudioItem handleLoadResult(MediaContainerDetectionResult result) {
-        if (result != null) {
-            if (result.isReference()) {
-                return result.getReference();
-            } else if (!result.isContainerDetected()) {
-                throw new FriendlyException("Unknown file format.", COMMON, null);
-            } else if (!result.isSupportedFile()) {
-                throw new FriendlyException(result.getUnsupportedReason(), COMMON, null);
+    protected abstract fun createTrack(trackInfo: AudioTrackInfo, containerTrackFactory: MediaContainerDescriptor): AudioTrack
+
+    protected fun handleLoadResult(result: MediaContainerDetectionResult?): AudioItem? {
+        return if (result != null) {
+            if (result.isReference) {
+                result.reference
+            } else if (!result.isContainerDetected) {
+                throw FriendlyException("Unknown file format.", FriendlyException.Severity.COMMON, null)
+            } else if (!result.isSupportedFile) {
+                throw FriendlyException(result.unsupportedReason, FriendlyException.Severity.COMMON, null)
             } else {
-                return createTrack(result.getTrackInfo(), result.getContainerDescriptor());
+                createTrack(result.trackInfo, result.containerDescriptor)
             }
-        }
-
-        return null;
+        } else null
     }
 
-    protected abstract AudioTrack createTrack(AudioTrackInfo trackInfo, MediaContainerDescriptor containerTrackFactory);
-
-    protected void encodeTrackFactory(MediaContainerDescriptor factory, DataOutput output) throws IOException {
-        String probeInfo = factory.probe.getName() + (factory.parameters != null ? PARAMETERS_SEPARATOR +
-            factory.parameters : "");
-
-        output.writeUTF(probeInfo);
+    @Throws(IOException::class)
+    protected fun encodeTrackFactory(factory: MediaContainerDescriptor, output: DataOutput) {
+        val probeInfo = factory.probe.name + if (factory.parameters != null) PARAMETERS_SEPARATOR.toString() + factory.parameters else ""
+        output.writeUTF(probeInfo)
     }
 
-    protected MediaContainerDescriptor decodeTrackFactory(DataInput input) throws IOException {
-        String probeInfo = input.readUTF();
-        int separatorPosition = probeInfo.indexOf(PARAMETERS_SEPARATOR);
-
-        String probeName = separatorPosition < 0 ? probeInfo : probeInfo.substring(0, separatorPosition);
-        String parameters = separatorPosition < 0 ? null : probeInfo.substring(separatorPosition + 1);
-
-        MediaContainerProbe probe = containerRegistry.find(probeName);
-        if (probe != null) {
-            return new MediaContainerDescriptor(probe, parameters);
-        }
-
-        return null;
+    @Throws(IOException::class)
+    protected fun decodeTrackFactory(input: DataInput): MediaContainerDescriptor? {
+        val probeInfo = input.readUTF()
+        val separatorPosition = probeInfo.indexOf(PARAMETERS_SEPARATOR)
+        val probeName = if (separatorPosition < 0) probeInfo else probeInfo.substring(0, separatorPosition)
+        val parameters = if (separatorPosition < 0) null else probeInfo.substring(separatorPosition + 1)
+        val probe = containerRegistry.find(probeName)
+        return probe?.let { MediaContainerDescriptor(it, parameters) }
     }
 }

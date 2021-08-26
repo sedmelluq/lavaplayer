@@ -289,9 +289,9 @@ public class PersistentHttpStream extends SeekableInputStream implements AutoClo
     }
 
     private AudioTrackInfoProvider createIceCastHeaderProvider() {
-        AudioTrackInfoBuilder builder = AudioTrackInfoBuilder.empty()
-            .setTitle(getHeaderValue(currentResponse, "icy-description"))
-            .setAuthor(getHeaderValue(currentResponse, "icy-name"));
+        AudioTrackInfoBuilder builder = AudioTrackInfoBuilder.empty();
+        builder.setTitle(getHeaderValue(currentResponse, "icy-description"));
+        builder.setAuthor(getHeaderValue(currentResponse, "icy-name"));
 
         if (builder.getTitle() == null) {
             builder.setTitle(getHeaderValue(currentResponse, "icy-url"));

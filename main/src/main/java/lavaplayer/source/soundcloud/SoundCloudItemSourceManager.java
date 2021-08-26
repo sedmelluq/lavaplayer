@@ -117,7 +117,7 @@ public class SoundCloudItemSourceManager implements ItemSourceManager, HttpConfi
         AudioItem track = processAsSingleTrack(reference);
 
         if (track == null) {
-            track = playlistLoader.load(reference.identifier, httpInterfaceManager, this::buildTrackFromInfo);
+            track = playlistLoader.load(reference.getIdentifier(), httpInterfaceManager, this::buildTrackFromInfo);
         }
 
         if (track == null) {
@@ -173,7 +173,7 @@ public class SoundCloudItemSourceManager implements ItemSourceManager, HttpConfi
     }
 
     private AudioTrack processAsSingleTrack(AudioReference reference) {
-        String url = SoundCloudHelper.nonMobileUrl(reference.identifier);
+        String url = SoundCloudHelper.nonMobileUrl(reference.getIdentifier());
 
         Matcher trackUrlMatcher = trackUrlPattern.matcher(url);
         if (trackUrlMatcher.matches() && !"likes".equals(trackUrlMatcher.group(2))) {
@@ -194,7 +194,7 @@ public class SoundCloudItemSourceManager implements ItemSourceManager, HttpConfi
     }
 
     private AudioItem processAsLikedTracks(AudioReference reference) {
-        String url = SoundCloudHelper.nonMobileUrl(reference.identifier);
+        String url = SoundCloudHelper.nonMobileUrl(reference.getIdentifier());
 
         if (likedUrlPattern.matcher(url).matches()) {
             return loadFromLikedTracks(url);
@@ -284,12 +284,12 @@ public class SoundCloudItemSourceManager implements ItemSourceManager, HttpConfi
     }
 
     private AudioItem processAsSearchQuery(AudioReference reference) {
-        if (reference.identifier.startsWith(SEARCH_PREFIX)) {
-            if (reference.identifier.startsWith(SEARCH_PREFIX_DEFAULT)) {
-                return loadSearchResult(reference.identifier.substring(SEARCH_PREFIX_DEFAULT.length()).trim(), 0, DEFAULT_SEARCH_RESULTS);
+        if (reference.getIdentifier().startsWith(SEARCH_PREFIX)) {
+            if (reference.getIdentifier().startsWith(SEARCH_PREFIX_DEFAULT)) {
+                return loadSearchResult(reference.getIdentifier().substring(SEARCH_PREFIX_DEFAULT.length()).trim(), 0, DEFAULT_SEARCH_RESULTS);
             }
 
-            Matcher searchMatcher = searchPattern.matcher(reference.identifier);
+            Matcher searchMatcher = searchPattern.matcher(reference.getIdentifier());
 
             if (searchMatcher.matches()) {
                 return loadSearchResult(searchMatcher.group(3), Integer.parseInt(searchMatcher.group(1)), Integer.parseInt(searchMatcher.group(2)));

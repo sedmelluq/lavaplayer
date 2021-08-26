@@ -35,7 +35,7 @@ public class LocalItemSourceManager extends ProbingItemSourceManager {
 
     @Override
     public AudioItem loadItem(ItemLoader itemLoader, AudioReference reference) {
-        File file = new File(reference.identifier);
+        File file = new File(reference.getIdentifier());
 
         if (file.exists() && file.isFile() && file.canRead()) {
             return handleLoadResult(detectContainerForFile(reference, file));

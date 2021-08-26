@@ -39,7 +39,7 @@ public class OggContainerProbe implements MediaContainerProbe {
             return null;
         }
 
-        log.debug("Track {} is an OGG stream.", reference.identifier);
+        log.debug("Track {} is an OGG stream.", reference.getIdentifier());
 
         AudioTrackInfoBuilder infoBuilder = AudioTrackInfoBuilder.create(reference, stream).setIsStream(true);
 

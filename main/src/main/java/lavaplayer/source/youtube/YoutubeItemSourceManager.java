@@ -197,7 +197,7 @@ public class YoutubeItemSourceManager implements ItemSourceManager, HttpConfigur
     }
 
     private AudioItem loadItemOnce(AudioReference reference) {
-        return linkRouter.route(reference.identifier, loadingRoutes);
+        return linkRouter.route(reference.getIdentifier(), loadingRoutes);
     }
 
     /**

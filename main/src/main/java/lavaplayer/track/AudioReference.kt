@@ -1,73 +1,46 @@
-package lavaplayer.track;
+package lavaplayer.track
 
-import lavaplayer.container.MediaContainerDescriptor;
-import lavaplayer.track.info.AudioTrackInfoProvider;
+import kotlin.jvm.JvmOverloads
+import lavaplayer.container.MediaContainerDescriptor
+import lavaplayer.track.AudioItem
+import lavaplayer.track.info.AudioTrackInfoProvider
+import lavaplayer.track.AudioReference
 
 /**
  * An audio item which refers to an unloaded audio item. Source managers can return this to indicate a redirection,
  * which means that the item referred to in it is loaded instead.
+ *
+ * @param identifier The identifier of the other item.
+ * @param title      The title of the other item, if known.
  */
-public class AudioReference implements AudioItem, AudioTrackInfoProvider {
-    public static final AudioReference NO_TRACK = new AudioReference(null, null, null);
-
+class AudioReference @JvmOverloads constructor(
     /**
      * The identifier of the other item.
      */
-    public final String identifier;
+    @JvmField override val identifier: String?,
     /**
      * The title of the other item, if known.
      */
-    public final String title;
+    @JvmField override val title: String?,
     /**
      * Known probe and probe settings of the item to be loaded.
      */
-    public final MediaContainerDescriptor containerDescriptor;
-
-    /**
-     * @param identifier The identifier of the other item.
-     * @param title      The title of the other item, if known.
-     */
-    public AudioReference(String identifier, String title) {
-        this(identifier, title, null);
+    @JvmField val containerDescriptor: MediaContainerDescriptor? = null
+) : AudioItem, AudioTrackInfoProvider {
+    companion object {
+        @JvmField
+        val NO_TRACK = AudioReference(null, null, null)
     }
 
-    /**
-     * @param identifier The identifier of the other item.
-     * @param title      The title of the other item, if known.
-     */
-    public AudioReference(String identifier, String title, MediaContainerDescriptor containerDescriptor) {
-        this.identifier = identifier;
-        this.title = title;
-        this.containerDescriptor = containerDescriptor;
-    }
+    override val author: String?
+        get() = null
 
-    @Override
-    public String getTitle() {
-        return title;
-    }
+    override val length: Long?
+        get() = null
 
-    @Override
-    public String getAuthor() {
-        return null;
-    }
+    override val artworkUrl: String?
+        get() = null
 
-    @Override
-    public Long getLength() {
-        return null;
-    }
-
-    @Override
-    public String getIdentifier() {
-        return identifier;
-    }
-
-    @Override
-    public String getUri() {
-        return identifier;
-    }
-
-    @Override
-    public String getArtworkUrl() {
-        return null;
-    }
+    override val uri: String?
+        get() = identifier
 }

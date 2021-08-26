@@ -58,7 +58,7 @@ public class M3uPlaylistContainerProbe implements MediaContainerProbe {
             return null;
         }
 
-        log.debug("Track {} is an M3U playlist file.", reference.identifier);
+        log.debug("Track {} is an M3U playlist file.", reference.getIdentifier());
         String[] lines = DataFormatTools.streamToLines(inputStream, StandardCharsets.UTF_8);
 
         String hlsStreamUrl = HlsStreamSegmentUrlProvider.findHlsEntryUrl(lines);
@@ -68,7 +68,8 @@ public class M3uPlaylistContainerProbe implements MediaContainerProbe {
             AudioReference httpReference = HttpItemSourceManager.getAsHttpReference(reference);
 
             if (httpReference != null) {
-                return supportedFormat(this, TYPE_HLS_OUTER, infoBuilder.setIdentifier(httpReference.identifier).build());
+                infoBuilder.setIdentifier(httpReference.getIdentifier());
+                return supportedFormat(this, TYPE_HLS_OUTER, infoBuilder.build());
             } else {
                 return refer(this, new AudioReference(hlsStreamUrl, infoBuilder.getTitle(),
                     new MediaContainerDescriptor(this, TYPE_HLS_INNER)));

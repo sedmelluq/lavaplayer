@@ -110,7 +110,7 @@ public final class RotatingIpRoutePlanner extends AbstractRoutePlanner {
         }
 
         if (currentAddress == null && index.get().compareTo(BigInteger.ZERO) > 0) {
-            currentAddress = ipBlock.getAddressAtIndex(index.get().subtract(BigInteger.ONE));
+            currentAddress = ipBlock.getAddressAtIndex(index.get());
         }
         next.set(false);
         return new Pair<>(currentAddress, remoteAddress);
@@ -146,7 +146,7 @@ public final class RotatingIpRoutePlanner extends AbstractRoutePlanner {
                 rotateIndex.accumulateAndGet(Ipv6Block.BLOCK64_IPS.add(BigInteger.valueOf(random.nextLong())), BigInteger::add);
             }
             try {
-                localAddress = ipBlock.getAddressAtIndex(index.get().subtract(BigInteger.ONE));
+                localAddress = ipBlock.getAddressAtIndex(index.get());
             } catch (final Exception ex) {
                 index.set(BigInteger.ZERO);
                 localAddress = null;

@@ -54,12 +54,12 @@ public class VimeoItemSourceManager implements ItemSourceManager, HttpConfigurab
 
     @Override
     public AudioItem loadItem(ItemLoader itemLoader, AudioReference reference) {
-        if (!trackUrlPattern.matcher(reference.identifier).matches()) {
+        if (!trackUrlPattern.matcher(reference.getIdentifier()).matches()) {
             return null;
         }
 
         try (HttpInterface httpInterface = httpInterfaceManager.get()) {
-            return loadFromTrackPage(httpInterface, reference.identifier);
+            return loadFromTrackPage(httpInterface, reference.getIdentifier());
         } catch (IOException e) {
             throw new FriendlyException("Loading Vimeo track information failed.", SUSPICIOUS, e);
         }

@@ -11,20 +11,13 @@ import org.apache.http.client.protocol.HttpClientContext
 import org.slf4j.LoggerFactory
 import java.net.BindException
 
-class IpRotatorFilter(
+class IpRotatorFilter @JvmOverloads constructor(
     delegate: HttpContextFilter?,
     private val isSearch: Boolean,
     private val routePlanner: AbstractRoutePlanner,
     private val retryLimit: Int,
     retryCountAttribute: String = RETRY_COUNT_ATTRIBUTE
 ) : AbstractHttpContextFilter(delegate) {
-    constructor(
-        mainDelegate: HttpContextFilter?,
-        isSearch: Boolean,
-        routePlanner: AbstractRoutePlanner,
-        retryLimit: Int
-    ) : this(mainDelegate, isSearch, routePlanner, retryLimit, RETRY_COUNT_ATTRIBUTE)
-
     companion object {
         const val RETRY_COUNT_ATTRIBUTE = "retry-counter"
 

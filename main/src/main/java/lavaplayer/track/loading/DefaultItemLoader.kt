@@ -33,7 +33,7 @@ open class DefaultItemLoader(override val reference: AudioReference, private val
 
     private fun executorQueueFull(e: Throwable): ItemLoadResult.LoadFailed {
         val exception = FriendlyException("Cannot queue loading a track, queue is full.", FriendlyException.Severity.SUSPICIOUS, e)
-        ExceptionTools.log(log, exception, "queueing item ${reference.identifier}")
+        ExceptionTools.log(log, exception, "queueing item ${reference.uri}")
         return ItemLoadResult.LoadFailed(exception)
     }
 
@@ -54,14 +54,14 @@ open class DefaultItemLoader(override val reference: AudioReference, private val
         try {
             val result = loadReference(itemWasLoaded)
             if (result is ItemLoadResult.NoMatches) {
-                log.debug("No matches found for identifier ${reference.identifier}")
+                log.debug("No matches found for identifier ${reference.uri}")
             }
 
             resultHandler?.handle(result)
             result
         } catch (t: Throwable) {
             val exception = ExceptionTools.wrapUnfriendlyExceptions("Something went wrong when looking up the track", FriendlyException.Severity.FAULT, t)
-            ExceptionTools.log(log, exception, "loading item ${reference.identifier}")
+            ExceptionTools.log(log, exception, "loading item ${reference.uri}")
             ItemLoadResult.LoadFailed(exception)
         } finally {
             messages.cancel("Item loader has finished")
@@ -71,7 +71,7 @@ open class DefaultItemLoader(override val reference: AudioReference, private val
     private fun loadReference(itemWasLoaded: AtomicBoolean): ItemLoadResult {
         var currentReference = reference
         var redirects = 0
-        while (redirects < MAXIMUM_LOAD_REDIRECTS && currentReference.identifier != null) {
+        while (redirects < MAXIMUM_LOAD_REDIRECTS && currentReference.uri != null) {
             val item = loadReference(currentReference, itemWasLoaded)
                 ?: return ItemLoadResult.NoMatches
 
@@ -98,7 +98,7 @@ open class DefaultItemLoader(override val reference: AudioReference, private val
 
             if (item !is AudioReference) {
                 val name = "audio track${" collection".takeIf { item is AudioTrackCollection } ?: ""}"
-                log.debug("Loaded an $name with identifier ${reference.identifier} using ${sourceManager::class.qualifiedName}.")
+                log.debug("Loaded an $name with identifier ${reference.uri} using ${sourceManager::class.qualifiedName}.")
                 itemWasLoaded.set(true)
             }
 

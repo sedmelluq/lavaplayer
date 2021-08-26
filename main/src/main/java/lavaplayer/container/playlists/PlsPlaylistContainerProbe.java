@@ -31,8 +31,8 @@ public class PlsPlaylistContainerProbe implements MediaContainerProbe {
 
     private static final int[] PLS_HEADER = new int[]{'[', -1, 'l', 'a', 'y', 'l', 'i', 's', 't', ']'};
 
-    private static Pattern filePattern = Pattern.compile("\\s*File([0-9]+)=((?:https?|icy)://.*)\\s*");
-    private static Pattern titlePattern = Pattern.compile("\\s*Title([0-9]+)=(.*)\\s*");
+    private static final Pattern FILE_PATTERN = Pattern.compile("\\s*File([0-9]+)=((?:https?|icy)://.*)\\s*");
+    private static final Pattern TITLE_PATTERN = Pattern.compile("\\s*Title([0-9]+)=(.*)\\s*");
 
     @Override
     public String getName() {
@@ -50,7 +50,7 @@ public class PlsPlaylistContainerProbe implements MediaContainerProbe {
             return null;
         }
 
-        log.debug("Track {} is a PLS playlist file.", reference.identifier);
+        log.debug("Track {} is a PLS playlist file.", reference.getIdentifier());
         return loadFromLines(DataFormatTools.streamToLines(inputStream, StandardCharsets.UTF_8));
     }
 
@@ -59,14 +59,14 @@ public class PlsPlaylistContainerProbe implements MediaContainerProbe {
         Map<String, String> trackTitles = new HashMap<>();
 
         for (String line : lines) {
-            Matcher fileMatcher = filePattern.matcher(line);
+            Matcher fileMatcher = FILE_PATTERN.matcher(line);
 
             if (fileMatcher.matches()) {
                 trackFiles.put(fileMatcher.group(1), fileMatcher.group(2));
                 continue;
             }
 
-            Matcher titleMatcher = titlePattern.matcher(line);
+            Matcher titleMatcher = TITLE_PATTERN.matcher(line);
             if (titleMatcher.matches()) {
                 trackTitles.put(titleMatcher.group(1), titleMatcher.group(2));
             }

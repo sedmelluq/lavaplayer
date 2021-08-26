@@ -1,36 +1,36 @@
-package lavaplayer.track.info;
+package lavaplayer.track.info
 
 /**
  * Provider for audio track info.
  */
-public interface AudioTrackInfoProvider {
+interface AudioTrackInfoProvider {
     /**
-     * @return Track title, or <code>null</code> if this provider does not know it.
+     * @return Track title, or `null` if this provider does not know it.
      */
-    String getTitle();
+    val title: String?
 
     /**
-     * @return Track author, or <code>null</code> if this provider does not know it.
+     * @return Track author, or `null` if this provider does not know it.
      */
-    String getAuthor();
+    val author: String?
 
     /**
-     * @return Track length in milliseconds, or <code>null</code> if this provider does not know it.
+     * @return Track length in milliseconds, or `null` if this provider does not know it.
      */
-    Long getLength();
+    val length: Long?
 
     /**
-     * @return Track identifier, or <code>null</code> if this provider does not know it.
+     * @return Track identifier, or `null` if this provider does not know it.
      */
-    String getIdentifier();
+    val identifier: String?
 
     /**
-     * @return Track URI, or <code>null</code> if this provider does not know it.
+     * @return Track URI, or `null` if this provider does not know it.
      */
-    String getUri();
+    val uri: String?
 
     /**
-     * @return Track Artwork URL, or <code>null</code> if this provider does not know it.
+     * @return Track Artwork URL, or `null` if this provider does not know it.
      */
-    String getArtworkUrl();
+    val artworkUrl: String?
 }

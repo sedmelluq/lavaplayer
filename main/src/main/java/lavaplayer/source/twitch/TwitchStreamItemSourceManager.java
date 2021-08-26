@@ -89,7 +89,7 @@ public class TwitchStreamItemSourceManager implements ItemSourceManager, HttpCon
 
     @Override
     public AudioItem loadItem(ItemLoader itemLoader, AudioReference reference) {
-        String streamName = getChannelIdentifierFromUrl(reference.identifier);
+        String streamName = getChannelIdentifierFromUrl(reference.getIdentifier());
         if (streamName == null) {
             return null;
         }
@@ -136,9 +136,9 @@ public class TwitchStreamItemSourceManager implements ItemSourceManager, HttpCon
                 status,
                 streamName,
                 Units.DURATION_MS_UNKNOWN,
-                reference.identifier,
+                reference.getIdentifier(),
                 true,
-                reference.identifier,
+                reference.getIdentifier(),
                 thumbnail
             ), this);
         }

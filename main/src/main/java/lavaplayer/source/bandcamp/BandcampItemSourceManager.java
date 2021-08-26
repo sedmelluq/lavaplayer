@@ -58,7 +58,7 @@ public class BandcampItemSourceManager implements ItemSourceManager, HttpConfigu
 
     @Override
     public AudioItem loadItem(ItemLoader itemLoader, AudioReference reference) {
-        UrlInfo urlInfo = parseUrl(reference.identifier);
+        UrlInfo urlInfo = parseUrl(reference.getIdentifier());
 
         if (urlInfo != null) {
             if (urlInfo.isAlbum) {

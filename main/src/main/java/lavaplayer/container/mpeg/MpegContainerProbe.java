@@ -42,7 +42,7 @@ public class MpegContainerProbe implements MediaContainerProbe {
             return null;
         }
 
-        log.debug("Track {} is an MP4 file.", reference.identifier);
+        log.debug("Track {} is an MP4 file.", reference.getIdentifier());
 
         MpegFileLoader file = new MpegFileLoader(inputStream);
         file.parseHeaders();
@@ -60,11 +60,12 @@ public class MpegContainerProbe implements MediaContainerProbe {
             return unsupportedFormat(this, "MP4 file uses an unsupported format.");
         }
 
-        AudioTrackInfo trackInfo = AudioTrackInfoBuilder.create(reference, inputStream)
-            .setTitle(file.getTextMetadata("Title"))
-            .setAuthor(file.getTextMetadata("Artist"))
-            .setLength(fileReader.getDuration())
-            .build();
+        AudioTrackInfo trackInfo = AudioTrackInfoBuilder.create(reference, inputStream, (builder) -> {
+            builder.setTitle(file.getTextMetadata("Title"));
+            builder.setAuthor(file.getTextMetadata("Artist"));
+            builder.setLength(fileReader.getDuration());
+            return null;
+        }).build();
 
         return supportedFormat(this, null, trackInfo);
     }

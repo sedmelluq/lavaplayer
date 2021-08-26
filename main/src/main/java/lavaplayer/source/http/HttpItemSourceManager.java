@@ -56,10 +56,10 @@ public class HttpItemSourceManager extends ProbingItemSourceManager implements H
     }
 
     public static AudioReference getAsHttpReference(AudioReference reference) {
-        if (reference.identifier.startsWith("https://") || reference.identifier.startsWith("http://")) {
+        if (reference.getUri().startsWith("https://") || reference.getIdentifier().startsWith("http://")) {
             return reference;
-        } else if (reference.identifier.startsWith("icy://")) {
-            return new AudioReference("http://" + reference.identifier.substring(6), reference.title);
+        } else if (reference.getUri().startsWith("icy://")) {
+            return new AudioReference("http://" + reference.getIdentifier().substring(6), reference.title);
         }
         return null;
     }
@@ -118,9 +118,9 @@ public class HttpItemSourceManager extends ProbingItemSourceManager implements H
     }
 
     private MediaContainerDetectionResult detectContainerWithClient(HttpInterface httpInterface, AudioReference reference) throws IOException {
-        try (PersistentHttpStream inputStream = new PersistentHttpStream(httpInterface, new URI(reference.identifier), Units.CONTENT_LENGTH_UNKNOWN)) {
+        try (PersistentHttpStream inputStream = new PersistentHttpStream(httpInterface, new URI(reference.getIdentifier()), Units.CONTENT_LENGTH_UNKNOWN)) {
             int statusCode = inputStream.checkStatusCode();
-            String redirectUrl = HttpClientTools.getRedirectLocation(reference.identifier, inputStream.getCurrentResponse());
+            String redirectUrl = HttpClientTools.getRedirectLocation(reference.getIdentifier(), inputStream.getCurrentResponse());
 
             if (redirectUrl != null) {
                 return refer(null, new AudioReference(redirectUrl, null));

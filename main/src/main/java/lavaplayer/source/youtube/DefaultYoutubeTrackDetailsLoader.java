@@ -133,6 +133,13 @@ public class DefaultYoutubeTrackDetailsLoader implements YoutubeTrackDetailsLoad
         }
     }
 
+    protected enum InfoStatus {
+        INFO_PRESENT,
+        REQUIRES_LOGIN,
+        DOES_NOT_EXIST,
+        CONTENT_CHECK_REQUIRED
+    }
+
     protected String getUnplayableReason(JsonBrowser statusBlock) {
         JsonBrowser playerErrorMessage = statusBlock.get("errorScreen").get("playerErrorMessageRenderer");
         String unplayableReason = statusBlock.get("reason").text();
@@ -255,13 +262,6 @@ public class DefaultYoutubeTrackDetailsLoader implements YoutubeTrackDetailsLoad
 
             return data.withPlayerScriptUrl(fetchedPlayerScript);
         }
-    }
-
-    protected enum InfoStatus {
-        INFO_PRESENT,
-        REQUIRES_LOGIN,
-        DOES_NOT_EXIST,
-        CONTENT_CHECK_REQUIRED
     }
 
     protected static class CachedPlayerScript {

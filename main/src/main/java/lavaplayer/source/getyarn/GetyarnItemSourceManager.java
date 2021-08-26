@@ -52,7 +52,7 @@ public class GetyarnItemSourceManager implements HttpConfigurable, ItemSourceMan
 
     @Override
     public AudioItem loadItem(ItemLoader itemLoader, AudioReference reference) {
-        final Matcher m = GETYARN_REGEX.matcher(reference.identifier);
+        final Matcher m = GETYARN_REGEX.matcher(reference.getIdentifier());
 
         if (!m.matches()) {
             return null;
@@ -100,17 +100,17 @@ public class GetyarnItemSourceManager implements HttpConfigurable, ItemSourceMan
     }
 
     private AudioTrack extractVideoUrlFromPage(AudioReference reference) {
-        try (final CloseableHttpResponse response = getHttpInterface().execute(new HttpGet(reference.identifier))) {
+        try (final CloseableHttpResponse response = getHttpInterface().execute(new HttpGet(reference.getIdentifier()))) {
             final String html = IOUtils.toString(response.getEntity().getContent(), StandardCharsets.UTF_8);
             final Document document = Jsoup.parse(html);
 
-            final AudioTrackInfo trackInfo = AudioTrackInfoBuilder.empty()
-                .setUri(reference.identifier)
-                .setAuthor("Unknown")
-                .setIsStream(false)
-                .setIdentifier(document.selectFirst("meta[property=og:video:secure_url]").attr("content"))
-                .setTitle(document.selectFirst("meta[property=og:title]").attr("content"))
-                .build();
+            final AudioTrackInfo trackInfo = AudioTrackInfoBuilder.invoke(builder -> {
+                builder.setUri(reference.getUri());
+                builder.setAuthor("Unknown");
+                builder.setIdentifier(document.selectFirst("meta[property=og:video:secure_url]").attr("content"));
+                builder.setTitle(document.selectFirst("meta[property=og:title]").attr("content"));
+                return null;
+            });
 
             return createTrack(trackInfo);
         } catch (IOException e) {

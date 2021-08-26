@@ -39,7 +39,7 @@ public class WavContainerProbe implements MediaContainerProbe {
             return null;
         }
 
-        log.debug("Track {} is a WAV file.", reference.identifier);
+        log.debug("Track {} is a WAV file.", reference.getIdentifier());
 
         WavFileInfo fileInfo = new WavFileLoader(inputStream).parseHeaders();
 
@@ -47,9 +47,9 @@ public class WavContainerProbe implements MediaContainerProbe {
             defaultOnNull(reference.title, UNKNOWN_TITLE),
             UNKNOWN_ARTIST,
             fileInfo.getDuration(),
-            reference.identifier,
+            reference.getIdentifier(),
             false,
-            reference.identifier,
+            reference.getIdentifier(),
             null
         );
 
