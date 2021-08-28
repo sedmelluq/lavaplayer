@@ -1,52 +1,43 @@
-package lavaplayer.container;
+package lavaplayer.container
 
-import lavaplayer.container.adts.AdtsContainerProbe;
-import lavaplayer.container.flac.FlacContainerProbe;
-import lavaplayer.container.matroska.MatroskaContainerProbe;
-import lavaplayer.container.mp3.Mp3ContainerProbe;
-import lavaplayer.container.mpeg.MpegContainerProbe;
-import lavaplayer.container.mpegts.MpegAdtsContainerProbe;
-import lavaplayer.container.ogg.OggContainerProbe;
-import lavaplayer.container.playlists.M3uPlaylistContainerProbe;
-import lavaplayer.container.playlists.PlainPlaylistContainerProbe;
-import lavaplayer.container.playlists.PlsPlaylistContainerProbe;
-import lavaplayer.container.wav.WavContainerProbe;
-
-import java.util.ArrayList;
-import java.util.List;
+import lavaplayer.container.adts.AdtsContainerProbe
+import lavaplayer.container.flac.FlacContainerProbe
+import lavaplayer.container.matroska.MatroskaContainerProbe
+import lavaplayer.container.mp3.Mp3ContainerProbe
+import lavaplayer.container.mpeg.MpegContainerProbe
+import lavaplayer.container.mpegts.MpegAdtsContainerProbe
+import lavaplayer.container.ogg.OggContainerProbe
+import lavaplayer.container.playlists.M3uPlaylistContainerProbe
+import lavaplayer.container.playlists.PlainPlaylistContainerProbe
+import lavaplayer.container.playlists.PlsPlaylistContainerProbe
+import lavaplayer.container.wav.WavContainerProbe
 
 /**
  * Lists currently supported containers and their probes.
  */
-public enum MediaContainer {
-    WAV(new WavContainerProbe()),
-    MKV(new MatroskaContainerProbe()),
-    MP4(new MpegContainerProbe()),
-    FLAC(new FlacContainerProbe()),
-    OGG(new OggContainerProbe()),
-    M3U(new M3uPlaylistContainerProbe()),
-    PLS(new PlsPlaylistContainerProbe()),
-    PLAIN(new PlainPlaylistContainerProbe()),
-    MP3(new Mp3ContainerProbe()),
-    ADTS(new AdtsContainerProbe()),
-    MPEGADTS(new MpegAdtsContainerProbe());
-
+enum class MediaContainer(
     /**
      * The probe used to detect files using this container and create the audio tracks for them.
      */
-    public final MediaContainerProbe probe;
+    val probe: MediaContainerProbe
+) {
+    WAV(WavContainerProbe()),
+    MKV(MatroskaContainerProbe()),
+    MP4(MpegContainerProbe()),
+    FLAC(FlacContainerProbe()),
+    OGG(OggContainerProbe()),
+    M3U(M3uPlaylistContainerProbe()),
+    PLS(PlsPlaylistContainerProbe()),
+    PLAIN(PlainPlaylistContainerProbe()),
+    MP3(Mp3ContainerProbe()),
+    ADTS(AdtsContainerProbe()),
+    MPEGADTS(MpegAdtsContainerProbe());
 
-    MediaContainer(MediaContainerProbe probe) {
-        this.probe = probe;
-    }
-
-    public static List<MediaContainerProbe> asList() {
-        List<MediaContainerProbe> probes = new ArrayList<>();
-
-        for (MediaContainer container : MediaContainer.class.getEnumConstants()) {
-            probes.add(container.probe);
+    companion object {
+        fun asList(): MutableList<MediaContainerProbe> {
+            return values()
+                .map { it.probe }
+                .toMutableList()
         }
-
-        return probes;
     }
 }

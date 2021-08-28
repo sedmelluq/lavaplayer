@@ -162,7 +162,7 @@ public class YoutubeSignatureCipherManager implements YoutubeSignatureResolver {
                 try (CloseableHttpResponse response = httpInterface.execute(new HttpGet(parseTokenScriptUrl(cipherScriptUrl)))) {
                     validateResponseCode(cipherScriptUrl, response);
 
-                    cipherKey = extractTokensFromScript(IOUtils.toString(response.getEntity().getContent(), "UTF-8"), cipherScriptUrl);
+                    cipherKey = extractTokensFromScript(IOUtils.toString(response.getEntity().getContent(), StandardCharsets.UTF_8), cipherScriptUrl);
                     cipherCache.put(cipherScriptUrl, cipherKey);
                 }
             }

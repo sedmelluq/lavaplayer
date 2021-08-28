@@ -1,71 +1,41 @@
-package lavaplayer.format;
+package lavaplayer.format
 
-import lavaplayer.format.transcoder.AudioChunkDecoder;
-import lavaplayer.format.transcoder.AudioChunkEncoder;
-import lavaplayer.format.transcoder.OpusChunkDecoder;
-import lavaplayer.format.transcoder.OpusChunkEncoder;
-import lavaplayer.manager.AudioConfiguration;
+import lavaplayer.format.transcoder.AudioChunkDecoder
+import lavaplayer.format.transcoder.OpusChunkDecoder
+import lavaplayer.manager.AudioConfiguration
+import lavaplayer.format.transcoder.AudioChunkEncoder
+import lavaplayer.format.transcoder.OpusChunkEncoder
 
 /**
- * An {@link AudioDataFormat} for OPUS.
+ * An [AudioDataFormat] for OPUS.
+ *
+ * @param channelCount     Number of channels.
+ * @param sampleRate       Sample rate (frequency).
+ * @param chunkSampleCount Number of samples in one chunk.
  */
-public class OpusAudioDataFormat extends AudioDataFormat {
-    public static final String CODEC_NAME = "OPUS";
-
-    private static final byte[] SILENT_OPUS_FRAME = new byte[]{(byte) 0xFC, (byte) 0xFF, (byte) 0xFE};
-
-    private final int maximumChunkSize;
-    private final int expectedChunkSize;
-
-    /**
-     * @param channelCount     Number of channels.
-     * @param sampleRate       Sample rate (frequency).
-     * @param chunkSampleCount Number of samples in one chunk.
-     */
-    public OpusAudioDataFormat(int channelCount, int sampleRate, int chunkSampleCount) {
-        super(channelCount, sampleRate, chunkSampleCount);
-
-        this.maximumChunkSize = 32 + 1536 * chunkSampleCount / 960;
-        this.expectedChunkSize = 32 + 512 * chunkSampleCount / 960;
+class OpusAudioDataFormat(channelCount: Int, sampleRate: Int, chunkSampleCount: Int) : AudioDataFormat(channelCount, sampleRate, chunkSampleCount) {
+    companion object {
+        const val CODEC_NAME = "OPUS"
+        private val SILENT_OPUS_FRAME = byteArrayOf(0xFC.toByte(), 0xFF.toByte(), 0xFE.toByte())
     }
 
-    @Override
-    public String codecName() {
-        return CODEC_NAME;
+    override val codecName: String = CODEC_NAME
+    override val maximumChunkSize: Int = 32 + 1536 * chunkSampleCount / 960
+    override val expectedChunkSize: Int = 32 + 512 * chunkSampleCount / 960
+
+    override fun silenceBytes(): ByteArray {
+        return SILENT_OPUS_FRAME
     }
 
-    @Override
-    public byte[] silenceBytes() {
-        return SILENT_OPUS_FRAME;
+    override fun createDecoder(): AudioChunkDecoder {
+        return OpusChunkDecoder(this)
     }
 
-    @Override
-    public int expectedChunkSize() {
-        return expectedChunkSize;
+    override fun createEncoder(configuration: AudioConfiguration): AudioChunkEncoder {
+        return OpusChunkEncoder(configuration, this)
     }
 
-    @Override
-    public int maximumChunkSize() {
-        return maximumChunkSize;
-    }
-
-    @Override
-    public AudioChunkDecoder createDecoder() {
-        return new OpusChunkDecoder(this);
-    }
-
-    @Override
-    public AudioChunkEncoder createEncoder(AudioConfiguration configuration) {
-        return new OpusChunkEncoder(configuration, this);
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        return this == o || o != null && getClass() == o.getClass() && super.equals(o);
-    }
-
-    @Override
-    public int hashCode() {
-        return super.hashCode();
+    override fun equals(other: Any?): Boolean {
+        return this === other || other != null && javaClass == other.javaClass && super.equals(other)
     }
 }

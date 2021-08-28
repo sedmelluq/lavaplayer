@@ -1,7 +1,7 @@
-package lavaplayer.manager.event;
+package lavaplayer.manager.event
 
-import lavaplayer.manager.AudioPlayer;
-import lavaplayer.track.AudioTrack;
+import lavaplayer.manager.AudioPlayer
+import lavaplayer.track.AudioTrack
 
 /**
  * Event that is fired when a track starts playing.

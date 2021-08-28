@@ -1,18 +1,16 @@
 package lavaplayer.source.soundcloud
 
+import lavaplayer.container.mp3.Mp3AudioTrack
 import lavaplayer.source.soundcloud.SoundCloudHelper.loadPlaybackUrl
+import lavaplayer.tools.io.HttpClientTools
+import lavaplayer.tools.io.HttpInterface
+import lavaplayer.tools.io.PersistentHttpStream
+import lavaplayer.track.AudioTrack
 import lavaplayer.track.AudioTrackInfo
 import lavaplayer.track.DelegatedAudioTrack
-import kotlin.Throws
 import lavaplayer.track.playback.LocalAudioTrackExecutor
-import lavaplayer.tools.io.HttpInterface
-import lavaplayer.track.AudioTrack
-import lavaplayer.tools.io.PersistentHttpStream
-import lavaplayer.tools.io.HttpClientTools
-import java.io.IOException
-import lavaplayer.container.mp3.Mp3AudioTrack
 import org.slf4j.LoggerFactory
-import java.lang.Exception
+import java.io.IOException
 import java.net.URI
 
 /**
@@ -37,7 +35,12 @@ class SoundCloudAudioTrack(
     }
 
     @Throws(Exception::class)
-    private fun playFromIdentifier(httpInterface: HttpInterface, identifier: String, recursion: Boolean, localExecutor: LocalAudioTrackExecutor) {
+    private fun playFromIdentifier(
+        httpInterface: HttpInterface,
+        identifier: String,
+        recursion: Boolean,
+        localExecutor: LocalAudioTrackExecutor
+    ) {
         val m3uInfo = sourceManager.formatHandler.getM3uInfo(identifier)
         if (m3uInfo != null) {
             processDelegate(SoundCloudM3uAudioTrack(info, httpInterface, m3uInfo), localExecutor)

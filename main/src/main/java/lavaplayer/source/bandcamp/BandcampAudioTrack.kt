@@ -1,19 +1,17 @@
 package lavaplayer.source.bandcamp
 
+import lavaplayer.container.mp3.Mp3AudioTrack
+import lavaplayer.tools.io.HttpClientTools
+import lavaplayer.tools.io.HttpInterface
+import lavaplayer.tools.io.PersistentHttpStream
+import lavaplayer.track.AudioTrack
 import lavaplayer.track.AudioTrackInfo
 import lavaplayer.track.DelegatedAudioTrack
-import kotlin.Throws
 import lavaplayer.track.playback.LocalAudioTrackExecutor
-import lavaplayer.tools.io.PersistentHttpStream
-import lavaplayer.container.mp3.Mp3AudioTrack
-import java.io.IOException
-import lavaplayer.tools.io.HttpInterface
-import org.apache.http.client.methods.HttpGet
-import lavaplayer.tools.io.HttpClientTools
-import lavaplayer.track.AudioTrack
 import org.apache.commons.io.IOUtils
+import org.apache.http.client.methods.HttpGet
 import org.slf4j.LoggerFactory
-import java.lang.Exception
+import java.io.IOException
 import java.net.URI
 import java.nio.charset.StandardCharsets
 

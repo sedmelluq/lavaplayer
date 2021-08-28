@@ -7,5 +7,9 @@ import lavaplayer.track.AudioTrackInfo
 import java.util.function.Function
 
 interface TrackCollectionLoader {
-    fun load(identifier: String, httpInterfaceManager: HttpInterfaceManager, trackFactory: Function<AudioTrackInfo, AudioTrack>): AudioTrackCollection
+    fun load(
+        identifier: String,
+        httpInterfaceManager: HttpInterfaceManager,
+        trackFactory: Function<AudioTrackInfo, AudioTrack>
+    ): AudioTrackCollection
 }

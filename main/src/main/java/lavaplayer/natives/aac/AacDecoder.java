@@ -1,8 +1,8 @@
 package lavaplayer.natives.aac;
 
+import lavaplayer.common.natives.NativeResourceHolder;
 import lavaplayer.tools.io.BitStreamWriter;
 import lavaplayer.tools.io.ByteBufferOutputStream;
-import lavaplayer.common.natives.NativeResourceHolder;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;

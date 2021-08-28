@@ -3,8 +3,8 @@ package lavaplayer.manager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
-import lavaplayer.track.TrackEncoder
 import lavaplayer.source.SourceRegistry
+import lavaplayer.track.TrackEncoder
 import lavaplayer.track.loader.ItemLoaderFactory
 import org.apache.http.client.config.RequestConfig
 import org.apache.http.impl.client.HttpClientBuilder

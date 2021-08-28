@@ -1,4 +1,4 @@
-package lavaplayer.source.soundcloud;
+package lavaplayer.source.soundcloud
 
 data class DefaultSoundCloudTrackFormat(
     override val trackId: String,

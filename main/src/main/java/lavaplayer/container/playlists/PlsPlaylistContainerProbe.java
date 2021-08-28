@@ -14,6 +14,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -54,7 +55,7 @@ public class PlsPlaylistContainerProbe implements MediaContainerProbe {
         return loadFromLines(DataFormatTools.streamToLines(inputStream, StandardCharsets.UTF_8));
     }
 
-    private MediaContainerDetectionResult loadFromLines(String[] lines) {
+    private MediaContainerDetectionResult loadFromLines(List<String> lines) {
         Map<String, String> trackFiles = new HashMap<>();
         Map<String, String> trackTitles = new HashMap<>();
 

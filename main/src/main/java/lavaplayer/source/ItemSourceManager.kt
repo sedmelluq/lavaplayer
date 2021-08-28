@@ -1,14 +1,13 @@
 package lavaplayer.source
 
-import lavaplayer.track.AudioReference
 import lavaplayer.track.AudioItem
+import lavaplayer.track.AudioReference
 import lavaplayer.track.AudioTrack
-import kotlin.Throws
-import java.io.IOException
-import java.io.DataOutput
 import lavaplayer.track.AudioTrackInfo
 import lavaplayer.track.loader.LoaderState
 import java.io.DataInput
+import java.io.DataOutput
+import java.io.IOException
 
 /**
  * Manager for a source of audio items.

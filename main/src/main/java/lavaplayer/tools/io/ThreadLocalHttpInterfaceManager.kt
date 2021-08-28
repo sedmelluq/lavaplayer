@@ -22,7 +22,8 @@ class ThreadLocalHttpInterfaceManager(
     private val filter = SettableHttpRequestFilter()
 
     init {
-        httpInterfaces = ThreadLocal.withInitial { HttpInterface(getSharedClient(), HttpClientContext.create(), false, filter) }
+        httpInterfaces =
+            ThreadLocal.withInitial { HttpInterface(getSharedClient(), HttpClientContext.create(), false, filter) }
     }
 
     override fun get(): HttpInterface {

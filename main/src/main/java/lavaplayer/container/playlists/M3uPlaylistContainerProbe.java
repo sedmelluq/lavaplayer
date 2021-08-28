@@ -19,6 +19,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 
 import static lavaplayer.container.MediaContainerDetection.checkNextBytes;
 import static lavaplayer.container.MediaContainerDetectionResult.*;
@@ -59,7 +60,7 @@ public class M3uPlaylistContainerProbe implements MediaContainerProbe {
         }
 
         log.debug("Track {} is an M3U playlist file.", reference.identifier);
-        String[] lines = DataFormatTools.streamToLines(inputStream, StandardCharsets.UTF_8);
+        List<String> lines = DataFormatTools.streamToLines(inputStream, StandardCharsets.UTF_8);
 
         String hlsStreamUrl = HlsStreamSegmentUrlProvider.findHlsEntryUrl(lines);
 
@@ -84,7 +85,7 @@ public class M3uPlaylistContainerProbe implements MediaContainerProbe {
         return unsupportedFormat(this, "The playlist file contains no links.");
     }
 
-    private MediaContainerDetectionResult loadSingleItemPlaylist(String[] lines) {
+    private MediaContainerDetectionResult loadSingleItemPlaylist(List<String> lines) {
         String trackTitle = null;
 
         for (String line : lines) {

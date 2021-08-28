@@ -31,7 +31,8 @@ import java.util.regex.Pattern
 /**
  * Audio source manager that implements finding NicoNico tracks based on URL.
  */
-class NicoItemSourceManager(private val email: String, private val password: String) : ItemSourceManager, HttpConfigurable {
+class NicoItemSourceManager(private val email: String, private val password: String) : ItemSourceManager,
+    HttpConfigurable {
     companion object {
         private const val TRACK_URL_REGEX = """^https?://(?:www\.)?nicovideo\.jp/watch/(sm[0-9]+)(?:\?.*)?$"""
         private val trackUrlPattern = Pattern.compile(TRACK_URL_REGEX)
@@ -68,14 +69,22 @@ class NicoItemSourceManager(private val email: String, private val password: Str
 
                     val location = response.getFirstHeader("Location")
                     if (location == null || location.value.contains("message=")) {
-                        throw FriendlyException("Login details for NicoNico are invalid.", FriendlyException.Severity.COMMON, null)
+                        throw FriendlyException(
+                            "Login details for NicoNico are invalid.",
+                            FriendlyException.Severity.COMMON,
+                            null
+                        )
                     }
 
                     loggedIn.set(true)
                 }
             }
         } catch (e: IOException) {
-            throw FriendlyException("Exception when trying to log into NicoNico", FriendlyException.Severity.SUSPICIOUS, e)
+            throw FriendlyException(
+                "Exception when trying to log into NicoNico",
+                FriendlyException.Severity.SUSPICIOUS,
+                e
+            )
         }
     }
 
@@ -125,7 +134,11 @@ class NicoItemSourceManager(private val email: String, private val password: Str
                 }
             }
         } catch (e: IOException) {
-            throw FriendlyException("Error occurred when extracting video info.", FriendlyException.Severity.SUSPICIOUS, e)
+            throw FriendlyException(
+                "Error occurred when extracting video info.",
+                FriendlyException.Severity.SUSPICIOUS,
+                e
+            )
         }
     }
 

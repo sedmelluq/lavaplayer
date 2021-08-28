@@ -1,8 +1,5 @@
 package lavaplayer.filter
 
-import kotlin.Throws
-import java.lang.InterruptedException
-
 /**
  * Audio filter which accepts floating point PCM samples.
  */

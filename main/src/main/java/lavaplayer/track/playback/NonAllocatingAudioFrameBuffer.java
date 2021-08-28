@@ -35,8 +35,8 @@ public class NonAllocatingAudioFrameBuffer extends AbstractAudioFrameBuffer {
         int maximumFrameCount = bufferDuration / (int) format.frameDuration() + 1;
         frames = createFrames(maximumFrameCount, format);
         silentFrame = createSilentFrame(format);
-        this.frameBuffer = new byte[format.expectedChunkSize() * maximumFrameCount];
-        worstCaseFrameCount = frameBuffer.length / format.maximumChunkSize();
+        this.frameBuffer = new byte[format.getExpectedChunkSize() * maximumFrameCount];
+        worstCaseFrameCount = frameBuffer.length / format.getMaximumChunkSize();
         this.stopping = stopping;
     }
 
@@ -74,7 +74,7 @@ public class NonAllocatingAudioFrameBuffer extends AbstractAudioFrameBuffer {
             int bufferHead = frames[firstFrame].getFrameOffset();
             int bufferTail = frames[lastFrame].getFrameEndOffset();
 
-            int maximumFrameSize = format.maximumChunkSize();
+            int maximumFrameSize = format.getMaximumChunkSize();
 
             if (bufferHead < bufferTail) {
                 return (frameBuffer.length - bufferTail) / maximumFrameSize + bufferHead / maximumFrameSize;
@@ -295,7 +295,7 @@ public class NonAllocatingAudioFrameBuffer extends AbstractAudioFrameBuffer {
     private MutableAudioFrame getBridgeFrame() {
         if (bridgeFrame == null) {
             bridgeFrame = new MutableAudioFrame();
-            bridgeFrame.setBuffer(ByteBuffer.allocate(format.maximumChunkSize()));
+            bridgeFrame.setBuffer(ByteBuffer.allocate(format.getMaximumChunkSize()));
         }
 
         return bridgeFrame;

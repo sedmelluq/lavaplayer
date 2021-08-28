@@ -40,7 +40,11 @@ class SoundCloudHttpContextFilter(private val clientIdTracker: SoundCloudClientI
         }
     }
 
-    override fun onRequestResponse(context: HttpClientContext, request: HttpUriRequest, response: HttpResponse): Boolean {
+    override fun onRequestResponse(
+        context: HttpClientContext,
+        request: HttpUriRequest,
+        response: HttpResponse
+    ): Boolean {
         return if (clientIdTracker.isIdFetchContext(context) || retryCounter.retryCountFor(context) >= 1) {
             false
         } else if (response.statusLine.statusCode == HttpStatus.SC_UNAUTHORIZED) {

@@ -90,7 +90,7 @@ public class TwitchStreamSegmentUrlProvider extends M3uStreamSegmentUrlProvider 
         }
     }
 
-    private ChannelStreams loadChannelStreamsInfo(String[] lines) {
+    private ChannelStreams loadChannelStreamsInfo(List<String> lines) {
         List<ChannelStreamInfo> streams = loadChannelStreamsList(lines);
         ExtendedM3uParser.Line twitchInfoLine = null;
 

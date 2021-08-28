@@ -1,5 +1,5 @@
-package lavaplayer.container.ogg;
+package lavaplayer.container.ogg
 
-public interface OggTrackBlueprint {
-    OggTrackHandler loadTrackHandler(OggPacketInputStream stream);
+interface OggTrackBlueprint {
+    fun loadTrackHandler(stream: OggPacketInputStream): OggTrackHandler
 }

@@ -1,4 +1,4 @@
-package lavaplayer.manager.event;
+package lavaplayer.manager.event
 
 /**
  * Listener of audio events.

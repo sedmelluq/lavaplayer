@@ -9,8 +9,6 @@ import lavaplayer.tools.io.HttpClientTools;
 import lavaplayer.tools.io.HttpInterface;
 import lavaplayer.tools.io.HttpInterfaceManager;
 import lavaplayer.track.*;
-import lavaplayer.track.AudioTrackCollectionType;
-import lavaplayer.track.BasicAudioTrackCollection;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.utils.URIBuilder;

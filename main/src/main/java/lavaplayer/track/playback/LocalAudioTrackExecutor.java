@@ -325,7 +325,6 @@ public class LocalAudioTrackExecutor implements AudioTrackExecutor {
 
     private boolean handlePlaybackInterrupt(InterruptedException interruption, SeekExecutor seekExecutor) {
         Thread.interrupted();
-
         if (checkStopped()) {
             markerTracker.trigger(STOPPED);
             return false;
@@ -476,6 +475,7 @@ public class LocalAudioTrackExecutor implements AudioTrackExecutor {
     /**
      * Read executor, see method description
      */
+    @FunctionalInterface
     public interface ReadExecutor {
         /**
          * Reads until interrupted or EOF.
@@ -488,6 +488,7 @@ public class LocalAudioTrackExecutor implements AudioTrackExecutor {
     /**
      * Seek executor, see method description
      */
+    @FunctionalInterface
     public interface SeekExecutor {
         /**
          * Perform a seek to the specified position

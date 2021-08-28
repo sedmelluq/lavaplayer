@@ -1,51 +1,42 @@
-package lavaplayer.tools.io;
+package lavaplayer.tools.io
 
-import java.io.FilterInputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.FilterInputStream
+import kotlin.Throws
+import java.io.IOException
+import java.io.InputStream
 
 /**
  * Input stream wrapper which reads or skips until EOF or requested length.
+ *
+ * @param input Underlying input stream.
  */
-public class GreedyInputStream extends FilterInputStream {
-    /**
-     * @param in Underlying input stream.
-     */
-    public GreedyInputStream(InputStream in) {
-        super(in);
-    }
-
-    @Override
-    public int read(byte[] buffer, int offset, int length) throws IOException {
-        int read = 0;
-
+class GreedyInputStream(input: InputStream) : FilterInputStream(input) {
+    @Throws(IOException::class)
+    override fun read(buffer: ByteArray, offset: Int, length: Int): Int {
+        var read = 0
         while (read < length) {
-            int chunk = in.read(buffer, offset + read, length - read);
+            val chunk = `in`.read(buffer, offset + read, length - read)
             if (chunk == -1) {
-                return read == 0 ? -1 : read;
+                return if (read == 0) -1 else read
             }
-            read += chunk;
+
+            read += chunk
         }
 
-        return read;
+        return read
     }
 
-    @Override
-    public long skip(long maximum) throws IOException {
-        long skipped = 0;
-
+    @Throws(IOException::class)
+    override fun skip(maximum: Long): Long {
+        var skipped: Long = 0
         while (skipped < maximum) {
-            long chunk = in.skip(maximum - skipped);
-            if (chunk == 0) {
-                if (in.read() == -1) {
-                    break;
-                } else {
-                    chunk = 1;
-                }
+            var chunk = `in`.skip(maximum - skipped)
+            if (chunk == 0L) {
+                chunk = if (`in`.read() == -1) break else 1
             }
-            skipped += chunk;
-        }
 
-        return skipped;
+            skipped += chunk
+        }
+        return skipped
     }
 }

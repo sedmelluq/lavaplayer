@@ -10,8 +10,6 @@ import lavaplayer.tools.io.HttpConfigurable;
 import lavaplayer.tools.io.HttpInterface;
 import lavaplayer.tools.io.HttpInterfaceManager;
 import lavaplayer.track.*;
-import lavaplayer.track.AudioTrackCollectionType;
-import lavaplayer.track.BasicAudioTrackCollection;
 import lavaplayer.track.loader.LoaderState;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpStatus;

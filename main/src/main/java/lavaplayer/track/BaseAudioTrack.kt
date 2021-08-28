@@ -22,8 +22,10 @@ abstract class BaseAudioTrack(final override val info: AudioTrackInfo) : Interna
 
     private val initialExecutor = PrimordialAudioTrackExecutor(info)
     private val executorAssigned = AtomicBoolean()
-    @Volatile private var _activeExecutor: AudioTrackExecutor? = null
-    @Volatile override var userData: Any? = null
+    @Volatile
+    private var _activeExecutor: AudioTrackExecutor? = null
+    @Volatile
+    override var userData: Any? = null
 
     override val activeExecutor: AudioTrackExecutor
         get() = _activeExecutor ?: initialExecutor

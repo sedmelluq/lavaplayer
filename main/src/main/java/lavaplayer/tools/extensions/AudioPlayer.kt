@@ -25,7 +25,10 @@ fun AudioPlayer.addListener(listener: AudioEventListener): Job {
     return on<AudioEvent>(this) { listener.onEvent(this) }
 }
 
-inline fun <reified T : AudioEvent> AudioPlayer.on(scope: CoroutineScope = this, noinline block: suspend T.() -> Unit): Job {
+inline fun <reified T : AudioEvent> AudioPlayer.on(
+    scope: CoroutineScope = this,
+    noinline block: suspend T.() -> Unit
+): Job {
     return events.buffer(UNLIMITED).filterIsInstance<T>()
         .onEach { event ->
             launch {

@@ -1,14 +1,5 @@
-package lavaplayer.demo.controller;
+package lavaplayer.demo.controller
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
-
-@Target(ElementType.METHOD)
-@Retention(RetentionPolicy.RUNTIME)
-public @interface BotCommandHandler {
-    String name() default "";
-
-    String usage() default "";
-}
+@Target(AnnotationTarget.FUNCTION, AnnotationTarget.PROPERTY_GETTER, AnnotationTarget.PROPERTY_SETTER)
+@Retention(AnnotationRetention.RUNTIME)
+annotation class BotCommandHandler(val name: String = "", val usage: String = "")

@@ -1,113 +1,104 @@
-package lavaplayer.format;
+package lavaplayer.format
 
-import lavaplayer.format.transcoder.AudioChunkDecoder;
-import lavaplayer.format.transcoder.AudioChunkEncoder;
-import lavaplayer.manager.AudioConfiguration;
-
-import java.util.Objects;
+import lavaplayer.format.transcoder.AudioChunkDecoder
+import lavaplayer.manager.AudioConfiguration
+import lavaplayer.format.transcoder.AudioChunkEncoder
 
 /**
  * Describes the format for audio with fixed chunk size.
+ *
+ * @param channelCount     Number of channels.
+ * @param sampleRate       Sample rate (frequency).
+ * @param chunkSampleCount Number of samples in one chunk.
  */
-public abstract class AudioDataFormat {
+abstract class AudioDataFormat(
     /**
      * Number of channels.
      */
-    public final int channelCount;
+    @JvmField
+    val channelCount: Int,
     /**
      * Sample rate (frequency).
      */
-    public final int sampleRate;
+    @JvmField
+    val sampleRate: Int,
     /**
      * Number of samples in one chunk.
      */
-    public final int chunkSampleCount;
+    @JvmField
+    val chunkSampleCount: Int
+) {
+    /**
+     * The name of the codec.
+     */
+    abstract val codecName: String
 
     /**
-     * @param channelCount     Number of channels.
-     * @param sampleRate       Sample rate (frequency).
-     * @param chunkSampleCount Number of samples in one chunk.
+     * Generally expected average size of a frame in this format.
      */
-    public AudioDataFormat(int channelCount, int sampleRate, int chunkSampleCount) {
-        this.channelCount = channelCount;
-        this.sampleRate = sampleRate;
-        this.chunkSampleCount = chunkSampleCount;
-    }
+    abstract val expectedChunkSize: Int
+
+    /**
+     * Maximum size of a frame in this format.
+     */
+    abstract val maximumChunkSize: Int
 
     /**
      * @return Total number of samples in one frame.
      */
-    public int totalSampleCount() {
-        return chunkSampleCount * channelCount;
+    fun totalSampleCount(): Int {
+        return chunkSampleCount * channelCount
     }
 
     /**
      * @return The duration in milliseconds of one frame in this format.
      */
-    public long frameDuration() {
-        return chunkSampleCount * 1000L / sampleRate;
+    fun frameDuration(): Long {
+        return chunkSampleCount * 1000L / sampleRate
     }
-
-    /**
-     * @return Name of the codec.
-     */
-    public abstract String codecName();
 
     /**
      * @return Byte array representing a frame of silence in this format.
      */
-    public abstract byte[] silenceBytes();
-
-    /**
-     * @return Generally expected average size of a frame in this format.
-     */
-    public abstract int expectedChunkSize();
-
-    /**
-     * @return Maximum size of a frame in this format.
-     */
-    public abstract int maximumChunkSize();
+    abstract fun silenceBytes(): ByteArray
 
     /**
      * @return Decoder to convert data in this format to short PCM.
      */
-    public abstract AudioChunkDecoder createDecoder();
+    abstract fun createDecoder(): AudioChunkDecoder
 
     /**
      * @param configuration Configuration to use for encoding.
      * @return Encoder to convert data in short PCM format to this format.
      */
-    public abstract AudioChunkEncoder createEncoder(AudioConfiguration configuration);
+    abstract fun createEncoder(configuration: AudioConfiguration): AudioChunkEncoder
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
+    override fun equals(other: Any?): Boolean {
+        if (this === other) {
+            return true
         }
 
-        AudioDataFormat that = (AudioDataFormat) o;
+        if (other == null || javaClass != other.javaClass) {
+            return false
+        }
 
+        val that = other as AudioDataFormat
         if (channelCount != that.channelCount) {
-            return false;
+            return false
         }
+
         if (sampleRate != that.sampleRate) {
-            return false;
+            return false
         }
-        if (chunkSampleCount != that.chunkSampleCount) {
-            return false;
-        }
-        return Objects.equals(codecName(), that.codecName());
+
+        return if (chunkSampleCount != that.chunkSampleCount) false else codecName == that.codecName
     }
 
-    @Override
-    public int hashCode() {
-        int result = channelCount;
-        result = 31 * result + sampleRate;
-        result = 31 * result + chunkSampleCount;
-        result = 31 * result + codecName().hashCode();
-        return result;
+    override fun hashCode(): Int {
+        var result = channelCount
+        result = 31 * result + sampleRate
+        result = 31 * result + chunkSampleCount
+        result = 31 * result + codecName.hashCode()
+        return result
     }
 }

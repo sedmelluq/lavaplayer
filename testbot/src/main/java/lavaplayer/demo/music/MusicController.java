@@ -78,13 +78,21 @@ public class MusicController implements BotController {
     }
 
     @BotCommandHandler
-    private void add(Message message, String identifier) {
-        addTrack(message, identifier, false);
+    private void add(Message message, String identifier) {addTrack(message, identifier, false, false);}
+
+    @BotCommandHandler
+    private void first(Message message, String identifier) {
+        addTrack(message, identifier, false, true);
+    }
+
+    @BotCommandHandler
+    private void firstNow(Message message, String identifier) {
+        addTrack(message, identifier, true, true);
     }
 
     @BotCommandHandler
     private void now(Message message, String identifier) {
-        addTrack(message, identifier, true);
+        addTrack(message, identifier, true, false);
     }
 
     @BotCommandHandler
@@ -221,7 +229,7 @@ public class MusicController implements BotController {
         guild.getAudioManager().closeAudioConnection();
     }
 
-    private void addTrack(final Message message, final String identifier, final boolean now) {
+    private void addTrack(final Message message, final String identifier, final boolean now, final boolean first) {
         outputChannel.set((TextChannel) message.getChannel());
 
         var itemLoader = manager.getItemLoaders().createItemLoader(identifier);
@@ -261,11 +269,11 @@ public class MusicController implements BotController {
                     scheduler.addToQueue(selected);
                 }
 
-                for (int i = 0; i < Math.min(10, playlist.getTracks().size()); i++) {
-                    if (tracks.get(i) != selected) {
-                        scheduler.addToQueue(tracks.get(i));
-                    }
-                }
+//                for (int i = 0; i < Math.min(10, playlist.getTracks().size()); i++) {
+//                    if (tracks.get(i) != selected) {
+//                        scheduler.addToQueue(tracks.get(i));
+//                    }
+//                }
             }
 
             @Override

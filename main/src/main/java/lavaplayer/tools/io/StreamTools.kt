@@ -1,6 +1,5 @@
 package lavaplayer.tools.io
 
-import kotlin.Throws
 import java.io.IOException
 import java.io.InputStream
 

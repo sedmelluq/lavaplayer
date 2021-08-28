@@ -1,30 +1,23 @@
-package lavaplayer.container.mpeg.reader.fragmented;
+package lavaplayer.container.mpeg.reader.fragmented
 
 /**
  * Information about one MP4 segment aka fragment
+ *
+ * @param type     Type of the segment
+ * @param size     Size in bytes
+ * @param duration Duration using the timescale of the file
  */
-public class MpegSegmentEntry {
+data class MpegSegmentEntry(
     /**
      * Type of the segment
      */
-    public final int type;
+    @JvmField val type: Int,
     /**
      * Size in bytes
      */
-    public final int size;
+    @JvmField val size: Int,
     /**
      * Duration using the timescale of the file
      */
-    public final int duration;
-
-    /**
-     * @param type     Type of the segment
-     * @param size     Size in bytes
-     * @param duration Duration using the timescale of the file
-     */
-    public MpegSegmentEntry(int type, int size, int duration) {
-        this.type = type;
-        this.size = size;
-        this.duration = duration;
-    }
-}
+    @JvmField val duration: Int
+)

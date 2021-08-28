@@ -1,62 +1,50 @@
-package lavaplayer.container.wav;
+package lavaplayer.container.wav
 
 /**
  * WAV file format information.
+ *
+ * @param channelCount  Number of channels.
+ * @param sampleRate    Sample rate.
+ * @param bitsPerSample Bits per sample (currently only 16 supported).
+ * @param blockAlign    Size of a block (one sample for each channel + padding).
+ * @param blockCount    Number of blocks in the file.
+ * @param startOffset   Starting position of the raw PCM samples in the file.
  */
-public class WavFileInfo {
+data class WavFileInfo(
     /**
      * Number of channels.
      */
-    public final int channelCount;
+    @JvmField val channelCount: Int,
     /**
      * Sample rate.
      */
-    public final int sampleRate;
+    @JvmField val sampleRate: Int,
     /**
      * Bits per sample (currently only 16 supported).
      */
-    public final int bitsPerSample;
+    @JvmField val bitsPerSample: Int,
     /**
      * Size of a block (one sample for each channel + padding).
      */
-    public final int blockAlign;
+    @JvmField val blockAlign: Int,
     /**
      * Number of blocks in the file.
      */
-    public final long blockCount;
+    @JvmField val blockCount: Long,
     /**
      * Starting position of the raw PCM samples in the file.
      */
-    public final long startOffset;
-
-    /**
-     * @param channelCount  Number of channels.
-     * @param sampleRate    Sample rate.
-     * @param bitsPerSample Bits per sample (currently only 16 supported).
-     * @param blockAlign    Size of a block (one sample for each channel + padding).
-     * @param blockCount    Number of blocks in the file.
-     * @param startOffset   Starting position of the raw PCM samples in the file.
-     */
-    public WavFileInfo(int channelCount, int sampleRate, int bitsPerSample, int blockAlign, long blockCount, long startOffset) {
-        this.channelCount = channelCount;
-        this.sampleRate = sampleRate;
-        this.bitsPerSample = bitsPerSample;
-        this.blockAlign = blockAlign;
-        this.blockCount = blockCount;
-        this.startOffset = startOffset;
-    }
-
+    @JvmField val startOffset: Long
+) {
     /**
      * @return Duration of the file in milliseconds.
      */
-    public long getDuration() {
-        return blockCount * 1000L / sampleRate;
-    }
+    val duration: Long
+        get() = blockCount * 1000L / sampleRate
 
     /**
      * @return The size of padding in a sample block in bytes.
      */
-    public int getPadding() {
-        return blockAlign - channelCount * (bitsPerSample >> 3);
-    }
+    val padding: Int
+        get() = blockAlign - channelCount * (bitsPerSample shr 3)
 }

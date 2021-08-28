@@ -1,22 +1,16 @@
-package lavaplayer.container.playlists;
+package lavaplayer.container.playlists
 
-public class HlsStreamSegment {
+data class HlsStreamSegment(
     /**
      * URL of the segment.
      */
-    public final String url;
+    @JvmField val url: String,
     /**
-     * Duration of the segment in milliseconds. <code>null</code> if unknown.
+     * Duration of the segment in milliseconds. `null` if unknown.
      */
-    public final Long duration;
+    @JvmField val duration: Long?,
     /**
-     * Name of the segment. <code>null</code> if unknown.
+     * Name of the segment. `null` if unknown.
      */
-    public final String name;
-
-    public HlsStreamSegment(String url, Long duration, String name) {
-        this.url = url;
-        this.duration = duration;
-        this.name = name;
-    }
-}
+    @JvmField val name: String?
+)

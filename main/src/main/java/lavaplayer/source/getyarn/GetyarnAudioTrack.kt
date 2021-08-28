@@ -1,7 +1,6 @@
-package lavaplayer.source.getyarn;
+package lavaplayer.source.getyarn
 
 import lavaplayer.container.mpeg.MpegAudioTrack
-import lavaplayer.source.ItemSourceManager
 import lavaplayer.tools.Units
 import lavaplayer.tools.io.PersistentHttpStream
 import lavaplayer.track.AudioTrackInfo
@@ -15,18 +14,18 @@ class GetyarnAudioTrack(trackInfo: AudioTrackInfo, override val sourceManager: G
     DelegatedAudioTrack(trackInfo) {
 
     companion object {
-        private val log: Logger = LoggerFactory.getLogger(DelegatedAudioTrack::class.java);
+        private val log: Logger = LoggerFactory.getLogger(DelegatedAudioTrack::class.java)
     }
 
     override fun process(executor: LocalAudioTrackExecutor) {
         sourceManager.httpInterface.use { httpInterface ->
-            log.debug("Starting getyarn.io track from URL: ${info.identifier}");
+            log.debug("Starting getyarn.io track from URL: ${info.identifier}")
             PersistentHttpStream(httpInterface, URI(info.identifier), Units.CONTENT_LENGTH_UNKNOWN).use { stream ->
-                processDelegate(MpegAudioTrack(info, stream), executor);
+                processDelegate(MpegAudioTrack(info, stream), executor)
             }
         }
     }
 
     override fun makeShallowClone() =
-        GetyarnAudioTrack(info, sourceManager);
+        GetyarnAudioTrack(info, sourceManager)
 }

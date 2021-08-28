@@ -1,5 +1,6 @@
 package lavaplayer.demo;
 
+import lavaplayer.common.tools.DaemonThreadFactory;
 import lavaplayer.demo.controller.BotCommandMappingHandler;
 import lavaplayer.demo.controller.BotController;
 import lavaplayer.demo.controller.BotControllerManager;
@@ -9,14 +10,7 @@ import lavaplayer.manager.AudioConfiguration;
 import lavaplayer.manager.AudioPlayerManager;
 import lavaplayer.manager.DefaultAudioPlayerManager;
 import lavaplayer.natives.samplerate.SampleRateConverter;
-import lavaplayer.source.bandcamp.BandcampItemSourceManager;
-import lavaplayer.source.http.HttpItemSourceManager;
-import lavaplayer.source.local.LocalItemSourceManager;
-import lavaplayer.source.soundcloud.SoundCloudItemSourceManager;
-import lavaplayer.source.twitch.TwitchStreamItemSourceManager;
-import lavaplayer.source.vimeo.VimeoItemSourceManager;
-import lavaplayer.source.youtube.YoutubeItemSourceManager;
-import lavaplayer.common.tools.DaemonThreadFactory;
+import lavaplayer.source.SourceRegistry;
 import net.dv8tion.jda.api.entities.ChannelType;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
@@ -49,16 +43,8 @@ public class BotApplicationManager extends ListenerAdapter {
         ResamplingPcmAudioFilter.RESAMPLING_VALUES.replace(AudioConfiguration.ResamplingQuality.HIGH, SampleRateConverter.ResamplingType.SINC_BEST_QUALITY);
 
         playerManager = new DefaultAudioPlayerManager();
-        //playerManager.useRemoteNodes("localhost:8080");
         playerManager.getConfiguration().setResamplingQuality(AudioConfiguration.ResamplingQuality.HIGH);
-        playerManager.registerSourceManager(new YoutubeItemSourceManager());
-        playerManager.registerSourceManager(SoundCloudItemSourceManager.createDefault());
-        playerManager.registerSourceManager(new BandcampItemSourceManager());
-        playerManager.registerSourceManager(new VimeoItemSourceManager());
-        playerManager.registerSourceManager(new TwitchStreamItemSourceManager());
-        playerManager.registerSourceManager(new HttpItemSourceManager());
-        playerManager.registerSourceManager(new LocalItemSourceManager());
-
+        SourceRegistry.registerRemoteSources(playerManager);
         executorService = Executors.newScheduledThreadPool(1, new DaemonThreadFactory("bot"));
     }
 
@@ -115,19 +101,16 @@ public class BotApplicationManager extends ListenerAdapter {
             @Override
             public void commandWrongParameterType(Message message, String name, String usage, int index, String value, Class<?> expectedType) {
                 event.getTextChannel().sendMessage("Wrong argument type for command").queue();
-                ;
             }
 
             @Override
             public void commandRestricted(Message message, String name) {
                 event.getTextChannel().sendMessage("Command not permitted").queue();
-                ;
             }
 
             @Override
             public void commandException(Message message, String name, Throwable throwable) {
                 event.getTextChannel().sendMessage("Command threw an exception").queue();
-                ;
 
                 log.error("Command with content {} threw an exception.", message.getContentDisplay(), throwable);
             }

@@ -1,51 +1,41 @@
-package lavaplayer.tools;
+package lavaplayer.tools
 
-import org.apache.commons.io.IOUtils;
-import org.apache.http.NameValuePair;
-import org.apache.http.client.utils.URLEncodedUtils;
-
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.regex.Pattern;
+import org.apache.commons.io.IOUtils
+import org.apache.http.NameValuePair
+import org.apache.http.client.utils.URLEncodedUtils
+import java.io.DataInput
+import java.io.DataOutput
+import java.io.IOException
+import java.io.InputStream
+import java.nio.charset.Charset
+import java.nio.charset.StandardCharsets
 
 /**
  * Helper methods related to Strings, Maps, and Numbers.
  */
-public class DataFormatTools {
-    private static final Pattern lineSplitPattern = Pattern.compile("[\\r\\n\\s]*\\n[\\r\\n\\s]*");
-
+object DataFormatTools {
     /**
      * Parses a duration string into milliseconds
      *
      * @param duration The string duration
      * @return The duration in milliseconds.
      */
-    public static long parseDuration(String duration) {
-        String[] parts = duration.split(":");
-
-        switch (parts.length) {
-            // hh:mm:ss
-            case 3: {
-                int hours = Integer.parseInt(parts[0]);
-                int minutes = Integer.parseInt(parts[1]);
-                int seconds = Integer.parseInt(parts[2]);
-                return (hours * 3_600_000L) + (minutes * 60_000L) + (seconds * 1_000L);
+    @JvmStatic
+    fun parseDuration(duration: String): Long {
+        val parts = duration.split(":".toRegex())
+        return when (parts.size) {
+            3 -> {
+                val hours = parts[0].toInt()
+                val minutes = parts[1].toInt()
+                val seconds = parts[2].toInt()
+                hours * 3600000L + minutes * 60000L + seconds * 1000L
             }
-            // mm:ss
-            case 2: {
-                int minutes = Integer.parseInt(parts[0]);
-                int seconds = Integer.parseInt(parts[1]);
-                return (minutes * 60_000L) + (seconds * 1_000L);
+            2 -> {
+                val minutes = parts[0].toInt()
+                val seconds = parts[1].toInt()
+                minutes * 60000L + seconds * 1000L
             }
-            default:
-                return Units.DURATION_MS_UNKNOWN;
+            else -> Units.DURATION_MS_UNKNOWN
         }
     }
 
@@ -57,52 +47,23 @@ public class DataFormatTools {
      * @param end      The text before which to stop extracting
      * @return The extracted string
      */
-    public static String extractBetween(String haystack, String start, String end) {
-        int startMatch = haystack.indexOf(start);
-
+    @JvmStatic
+    fun extractBetween(haystack: String, start: String, end: String): String? {
+        val startMatch = haystack.indexOf(start)
         if (startMatch >= 0) {
-            int startPosition = startMatch + start.length();
-            int endPosition = haystack.indexOf(end, startPosition);
-
+            val startPosition = startMatch + start.length
+            val endPosition = haystack.indexOf(end, startPosition)
             if (endPosition >= 0) {
-                return haystack.substring(startPosition, endPosition);
+                return haystack.substring(startPosition, endPosition)
             }
         }
 
-        return null;
+        return null
     }
 
-    public static String extractBetween(String haystack, TextRange[] candidates) {
-        for (TextRange candidate : candidates) {
-            String result = extractBetween(haystack, candidate.start, candidate.end);
-            if (result != null) {
-                return result;
-            }
-        }
-
-        return null;
-    }
-
-    public static String extractAfter(String haystack, String start) {
-        int startMatch = haystack.indexOf(start);
-
-        if (startMatch >= 0) {
-            return haystack.substring(startMatch + start.length());
-        }
-
-        return null;
-    }
-
-    public static String extractAfter(String haystack, String[] candidates) {
-        for (String candidate : candidates) {
-            String result = extractAfter(haystack, candidate);
-
-            if (result != null) {
-                return result;
-            }
-        }
-
-        return null;
+    @JvmStatic
+    fun extractBetween(haystack: String, candidates: List<TextRange>): String? {
+        return candidates.firstNotNullOfOrNull { extractBetween(haystack, it.start, it.end) }
     }
 
     /**
@@ -111,20 +72,24 @@ public class DataFormatTools {
      * @param pairs Name value pairs to convert
      * @return The resulting map
      */
-    public static Map<String, String> convertToMapLayout(Collection<NameValuePair> pairs) {
-        Map<String, String> map = new HashMap<>();
-        for (NameValuePair pair : pairs) {
-            map.put(pair.getName(), pair.getValue());
+    @JvmStatic
+    fun convertToMapLayout(pairs: List<NameValuePair>): Map<String, String> {
+        val map: MutableMap<String, String> = HashMap()
+        for (pair in pairs) {
+            map[pair.name] = pair.value
         }
-        return map;
+
+        return map
     }
 
-    public static Map<String, String> decodeUrlEncodedItems(String input, boolean escapedSeparator) {
+    @JvmStatic
+    fun decodeUrlEncodedItems(input: String, escapedSeparator: Boolean): Map<String, String> {
+        var input = input
         if (escapedSeparator) {
-            input = input.replace("\\\\u0026", "&");
+            input = input.replace("""\\u0026""", "&")
         }
 
-        return convertToMapLayout(URLEncodedUtils.parse(input, StandardCharsets.UTF_8));
+        return convertToMapLayout(URLEncodedUtils.parse(input, StandardCharsets.UTF_8))
     }
 
     /**
@@ -134,9 +99,10 @@ public class DataFormatTools {
      * @param defaultValue Default value to return if value is null
      * @param <T>          The type of the value
      * @return Value or default value
-     */
-    public static <T> T defaultOnNull(T value, T defaultValue) {
-        return value == null ? defaultValue : value;
+    </T> */
+    @JvmStatic
+    fun <T> defaultOnNull(value: T?, defaultValue: T): T {
+        return value ?: defaultValue
     }
 
     /**
@@ -147,9 +113,10 @@ public class DataFormatTools {
      * @return Lines from the stream
      * @throws IOException On read error
      */
-    public static String[] streamToLines(InputStream inputStream, Charset charset) throws IOException {
-        String text = IOUtils.toString(inputStream, charset);
-        return lineSplitPattern.split(text);
+    @JvmStatic
+    @Throws(IOException::class)
+    fun streamToLines(inputStream: InputStream, charset: Charset?): List<String> {
+        return IOUtils.toString(inputStream, charset).lines()
     }
 
     /**
@@ -158,58 +125,54 @@ public class DataFormatTools {
      * @param durationText Duration in text format.
      * @return Duration in milliseconds.
      */
-    public static long durationTextToMillis(String durationText) {
-        int length = 0;
-
-        for (String part : durationText.split("[:.]")) {
-            length = length * 60 + Integer.parseInt(part);
+    @JvmStatic
+    fun durationTextToMillis(durationText: String): Long {
+        var length = 0
+        for (part in durationText.split("[:.]".toRegex())) {
+            length = length * 60 + part.toInt()
         }
 
-        return length * 1000L;
+        return length * 1000L
     }
 
     /**
-     * Writes a string to output with the additional information whether it is <code>null</code> or not. Compatible with
-     * {@link #readNullableText(DataInput)}.
+     * Writes a string to output with the additional information whether it is `null` or not. Compatible with
+     * [.readNullableText].
      *
      * @param output Output to write to.
      * @param text   Text to write.
      * @throws IOException On write error.
      */
-    public static void writeNullableText(DataOutput output, String text) throws IOException {
-        output.writeBoolean(text != null);
-
+    @Throws(IOException::class)
+    fun writeNullableText(output: DataOutput, text: String?) {
+        output.writeBoolean(text != null)
         if (text != null) {
-            output.writeUTF(text);
+            output.writeUTF(text)
         }
     }
 
     /**
-     * Reads a string from input which may be <code>null</code>. Compatible with
-     * {@link #writeNullableText(DataOutput, String)}.
+     * Reads a string from input which may be `null`. Compatible with
+     * [.writeNullableText].
      *
      * @param input Input to read from.
-     * @return The string that was read, or <code>null</code>.
+     * @return The string that was read, or `null`.
      * @throws IOException On read error.
      */
-    public static String readNullableText(DataInput input) throws IOException {
-        boolean exists = input.readBoolean();
-        return exists ? input.readUTF() : null;
+    @Throws(IOException::class)
+    fun readNullableText(input: DataInput): String? {
+        val exists = input.readBoolean()
+        return if (exists) input.readUTF() else null
     }
 
-    public static boolean arrayRangeEquals(byte[] array, int offset, byte[] segment) {
-        if (array.length < offset + segment.length) {
-            return false;
+    @JvmStatic
+    fun arrayRangeEquals(array: ByteArray, offset: Int, segment: ByteArray): Boolean {
+        if (array.size < offset + segment.size) {
+            return false
         }
 
-        for (int i = 0; i < segment.length; i++) {
-            if (segment[i] != array[i + offset]) {
-                return false;
-            }
-        }
-
-        return true;
+        return segment.withIndex().all { (it, _) -> segment[it] == array[it + offset] }
     }
 
-    public record TextRange(String start, String end) {}
+    data class TextRange(val start: String, val end: String)
 }

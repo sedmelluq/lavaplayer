@@ -24,7 +24,10 @@ interface SourceRegistry {
          */
         @JvmOverloads
         @JvmStatic
-        fun registerRemoteSources(sourceRegistry: SourceRegistry, containerRegistry: MediaContainerRegistry = MediaContainerRegistry.DEFAULT_REGISTRY) {
+        fun registerRemoteSources(
+            sourceRegistry: SourceRegistry,
+            containerRegistry: MediaContainerRegistry = MediaContainerRegistry.DEFAULT_REGISTRY
+        ) {
             sourceRegistry.registerSourceManager(YoutubeItemSourceManager(true))
             sourceRegistry.registerSourceManager(SoundCloudItemSourceManager.createDefault())
             sourceRegistry.registerSourceManager(BandcampItemSourceManager())

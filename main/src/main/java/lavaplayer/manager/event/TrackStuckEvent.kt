@@ -1,8 +1,7 @@
-package lavaplayer.manager.event;
+package lavaplayer.manager.event
 
-import lavaplayer.manager.AudioPlayer;
-import lavaplayer.track.AudioTrack;
-import java.util.ArrayList
+import lavaplayer.manager.AudioPlayer
+import lavaplayer.track.AudioTrack
 
 /**
  * Event that is fired when a track was started, but no audio frames from it have arrived in a long time, specified

@@ -1,39 +1,30 @@
-package lavaplayer.container.wav;
+package lavaplayer.container.wav
 
-import lavaplayer.tools.io.SeekableInputStream;
-import lavaplayer.track.AudioTrackInfo;
-import lavaplayer.track.BaseAudioTrack;
-import lavaplayer.track.playback.LocalAudioTrackExecutor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lavaplayer.tools.io.SeekableInputStream
+import lavaplayer.track.AudioTrackInfo
+import lavaplayer.track.BaseAudioTrack
+import lavaplayer.track.playback.LocalAudioTrackExecutor
+import org.slf4j.LoggerFactory
 
 /**
  * Audio track that handles a WAV stream
+ *
+ * @param trackInfo Track info
+ * @param stream    Input stream for the WAV file
  */
-public class WavAudioTrack extends BaseAudioTrack {
-    private static final Logger log = LoggerFactory.getLogger(WavAudioTrack.class);
-
-    private final SeekableInputStream inputStream;
-
-    /**
-     * @param trackInfo   Track info
-     * @param inputStream Input stream for the WAV file
-     */
-    public WavAudioTrack(AudioTrackInfo trackInfo, SeekableInputStream inputStream) {
-        super(trackInfo);
-
-        this.inputStream = inputStream;
+class WavAudioTrack(trackInfo: AudioTrackInfo, private val stream: SeekableInputStream) : BaseAudioTrack(trackInfo) {
+    companion object {
+        private val log = LoggerFactory.getLogger(WavAudioTrack::class.java)
     }
 
-    @Override
-    public void process(LocalAudioTrackExecutor localExecutor) throws Exception {
-        WavTrackProvider trackProvider = new WavFileLoader(inputStream).loadTrack(localExecutor.getProcessingContext());
-
+    @Throws(Exception::class)
+    override fun process(executor: LocalAudioTrackExecutor) {
+        val trackProvider = WavFileLoader(stream).loadTrack(executor.processingContext)
         try {
-            log.debug("Starting to play WAV track {}", getIdentifier());
-            localExecutor.executeProcessingLoop(trackProvider::provideFrames, trackProvider::seekToTimecode);
+            log.debug("Starting to play WAV track {}", identifier)
+            executor.executeProcessingLoop({ trackProvider.provideFrames() }) { trackProvider.seekToTimecode(it) }
         } finally {
-            trackProvider.close();
+            trackProvider.close()
         }
     }
 }

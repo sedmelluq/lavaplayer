@@ -1,30 +1,19 @@
-package lavaplayer.container.mpegts;
+package lavaplayer.container.mpegts
 
-import lavaplayer.container.adts.AdtsAudioTrack;
-import lavaplayer.track.AudioTrackInfo;
-import lavaplayer.track.DelegatedAudioTrack;
-import lavaplayer.track.playback.LocalAudioTrackExecutor;
+import lavaplayer.container.adts.AdtsAudioTrack
+import lavaplayer.track.AudioTrackInfo
+import lavaplayer.track.DelegatedAudioTrack
+import lavaplayer.track.playback.LocalAudioTrackExecutor
+import java.io.InputStream
 
-import java.io.InputStream;
-
-import static lavaplayer.container.mpegts.MpegTsElementaryInputStream.ADTS_ELEMENTARY_STREAM;
-
-public class MpegAdtsAudioTrack extends DelegatedAudioTrack {
-    private final InputStream inputStream;
-
-    /**
-     * @param trackInfo Track info
-     */
-    public MpegAdtsAudioTrack(AudioTrackInfo trackInfo, InputStream inputStream) {
-        super(trackInfo);
-
-        this.inputStream = inputStream;
-    }
-
-    @Override
-    public void process(LocalAudioTrackExecutor executor) throws Exception {
-        MpegTsElementaryInputStream elementaryInputStream = new MpegTsElementaryInputStream(inputStream, ADTS_ELEMENTARY_STREAM);
-        PesPacketInputStream pesPacketInputStream = new PesPacketInputStream(elementaryInputStream);
-        processDelegate(new AdtsAudioTrack(getInfo(), pesPacketInputStream), executor);
+/**
+ * @param trackInfo Track info
+ */
+class MpegAdtsAudioTrack(trackInfo: AudioTrackInfo, private val inputStream: InputStream) : DelegatedAudioTrack(trackInfo) {
+    @Throws(Exception::class)
+    override fun process(executor: LocalAudioTrackExecutor) {
+        val elementaryInputStream = MpegTsElementaryInputStream(inputStream, MpegTsElementaryInputStream.ADTS_ELEMENTARY_STREAM)
+        val pesPacketInputStream = PesPacketInputStream(elementaryInputStream)
+        processDelegate(AdtsAudioTrack(info, pesPacketInputStream), executor)
     }
 }

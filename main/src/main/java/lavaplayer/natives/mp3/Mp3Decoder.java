@@ -87,7 +87,9 @@ public class Mp3Decoder extends NativeResourceHolder {
      * @return Sample rate
      */
     public static int getFrameSampleRate(byte[] buffer, int offset) {
-        return isMpegVersionOne(buffer, offset) ? getFrameSampleRateV1(buffer, offset) : getFrameSampleRateV2(buffer, offset);
+        return isMpegVersionOne(buffer, offset)
+            ? getFrameSampleRateV1(buffer, offset)
+            : getFrameSampleRateV2(buffer, offset);
     }
 
     /**

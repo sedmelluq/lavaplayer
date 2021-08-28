@@ -34,7 +34,11 @@ class AudioTrackInfoBuilder private constructor() : AudioTrackInfoProvider {
          */
         @JvmStatic
         @JvmOverloads
-        fun create(reference: AudioReference?, stream: SeekableInputStream?, build: AudioTrackInfoBuilder.() -> Unit = {}) = apply {
+        fun create(
+            reference: AudioReference?,
+            stream: SeekableInputStream?,
+            build: AudioTrackInfoBuilder.() -> Unit = {}
+        ) = apply {
             author = UNKNOWN_ARTIST
             title = UNKNOWN_TITLE
             length = DURATION_MS_UNKNOWN

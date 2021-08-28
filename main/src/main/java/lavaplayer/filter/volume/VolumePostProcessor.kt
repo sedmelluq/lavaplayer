@@ -11,7 +11,7 @@ class VolumePostProcessor(private val context: AudioProcessingContext) : AudioPo
     private val volumeProcessor: PcmVolumeProcessor = PcmVolumeProcessor(context.playerOptions.volumeLevel.get())
 
     @Throws(InterruptedException::class)
-    override fun process(timecode: Long, buffer: ShortBuffer?) {
+    override fun process(timecode: Long, buffer: ShortBuffer) {
         val currentVolume = context.playerOptions.volumeLevel.get()
         if (currentVolume != volumeProcessor.lastVolume) {
             AudioFrameVolumeChanger.apply(context)

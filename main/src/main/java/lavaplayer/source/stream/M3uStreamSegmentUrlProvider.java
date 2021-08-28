@@ -124,7 +124,7 @@ public abstract class M3uStreamSegmentUrlProvider {
 
     protected abstract HttpUriRequest createSegmentGetRequest(String url);
 
-    protected List<ChannelStreamInfo> loadChannelStreamsList(String[] lines) {
+    protected List<ChannelStreamInfo> loadChannelStreamsList(List<String> lines) {
         ExtendedM3uParser.Line streamInfoLine = null;
 
         List<ChannelStreamInfo> streams = new ArrayList<>();

@@ -1,9 +1,9 @@
-package lavaplayer.source.youtube;
+package lavaplayer.source.youtube
 
-import org.apache.http.entity.ContentType;
+import org.apache.http.entity.ContentType
 
-import java.net.URI;
-import java.net.URISyntaxException;
+import java.net.URI
+import java.net.URISyntaxException
 
 /**
  * Describes an available media format for a track
@@ -46,9 +46,10 @@ data class YoutubeTrackFormat(
     /**
      * Base URL for the playback of this format
      */
-    val url: URI get() = try {
-        URI(baseUrl);
-    } catch (e: URISyntaxException) {
-        throw RuntimeException(e);
-    }
+    val url: URI
+        get() = try {
+            URI(baseUrl)
+        } catch (e: URISyntaxException) {
+            throw RuntimeException(e)
+        }
 }

@@ -8,15 +8,13 @@ import org.apache.http.conn.*
 import org.apache.http.conn.routing.HttpRoute
 import org.apache.http.impl.conn.ManagedHttpClientConnectionFactory
 import org.apache.http.protocol.HttpContext
-
 import java.io.IOException
 import java.util.concurrent.TimeUnit
-import kotlin.jvm.Throws
 
 class SimpleHttpClientConnectionManager(
     private val connectionOperator: HttpClientConnectionOperator,
     val connectionFactory: HttpConnectionFactory<HttpRoute, ManagedHttpClientConnection> = ManagedHttpClientConnectionFactory.INSTANCE
-): HttpClientConnectionManager {
+) : HttpClientConnectionManager {
     @Volatile
     var socketConfig: SocketConfig = SocketConfig.DEFAULT
 
@@ -51,7 +49,12 @@ class SimpleHttpClientConnectionManager(
     }
 
     @Throws(IOException::class)
-    override fun connect(connection: HttpClientConnection, route: HttpRoute, connectTimeout: Int, context: HttpContext) {
+    override fun connect(
+        connection: HttpClientConnection,
+        route: HttpRoute,
+        connectTimeout: Int,
+        context: HttpContext
+    ) {
         val host: HttpHost = if (route.proxyHost != null) route.proxyHost else route.targetHost
         val managed = connection as ManagedHttpClientConnection
 

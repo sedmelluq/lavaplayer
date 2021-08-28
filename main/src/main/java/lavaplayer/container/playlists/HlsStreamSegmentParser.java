@@ -14,7 +14,7 @@ public class HlsStreamSegmentParser {
         return parseFromLines(fetchResponseLines(httpInterface, new HttpGet(url), "stream segments list"));
     }
 
-    public static List<HlsStreamSegment> parseFromLines(String[] lines) {
+    public static List<HlsStreamSegment> parseFromLines(List<String> lines) {
         List<HlsStreamSegment> segments = new ArrayList<>();
         ExtendedM3uParser.Line segmentInfo = null;
 

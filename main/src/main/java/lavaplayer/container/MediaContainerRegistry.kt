@@ -1,37 +1,17 @@
-package lavaplayer.container;
+package lavaplayer.container
 
-import java.util.List;
+class MediaContainerRegistry(val all: List<MediaContainerProbe>) {
+    companion object {
+        @JvmField
+        val DEFAULT_REGISTRY = MediaContainerRegistry(MediaContainer.asList())
 
-public class MediaContainerRegistry {
-    public static final MediaContainerRegistry DEFAULT_REGISTRY = new MediaContainerRegistry(MediaContainer.asList());
-
-    private final List<MediaContainerProbe> probes;
-
-    public MediaContainerRegistry(List<MediaContainerProbe> probes) {
-        this.probes = probes;
-    }
-
-    public static MediaContainerRegistry extended(MediaContainerProbe... additional) {
-        List<MediaContainerProbe> probes = MediaContainer.asList();
-
-        for (MediaContainerProbe probe : additional) {
-            probes.add(probe);
+        fun extended(vararg additional: MediaContainerProbe): MediaContainerRegistry {
+            val probes = MediaContainer.asList()
+            probes.addAll(probes.intersect(additional.toList()))
+            return MediaContainerRegistry(probes)
         }
-
-        return new MediaContainerRegistry(probes);
     }
 
-    public MediaContainerProbe find(String name) {
-        for (MediaContainerProbe probe : probes) {
-            if (name.equals(probe.getName())) {
-                return probe;
-            }
-        }
-
-        return null;
-    }
-
-    public List<MediaContainerProbe> getAll() {
-        return probes;
-    }
+    fun find(name: String): MediaContainerProbe? =
+        all.find { it.name == name }
 }

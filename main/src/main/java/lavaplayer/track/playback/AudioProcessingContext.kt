@@ -1,8 +1,8 @@
-package lavaplayer.track.playback;
+package lavaplayer.track.playback
 
-import lavaplayer.format.AudioDataFormat;
-import lavaplayer.manager.AudioConfiguration;
-import lavaplayer.manager.AudioPlayerResources;
+import lavaplayer.format.AudioDataFormat
+import lavaplayer.manager.AudioConfiguration
+import lavaplayer.manager.AudioPlayerResources
 
 /**
  * Context for processing audio. Contains configuration for encoding and the output where the frames go to.
@@ -38,5 +38,5 @@ data class AudioProcessingContext(
      * Whether filter factory change is applied to already playing tracks.
      */
     @JvmField
-    val filterHotSwapEnabled: Boolean = configuration.filterHotSwapEnabled;
+    val filterHotSwapEnabled: Boolean = configuration.filterHotSwapEnabled
 }

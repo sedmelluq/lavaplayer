@@ -16,11 +16,11 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static lavaplayer.source.youtube.YoutubeHttpContextFilter.PBJ_PARAMETER;
 import static lavaplayer.tools.ExceptionTools.throwWithDebugInfo;
 import static lavaplayer.tools.FriendlyException.Severity.COMMON;
 import static lavaplayer.tools.FriendlyException.Severity.SUSPICIOUS;
-import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class DefaultYoutubeTrackDetailsLoader implements YoutubeTrackDetailsLoader {
     private static final Logger log = LoggerFactory.getLogger(DefaultYoutubeTrackDetailsLoader.class);
@@ -131,13 +131,6 @@ public class DefaultYoutubeTrackDetailsLoader implements YoutubeTrackDetailsLoad
         } else {
             throw new FriendlyException("This video cannot be viewed anonymously.", COMMON, null);
         }
-    }
-
-    protected enum InfoStatus {
-        INFO_PRESENT,
-        REQUIRES_LOGIN,
-        DOES_NOT_EXIST,
-        CONTENT_CHECK_REQUIRED
     }
 
     protected String getUnplayableReason(JsonBrowser statusBlock) {
@@ -262,6 +255,13 @@ public class DefaultYoutubeTrackDetailsLoader implements YoutubeTrackDetailsLoad
 
             return data.withPlayerScriptUrl(fetchedPlayerScript);
         }
+    }
+
+    protected enum InfoStatus {
+        INFO_PRESENT,
+        REQUIRES_LOGIN,
+        DOES_NOT_EXIST,
+        CONTENT_CHECK_REQUIRED
     }
 
     protected static class CachedPlayerScript {

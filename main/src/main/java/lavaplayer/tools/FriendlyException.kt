@@ -1,6 +1,5 @@
 package lavaplayer.tools
 
-import java.lang.RuntimeException
 import lavaplayer.tools.exception.EnvironmentInformation
 
 /**

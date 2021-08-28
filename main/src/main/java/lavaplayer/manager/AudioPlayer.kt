@@ -2,11 +2,10 @@ package lavaplayer.manager
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.SharedFlow
-import lavaplayer.track.playback.AudioFrameProvider
-import lavaplayer.track.AudioTrack
 import lavaplayer.filter.PcmFilterFactory
 import lavaplayer.manager.event.AudioEvent
-import lavaplayer.manager.event.AudioEventListener
+import lavaplayer.track.AudioTrack
+import lavaplayer.track.playback.AudioFrameProvider
 
 /**
  * An audio player that is capable of playing audio tracks and provides audio frames from the currently playing track.

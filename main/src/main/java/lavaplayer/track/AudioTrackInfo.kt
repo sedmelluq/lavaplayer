@@ -1,8 +1,8 @@
 package lavaplayer.track
 
+import kotlinx.serialization.Serializable
 import lavaplayer.tools.DataFormatTools
 import lavaplayer.tools.io.MessageInput
-import kotlinx.serialization.Serializable
 import java.io.DataInput
 import java.io.DataOutput
 import kotlin.experimental.and

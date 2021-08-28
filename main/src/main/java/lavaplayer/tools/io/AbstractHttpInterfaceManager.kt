@@ -1,4 +1,4 @@
-package lavaplayer.tools.io;
+package lavaplayer.tools.io
 
 import org.apache.http.client.config.RequestConfig
 import org.apache.http.impl.client.CloseableHttpClient
@@ -19,52 +19,52 @@ abstract class AbstractHttpInterfaceManager(
     private var requestConfig: RequestConfig
 ) : HttpInterfaceManager {
     companion object {
-        private val logger: Logger = LoggerFactory.getLogger(AbstractHttpInterfaceManager::class.java);
+        private val logger: Logger = LoggerFactory.getLogger(AbstractHttpInterfaceManager::class.java)
     }
 
-    private var closed: Boolean = false;
-    private var sharedClient: CloseableHttpClient? = null;
+    private var closed: Boolean = false
+    private var sharedClient: CloseableHttpClient? = null
 
     @Throws(IOException::class)
     override fun close() = synchronized(this) {
-        closed = true;
+        closed = true
         sharedClient?.use { sharedClient = null } ?: Unit
     }
 
     override fun configureRequests(configurator: Function<RequestConfig, RequestConfig>) {
         synchronized(this) {
             try {
-                close();
+                close()
             } catch (e: Exception) {
-                logger.warn("Failed to close HTTP client.", e);
+                logger.warn("Failed to close HTTP client.", e)
             }
 
-            closed = false;
-            requestConfig = configurator.apply(requestConfig);
-            clientBuilder.setDefaultRequestConfig(requestConfig);
+            closed = false
+            requestConfig = configurator.apply(requestConfig)
+            clientBuilder.setDefaultRequestConfig(requestConfig)
         }
     }
 
     override fun configureBuilder(configurator: Consumer<HttpClientBuilder>) {
         synchronized(this) {
             try {
-                close();
+                close()
             } catch (e: Exception) {
-                logger.warn("Failed to close HTTP client.", e);
+                logger.warn("Failed to close HTTP client.", e)
             }
 
-            closed = false;
-            configurator.accept(clientBuilder);
+            closed = false
+            configurator.accept(clientBuilder)
         }
     }
 
     protected fun getSharedClient() = synchronized(this) {
         if (closed) {
-            throw IllegalStateException("Cannot get http client for a closed manager.");
+            throw IllegalStateException("Cannot get http client for a closed manager.")
         }
 
         if (sharedClient == null) {
-            sharedClient = clientBuilder.build();
+            sharedClient = clientBuilder.build()
         }
 
         sharedClient!!

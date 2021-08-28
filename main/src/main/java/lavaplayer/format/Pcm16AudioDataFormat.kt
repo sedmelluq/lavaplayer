@@ -1,70 +1,55 @@
-package lavaplayer.format;
+package lavaplayer.format
 
-import lavaplayer.format.transcoder.AudioChunkDecoder;
-import lavaplayer.format.transcoder.AudioChunkEncoder;
-import lavaplayer.format.transcoder.PcmChunkDecoder;
-import lavaplayer.format.transcoder.PcmChunkEncoder;
-import lavaplayer.manager.AudioConfiguration;
+import lavaplayer.format.transcoder.AudioChunkDecoder
+import lavaplayer.format.transcoder.PcmChunkDecoder
+import lavaplayer.manager.AudioConfiguration
+import lavaplayer.format.transcoder.AudioChunkEncoder
+import lavaplayer.format.transcoder.PcmChunkEncoder
 
 /**
- * An {@link AudioDataFormat} for 16-bit signed PCM.
+ * An [AudioDataFormat] for 16-bit signed PCM.
+ *
+ * @param channelCount     Number of channels.
+ * @param sampleRate       Sample rate (frequency).
+ * @param chunkSampleCount Number of samples in one chunk.
+ * @param bigEndian        Whether the samples are in big-endian format (as opposed to little-endian).
  */
-public class Pcm16AudioDataFormat extends AudioDataFormat {
-    public static final String CODEC_NAME_BE = "PCM_S16_BE";
-    public static final String CODEC_NAME_LE = "PCM_S16_LE";
-
-    private final boolean bigEndian;
-    private final byte[] silenceBytes;
-
-    /**
-     * @param channelCount     Number of channels.
-     * @param sampleRate       Sample rate (frequency).
-     * @param chunkSampleCount Number of samples in one chunk.
-     * @param bigEndian        Whether the samples are in big-endian format (as opposed to little-endian).
-     */
-    public Pcm16AudioDataFormat(int channelCount, int sampleRate, int chunkSampleCount, boolean bigEndian) {
-        super(channelCount, sampleRate, chunkSampleCount);
-        this.bigEndian = bigEndian;
-        this.silenceBytes = new byte[channelCount * chunkSampleCount * 2];
+class Pcm16AudioDataFormat(channelCount: Int, sampleRate: Int, chunkSampleCount: Int, private val bigEndian: Boolean) : AudioDataFormat(channelCount, sampleRate, chunkSampleCount) {
+    companion object {
+        const val CODEC_NAME_BE = "PCM_S16_BE"
+        const val CODEC_NAME_LE = "PCM_S16_LE"
     }
 
-    @Override
-    public String codecName() {
-        return CODEC_NAME_BE;
+    private val silenceBytes: ByteArray = ByteArray(channelCount * chunkSampleCount * 2)
+
+    override val codecName: String
+        get() = CODEC_NAME_BE
+
+    override val expectedChunkSize: Int
+        get() = silenceBytes.size
+
+    override val maximumChunkSize: Int
+        get() = silenceBytes.size
+
+    override fun silenceBytes(): ByteArray {
+        return silenceBytes
     }
 
-    @Override
-    public byte[] silenceBytes() {
-        return silenceBytes;
+    override fun createDecoder(): AudioChunkDecoder {
+        return PcmChunkDecoder(this, bigEndian)
     }
 
-    @Override
-    public int expectedChunkSize() {
-        return silenceBytes.length;
+    override fun createEncoder(configuration: AudioConfiguration): AudioChunkEncoder {
+        return PcmChunkEncoder(this, bigEndian)
     }
 
-    @Override
-    public int maximumChunkSize() {
-        return silenceBytes.length;
+    override fun equals(other: Any?): Boolean {
+        return this === other || other != null && javaClass == other.javaClass && super.equals(other)
     }
 
-    @Override
-    public AudioChunkDecoder createDecoder() {
-        return new PcmChunkDecoder(this, bigEndian);
-    }
-
-    @Override
-    public AudioChunkEncoder createEncoder(AudioConfiguration configuration) {
-        return new PcmChunkEncoder(this, bigEndian);
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        return this == o || o != null && getClass() == o.getClass() && super.equals(o);
-    }
-
-    @Override
-    public int hashCode() {
-        return super.hashCode();
+    override fun hashCode(): Int {
+        var result = super.hashCode()
+        result = 31 * result + bigEndian.hashCode()
+        return result
     }
 }

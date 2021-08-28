@@ -85,7 +85,7 @@ class VimeoItemSourceManager : ItemSourceManager, HttpConfigurable {
     }
 
     @Throws(IOException::class)
-    fun loadConfigJsonFromPageContent(content: String?): JsonBrowser? {
+    fun loadConfigJsonFromPageContent(content: String): JsonBrowser? {
         val configText = DataFormatTools.extractBetween(content, "window.vimeo.clip_page_config = ", "\n")
         return if (configText != null) parse(configText) else null
     }

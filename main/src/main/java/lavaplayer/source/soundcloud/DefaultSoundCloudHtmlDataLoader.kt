@@ -37,9 +37,11 @@ class DefaultSoundCloudHtmlDataLoader : SoundCloudHtmlDataLoader {
             HttpClientTools.assertSuccessWithContent(response, "video page response")
 
             val html = EntityUtils.toString(response.entity, StandardCharsets.UTF_8)
-            val rootData = DataFormatTools.extractBetween(html, JSON_RANGES.toTypedArray())
-                ?: throw FriendlyException ("This url does not appear to be a playable track.", SUSPICIOUS,
-                    ExceptionTools.throwWithDebugInfo(log, null, "No track JSON found", "html", html))
+            val rootData = DataFormatTools.extractBetween(html, JSON_RANGES)
+                ?: throw FriendlyException(
+                    "This url does not appear to be a playable track.", SUSPICIOUS,
+                    ExceptionTools.throwWithDebugInfo(log, null, "No track JSON found", "html", html)
+                )
 
             return JsonBrowser.parse(rootData)
         }

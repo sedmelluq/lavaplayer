@@ -1,83 +1,67 @@
-package lavaplayer.container.mp3;
+package lavaplayer.container.mp3
 
-import lavaplayer.natives.mp3.Mp3Decoder;
-import lavaplayer.tools.DataFormatTools;
-import lavaplayer.tools.io.SeekableInputStream;
-
-import java.io.IOException;
-
-import static lavaplayer.natives.mp3.Mp3Decoder.MPEG1_SAMPLES_PER_FRAME;
+import lavaplayer.tools.DataFormatTools.arrayRangeEquals
+import lavaplayer.container.mp3.Mp3Seeker
+import lavaplayer.natives.mp3.Mp3Decoder
+import kotlin.Throws
+import java.io.IOException
+import lavaplayer.tools.io.SeekableInputStream
+import lavaplayer.container.mp3.Mp3ConstantRateSeeker
+import lavaplayer.tools.DataFormatTools
 
 /**
  * MP3 seeking support for constant bitrate files or in cases where the variable bitrate format used by the file is not
  * supported. In case the file is not actually CBR, this being used as a fallback may cause inaccurate seeking.
  */
-public class Mp3ConstantRateSeeker implements Mp3Seeker {
-    private static final int META_TAG_OFFSET = 36;
-    private static final byte[][] META_TAGS = new byte[][]{
-        new byte[]{'I', 'n', 'f', 'o'},
-        new byte[]{'L', 'A', 'M', 'E'}
-    };
+class Mp3ConstantRateSeeker private constructor(
+    private val averageFrameSize: Double,
+    private val sampleRate: Int,
+    private val firstFramePosition: Long,
+    private val contentLength: Long
+) : Mp3Seeker {
+    companion object {
+        private const val META_TAG_OFFSET = 36
+        private val META_TAGS = arrayOf(
+            byteArrayOf('I'.code.toByte(), 'n'.code.toByte(), 'f'.code.toByte(), 'o'.code.toByte()),
+            byteArrayOf('L'.code.toByte(), 'A'.code.toByte(), 'M'.code.toByte(), 'E'.code.toByte())
+        )
 
-    private final double averageFrameSize;
-    private final int sampleRate;
-    private final long firstFramePosition;
-    private final long contentLength;
-
-    private Mp3ConstantRateSeeker(double averageFrameSize, int sampleRate, long firstFramePosition, long contentLength) {
-        this.averageFrameSize = averageFrameSize;
-        this.sampleRate = sampleRate;
-        this.firstFramePosition = firstFramePosition;
-        this.contentLength = contentLength;
-    }
-
-    /**
-     * @param firstFramePosition Position of the first frame in the file
-     * @param contentLength      Total length of the file
-     * @param frameBuffer        Buffer of the first frame
-     * @return Constant rate seeker, will always succeed, never null.
-     */
-    public static Mp3ConstantRateSeeker createFromFrame(long firstFramePosition, long contentLength, byte[] frameBuffer) {
-        int sampleRate = Mp3Decoder.getFrameSampleRate(frameBuffer, 0);
-        double averageFrameSize = Mp3Decoder.getAverageFrameSize(frameBuffer, 0);
-
-        return new Mp3ConstantRateSeeker(averageFrameSize, sampleRate, firstFramePosition, contentLength);
-    }
-
-    public static boolean isMetaFrame(byte[] frameBuffer) {
-        for (byte[] metaTag : META_TAGS) {
-            if (DataFormatTools.arrayRangeEquals(frameBuffer, META_TAG_OFFSET, metaTag)) {
-                return true;
-            }
+        /**
+         * @param firstFramePosition Position of the first frame in the file
+         * @param contentLength      Total length of the file
+         * @param frameBuffer        Buffer of the first frame
+         * @return Constant rate seeker, will always succeed, never null.
+         */
+        @JvmStatic
+        fun createFromFrame(firstFramePosition: Long, contentLength: Long, frameBuffer: ByteArray): Mp3ConstantRateSeeker {
+            val sampleRate = Mp3Decoder.getFrameSampleRate(frameBuffer, 0)
+            val averageFrameSize = Mp3Decoder.getAverageFrameSize(frameBuffer, 0)
+            return Mp3ConstantRateSeeker(averageFrameSize, sampleRate, firstFramePosition, contentLength)
         }
 
-        return false;
+        @JvmStatic
+        fun isMetaFrame(frameBuffer: ByteArray): Boolean {
+            return META_TAGS.any { arrayRangeEquals(frameBuffer, META_TAG_OFFSET, it) }
+        }
     }
 
-    @Override
-    public long getDuration() {
-        return getMaximumFrameCount() * MPEG1_SAMPLES_PER_FRAME * 1000 / sampleRate;
-    }
+    private val maximumFrameCount: Long
+        get() = ((contentLength - firstFramePosition + 8) / averageFrameSize).toLong()
 
-    @Override
-    public boolean isSeekable() {
-        return true;
-    }
+    override val duration: Long
+        get() = maximumFrameCount * Mp3Decoder.MPEG1_SAMPLES_PER_FRAME * 1000 / sampleRate
 
-    @Override
-    public long seekAndGetFrameIndex(long timecode, SeekableInputStream inputStream) throws IOException {
-        long maximumFrameCount = getMaximumFrameCount();
+    override val isSeekable: Boolean
+        get() = true
 
-        long sampleIndex = timecode * sampleRate / 1000;
-        long frameIndex = Math.min(sampleIndex / MPEG1_SAMPLES_PER_FRAME, maximumFrameCount);
+    @Throws(IOException::class)
+    override fun seekAndGetFrameIndex(timecode: Long, inputStream: SeekableInputStream): Long {
+        val maximumFrameCount = maximumFrameCount
+        val sampleIndex = timecode * sampleRate / 1000
+        val frameIndex = (sampleIndex / Mp3Decoder.MPEG1_SAMPLES_PER_FRAME).coerceAtMost(maximumFrameCount)
+        val seekPosition = (frameIndex * averageFrameSize).toLong() - 8
+        inputStream.seek(firstFramePosition + seekPosition)
 
-        long seekPosition = (long) (frameIndex * averageFrameSize) - 8;
-        inputStream.seek(firstFramePosition + seekPosition);
-
-        return frameIndex;
-    }
-
-    private long getMaximumFrameCount() {
-        return (long) ((contentLength - firstFramePosition + 8) / averageFrameSize);
+        return frameIndex
     }
 }

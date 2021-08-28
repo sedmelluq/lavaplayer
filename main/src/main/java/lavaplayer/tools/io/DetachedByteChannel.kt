@@ -1,10 +1,9 @@
 package lavaplayer.tools.io
 
-import java.nio.channels.ReadableByteChannel
-import kotlin.Throws
 import java.io.IOException
 import java.nio.ByteBuffer
 import java.nio.channels.ClosedChannelException
+import java.nio.channels.ReadableByteChannel
 
 /**
  * Creates a readable byte channel which can be closed without closing the underlying channel.

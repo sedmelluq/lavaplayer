@@ -19,7 +19,6 @@ import java.util.concurrent.atomic.AtomicReference;
 public class MusicScheduler extends AudioEventAdapter implements Runnable {
     private final AudioPlayer player;
     private final MessageDispatcher messageDispatcher;
-    private final ScheduledExecutorService executorService;
     private final BlockingDeque<AudioTrack> queue;
     private final AtomicReference<Message> boxMessage;
     private final AtomicBoolean creatingBoxMessage;
@@ -27,7 +26,6 @@ public class MusicScheduler extends AudioEventAdapter implements Runnable {
     public MusicScheduler(AudioPlayer player, MessageDispatcher messageDispatcher, ScheduledExecutorService executorService) {
         this.player = player;
         this.messageDispatcher = messageDispatcher;
-        this.executorService = executorService;
         this.queue = new LinkedBlockingDeque<>();
         this.boxMessage = new AtomicReference<>();
         this.creatingBoxMessage = new AtomicBoolean();
@@ -110,7 +108,7 @@ public class MusicScheduler extends AudioEventAdapter implements Runnable {
             Message message = boxMessage.getAndSet(null);
 
             if (message != null) {
-                message.delete();
+                message.delete().queue();
             }
         }
 

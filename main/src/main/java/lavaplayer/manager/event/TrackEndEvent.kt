@@ -1,8 +1,8 @@
-package lavaplayer.manager.event;
+package lavaplayer.manager.event
 
-import lavaplayer.manager.AudioPlayer;
-import lavaplayer.track.AudioTrack;
-import lavaplayer.track.AudioTrackEndReason;
+import lavaplayer.manager.AudioPlayer
+import lavaplayer.track.AudioTrack
+import lavaplayer.track.AudioTrackEndReason
 
 /**
  * Event that is fired when an audio track ends in an audio player, either by interruption, exception or reaching the end.

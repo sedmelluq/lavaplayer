@@ -31,7 +31,7 @@ public class AdtsContainerProbe implements MediaContainerProbe {
     public boolean matchesHints(MediaContainerHints hints) {
         boolean invalidMimeType = hints.mimeType != null && !"audio/aac".equalsIgnoreCase(hints.mimeType);
         boolean invalidFileExtension = hints.fileExtension != null && !"aac".equalsIgnoreCase(hints.fileExtension);
-        return hints.present() && !invalidMimeType && !invalidFileExtension;
+        return hints.isPresent() && !invalidMimeType && !invalidFileExtension;
     }
 
     @Override

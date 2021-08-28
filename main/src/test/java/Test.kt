@@ -3,7 +3,7 @@ import lavaplayer.manager.DefaultAudioPlayerManager
 import lavaplayer.source.SourceRegistry
 import lavaplayer.tools.FriendlyException
 import lavaplayer.tools.extensions.isSearchResult
-import lavaplayer.tools.extensions.loadItem
+import lavaplayer.tools.extensions.loadItemAsync
 import lavaplayer.track.AudioTrack
 import lavaplayer.track.AudioTrackCollection
 import lavaplayer.track.loader.ItemLoadResultAdapter
@@ -26,7 +26,7 @@ object Test {
 
         /* old item loading. */
         try {
-            playerManager.loadItem(query, object : ItemLoadResultAdapter() {
+            playerManager.loadItemAsync(query, object : ItemLoadResultAdapter() {
                 override fun onTrackLoad(track: AudioTrack) {
                     println("""
                          ----------------------------------------

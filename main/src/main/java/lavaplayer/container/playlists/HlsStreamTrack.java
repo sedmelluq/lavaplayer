@@ -12,7 +12,7 @@ public class HlsStreamTrack extends MpegTsM3uStreamAudioTrack {
 
     /**
      * @param trackInfo            Track info
-     * @param httpInterfaceManager
+     * @param httpInterfaceManager The http interface manager
      */
     public HlsStreamTrack(AudioTrackInfo trackInfo, String streamUrl, HttpInterfaceManager httpInterfaceManager,
                           boolean isInnerUrl) {

@@ -6,11 +6,7 @@ import lavaplayer.tools.ThumbnailTools;
 import lavaplayer.tools.Units;
 import lavaplayer.tools.io.HttpClientTools;
 import lavaplayer.tools.io.HttpInterface;
-import lavaplayer.track.AudioTrack;
-import lavaplayer.track.AudioTrackInfo;
-import lavaplayer.track.AudioTrackCollection;
-import lavaplayer.track.AudioTrackCollectionType;
-import lavaplayer.track.BasicAudioTrackCollection;
+import lavaplayer.track.*;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
@@ -58,7 +54,7 @@ public class DefaultYoutubePlaylistLoader implements YoutubePlaylistLoader {
     }
 
     private AudioTrackCollection buildPlaylist(HttpInterface httpInterface, JsonBrowser json, String selectedVideoId,
-                                        Function<AudioTrackInfo, AudioTrack> trackFactory) throws IOException {
+                                               Function<AudioTrackInfo, AudioTrack> trackFactory) throws IOException {
 
         JsonBrowser jsonResponse = json.index(1).get("response");
 

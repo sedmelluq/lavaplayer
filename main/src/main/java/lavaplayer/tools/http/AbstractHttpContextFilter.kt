@@ -17,7 +17,11 @@ abstract class AbstractHttpContextFilter(private val delegate: HttpContextFilter
         delegate?.onRequest(context, request, isRepetition)
     }
 
-    override fun onRequestResponse(context: HttpClientContext, request: HttpUriRequest, response: HttpResponse): Boolean {
+    override fun onRequestResponse(
+        context: HttpClientContext,
+        request: HttpUriRequest,
+        response: HttpResponse
+    ): Boolean {
         return delegate?.onRequestResponse(context, request, response) ?: false
     }
 

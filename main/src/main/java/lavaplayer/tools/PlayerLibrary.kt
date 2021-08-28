@@ -1,7 +1,6 @@
 package lavaplayer.tools
 
 import org.apache.commons.io.IOUtils
-import java.lang.Exception
 import java.nio.charset.StandardCharsets
 
 /**

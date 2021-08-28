@@ -1,7 +1,5 @@
 package lavaplayer.tools
 
-import java.lang.RuntimeException
-
 object Units {
     /**
      * Not a negative number, so that we would not need to test for it separately when comparing.

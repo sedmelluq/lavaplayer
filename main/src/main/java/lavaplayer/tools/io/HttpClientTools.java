@@ -28,6 +28,7 @@ import java.net.SocketTimeoutException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 
 import static lavaplayer.tools.FriendlyException.Severity.SUSPICIOUS;
 
@@ -233,7 +234,7 @@ public class HttpClientTools {
      * @return Array of lines from the response
      * @throws IOException On network error or for non-200 response code.
      */
-    public static String[] fetchResponseLines(HttpInterface httpInterface, HttpUriRequest request, String name) throws IOException {
+    public static List<String> fetchResponseLines(HttpInterface httpInterface, HttpUriRequest request, String name) throws IOException {
         try (CloseableHttpResponse response = httpInterface.execute(request)) {
             int statusCode = response.getStatusLine().getStatusCode();
             if (!isSuccessWithContent(statusCode)) {

@@ -1,22 +1,22 @@
-package lavaplayer.container.mp3;
+package lavaplayer.container.mp3
 
-import lavaplayer.tools.io.SeekableInputStream;
-
-import java.io.IOException;
+import kotlin.Throws
+import java.io.IOException
+import lavaplayer.tools.io.SeekableInputStream
 
 /**
  * A seeking handler for MP3 files.
  */
-public interface Mp3Seeker {
+interface Mp3Seeker {
     /**
-     * @return The duration of the file in milliseconds. May be an estimate.
+     * @return The duration of the file in milliseconds. It may be an estimate.
      */
-    long getDuration();
+    val duration: Long
 
     /**
      * @return True if the track is seekable.
      */
-    boolean isSeekable();
+    val isSeekable: Boolean
 
     /**
      * @param timecode    The timecode that the seek is requested to
@@ -24,5 +24,6 @@ public interface Mp3Seeker {
      * @return The index of the frame that the seek was performed to
      * @throws IOException On IO error
      */
-    long seekAndGetFrameIndex(long timecode, SeekableInputStream inputStream) throws IOException;
+    @Throws(IOException::class)
+    fun seekAndGetFrameIndex(timecode: Long, inputStream: SeekableInputStream): Long
 }

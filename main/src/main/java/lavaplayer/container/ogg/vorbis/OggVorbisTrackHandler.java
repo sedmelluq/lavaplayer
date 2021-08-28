@@ -23,7 +23,7 @@ public class OggVorbisTrackHandler implements OggTrackHandler {
     private final DirectBufferStreamBroker broker;
     private final VorbisDecoder decoder;
     private final int sampleRate;
-    private float[][] channelPcmBuffers;
+    private final float[][] channelPcmBuffers;
     private AudioPipeline downstream;
 
     /**

@@ -7,5 +7,10 @@ import lavaplayer.track.AudioTrackInfo
 import java.util.function.Function
 
 interface YoutubeMixLoader {
-    fun load(httpInterface: HttpInterface, mixId: String, selectedVideoId: String, trackFactory: Function<AudioTrackInfo, AudioTrack>): AudioTrackCollection
+    fun load(
+        httpInterface: HttpInterface,
+        mixId: String,
+        selectedVideoId: String,
+        trackFactory: Function<AudioTrackInfo, AudioTrack>
+    ): AudioTrackCollection
 }

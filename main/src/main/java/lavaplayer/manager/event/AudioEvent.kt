@@ -1,6 +1,6 @@
-package lavaplayer.manager.event;
+package lavaplayer.manager.event
 
-import lavaplayer.manager.AudioPlayer;
+import lavaplayer.manager.AudioPlayer
 
 /**
  * An event related to an audio player.

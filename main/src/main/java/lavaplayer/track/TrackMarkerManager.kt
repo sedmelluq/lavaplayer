@@ -1,7 +1,7 @@
 package lavaplayer.track
 
-import java.util.concurrent.atomic.AtomicReference
 import lavaplayer.track.TrackMarkerHandler.MarkerState
+import java.util.concurrent.atomic.AtomicReference
 
 /**
  * Tracks the state of a track position marker.

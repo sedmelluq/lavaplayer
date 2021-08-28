@@ -1,8 +1,6 @@
 package lavaplayer.filter
 
 import java.io.Closeable
-import kotlin.Throws
-import java.lang.InterruptedException
 import java.nio.ShortBuffer
 
 /**
@@ -18,7 +16,7 @@ interface AudioPostProcessor : Closeable {
      * @throws InterruptedException When interrupted externally (or for seek/stop).
      */
     @Throws(InterruptedException::class)
-    fun process(timecode: Long, buffer: ShortBuffer?)
+    fun process(timecode: Long, buffer: ShortBuffer)
 
     /**
      * Frees up all resources this processor is holding internally.

@@ -96,7 +96,6 @@ public class FlacMetadataReader {
             int sampleCount = dataInput.readUnsignedShort();
 
             seekPoints[i] = new FlacSeekPoint(sampleIndex, byteOffset, sampleCount);
-
             if (sampleIndex != -1) {
                 seekPointCount = i + 1;
             }

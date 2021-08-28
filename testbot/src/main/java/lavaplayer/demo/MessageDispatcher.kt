@@ -1,11 +1,10 @@
-package lavaplayer.demo;
+package lavaplayer.demo
 
-import net.dv8tion.jda.api.entities.Message;
+import net.dv8tion.jda.api.entities.Message
+import java.util.function.Consumer
 
-import java.util.function.Consumer;
+interface MessageDispatcher {
+    fun sendMessage(message: String, success: Consumer<Message>, failure: Consumer<Throwable>)
 
-public interface MessageDispatcher {
-    void sendMessage(String message, Consumer<Message> success, Consumer<Throwable> failure);
-
-    void sendMessage(String message);
+    fun sendMessage(message: String)
 }

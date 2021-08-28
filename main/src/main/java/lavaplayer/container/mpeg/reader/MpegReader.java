@@ -90,7 +90,7 @@ public class MpegReader {
      */
     public String readFourCC() throws IOException {
         data.readFully(fourCcBuffer);
-        return new String(fourCcBuffer, "ISO-8859-1");
+        return new String(fourCcBuffer, StandardCharsets.ISO_8859_1);
     }
 
     /**
@@ -121,7 +121,7 @@ public class MpegReader {
             bytes.write(nextByte);
         }
 
-        return new String(bytes.toByteArray(), StandardCharsets.UTF_8);
+        return bytes.toString(StandardCharsets.UTF_8);
     }
 
     public int readCompressedInt() throws IOException {

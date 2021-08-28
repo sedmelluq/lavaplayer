@@ -1,26 +1,26 @@
-package lavaplayer.format.transcoder;
+package lavaplayer.format.transcoder
 
-import java.nio.ByteBuffer;
-import java.nio.ShortBuffer;
+import java.nio.ByteBuffer
+import java.nio.ShortBuffer
 
 /**
  * Encodes one chunk of audio from internal PCM format.
  */
-public interface AudioChunkEncoder {
+interface AudioChunkEncoder {
     /**
      * @param buffer Input buffer containing the PCM samples.
      * @return Encoded bytes
      */
-    byte[] encode(ShortBuffer buffer);
+    fun encode(buffer: ShortBuffer): ByteArray
 
     /**
-     * @param buffer Input buffer containing the PCM samples.
-     * @param out    Output buffer to store the encoded bytes in
+     * @param input  Input buffer containing the PCM samples.
+     * @param output Output buffer to store the encoded bytes in
      */
-    void encode(ShortBuffer buffer, ByteBuffer out);
+    fun encode(input: ShortBuffer, output: ByteBuffer)
 
     /**
      * Frees up all held resources.
      */
-    void close();
+    fun close()
 }

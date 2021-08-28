@@ -15,7 +15,10 @@ import lavaplayer.track.AudioTrackEndReason
 import lavaplayer.track.AudioTrackEndReason.*
 import lavaplayer.track.InternalAudioTrack
 import lavaplayer.track.TrackStateListener
-import lavaplayer.track.playback.*
+import lavaplayer.track.playback.AudioFrame
+import lavaplayer.track.playback.AudioFrameProviderTools
+import lavaplayer.track.playback.LocalAudioTrackExecutor
+import lavaplayer.track.playback.MutableAudioFrame
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.util.concurrent.TimeUnit
@@ -25,7 +28,8 @@ import kotlin.coroutines.CoroutineContext
 /**
  * An audio player that is capable of playing audio tracks and provides audio frames from the currently playing track.
  */
-class DefaultAudioPlayer(private val manager: DefaultAudioPlayerManager) : AudioPlayer, TrackStateListener, CoroutineScope {
+class DefaultAudioPlayer(private val manager: DefaultAudioPlayerManager) : AudioPlayer, TrackStateListener,
+    CoroutineScope {
     companion object {
         private val log: Logger = LoggerFactory.getLogger(AudioPlayer::class.java)
     }
@@ -117,7 +121,7 @@ class DefaultAudioPlayer(private val manager: DefaultAudioPlayerManager) : Audio
             return false
         }
 
-        dispatchEvent(TrackStartEvent (this, newTrack))
+        dispatchEvent(TrackStartEvent(this, newTrack))
 
         manager.executeTrack(this, newTrack, manager.configuration, resources)
         return true

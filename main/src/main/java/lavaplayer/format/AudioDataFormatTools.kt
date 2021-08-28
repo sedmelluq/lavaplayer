@@ -1,31 +1,29 @@
-package lavaplayer.format;
+package lavaplayer.format
 
-import javax.sound.sampled.AudioFormat;
-
-import static javax.sound.sampled.AudioFormat.Encoding.PCM_SIGNED;
+import javax.sound.sampled.AudioFormat
+import java.lang.IllegalStateException
 
 /**
  * Tools to deal with audio data formats.
  */
-public class AudioDataFormatTools {
-
+object AudioDataFormatTools {
     /**
      * @param format Audio data format to convert to JDK audio format
      * @return JDK audio format for the specified format.
      */
-    public static AudioFormat toAudioFormat(AudioDataFormat format) {
-        if (format instanceof Pcm16AudioDataFormat) {
-            return new AudioFormat(
-                PCM_SIGNED,
-                format.sampleRate,
+    @JvmStatic
+    fun toAudioFormat(format: AudioDataFormat): AudioFormat {
+        return if (format is Pcm16AudioDataFormat) {
+            AudioFormat(
+                AudioFormat.Encoding.PCM_SIGNED,
+                format.sampleRate.toFloat(),
                 16,
                 format.channelCount,
                 format.channelCount * 2,
-                format.sampleRate,
-                format.codecName().equals(Pcm16AudioDataFormat.CODEC_NAME_BE)
-            );
+                format.sampleRate.toFloat(), format.codecName == Pcm16AudioDataFormat.CODEC_NAME_BE
+            )
         } else {
-            throw new IllegalStateException("Only PCM is currently supported.");
+            throw IllegalStateException("Only PCM is currently supported.")
         }
     }
 }

@@ -42,7 +42,8 @@ class YoutubeMixProvider : YoutubeMixLoader {
                 HttpClientTools.assertSuccessWithContent(response, "mix response")
 
                 val body = JsonBrowser.parse(response.entity.content)
-                val playlist = body.index(3)["response"]["contents"]["twoColumnWatchNextResults"]["playlist"]["playlist"]
+                val playlist =
+                    body.index(3)["response"]["contents"]["twoColumnWatchNextResults"]["playlist"]["playlist"]
                 val title = playlist["title"]
                 if (!title.isNull) {
                     playlistTitle = title.safeText

@@ -1,7 +1,6 @@
 package lavaplayer.tools.exception
 
 import lavaplayer.tools.PlayerLibrary
-import java.lang.Exception
 
 class EnvironmentInformation private constructor(message: String) : Exception(message, null, false, false) {
     companion object {

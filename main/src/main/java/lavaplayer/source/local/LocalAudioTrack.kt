@@ -1,14 +1,12 @@
 package lavaplayer.source.local
 
-import lavaplayer.track.AudioTrackInfo
 import lavaplayer.container.MediaContainerDescriptor
-import lavaplayer.track.DelegatedAudioTrack
-import java.io.File
-import kotlin.Throws
-import lavaplayer.track.playback.LocalAudioTrackExecutor
-import lavaplayer.track.InternalAudioTrack
 import lavaplayer.track.AudioTrack
-import java.lang.Exception
+import lavaplayer.track.AudioTrackInfo
+import lavaplayer.track.DelegatedAudioTrack
+import lavaplayer.track.InternalAudioTrack
+import lavaplayer.track.playback.LocalAudioTrackExecutor
+import java.io.File
 
 /**
  * Audio track that handles processing local files as audio tracks.

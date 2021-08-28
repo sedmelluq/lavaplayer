@@ -1,11 +1,9 @@
 package lavaplayer.track
 
+import lavaplayer.manager.AudioPlayerManager
 import lavaplayer.track.playback.AudioFrameProvider
 import lavaplayer.track.playback.AudioTrackExecutor
-import kotlin.Throws
 import lavaplayer.track.playback.LocalAudioTrackExecutor
-import lavaplayer.manager.AudioPlayerManager
-import java.lang.Exception
 
 /**
  * Methods of an audio track that should not be visible outside the library

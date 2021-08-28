@@ -1,56 +1,41 @@
-package lavaplayer.format.transcoder;
+package lavaplayer.format.transcoder
 
-import lavaplayer.format.AudioDataFormat;
-import lavaplayer.natives.opus.OpusEncoder;
-import lavaplayer.manager.AudioConfiguration;
-
-import java.nio.ByteBuffer;
-import java.nio.ShortBuffer;
+import lavaplayer.format.AudioDataFormat
+import lavaplayer.manager.AudioConfiguration
+import lavaplayer.natives.opus.OpusEncoder
+import java.nio.ByteBuffer
+import java.nio.ShortBuffer
 
 /**
  * Audio chunk encoder for Opus codec.
+ *
+ * @param configuration Audio configuration used for configuring the encoder
+ * @param format        Target audio format.
  */
-public class OpusChunkEncoder implements AudioChunkEncoder {
-    private final AudioDataFormat format;
-    private final OpusEncoder encoder;
-    private final ByteBuffer encodedBuffer;
+class OpusChunkEncoder(configuration: AudioConfiguration, private val format: AudioDataFormat) : AudioChunkEncoder {
+    private val encodedBuffer = ByteBuffer.allocateDirect(format.maximumChunkSize)
+    private val encoder = OpusEncoder(format.sampleRate, format.channelCount, configuration.opusEncodingQuality)
 
-    /**
-     * @param configuration Audio configuration used for configuring the encoder
-     * @param format        Target audio format.
-     */
-    public OpusChunkEncoder(AudioConfiguration configuration, AudioDataFormat format) {
-        encodedBuffer = ByteBuffer.allocateDirect(format.maximumChunkSize());
-        encoder = new OpusEncoder(format.sampleRate, format.channelCount, configuration.getOpusEncodingQuality());
-        this.format = format;
+    override fun encode(buffer: ShortBuffer): ByteArray {
+        encoder.encode(buffer, format.chunkSampleCount, encodedBuffer)
+        val bytes = ByteArray(encodedBuffer.remaining())
+        encodedBuffer.get(bytes)
+        return bytes
     }
 
-    @Override
-    public byte[] encode(ShortBuffer buffer) {
-        encoder.encode(buffer, format.chunkSampleCount, encodedBuffer);
-
-        byte[] bytes = new byte[encodedBuffer.remaining()];
-        encodedBuffer.get(bytes);
-        return bytes;
-    }
-
-    @Override
-    public void encode(ShortBuffer buffer, ByteBuffer outBuffer) {
-        if (outBuffer.isDirect()) {
-            encoder.encode(buffer, format.chunkSampleCount, outBuffer);
+    override fun encode(input: ShortBuffer, output: ByteBuffer) {
+        if (output.isDirect) {
+            encoder.encode(input, format.chunkSampleCount, output)
         } else {
-            encoder.encode(buffer, format.chunkSampleCount, encodedBuffer);
-
-            int length = encodedBuffer.remaining();
-            encodedBuffer.get(outBuffer.array(), 0, length);
-
-            outBuffer.position(0);
-            outBuffer.limit(length);
+            encoder.encode(input, format.chunkSampleCount, encodedBuffer)
+            val length = encodedBuffer.remaining()
+            encodedBuffer[output.array(), 0, length]
+            output.position(0)
+            output.limit(length)
         }
     }
 
-    @Override
-    public void close() {
-        encoder.close();
+    override fun close() {
+        encoder.close()
     }
 }

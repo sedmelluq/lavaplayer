@@ -47,7 +47,7 @@ public enum MatroskaElementType {
     CueClusterPosition(DataType.UNSIGNED_INTEGER, new int[]{0xF1}),
     Unknown(DataType.BINARY, new int[]{});
 
-    private static Map<Long, MatroskaElementType> mapping;
+    private static final Map<Long, MatroskaElementType> mapping;
 
     static {
         Map<Long, MatroskaElementType> codeMapping = new HashMap<>();

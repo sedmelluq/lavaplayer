@@ -1,33 +1,34 @@
-package lavaplayer.container.ogg;
+package lavaplayer.container.ogg
 
-import lavaplayer.track.playback.AudioProcessingContext;
-
-import java.io.Closeable;
-import java.io.IOException;
+import lavaplayer.track.playback.AudioProcessingContext
+import java.io.Closeable
+import java.io.IOException
 
 /**
  * A handler for a specific codec for an OGG stream.
  */
-public interface OggTrackHandler extends Closeable {
+interface OggTrackHandler : Closeable {
     /**
      * Initialises the track stream.
      *
      * @param context Configuration and output information for processing
      * @throws IOException On read error.
      */
-    void initialise(AudioProcessingContext context, long timecode, long desiredTimecode) throws IOException;
+    @Throws(IOException::class)
+    fun initialise(context: AudioProcessingContext, timecode: Long, desiredTimecode: Long)
 
     /**
      * Decodes audio frames and sends them to frame consumer.
      *
      * @throws InterruptedException When interrupted externally (or for seek/stop).
      */
-    void provideFrames() throws InterruptedException;
+    @Throws(InterruptedException::class)
+    fun provideFrames()
 
     /**
      * Seeks to the specified timecode.
      *
      * @param timecode The timecode in milliseconds
      */
-    void seekToTimecode(long timecode);
+    fun seekToTimecode(timecode: Long)
 }

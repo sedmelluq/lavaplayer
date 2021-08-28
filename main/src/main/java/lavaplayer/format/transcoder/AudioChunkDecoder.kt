@@ -1,19 +1,20 @@
-package lavaplayer.format.transcoder;
+package lavaplayer.format.transcoder
 
-import java.nio.ShortBuffer;
+import java.io.Closeable
+import java.nio.ShortBuffer
 
 /**
  * Decodes one chunk of audio into internal PCM format.
  */
-public interface AudioChunkDecoder {
+interface AudioChunkDecoder : Closeable {
     /**
      * @param encoded Encoded bytes
-     * @param buffer  Output buffer for the PCM data
+     * @param output  Output buffer for the PCM data
      */
-    void decode(byte[] encoded, ShortBuffer buffer);
+    fun decode(encoded: ByteArray, output: ShortBuffer)
 
     /**
      * Frees up all held resources.
      */
-    void close();
+    override fun close()
 }

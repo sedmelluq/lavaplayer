@@ -1,9 +1,9 @@
-package lavaplayer.source.youtube;
+package lavaplayer.source.youtube
 
 import lavaplayer.tools.ExceptionTools.throwWithDebugInfo
-import lavaplayer.tools.JsonBrowser;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lavaplayer.tools.JsonBrowser
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 data class YoutubeTrackJsonData(
     @JvmField val playerResponse: JsonBrowser,
@@ -11,65 +11,65 @@ data class YoutubeTrackJsonData(
     @JvmField val playerScriptUrl: String?
 ) {
     companion object {
-        private val log: Logger = LoggerFactory.getLogger(DefaultYoutubeTrackDetailsLoader::class.java);
+        private val log: Logger = LoggerFactory.getLogger(DefaultYoutubeTrackDetailsLoader::class.java)
 
         @JvmStatic
         fun fromMainResult(result: JsonBrowser): YoutubeTrackJsonData {
             try {
-                var playerInfo = JsonBrowser.NULL_BROWSER;
-                var playerResponse = JsonBrowser.NULL_BROWSER;
+                var playerInfo = JsonBrowser.NULL_BROWSER
+                var playerResponse = JsonBrowser.NULL_BROWSER
 
                 for (child in result.values()) {
                     if (child.isMap) {
                         if (playerInfo.isNull) {
-                            playerInfo = child["player"];
+                            playerInfo = child["player"]
                         }
 
                         if (playerResponse.isNull) {
-                            playerResponse = child["playerResponse"];
+                            playerResponse = child["playerResponse"]
                         }
                     } else {
                         if (playerResponse.isNull) {
-                            playerResponse = result;
+                            playerResponse = result
                         }
                     }
                 }
 
                 if (!playerInfo.isNull) {
-                    return fromPolymerPlayerInfo(playerInfo, playerResponse);
+                    return fromPolymerPlayerInfo(playerInfo, playerResponse)
                 } else if (!playerResponse.isNull) {
-                    return YoutubeTrackJsonData(playerResponse, JsonBrowser.NULL_BROWSER, null);
+                    return YoutubeTrackJsonData(playerResponse, JsonBrowser.NULL_BROWSER, null)
                 }
             } catch (e: Exception) {
-                throw throwWithDebugInfo(log, e, "Error parsing result", "json", result.format());
+                throw throwWithDebugInfo(log, e, "Error parsing result", "json", result.format())
             }
 
-            throw throwWithDebugInfo(log, null, "Neither player nor playerResponse in result", "json", result.format());
+            throw throwWithDebugInfo(log, null, "Neither player nor playerResponse in result", "json", result.format())
         }
 
         private fun fromPolymerPlayerInfo(playerInfo: JsonBrowser, playerResponse: JsonBrowser): YoutubeTrackJsonData {
-            val args = playerInfo["args"];
-            val playerScriptUrl = playerInfo["assets"]["js"].text;
+            val args = playerInfo["args"]
+            val playerScriptUrl = playerInfo["assets"]["js"].text
 
             // In case of Polymer, the playerResponse with formats is the one embedded in args, NOT the one in outer JSON.
             // However, if no player_response is available, use the outer playerResponse.
             val playerResponseText = args["player_response"].text
-                ?: return YoutubeTrackJsonData(playerResponse, args, playerScriptUrl);
+                ?: return YoutubeTrackJsonData(playerResponse, args, playerScriptUrl)
 
-            return YoutubeTrackJsonData(parsePlayerResponse(playerResponseText), args, playerScriptUrl);
+            return YoutubeTrackJsonData(parsePlayerResponse(playerResponseText), args, playerScriptUrl)
         }
 
         private fun parsePlayerResponse(playerResponseText: String): JsonBrowser {
             try {
-                return JsonBrowser.parse(playerResponseText);
+                return JsonBrowser.parse(playerResponseText)
             } catch (e: Exception) {
-                throw throwWithDebugInfo(log, e, "Failed to parse player_response", "value", playerResponseText);
+                throw throwWithDebugInfo(log, e, "Failed to parse player_response", "value", playerResponseText)
             }
         }
 
     }
 
     fun withPlayerScriptUrl(playerScriptUrl: String): YoutubeTrackJsonData {
-        return  YoutubeTrackJsonData(playerResponse, polymerArguments, playerScriptUrl);
+        return YoutubeTrackJsonData(playerResponse, polymerArguments, playerScriptUrl)
     }
 }

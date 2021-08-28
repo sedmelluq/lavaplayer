@@ -1,8 +1,6 @@
 package lavaplayer.filter
 
 import java.io.Closeable
-import kotlin.Throws
-import java.lang.InterruptedException
 
 /**
  * A filter for audio samples

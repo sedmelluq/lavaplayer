@@ -1,7 +1,7 @@
 package lavaplayer.filter
 
-import lavaplayer.track.AudioTrack
 import lavaplayer.format.AudioDataFormat
+import lavaplayer.track.AudioTrack
 
 /**
  * Factory for custom PCM filters.

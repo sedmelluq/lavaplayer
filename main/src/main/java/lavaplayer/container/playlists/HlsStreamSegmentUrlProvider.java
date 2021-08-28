@@ -23,7 +23,7 @@ public class HlsStreamSegmentUrlProvider extends M3uStreamSegmentUrlProvider {
         this.segmentPlaylistUrl = segmentPlaylistUrl;
     }
 
-    public static String findHlsEntryUrl(String[] lines) {
+    public static String findHlsEntryUrl(List<String> lines) {
         List<ChannelStreamInfo> streams = new HlsStreamSegmentUrlProvider(null, null)
             .loadChannelStreamsList(lines);
 

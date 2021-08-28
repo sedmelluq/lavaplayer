@@ -5,7 +5,6 @@ import lavaplayer.format.AudioPlayerInputStream;
 import lavaplayer.manager.AudioPlayer;
 import lavaplayer.manager.AudioPlayerManager;
 import lavaplayer.manager.DefaultAudioPlayerManager;
-import lavaplayer.source.ItemSourceManagers;
 import lavaplayer.source.SourceRegistry;
 import lavaplayer.track.loader.DelegatedItemLoadResultHandler;
 
@@ -42,7 +41,7 @@ public class LocalPlayerDemo {
         line.open(stream.getFormat());
         line.start();
 
-        byte[] buffer = new byte[COMMON_PCM_S16_BE.maximumChunkSize()];
+        byte[] buffer = new byte[COMMON_PCM_S16_BE.getMaximumChunkSize()];
         int chunkSize;
 
         while ((chunkSize = stream.read(buffer)) >= 0) {

@@ -1,29 +1,29 @@
 package lavaplayer.source
 
-import lavaplayer.container.MediaContainerRegistry
-import lavaplayer.source.ItemSourceManager
-import lavaplayer.container.MediaContainerDetectionResult
-import lavaplayer.track.AudioItem
-import lavaplayer.tools.FriendlyException
-import lavaplayer.track.AudioTrackInfo
 import lavaplayer.container.MediaContainerDescriptor
+import lavaplayer.container.MediaContainerDetectionResult
+import lavaplayer.container.MediaContainerRegistry
+import lavaplayer.tools.FriendlyException
+import lavaplayer.track.AudioItem
 import lavaplayer.track.AudioTrack
-import kotlin.Throws
-import java.io.IOException
-import java.io.DataOutput
-import lavaplayer.source.ProbingItemSourceManager
+import lavaplayer.track.AudioTrackInfo
 import java.io.DataInput
-import lavaplayer.container.MediaContainerProbe
+import java.io.DataOutput
+import java.io.IOException
 
 /**
  * The base class for audio sources which use probing to detect container type.
  */
-abstract class ProbingItemSourceManager protected constructor(@JvmField protected val containerRegistry: MediaContainerRegistry) : ItemSourceManager {
+abstract class ProbingItemSourceManager protected constructor(@JvmField protected val containerRegistry: MediaContainerRegistry) :
+    ItemSourceManager {
     companion object {
         private const val PARAMETERS_SEPARATOR = '|'
     }
 
-    protected abstract fun createTrack(trackInfo: AudioTrackInfo, containerTrackFactory: MediaContainerDescriptor): AudioTrack
+    protected abstract fun createTrack(
+        trackInfo: AudioTrackInfo,
+        containerTrackFactory: MediaContainerDescriptor
+    ): AudioTrack
 
     protected fun handleLoadResult(result: MediaContainerDetectionResult?): AudioItem? {
         return if (result != null) {
@@ -41,7 +41,8 @@ abstract class ProbingItemSourceManager protected constructor(@JvmField protecte
 
     @Throws(IOException::class)
     protected fun encodeTrackFactory(factory: MediaContainerDescriptor, output: DataOutput) {
-        val probeInfo = factory.probe.name + if (factory.parameters != null) PARAMETERS_SEPARATOR.toString() + factory.parameters else ""
+        val probeInfo =
+            factory.probe.name + if (factory.parameters != null) PARAMETERS_SEPARATOR.toString() + factory.parameters else ""
         output.writeUTF(probeInfo)
     }
 

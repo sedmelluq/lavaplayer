@@ -1,4 +1,4 @@
-package lavaplayer.source.youtube;
+package lavaplayer.source.youtube
 
 /**
  * Type of signature cipher operation.

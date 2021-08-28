@@ -1,8 +1,8 @@
-package lavaplayer.manager.event;
+package lavaplayer.manager.event
 
-import lavaplayer.manager.AudioPlayer;
-import lavaplayer.tools.FriendlyException;
-import lavaplayer.track.AudioTrack;
+import lavaplayer.manager.AudioPlayer
+import lavaplayer.tools.FriendlyException
+import lavaplayer.track.AudioTrack
 
 /**
  * Event that is fired when an exception occurs in an audio track that causes it to halt or not start.

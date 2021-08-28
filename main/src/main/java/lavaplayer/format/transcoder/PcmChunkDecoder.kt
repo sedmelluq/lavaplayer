@@ -1,48 +1,40 @@
-package lavaplayer.format.transcoder;
+package lavaplayer.format.transcoder
 
-import lavaplayer.format.AudioDataFormat;
-
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.nio.ShortBuffer;
+import lavaplayer.format.AudioDataFormat
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
+import java.nio.ShortBuffer
 
 /**
  * Audio chunk decoder for PCM data.
+ *
+ * @param format    Source audio format.
+ * @param bigEndian Whether the samples are in big-endian format (as opposed to little-endian).
  */
-public class PcmChunkDecoder implements AudioChunkDecoder {
-    private final ByteBuffer encodedAsByte;
-    private final ShortBuffer encodedAsShort;
+class PcmChunkDecoder(format: AudioDataFormat, bigEndian: Boolean) : AudioChunkDecoder {
+    private val encodedAsByte: ByteBuffer
+    private val encodedAsShort: ShortBuffer
 
-    /**
-     * @param format    Source audio format.
-     * @param bigEndian Whether the samples are in big-endian format (as opposed to little-endian).
-     */
-    public PcmChunkDecoder(AudioDataFormat format, boolean bigEndian) {
-        this.encodedAsByte = ByteBuffer.allocate(format.maximumChunkSize());
-
+    init {
+        encodedAsByte = ByteBuffer.allocate(format.maximumChunkSize)
         if (!bigEndian) {
-            encodedAsByte.order(ByteOrder.LITTLE_ENDIAN);
+            encodedAsByte.order(ByteOrder.LITTLE_ENDIAN)
         }
 
-        this.encodedAsShort = encodedAsByte.asShortBuffer();
+        encodedAsShort = encodedAsByte.asShortBuffer()
     }
 
-    @Override
-    public void decode(byte[] encoded, ShortBuffer buffer) {
-        buffer.clear();
-
-        encodedAsByte.clear();
-        encodedAsByte.put(encoded);
-
-        encodedAsShort.clear();
-        encodedAsShort.limit(encodedAsByte.position() / 2);
-
-        buffer.put(encodedAsShort);
-        buffer.rewind();
+    override fun decode(encoded: ByteArray, output: ShortBuffer) {
+        output.clear()
+        encodedAsByte.clear()
+        encodedAsByte.put(encoded)
+        encodedAsShort.clear()
+        encodedAsShort.limit(encodedAsByte.position() / 2)
+        output.put(encodedAsShort)
+        output.rewind()
     }
 
-    @Override
-    public void close() {
+    override fun close() {
         // Nothing to close here
     }
 }

@@ -1,7 +1,7 @@
 package lavaplayer.source.soundcloud
 
-import lavaplayer.tools.ThumbnailTools.extractSoundCloud
 import lavaplayer.tools.JsonBrowser
+import lavaplayer.tools.ThumbnailTools.extractSoundCloud
 import lavaplayer.track.AudioTrackInfo
 import org.slf4j.LoggerFactory
 

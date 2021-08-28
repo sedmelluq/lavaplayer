@@ -1,7 +1,7 @@
 package lavaplayer.filter;
 
-import lavaplayer.natives.samplerate.SampleRateConverter;
 import lavaplayer.manager.AudioConfiguration;
+import lavaplayer.natives.samplerate.SampleRateConverter;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -14,16 +14,16 @@ public class ResamplingPcmAudioFilter implements FloatPcmAudioFilter {
 
     private static final int BUFFER_SIZE = 4096;
 
-    private final FloatPcmAudioFilter downstream;
-    private final SampleRateConverter[] converters;
-    private final SampleRateConverter.Progress progress = new SampleRateConverter.Progress();
-    private final float[][] outputSegments;
-
     static {
         RESAMPLING_VALUES.put(AudioConfiguration.ResamplingQuality.HIGH, SampleRateConverter.ResamplingType.SINC_MEDIUM_QUALITY);
         RESAMPLING_VALUES.put(AudioConfiguration.ResamplingQuality.MEDIUM, SampleRateConverter.ResamplingType.SINC_FASTEST);
         RESAMPLING_VALUES.put(AudioConfiguration.ResamplingQuality.LOW, SampleRateConverter.ResamplingType.LINEAR);
     }
+
+    private final FloatPcmAudioFilter downstream;
+    private final SampleRateConverter[] converters;
+    private final SampleRateConverter.Progress progress = new SampleRateConverter.Progress();
+    private final float[][] outputSegments;
 
     /**
      * @param configuration Configuration to use
