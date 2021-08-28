@@ -1,37 +1,37 @@
-package lavaplayer.source;
+package lavaplayer.source
 
-import lavaplayer.track.AudioItem;
-import lavaplayer.track.AudioReference;
-import lavaplayer.track.AudioTrack;
-import lavaplayer.track.AudioTrackInfo;
-import lavaplayer.track.loading.ItemLoader;
-
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
+import lavaplayer.track.AudioReference
+import lavaplayer.track.AudioItem
+import lavaplayer.track.AudioTrack
+import kotlin.Throws
+import java.io.IOException
+import java.io.DataOutput
+import lavaplayer.track.AudioTrackInfo
+import lavaplayer.track.loader.LoaderState
+import java.io.DataInput
 
 /**
  * Manager for a source of audio items.
  */
-public interface ItemSourceManager {
+interface ItemSourceManager {
     /**
      * Every source manager implementation should have its unique name as it is used to determine which source manager
      * should be able to decode a serialized audio track.
      *
      * @return The name of this source manager
      */
-    String getSourceName();
+    val sourceName: String
 
     /**
      * Returns an audio track for the input string. It should return null if it can immediately detect that there is no
      * track for this identifier for this source. If checking that requires more expensive operations, then it should
      * return a track instance and check that in InternalAudioTrack#loadTrackInfo.
      *
-     * @param itemLoader The item loader that's requesting {@param reference} to be loaded???
+     * @param state      The state of the loader that's requesting {@param reference} to be loaded???
      * @param reference  The reference with the identifier which the source manager should find the track with
      * @return The loaded item or null on unrecognized identifier
      */
-    AudioItem loadItem(ItemLoader itemLoader, AudioReference reference);
+    fun loadItem(state: LoaderState, reference: AudioReference): AudioItem?
 
     /**
      * Returns whether the specified track can be encoded. The argument is always a track created by this manager. Being
@@ -41,7 +41,7 @@ public interface ItemSourceManager {
      * @param track The track to check
      * @return True if it is encodable
      */
-    boolean isTrackEncodable(AudioTrack track);
+    fun isTrackEncodable(track: AudioTrack): Boolean
 
     /**
      * Encodes an audio track into the specified output. The contents of AudioTrackInfo do not have to be included since
@@ -52,7 +52,8 @@ public interface ItemSourceManager {
      * @param output Output where to write the decoded format to
      * @throws IOException On write error.
      */
-    void encodeTrack(AudioTrack track, DataOutput output) throws IOException;
+    @Throws(IOException::class)
+    fun encodeTrack(track: AudioTrack, output: DataOutput)
 
     /**
      * Decodes an audio track from the encoded format encoded with encodeTrack().
@@ -62,11 +63,12 @@ public interface ItemSourceManager {
      * @return The decoded track
      * @throws IOException On read error.
      */
-    AudioTrack decodeTrack(AudioTrackInfo trackInfo, DataInput input) throws IOException;
+    @Throws(IOException::class)
+    fun decodeTrack(trackInfo: AudioTrackInfo, input: DataInput): AudioTrack
 
     /**
      * Shut down the source manager, freeing all associated resources and threads. A source manager is not responsible for
      * terminating the tracks that it has created.
      */
-    void shutdown();
+    fun shutdown()
 }

@@ -1,4 +1,4 @@
-package lavaplayer.track.loading
+package lavaplayer.track.loader
 
 import lavaplayer.track.AudioReference
 

@@ -105,7 +105,6 @@ public class BotApplicationManager extends ListenerAdapter {
         controllerManager.dispatchMessage(guildContext.controllers, "!/", event.getMessage(), new BotCommandMappingHandler() {
             @Override
             public void commandNotFound(Message message, String name) {
-                System.out.println(String.format("command not found ?!?!?!?!??!?!? %s", name));
             }
 
             @Override

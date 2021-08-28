@@ -6,7 +6,8 @@ import lavaplayer.manager.AudioPlayer;
 import lavaplayer.manager.AudioPlayerManager;
 import lavaplayer.manager.DefaultAudioPlayerManager;
 import lavaplayer.source.ItemSourceManagers;
-import lavaplayer.track.loading.DelegatedItemLoadResultHandler;
+import lavaplayer.source.SourceRegistry;
+import lavaplayer.track.loader.DelegatedItemLoadResultHandler;
 
 import javax.sound.sampled.*;
 import java.io.IOException;
@@ -16,7 +17,7 @@ import static lavaplayer.format.StandardAudioDataFormats.COMMON_PCM_S16_BE;
 public class LocalPlayerDemo {
     public static void main(String[] args) throws LineUnavailableException, IOException {
         AudioPlayerManager manager = new DefaultAudioPlayerManager();
-        ItemSourceManagers.registerRemoteSources(manager);
+        SourceRegistry.registerRemoteSources(manager);
         manager.getConfiguration().setOutputFormat(COMMON_PCM_S16_BE);
 
         AudioPlayer player = manager.createPlayer();
@@ -30,7 +31,7 @@ public class LocalPlayerDemo {
             null
         ));
 
-        itemLoader.load();
+        itemLoader.loadAsync();
 
         /* do some more bullshit lol */
         AudioDataFormat format = manager.getConfiguration().getOutputFormat();

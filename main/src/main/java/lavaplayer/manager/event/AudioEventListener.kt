@@ -3,9 +3,9 @@ package lavaplayer.manager.event;
 /**
  * Listener of audio events.
  */
-interface AudioEventListener {
+fun interface AudioEventListener {
     /**
      * @param event The event
      */
-    fun onEvent(event: AudioEvent)
+    suspend fun onEvent(event: AudioEvent)
 }

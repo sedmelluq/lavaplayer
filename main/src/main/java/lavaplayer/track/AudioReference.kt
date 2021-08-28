@@ -1,10 +1,7 @@
 package lavaplayer.track
 
-import kotlin.jvm.JvmOverloads
 import lavaplayer.container.MediaContainerDescriptor
-import lavaplayer.track.AudioItem
 import lavaplayer.track.info.AudioTrackInfoProvider
-import lavaplayer.track.AudioReference
 
 /**
  * An audio item which refers to an unloaded audio item. Source managers can return this to indicate a redirection,

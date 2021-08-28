@@ -11,5 +11,5 @@ interface SplitShortPcmAudioFilter : AudioFilter {
      * @throws InterruptedException When interrupted externally (or for seek/stop).
      */
     @Throws(InterruptedException::class)
-    fun process(input: Array<ShortArray?>, offset: Int, length: Int)
+    fun process(input: Array<ShortArray>, offset: Int, length: Int)
 }

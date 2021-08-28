@@ -3,7 +3,6 @@ package lavaplayer.track.playback
 import lavaplayer.format.AudioDataFormat
 
 import java.util.concurrent.atomic.AtomicBoolean
-import kotlin.reflect.KClass
 
 /**
  * Factory for audio frame buffers.
@@ -18,6 +17,3 @@ fun interface AudioFrameBufferFactory {
      */
     fun create(bufferDuration: Int, format: AudioDataFormat, stopping: AtomicBoolean): AudioFrameBuffer
 }
-
-fun KClass<out AudioFrameBuffer>.factory() =
-    AudioFrameBufferFactory { b, f, s -> constructors.first().call(b, f, s) }

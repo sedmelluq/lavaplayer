@@ -13,7 +13,7 @@ import lavaplayer.track.AudioItem;
 import lavaplayer.track.AudioReference;
 import lavaplayer.track.AudioTrack;
 import lavaplayer.track.AudioTrackInfo;
-import lavaplayer.track.loading.ItemLoader;
+import lavaplayer.track.loader.LoaderState;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpUriRequest;
@@ -88,8 +88,8 @@ public class TwitchStreamItemSourceManager implements ItemSourceManager, HttpCon
     }
 
     @Override
-    public AudioItem loadItem(ItemLoader itemLoader, AudioReference reference) {
-        String streamName = getChannelIdentifierFromUrl(reference.getIdentifier());
+    public AudioItem loadItem(LoaderState state, AudioReference reference) {
+        String streamName = getChannelIdentifierFromUrl(reference.identifier);
         if (streamName == null) {
             return null;
         }
@@ -136,9 +136,9 @@ public class TwitchStreamItemSourceManager implements ItemSourceManager, HttpCon
                 status,
                 streamName,
                 Units.DURATION_MS_UNKNOWN,
-                reference.getIdentifier(),
+                reference.identifier,
                 true,
-                reference.getIdentifier(),
+                reference.identifier,
                 thumbnail
             ), this);
         }

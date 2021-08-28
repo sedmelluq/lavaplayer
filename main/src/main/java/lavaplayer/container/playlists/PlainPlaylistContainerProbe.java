@@ -45,7 +45,7 @@ public class PlainPlaylistContainerProbe implements MediaContainerProbe {
             return null;
         }
 
-        log.debug("Track {} is a plain playlist file.", reference.getIdentifier());
+        log.debug("Track {} is a plain playlist file.", reference.identifier);
         return loadFromLines(DataFormatTools.streamToLines(inputStream, StandardCharsets.UTF_8));
     }
 

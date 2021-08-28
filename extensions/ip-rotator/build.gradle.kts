@@ -4,10 +4,11 @@ plugins {
 }
 
 val moduleName = "lavaplayer-ext-ip-rotator"
-version = "0.2.6"
+version = "0.2.7"
 
 dependencies {
-    api(project(":main"))
+    compileOnly(project(":main"))
+    api("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.5.1")
     api("org.slf4j:slf4j-api:1.7.32")
 }
 

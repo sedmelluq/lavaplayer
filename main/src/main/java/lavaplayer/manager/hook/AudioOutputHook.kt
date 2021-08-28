@@ -6,7 +6,7 @@ import lavaplayer.track.playback.AudioFrame
 /**
  * Hook for intercepting outgoing audio frames from AudioPlayer.
  */
-interface AudioOutputHook {
+fun interface AudioOutputHook {
     /**
      * @param player Audio player where the frame is coming from
      * @param frame  Audio frame

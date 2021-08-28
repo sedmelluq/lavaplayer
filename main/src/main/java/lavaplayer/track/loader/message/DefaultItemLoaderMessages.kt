@@ -1,38 +1,34 @@
-package lavaplayer.track.loading
+package lavaplayer.track.loader.message
 
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.*
 import org.slf4j.LoggerFactory
 import kotlin.coroutines.CoroutineContext
+import kotlin.reflect.KClass
 
-class ItemLoaderMessages : CoroutineScope {
+class DefaultItemLoaderMessages : ItemLoaderMessages, CoroutineScope {
     companion object {
         @PublishedApi
-        internal val log = LoggerFactory.getLogger(ItemLoaderMessages::class.java)
+        internal val log = LoggerFactory.getLogger(DefaultItemLoaderMessages::class.java)
     }
 
     override val coroutineContext: CoroutineContext
         get() = Dispatchers.Default + Job()
 
-    var communicating = false
-    val events: SharedFlow<ItemLoaderMessage> get() = eventFlow
+    var active = false
+    val events: SharedFlow<ItemLoaderMessage>
+        get() = eventFlow
 
     private val eventFlow: MutableSharedFlow<ItemLoaderMessage> by lazy {
         MutableSharedFlow(extraBufferCapacity = Int.MAX_VALUE)
     }
 
-    /**
-     *
-     */
-    inline fun <reified E : ItemLoaderMessage> on(
-        scope: CoroutineScope = this,
-        noinline block: suspend E.() -> Unit
-    ): Job {
-        communicating = true
-        return events
+    override fun <T : ItemLoaderMessage> on(clazz: KClass<T>, block: suspend T.() -> Unit): Job {
+        active = true
+        return (events
             .buffer(Channel.UNLIMITED)
-            .filterIsInstance<E>()
+            .filter { clazz.isInstance(it) } as Flow<T>)
             .onEach { event ->
                 launch {
                     event
@@ -40,7 +36,7 @@ class ItemLoaderMessages : CoroutineScope {
                         .onFailure { log.error("Error occurred while handling audio reference loader message", it) }
                 }
             }
-            .launchIn(scope)
+            .launchIn(this)
     }
 
     /**
@@ -48,11 +44,15 @@ class ItemLoaderMessages : CoroutineScope {
      *
      * @param message A [ItemLoaderMessage] to send.
      */
-    fun send(message: ItemLoaderMessage): Boolean {
-        if (!communicating) {
+    override fun send(message: ItemLoaderMessage): Boolean {
+        if (!active) {
             return false
         }
 
         return eventFlow.tryEmit(message)
+    }
+
+    override fun shutdown() {
+        cancel()
     }
 }

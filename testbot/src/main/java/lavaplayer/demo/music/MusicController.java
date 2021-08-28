@@ -12,13 +12,14 @@ import lavaplayer.manager.AudioPlayerManager;
 import lavaplayer.source.youtube.YoutubeItemSourceManager;
 import lavaplayer.tools.FriendlyException;
 import lavaplayer.tools.PlayerLibrary;
+import lavaplayer.tools.extensions.AudioPlayerKt;
 import lavaplayer.tools.io.MessageInput;
 import lavaplayer.tools.io.MessageOutput;
 import lavaplayer.track.AudioTrack;
 import lavaplayer.track.AudioTrackCollection;
 import lavaplayer.track.DecodedTrackHolder;
 import lavaplayer.track.TrackMarker;
-import lavaplayer.track.loading.ItemLoadResultAdapter;
+import lavaplayer.track.loader.ItemLoadResultAdapter;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.TextChannel;
@@ -57,7 +58,7 @@ public class MusicController implements BotController {
         MessageDispatcher messageDispatcher = new GlobalDispatcher();
         scheduler = new MusicScheduler(player, messageDispatcher, manager.getExecutorService());
 
-        player.addListener(scheduler);
+        AudioPlayerKt.addListener(player, scheduler);
     }
 
     private static void connectToFirstVoiceChannel(AudioManager audioManager) {
@@ -227,7 +228,7 @@ public class MusicController implements BotController {
 
         itemLoader.setResultHandler(new ItemLoadResultAdapter() {
             @Override
-            public void onTrack(AudioTrack track) {
+            public void onTrackLoad(AudioTrack track) {
                 connectToFirstVoiceChannel(guild.getAudioManager());
 
                 message.getChannel().sendMessage("Starting now: " + track.getInfo().title + " (length " + track.getDuration() + ")").queue();
@@ -239,7 +240,7 @@ public class MusicController implements BotController {
             }
 
             @Override
-            public void onTrackCollection(AudioTrackCollection playlist) {
+            public void onCollectionLoad(AudioTrackCollection playlist) {
                 List<AudioTrack> tracks = playlist.getTracks();
                 message.getChannel().sendMessage("Loaded playlist: " + playlist.getName() + " (" + tracks.size() + ")").queue();
 
@@ -268,7 +269,7 @@ public class MusicController implements BotController {
             }
 
             @Override
-            public void onNoMatches() {
+            public void noMatches() {
                 message.getChannel().sendMessage("Nothing found for " + identifier).queue();
             }
 
@@ -278,7 +279,7 @@ public class MusicController implements BotController {
             }
         });
 
-        itemLoader.load();
+        itemLoader.loadAsync();
     }
 
     private void forPlayingTrack(TrackOperation operation) {

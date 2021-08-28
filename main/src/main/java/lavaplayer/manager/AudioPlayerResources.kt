@@ -18,7 +18,7 @@ class AudioPlayerResources {
      * Current PCM filter factory. Applied in real-time.
      */
     @JvmField
-    val filterFactory = AtomicReference<PcmFilterFactory>()
+    val filterFactory = AtomicReference<PcmFilterFactory?>()
 
     /**
      * Current frame buffer size. If not set, the global default is used. Changing this only affects the next track that

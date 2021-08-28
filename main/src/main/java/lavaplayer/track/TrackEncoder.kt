@@ -9,8 +9,8 @@ import java.io.IOException
  */
 interface TrackEncoder {
     companion object {
-        const val TRACK_INFO_VERSION = 1
-        const val TRACK_INFO_VERSIONED = 2
+        const val TRACK_INFO_VERSION = 2
+        const val TRACK_INFO_VERSIONED = 1
     }
 
     /**

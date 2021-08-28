@@ -1,14 +1,12 @@
 package lavaplayer.source.twitch
 
-import lavaplayer.track.AudioTrackInfo
-import lavaplayer.source.stream.MpegTsM3uStreamAudioTrack
 import lavaplayer.source.stream.M3uStreamSegmentUrlProvider
+import lavaplayer.source.stream.MpegTsM3uStreamAudioTrack
 import lavaplayer.tools.io.HttpInterface
-import kotlin.Throws
-import lavaplayer.track.playback.LocalAudioTrackExecutor
 import lavaplayer.track.AudioTrack
+import lavaplayer.track.AudioTrackInfo
+import lavaplayer.track.playback.LocalAudioTrackExecutor
 import org.slf4j.LoggerFactory
-import java.lang.Exception
 
 /**
  * Audio track that handles processing Twitch tracks.

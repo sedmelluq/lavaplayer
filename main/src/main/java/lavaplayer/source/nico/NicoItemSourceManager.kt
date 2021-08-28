@@ -11,7 +11,7 @@ import lavaplayer.track.AudioItem
 import lavaplayer.track.AudioReference
 import lavaplayer.track.AudioTrack
 import lavaplayer.track.AudioTrackInfo
-import lavaplayer.track.loading.ItemLoader
+import lavaplayer.track.loader.LoaderState
 import org.apache.http.client.config.RequestConfig
 import org.apache.http.client.methods.HttpGet
 import org.apache.http.client.methods.HttpPost
@@ -40,6 +40,9 @@ class NicoItemSourceManager(private val email: String, private val password: Str
 
     private val httpInterfaceManager = HttpClientTools.createDefaultThreadLocalManager()
     private val loggedIn = AtomicBoolean()
+
+    override val sourceName: String =
+        "niconico"
 
     /**
      * @return Get an HTTP interface for a playing track.
@@ -76,9 +79,6 @@ class NicoItemSourceManager(private val email: String, private val password: Str
         }
     }
 
-    override fun getSourceName(): String =
-        "niconico"
-
     override fun isTrackEncodable(track: AudioTrack): Boolean =
         true
 
@@ -86,7 +86,7 @@ class NicoItemSourceManager(private val email: String, private val password: Str
     override fun decodeTrack(trackInfo: AudioTrackInfo, input: DataInput): AudioTrack =
         NicoAudioTrack(trackInfo, this)
 
-    override fun loadItem(itemLoader: ItemLoader, reference: AudioReference): AudioItem? {
+    override fun loadItem(state: LoaderState, reference: AudioReference): AudioItem? {
         val trackMatcher = trackUrlPattern.matcher(reference.identifier)
         return if (trackMatcher.matches()) loadTrack(trackMatcher.group(1)) else null
     }

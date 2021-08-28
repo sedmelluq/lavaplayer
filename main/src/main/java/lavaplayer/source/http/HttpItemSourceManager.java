@@ -10,7 +10,7 @@ import lavaplayer.track.AudioReference;
 import lavaplayer.track.AudioTrack;
 import lavaplayer.track.AudioTrackInfo;
 import lavaplayer.track.info.AudioTrackInfoBuilder;
-import lavaplayer.track.loading.ItemLoader;
+import lavaplayer.track.loader.LoaderState;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.impl.client.HttpClientBuilder;
@@ -56,10 +56,10 @@ public class HttpItemSourceManager extends ProbingItemSourceManager implements H
     }
 
     public static AudioReference getAsHttpReference(AudioReference reference) {
-        if (reference.getUri().startsWith("https://") || reference.getIdentifier().startsWith("http://")) {
+        if (reference.getUri().startsWith("https://") || reference.identifier.startsWith("http://")) {
             return reference;
         } else if (reference.getUri().startsWith("icy://")) {
-            return new AudioReference("http://" + reference.getIdentifier().substring(6), reference.title);
+            return new AudioReference("http://" + reference.identifier.substring(6), reference.title);
         }
         return null;
     }
@@ -70,7 +70,7 @@ public class HttpItemSourceManager extends ProbingItemSourceManager implements H
     }
 
     @Override
-    public AudioItem loadItem(ItemLoader itemLoader, AudioReference reference) {
+    public AudioItem loadItem(LoaderState state, AudioReference reference) {
         AudioReference httpReference = getAsHttpReference(reference);
         if (httpReference == null) {
             return null;
@@ -118,9 +118,9 @@ public class HttpItemSourceManager extends ProbingItemSourceManager implements H
     }
 
     private MediaContainerDetectionResult detectContainerWithClient(HttpInterface httpInterface, AudioReference reference) throws IOException {
-        try (PersistentHttpStream inputStream = new PersistentHttpStream(httpInterface, new URI(reference.getIdentifier()), Units.CONTENT_LENGTH_UNKNOWN)) {
+        try (PersistentHttpStream inputStream = new PersistentHttpStream(httpInterface, new URI(reference.identifier), Units.CONTENT_LENGTH_UNKNOWN)) {
             int statusCode = inputStream.checkStatusCode();
-            String redirectUrl = HttpClientTools.getRedirectLocation(reference.getIdentifier(), inputStream.getCurrentResponse());
+            String redirectUrl = HttpClientTools.getRedirectLocation(reference.identifier, inputStream.getCurrentResponse());
 
             if (redirectUrl != null) {
                 return refer(null, new AudioReference(redirectUrl, null));

@@ -32,7 +32,7 @@ data class YoutubeTrackFormat(
     /**
      * Cipher signature for this format
      */
-    val signature: String,
+    val signature: String?,
     /**
      * The key to use for deciphered signature in the final playback URL
      */

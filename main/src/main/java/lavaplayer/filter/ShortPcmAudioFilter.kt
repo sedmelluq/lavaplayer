@@ -13,7 +13,7 @@ interface ShortPcmAudioFilter : AudioFilter {
      * @throws InterruptedException When interrupted externally (or for seek/stop).
      */
     @Throws(InterruptedException::class)
-    fun process(input: ShortArray?, offset: Int, length: Int)
+    fun process(input: ShortArray, offset: Int, length: Int)
 
     /**
      * @param buffer The buffer of samples

@@ -1,9 +1,9 @@
-package lavaplayer.manager.event;
+package lavaplayer.manager.event
 
-import lavaplayer.manager.AudioPlayer;
-import lavaplayer.tools.FriendlyException;
-import lavaplayer.track.AudioTrack;
-import lavaplayer.track.AudioTrackEndReason;
+import lavaplayer.manager.AudioPlayer
+import lavaplayer.tools.FriendlyException
+import lavaplayer.track.AudioTrack
+import lavaplayer.track.AudioTrackEndReason
 
 /**
  * Adapter for different event handlers as method overrides
@@ -52,10 +52,10 @@ abstract class AudioEventAdapter : AudioEventListener {
         thresholdMs: Long,
         stackTrace: List<StackTraceElement>
     ) {
-        onTrackStuck(player, track, thresholdMs);
+        onTrackStuck(player, track, thresholdMs)
     }
 
-    override fun onEvent(event: AudioEvent) {
+    override suspend fun onEvent(event: AudioEvent) {
         when (event) {
             is PlayerPauseEvent -> onPlayerPause(event.player)
             is PlayerResumeEvent -> onPlayerResume(event.player)

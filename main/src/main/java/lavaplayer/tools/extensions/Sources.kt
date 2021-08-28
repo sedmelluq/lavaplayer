@@ -1,7 +1,7 @@
 package lavaplayer.tools.extensions
 
 import lavaplayer.source.ItemSourceManager
-import lavaplayer.source.Sources
+import lavaplayer.source.SourceRegistry
 
 
 /**
@@ -9,5 +9,5 @@ import lavaplayer.source.Sources
  * @param T The source manager class.
  * @return The source manager of the specified class, or null if not registered.
  */
-inline fun <reified T : ItemSourceManager> Sources.source(): T? =
+inline fun <reified T : ItemSourceManager> SourceRegistry.source(): T? =
     source(T::class.java)

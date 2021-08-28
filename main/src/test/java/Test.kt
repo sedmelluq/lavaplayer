@@ -1,19 +1,19 @@
 import lavaplayer.manager.AudioPlayerManager
 import lavaplayer.manager.DefaultAudioPlayerManager
-import lavaplayer.source.ItemSourceManagers
+import lavaplayer.source.SourceRegistry
 import lavaplayer.tools.FriendlyException
 import lavaplayer.tools.extensions.isSearchResult
 import lavaplayer.tools.extensions.loadItem
 import lavaplayer.track.AudioTrack
 import lavaplayer.track.AudioTrackCollection
-import lavaplayer.track.loading.ItemLoadResultAdapter
+import lavaplayer.track.loader.ItemLoadResultAdapter
 import java.util.concurrent.ExecutionException
 
 object Test {
     @JvmStatic
     fun main(args: Array<String>) {
         val playerManager: AudioPlayerManager = DefaultAudioPlayerManager()
-        ItemSourceManagers.registerRemoteSources(playerManager)
+        SourceRegistry.registerRemoteSources(playerManager)
 
         val query = "ytsearch:hey hi hyd glaive"
 
@@ -27,7 +27,7 @@ object Test {
         /* old item loading. */
         try {
             playerManager.loadItem(query, object : ItemLoadResultAdapter() {
-                override fun onTrack(track: AudioTrack) {
+                override fun onTrackLoad(track: AudioTrack) {
                     println("""
                          ----------------------------------------
                               class:    ${track.javaClass.name}
@@ -39,9 +39,9 @@ object Test {
                         """.trimIndent())
                 }
 
-                override fun onTrackCollection(trackCollection: AudioTrackCollection) {
-                    println("search result? ${if (trackCollection.isSearchResult) "yes" else "no"}")
-                    for (track in trackCollection.tracks) {
+                override fun onCollectionLoad(collection: AudioTrackCollection) {
+                    println("search result? ${if (collection.isSearchResult) "yes" else "no"}")
+                    for (track in collection.tracks) {
                         println("""
                          ----------------------------------------
                               title:    ${track.info.title}
@@ -53,7 +53,7 @@ object Test {
                     }
                 }
 
-                override fun onNoMatches() {
+                override fun noMatches() {
                     println("No matching items found")
                 }
 

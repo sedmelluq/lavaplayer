@@ -50,7 +50,7 @@ public class PlsPlaylistContainerProbe implements MediaContainerProbe {
             return null;
         }
 
-        log.debug("Track {} is a PLS playlist file.", reference.getIdentifier());
+        log.debug("Track {} is a PLS playlist file.", reference.identifier);
         return loadFromLines(DataFormatTools.streamToLines(inputStream, StandardCharsets.UTF_8));
     }
 

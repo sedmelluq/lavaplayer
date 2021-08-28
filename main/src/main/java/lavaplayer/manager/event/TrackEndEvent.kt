@@ -11,7 +11,7 @@ import lavaplayer.track.AudioTrackEndReason;
  * @param track     Audio track that ended
  * @param endReason The reason why the track stopped playing
  */
-class TrackEndEvent(
+data class TrackEndEvent(
     override val player: AudioPlayer,
     /**
      * Audio track that ended

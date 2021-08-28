@@ -17,7 +17,8 @@ import lavaplayer.track.AudioItem;
 import lavaplayer.track.AudioReference;
 import lavaplayer.track.AudioTrack;
 import lavaplayer.track.AudioTrackInfo;
-import lavaplayer.track.loading.ItemLoader;
+import lavaplayer.track.loader.ItemLoader;
+import lavaplayer.track.loader.LoaderState;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
@@ -130,7 +131,7 @@ public class YoutubeItemSourceManager implements ItemSourceManager, HttpConfigur
     }
 
     @Override
-    public AudioItem loadItem(ItemLoader itemLoader, AudioReference reference) {
+    public AudioItem loadItem(LoaderState state, AudioReference reference) {
         try {
             return loadItemOnce(reference);
         } catch (FriendlyException exception) {
@@ -197,7 +198,7 @@ public class YoutubeItemSourceManager implements ItemSourceManager, HttpConfigur
     }
 
     private AudioItem loadItemOnce(AudioReference reference) {
-        return linkRouter.route(reference.getIdentifier(), loadingRoutes);
+        return linkRouter.route(reference.identifier, loadingRoutes);
     }
 
     /**

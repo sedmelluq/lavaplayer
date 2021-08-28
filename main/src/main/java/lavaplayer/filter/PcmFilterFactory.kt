@@ -6,7 +6,7 @@ import lavaplayer.format.AudioDataFormat
 /**
  * Factory for custom PCM filters.
  */
-interface PcmFilterFactory {
+fun interface PcmFilterFactory {
     /**
      * Builds a filter chain for processing a track. Note that this may be called several times during the playback of a
      * single track. All filters should send the output from the filter either to the next filter in the list, or to the

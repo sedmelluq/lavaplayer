@@ -46,7 +46,7 @@ public class MatroskaContainerProbe implements MediaContainerProbe {
             return null;
         }
 
-        log.debug("Track {} is a matroska file.", reference.getIdentifier());
+        log.debug("Track {} is a matroska file.", reference.identifier);
 
         MatroskaStreamingFile file = new MatroskaStreamingFile(inputStream);
         file.readFile();
@@ -59,9 +59,9 @@ public class MatroskaContainerProbe implements MediaContainerProbe {
             UNKNOWN_TITLE,
             UNKNOWN_ARTIST,
             (long) file.getDuration(),
-            reference.getIdentifier(),
+            reference.identifier,
             false,
-            reference.getIdentifier(),
+            reference.identifier,
             null
         );
 

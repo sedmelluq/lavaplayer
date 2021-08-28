@@ -1,4 +1,4 @@
-package lavaplayer.track.loading
+package lavaplayer.track.loader
 
 import lavaplayer.tools.FriendlyException
 import lavaplayer.track.AudioTrack
@@ -11,15 +11,15 @@ class DelegatedItemLoadResultHandler(
     var emptyResultHandler: Runnable?,
     var exceptionConsumer: Consumer<FriendlyException>?,
 ) : ItemLoadResultAdapter() {
-    override fun onTrack(track: AudioTrack) {
+    override fun onTrackLoad(track: AudioTrack) {
         trackConsumer?.accept(track)
     }
 
-    override fun onTrackCollection(trackCollection: AudioTrackCollection) {
-        collectionConsumer?.accept(trackCollection)
+    override fun onCollectionLoad(collection: AudioTrackCollection) {
+        collectionConsumer?.accept(collection)
     }
 
-    override fun onNoMatches() {
+    override fun noMatches() {
         emptyResultHandler?.run()
     }
 

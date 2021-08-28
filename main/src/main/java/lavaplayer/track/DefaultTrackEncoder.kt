@@ -14,14 +14,12 @@ abstract class DefaultTrackEncoder : TrackEncoder {
     @Throws(IOException::class)
     override fun encodeTrack(stream: MessageOutput, track: AudioTrack) {
         val output = stream.startMessage()
-        output.apply {
-            write(TrackEncoder.TRACK_INFO_VERSION)
+        output.write(TrackEncoder.TRACK_INFO_VERSION)
 
-            /* encode specific details about the track. */
-            AudioTrackInfo.encode(output, track.info)
-            encodeTrackDetails(track, output)
-            output.writeLong(track.position)
-        }
+        /* encode specific details about the track. */
+        AudioTrackInfo.encode(output, track.info)
+        encodeTrackDetails(track, output)
+        output.writeLong(track.position)
 
         stream.commitMessage(TrackEncoder.TRACK_INFO_VERSIONED)
     }
@@ -31,11 +29,11 @@ abstract class DefaultTrackEncoder : TrackEncoder {
         val input = stream.nextMessage()
             ?: return null
 
-        val version = AudioTrackInfo.getVersion(stream, input)
-        val trackInfo = AudioTrackInfo.decode(input, version)
+        val trackInfo = AudioTrackInfo.decode(input)
         val track = decodeTrackDetails(trackInfo, input)
+        val position = input.readLong()
 
-        track?.let { it.position = input.readLong() }
+        track?.let { it.position = position }
         stream.skipRemainingBytes()
 
         return DecodedTrackHolder(track)
@@ -86,8 +84,7 @@ abstract class DefaultTrackEncoder : TrackEncoder {
     @Throws(IOException::class)
     protected open fun decodeTrackDetails(trackInfo: AudioTrackInfo, input: DataInput): AudioTrack? {
         val sourceName = input.readUTF()
-        return sourceManagers.find { it.sourceName == sourceName }
-            ?.decodeTrack(trackInfo, input)
+        return sourceManagers.find { it.sourceName == sourceName }?.decodeTrack(trackInfo, input)
     }
 
 }

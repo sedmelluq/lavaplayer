@@ -7,7 +7,7 @@ import lavaplayer.track.AudioItem;
 import lavaplayer.track.AudioReference;
 import lavaplayer.track.AudioTrack;
 import lavaplayer.track.AudioTrackInfo;
-import lavaplayer.track.loading.ItemLoader;
+import lavaplayer.track.loader.LoaderState;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -34,8 +34,8 @@ public class LocalItemSourceManager extends ProbingItemSourceManager {
     }
 
     @Override
-    public AudioItem loadItem(ItemLoader itemLoader, AudioReference reference) {
-        File file = new File(reference.getIdentifier());
+    public AudioItem loadItem(LoaderState state, AudioReference reference) {
+        File file = new File(reference.identifier);
 
         if (file.exists() && file.isFile() && file.canRead()) {
             return handleLoadResult(detectContainerForFile(reference, file));

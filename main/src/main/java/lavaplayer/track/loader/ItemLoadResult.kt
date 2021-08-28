@@ -1,4 +1,4 @@
-package lavaplayer.track.loading
+package lavaplayer.track.loader
 
 import lavaplayer.tools.FriendlyException
 import lavaplayer.track.AudioTrack
@@ -23,5 +23,5 @@ interface ItemLoadResult {
     /**
      * The requested item was a collection of tracks.
      */
-    data class TrackCollectionLoaded(val trackCollection: AudioTrackCollection) : ItemLoadResult
+    data class CollectionLoaded(val collection: AudioTrackCollection) : ItemLoadResult
 }

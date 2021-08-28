@@ -1,8 +1,13 @@
 package lavaplayer.manager
 
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.runBlocking
 import lavaplayer.filter.PcmFilterFactory
 import lavaplayer.manager.event.*
-import lavaplayer.tools.CopyOnUpdateIdentityList
 import lavaplayer.tools.ExceptionTools
 import lavaplayer.tools.FriendlyException
 import lavaplayer.track.AudioTrack
@@ -15,19 +20,48 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
+import kotlin.coroutines.CoroutineContext
 
 /**
  * An audio player that is capable of playing audio tracks and provides audio frames from the currently playing track.
  */
-class DefaultAudioPlayer(private val manager: DefaultAudioPlayerManager) : AudioPlayer, TrackStateListener {
+class DefaultAudioPlayer(private val manager: DefaultAudioPlayerManager) : AudioPlayer, TrackStateListener, CoroutineScope {
     companion object {
         private val log: Logger = LoggerFactory.getLogger(AudioPlayer::class.java)
     }
 
+    override val coroutineContext: CoroutineContext
+        get() = Dispatchers.IO + manager.coroutineContext
+
+    override var volume: Int
+        get() = resources.volumeLevel.get()
+        set(value) {
+            resources.volumeLevel.set(1000.coerceAtMost(0.coerceAtLeast(value)))
+        }
+
+    override var isPaused: Boolean
+        get() = paused.get()
+        set(value) {
+            if (paused.compareAndSet(!value, value)) {
+                if (value) {
+                    dispatchEvent(PlayerPauseEvent(this))
+                } else {
+                    dispatchEvent(PlayerResumeEvent(this))
+                    lastReceiveTime = System.nanoTime()
+                }
+            }
+        }
+
+    override val playingTrack: AudioTrack?
+        get() = activeTrack
+
+    override val events: SharedFlow<AudioEvent>
+        get() = eventFlow
+
     private val paused = AtomicBoolean()
-    private val listeners = CopyOnUpdateIdentityList<AudioEventListener>()
     private val trackSwitchLock = Any()
     private val resources = AudioPlayerResources()
+    private val eventFlow = MutableSharedFlow<AudioEvent>(extraBufferCapacity = 1)
 
     @Volatile
     private var activeTrack: InternalAudioTrack? = null
@@ -45,14 +79,9 @@ class DefaultAudioPlayer(private val manager: DefaultAudioPlayerManager) : Audio
     private var shadowTrack: InternalAudioTrack? = null
 
     /**
-     * @return Currently playing track
-     */
-    override fun getPlayingTrack(): AudioTrack? = activeTrack
-
-    /**
      * @param track The track to start playing
      */
-    override fun playTrack(track: AudioTrack) {
+    override fun playTrack(track: AudioTrack?) {
         startTrack(track, false)
     }
 
@@ -61,7 +90,7 @@ class DefaultAudioPlayer(private val manager: DefaultAudioPlayerManager) : Audio
      * @param noInterrupt Whether to only start if nothing else is playing
      * @return True if the track was started
      */
-    override fun startTrack(track: AudioTrack, noInterrupt: Boolean): Boolean {
+    override fun startTrack(track: AudioTrack?, noInterrupt: Boolean): Boolean {
         val newTrack = track as? InternalAudioTrack
         var previousTrack: InternalAudioTrack?
 
@@ -175,13 +204,7 @@ class DefaultAudioPlayer(private val manager: DefaultAudioPlayerManager) : Audio
         return false
     }
 
-    override fun getVolume() = resources.volumeLevel.get()
-
-    override fun setVolume(volume: Int) {
-        resources.volumeLevel.set(1000.coerceAtMost(0.coerceAtLeast(volume)))
-    }
-
-    override fun setFilterFactory(factory: PcmFilterFactory) {
+    override fun setFilterFactory(factory: PcmFilterFactory?) {
         resources.filterFactory.set(factory)
     }
 
@@ -190,53 +213,11 @@ class DefaultAudioPlayer(private val manager: DefaultAudioPlayerManager) : Audio
     }
 
     /**
-     * @return Whether the player is paused
-     */
-    override fun isPaused(): Boolean {
-        return paused.get()
-    }
-
-    /**
-     * @param value True to pause, false to resume
-     */
-    override fun setPaused(value: Boolean) {
-        if (paused.compareAndSet(!value, value)) {
-            if (value) {
-                dispatchEvent(PlayerPauseEvent(this))
-            } else {
-                dispatchEvent(PlayerResumeEvent(this))
-                lastReceiveTime = System.nanoTime()
-            }
-        }
-    }
-
-    /**
      * Destroy the player and stop playing track.
      */
     override fun destroy() {
         stopTrack()
-    }
-
-    /**
-     * Add a listener to events from this player.
-     *
-     * @param listener New listener
-     */
-    override fun addListener(listener: AudioEventListener) {
-        synchronized(trackSwitchLock) {
-            listeners.add(listener)
-        }
-    }
-
-    /**
-     * Remove an attached listener using identity comparison.
-     *
-     * @param listener The listener to remove
-     */
-    override fun removeListener(listener: AudioEventListener) {
-        synchronized(trackSwitchLock) {
-            listeners.remove(listener)
-        }
+        cancel()
     }
 
     override fun onTrackException(track: AudioTrack, exception: FriendlyException) {
@@ -306,15 +287,8 @@ class DefaultAudioPlayer(private val manager: DefaultAudioPlayerManager) : Audio
 
     private fun dispatchEvent(event: AudioEvent) {
         log.debug("Firing an event with class {}", event::class.qualifiedName)
-
-        synchronized(trackSwitchLock) {
-            for (listener in listeners.items) {
-                try {
-                    listener.onEvent(event)
-                } catch (e: Exception) {
-                    log.error("Handler of event $event threw an exception.", e)
-                }
-            }
+        runBlocking {
+            eventFlow.emit(event)
         }
     }
 

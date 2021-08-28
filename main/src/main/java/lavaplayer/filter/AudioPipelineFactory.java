@@ -43,8 +43,15 @@ public class AudioPipelineFactory {
         }
 
         if (inputFormat.sampleRate != context.outputFormat.sampleRate) {
-            builder.addFirst(new ResamplingPcmAudioFilter(context.configuration, outputChannels,
-                builder.makeFirstFloat(outputChannels), inputFormat.sampleRate, context.outputFormat.sampleRate));
+            var resamplingFilter = new ResamplingPcmAudioFilter(
+                context.configuration,
+                outputChannels,
+                builder.makeFirstFloat(outputChannels),
+                inputFormat.sampleRate,
+                context.outputFormat.sampleRate
+            );
+
+            builder.addFirst(resamplingFilter);
         }
 
         if (inputChannels != outputChannels) {

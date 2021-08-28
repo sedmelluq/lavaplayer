@@ -76,13 +76,13 @@ data class AudioTrackInfo(
         }
 
         @JvmStatic
-        fun decode(input: DataInput, version: Int) = AudioTrackInfo(
+        fun decode(input: DataInput) = AudioTrackInfo(
             input.readUTF(),
             input.readUTF(),
             input.readLong(),
             input.readUTF(),
             input.readBoolean(),
-            if (version >= 2) DataFormatTools.readNullableText(input) else null,
+            DataFormatTools.readNullableText(input),
             DataFormatTools.readNullableText(input)
         )
     }

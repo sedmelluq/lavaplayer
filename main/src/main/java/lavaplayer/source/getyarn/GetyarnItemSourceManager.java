@@ -8,12 +8,14 @@ import lavaplayer.track.AudioReference;
 import lavaplayer.track.AudioTrack;
 import lavaplayer.track.AudioTrackInfo;
 import lavaplayer.track.info.AudioTrackInfoBuilder;
-import lavaplayer.track.loading.ItemLoader;
+import lavaplayer.track.loader.LoaderState;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.HttpClientBuilder;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 
@@ -50,9 +52,10 @@ public class GetyarnItemSourceManager implements HttpConfigurable, ItemSourceMan
         return "getyarn.io";
     }
 
+    @Nullable
     @Override
-    public AudioItem loadItem(ItemLoader itemLoader, AudioReference reference) {
-        final Matcher m = GETYARN_REGEX.matcher(reference.getIdentifier());
+    public AudioItem loadItem(@NotNull LoaderState state, AudioReference reference) {
+        final Matcher m = GETYARN_REGEX.matcher(reference.identifier);
 
         if (!m.matches()) {
             return null;
@@ -100,7 +103,7 @@ public class GetyarnItemSourceManager implements HttpConfigurable, ItemSourceMan
     }
 
     private AudioTrack extractVideoUrlFromPage(AudioReference reference) {
-        try (final CloseableHttpResponse response = getHttpInterface().execute(new HttpGet(reference.getIdentifier()))) {
+        try (final CloseableHttpResponse response = getHttpInterface().execute(new HttpGet(reference.identifier))) {
             final String html = IOUtils.toString(response.getEntity().getContent(), StandardCharsets.UTF_8);
             final Document document = Jsoup.parse(html);
 

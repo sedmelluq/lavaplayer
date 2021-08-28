@@ -42,7 +42,7 @@ public class MpegContainerProbe implements MediaContainerProbe {
             return null;
         }
 
-        log.debug("Track {} is an MP4 file.", reference.getIdentifier());
+        log.debug("Track {} is an MP4 file.", reference.identifier);
 
         MpegFileLoader file = new MpegFileLoader(inputStream);
         file.parseHeaders();
