@@ -1,48 +1,48 @@
-package lavaplayer.track.playback;
+package lavaplayer.track.playback
 
-import lavaplayer.format.AudioDataFormat;
+import lavaplayer.format.AudioDataFormat
 
 /**
  * Represents an audio frame.
  */
-public interface AudioFrame {
+interface AudioFrame {
     /**
      * @return Absolute timecode of the frame in milliseconds.
      */
-    long getTimecode();
+    val timecode: Long
 
     /**
      * @return Volume of the current frame.
      */
-    int getVolume();
+    val volume: Int
 
     /**
      * @return Length of the data of this frame.
      */
-    int getDataLength();
-
-    /**
-     * @return Byte array with the frame data.
-     */
-    byte[] getData();
-
-    /**
-     * Before calling this method, the caller should verify that the data fits in the buffer using
-     * {@link #getDataLength()}.
-     *
-     * @param buffer Buffer to write the frame data to.
-     * @param offset Offset in the buffer to start writing at.
-     */
-    void getData(byte[] buffer, int offset);
+    val dataLength: Int
 
     /**
      * @return The data format of this buffer.
      */
-    AudioDataFormat getFormat();
+    val format: AudioDataFormat?
+
+    /**
+     * @return Byte array with the frame data.
+     */
+    val data: ByteArray
+
+    /**
+     * Before calling this method, the caller should verify that the data fits in the buffer using
+     * [.getDataLength].
+     *
+     * @param buffer Buffer to write the frame data to.
+     * @param offset Offset in the buffer to start writing at.
+     */
+    fun getData(buffer: ByteArray, offset: Int)
 
     /**
      * @return Whether this frame is a terminator. This is an internal concept of the player and should never be
-     * <code>true</code> in any frames received by the user.
+     * `true` in any frames received by the user.
      */
-    boolean isTerminator();
+    val isTerminator: Boolean
 }

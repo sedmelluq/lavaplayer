@@ -22,7 +22,7 @@ interface AudioPlayerManager : TrackEncoder, SourceRegistry, CoroutineScope {
     /**
      * The item loader factory for this player manager.
      */
-    val itemLoaders: ItemLoaderFactory
+    val items: ItemLoaderFactory
 
     /**
      * The length of the internal buffer for audio in milliseconds.

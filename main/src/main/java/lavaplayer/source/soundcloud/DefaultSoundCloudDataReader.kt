@@ -10,8 +10,8 @@ class DefaultSoundCloudDataReader : SoundCloudDataReader {
         private val log = LoggerFactory.getLogger(DefaultSoundCloudDataReader::class.java)
     }
 
-    override fun findTrackData(rootData: JsonBrowser): JsonBrowser {
-        return findEntryOfKind(rootData, "track")!!
+    override fun findTrackData(rootData: JsonBrowser): JsonBrowser? {
+        return findEntryOfKind(rootData, "track")
     }
 
     override fun readTrackId(trackData: JsonBrowser): String {
@@ -60,8 +60,8 @@ class DefaultSoundCloudDataReader : SoundCloudDataReader {
         return formats
     }
 
-    override fun findPlaylistData(rootData: JsonBrowser): JsonBrowser {
-        return findEntryOfKind(rootData, "playlist")!!
+    override fun findPlaylistData(rootData: JsonBrowser): JsonBrowser? {
+        return findEntryOfKind(rootData, "playlist")
     }
 
     override fun readPlaylistName(playlistData: JsonBrowser): String {

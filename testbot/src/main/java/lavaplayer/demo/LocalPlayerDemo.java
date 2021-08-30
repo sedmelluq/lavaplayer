@@ -22,7 +22,7 @@ public class LocalPlayerDemo {
         AudioPlayer player = manager.createPlayer();
 
         /* load items. */
-        var itemLoader = manager.getItemLoaders().createItemLoader("ytsearch:DHL frank ocean");
+        var itemLoader = manager.getItems().createItemLoader("ytsearch:DHL frank ocean");
         itemLoader.setResultHandler(new DelegatedItemLoadResultHandler(
             null,
             playlist -> player.playTrack(playlist.getTracks().get(0)),

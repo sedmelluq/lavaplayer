@@ -4,7 +4,7 @@ import lavaplayer.tools.JsonBrowser
 import lavaplayer.track.AudioTrackInfo
 
 interface SoundCloudDataReader {
-    fun findTrackData(rootData: JsonBrowser): JsonBrowser
+    fun findTrackData(rootData: JsonBrowser): JsonBrowser?
 
     fun readTrackId(trackData: JsonBrowser): String
 
@@ -14,7 +14,7 @@ interface SoundCloudDataReader {
 
     fun readTrackFormats(trackData: JsonBrowser): List<SoundCloudTrackFormat>
 
-    fun findPlaylistData(rootData: JsonBrowser): JsonBrowser
+    fun findPlaylistData(rootData: JsonBrowser): JsonBrowser?
 
     fun readPlaylistName(playlistData: JsonBrowser): String
 
