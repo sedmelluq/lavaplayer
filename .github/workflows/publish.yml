@@ -18,7 +18,7 @@ jobs:
             -   name: Build with Gradle
                 run: ./gradlew build
             -   name: Publish
-                run: ./gradlew publish
+                run: ./gradlew main:publish
                 env:
                     JFROG_USERNAME: ${{ secrets.JFROG_USERNAME }}
                     JFROG_PASSWORD: ${{ secrets.JFROG_PASSWORD }}
