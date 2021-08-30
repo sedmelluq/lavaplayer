@@ -11,5 +11,5 @@ interface TrackCollectionLoader {
         identifier: String,
         httpInterfaceManager: HttpInterfaceManager,
         trackFactory: Function<AudioTrackInfo, AudioTrack>
-    ): AudioTrackCollection
+    ): AudioTrackCollection?
 }

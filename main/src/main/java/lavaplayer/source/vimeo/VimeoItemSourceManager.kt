@@ -47,7 +47,7 @@ class VimeoItemSourceManager : ItemSourceManager, HttpConfigurable {
     override val sourceName: String
         get() = "vimeo"
 
-    override fun loadItem(state: LoaderState, reference: AudioReference): AudioItem? {
+    override suspend fun loadItem(state: LoaderState, reference: AudioReference): AudioItem? {
         if (!trackUrlPattern.matcher(reference.identifier).matches()) {
             return null
         }

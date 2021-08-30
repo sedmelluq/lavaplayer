@@ -95,7 +95,7 @@ class NicoItemSourceManager(private val email: String, private val password: Str
     override fun decodeTrack(trackInfo: AudioTrackInfo, input: DataInput): AudioTrack =
         NicoAudioTrack(trackInfo, this)
 
-    override fun loadItem(state: LoaderState, reference: AudioReference): AudioItem? {
+    override suspend fun loadItem(state: LoaderState, reference: AudioReference): AudioItem? {
         val trackMatcher = trackUrlPattern.matcher(reference.identifier)
         return if (trackMatcher.matches()) loadTrack(trackMatcher.group(1)) else null
     }

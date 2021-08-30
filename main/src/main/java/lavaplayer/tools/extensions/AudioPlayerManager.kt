@@ -10,7 +10,7 @@ fun AudioPlayerManager.loadItemAsync(identifier: String, handler: ItemLoadResult
     loadItemAsync(AudioReference(identifier, null), handler)
 
 fun AudioPlayerManager.loadItemAsync(reference: AudioReference, handler: ItemLoadResultAdapter): Deferred<ItemLoadResult> {
-    val itemLoader = itemLoaders.createItemLoader(reference)
+    val itemLoader = items.createItemLoader(reference)
     itemLoader.resultHandler = handler
     return itemLoader.loadAsync()
 }

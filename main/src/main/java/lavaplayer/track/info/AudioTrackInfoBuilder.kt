@@ -8,17 +8,10 @@ import lavaplayer.track.AudioTrackInfo
 /**
  * Builder for [AudioTrackInfo].
  */
-class AudioTrackInfoBuilder private constructor() : AudioTrackInfoProvider {
+class AudioTrackInfoBuilder internal constructor() : AudioTrackInfoProvider {
     companion object {
         private const val UNKNOWN_TITLE = "Unknown title"
         private const val UNKNOWN_ARTIST = "Unknown artist"
-
-        @JvmStatic
-        operator fun invoke(build: AudioTrackInfoBuilder.() -> Unit): AudioTrackInfo {
-            return AudioTrackInfoBuilder()
-                .apply(build)
-                .build()
-        }
 
         fun apply(build: AudioTrackInfoBuilder.() -> Unit): AudioTrackInfoBuilder {
             return AudioTrackInfoBuilder()

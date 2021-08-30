@@ -29,6 +29,7 @@ abstract class DefaultTrackEncoder : TrackEncoder {
         val input = stream.nextMessage()
             ?: return null
 
+        AudioTrackInfo.getVersion(stream, input)
         val trackInfo = AudioTrackInfo.decode(input)
         val track = decodeTrackDetails(trackInfo, input)
         val position = input.readLong()
