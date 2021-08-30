@@ -3,6 +3,7 @@ package lavaplayer.track.playback;
 import lavaplayer.format.AudioDataFormat;
 import lavaplayer.manager.AudioConfiguration;
 import lavaplayer.manager.AudioPlayerResources;
+import lavaplayer.source.youtube.*;
 import lavaplayer.tools.ExceptionTools;
 import lavaplayer.tools.FriendlyException;
 import lavaplayer.track.*;
@@ -27,6 +28,7 @@ import static lavaplayer.track.TrackMarkerHandler.MarkerState.STOPPED;
  */
 public class LocalAudioTrackExecutor implements AudioTrackExecutor {
     private static final Logger log = LoggerFactory.getLogger(LocalAudioTrackExecutor.class);
+    private static final long RETRY_COOLDOWN = 5000L;
 
     private final InternalAudioTrack audioTrack;
     private final AudioProcessingContext processingContext;
@@ -41,6 +43,7 @@ public class LocalAudioTrackExecutor implements AudioTrackExecutor {
     private final TrackMarkerManager markerTracker = new TrackMarkerManager();
     private long externalSeekPosition = -1;
     private boolean interruptibleForSeek = false;
+    private volatile long lastRetry = -1;
     private volatile Throwable trackException;
 
     /**
@@ -86,8 +89,6 @@ public class LocalAudioTrackExecutor implements AudioTrackExecutor {
 
     @Override
     public void execute(TrackStateListener listener) {
-        InterruptedException interrupt = null;
-
         if (Thread.interrupted()) {
             log.debug("Cleared a stray interrupt.");
         }
@@ -96,44 +97,67 @@ public class LocalAudioTrackExecutor implements AudioTrackExecutor {
             log.debug("Starting to play track {} locally with listener {}", audioTrack.getInfo().identifier, listener);
 
             state.set(AudioTrackState.LOADING);
-
-            try {
-                audioTrack.process(this);
-
-                log.debug("Playing track {} finished or was stopped.", audioTrack.getIdentifier());
-            } catch (Throwable e) {
-                // Temporarily clear the interrupted status so it would not disrupt listener methods.
-                interrupt = findInterrupt(e);
-
-                if (interrupt != null && checkStopped()) {
-                    log.debug("Track {} was interrupted outside of execution loop.", audioTrack.getIdentifier());
-                } else {
-                    frameBuffer.setTerminateOnEmpty();
-
-                    FriendlyException exception = ExceptionTools.wrapUnfriendlyExceptions("Something broke when playing the track.", FAULT, e);
-                    ExceptionTools.log(log, exception, "playback of " + audioTrack.getIdentifier());
-
-                    trackException = exception;
-                    listener.onTrackException(audioTrack, exception);
-
-                    ExceptionTools.rethrowErrors(e);
-                }
-            } finally {
-                synchronized (actionSynchronizer) {
-                    interrupt = interrupt != null ? interrupt : findInterrupt(null);
-
-                    playingThread.compareAndSet(Thread.currentThread(), null);
-
-                    markerTracker.trigger(ENDED);
-                    state.set(AudioTrackState.FINISHED);
-                }
-
-                if (interrupt != null) {
-                    Thread.currentThread().interrupt();
-                }
-            }
+            attemptProcess(listener);
         } else {
             log.warn("Tried to start an already playing track {}", audioTrack.getIdentifier());
+        }
+    }
+
+    private void attemptProcess(TrackStateListener listener) {
+        InterruptedException interrupt = null;
+
+        try {
+            audioTrack.process(this);
+            log.debug("Playing track {} finished or was stopped.", audioTrack.getIdentifier());
+        } catch (Throwable e) {
+            if (e.getMessage().contains("Not success status code: 403")
+                && (lastRetry == -1 || lastRetry + RETRY_COOLDOWN <= System.currentTimeMillis())
+                && audioTrack.getSourceManager() instanceof YoutubeItemSourceManager sourceManager) {
+                lastRetry = System.currentTimeMillis();
+
+                if (sourceManager.getTrackDetailsLoader() instanceof DefaultYoutubeTrackDetailsLoader detailsLoader) {
+                    log.debug("Detected 403, clearing cipher cache and retrying.");
+
+                    var cachedScript = detailsLoader.getCachedPlayerScript();
+                    if (cachedScript != null) {
+                        ((YoutubeSignatureCipherManager) sourceManager.getSignatureResolver()).removeCipherFromCache(cachedScript.playerScriptUrl());
+                        detailsLoader.clearCachedPlayerScript();
+                    }
+
+                    attemptProcess(listener);
+                    return;
+                }
+            }
+
+            // Temporarily clear the interrupted status so it would not disrupt listener methods.
+            interrupt = findInterrupt(e);
+
+            if (interrupt != null && checkStopped()) {
+                log.debug("Track {} was interrupted outside of execution loop.", audioTrack.getIdentifier());
+            } else {
+                frameBuffer.setTerminateOnEmpty();
+
+                FriendlyException exception = ExceptionTools.wrapUnfriendlyExceptions("Something broke when playing the track.", FAULT, e);
+                ExceptionTools.log(log, exception, "playback of " + audioTrack.getIdentifier());
+
+                trackException = exception;
+                listener.onTrackException(audioTrack, exception);
+
+                ExceptionTools.rethrowErrors(e);
+            }
+        } finally {
+            synchronized (actionSynchronizer) {
+                interrupt = interrupt != null ? interrupt : findInterrupt(null);
+
+                playingThread.compareAndSet(Thread.currentThread(), null);
+
+                markerTracker.trigger(ENDED);
+                state.set(AudioTrackState.FINISHED);
+            }
+
+            if (interrupt != null) {
+                Thread.currentThread().interrupt();
+            }
         }
     }
 
@@ -167,7 +191,7 @@ public class LocalAudioTrackExecutor implements AudioTrackExecutor {
 
     /**
      * Wait until all the frames from the frame buffer have been consumed. Keeps the buffering thread alive to keep it
-     * interruptible for seeking until buffer is empty.
+     * uninterruptible for seeking until buffer is empty.
      *
      * @throws InterruptedException When interrupted externally (or for seek/stop).
      */

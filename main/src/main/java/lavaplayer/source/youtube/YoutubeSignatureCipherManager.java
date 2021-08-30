@@ -102,6 +102,14 @@ public class YoutubeSignatureCipherManager implements YoutubeSignatureResolver {
     }
 
     /**
+     * Removes a cipher from the cache.
+     * @param cipherScriptUrl The cipher to remove.
+     */
+    public void removeCipherFromCache(String cipherScriptUrl) {
+        cipherCache.remove(cipherScriptUrl);
+    }
+
+    /**
      * Produces a valid playback URL for the specified track
      *
      * @param httpInterface HTTP interface to use

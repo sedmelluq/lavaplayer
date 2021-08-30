@@ -257,6 +257,20 @@ public class DefaultYoutubeTrackDetailsLoader implements YoutubeTrackDetailsLoad
         }
     }
 
+    /**
+     * @return The cached player script.
+     */
+    public CachedPlayerScript getCachedPlayerScript() {
+        return cachedPlayerScript;
+    }
+
+    /**
+     * Clears the cached player script.
+     */
+    public void clearCachedPlayerScript() {
+        cachedPlayerScript = null;
+    }
+
     protected enum InfoStatus {
         INFO_PRESENT,
         REQUIRES_LOGIN,
@@ -264,13 +278,6 @@ public class DefaultYoutubeTrackDetailsLoader implements YoutubeTrackDetailsLoad
         CONTENT_CHECK_REQUIRED
     }
 
-    protected static class CachedPlayerScript {
-        public final String playerScriptUrl;
-        public final long timestamp;
-
-        public CachedPlayerScript(String playerScriptUrl, long timestamp) {
-            this.playerScriptUrl = playerScriptUrl;
-            this.timestamp = timestamp;
-        }
+    public record CachedPlayerScript(String playerScriptUrl, long timestamp) {
     }
 }
