@@ -87,7 +87,6 @@ public class DefaultYoutubeLinkRouter implements YoutubeLinkRouter {
             }
         } else if ("/playlist".equals(urlInfo.path)) {
             String playlistId = urlInfo.parameters.get("list");
-
             if (playlistId != null) {
                 return routes.playlist(playlistId, null);
             }

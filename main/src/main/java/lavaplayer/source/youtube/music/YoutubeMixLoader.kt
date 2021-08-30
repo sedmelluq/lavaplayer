@@ -10,7 +10,7 @@ interface YoutubeMixLoader {
     fun load(
         httpInterface: HttpInterface,
         mixId: String,
-        selectedVideoId: String,
+        selectedVideoId: String?,
         trackFactory: Function<AudioTrackInfo, AudioTrack>
     ): AudioTrackCollection
 }

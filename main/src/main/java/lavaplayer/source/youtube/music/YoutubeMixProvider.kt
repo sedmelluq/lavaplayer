@@ -31,7 +31,7 @@ class YoutubeMixProvider : YoutubeMixLoader {
     override fun load(
         httpInterface: HttpInterface,
         mixId: String,
-        selectedVideoId: String,
+        selectedVideoId: String?,
         trackFactory: Function<AudioTrackInfo, AudioTrack>
     ): AudioTrackCollection {
         var playlistTitle = "YouTube mix"

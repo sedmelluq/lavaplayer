@@ -12,7 +12,7 @@ interface YoutubePlaylistLoader {
     fun load(
         httpInterface: HttpInterface,
         playlistId: String,
-        selectedVideoId: String,
+        selectedVideoId: String?,
         trackFactory: Function<AudioTrackInfo, AudioTrack>
     ): AudioTrackCollection
 }

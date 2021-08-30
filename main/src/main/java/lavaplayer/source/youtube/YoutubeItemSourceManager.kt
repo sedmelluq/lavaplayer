@@ -157,7 +157,7 @@ class YoutubeItemSourceManager @JvmOverloads constructor(
             return loadTrackWithVideoId(videoId, false)
         }
 
-        override fun playlist(playlistId: String, selectedVideoId: String): AudioItem {
+        override fun playlist(playlistId: String, selectedVideoId: String?): AudioItem {
             log.debug("Starting to load playlist with ID {}", playlistId)
             try {
                 httpInterface.use { httpInterface ->
@@ -170,7 +170,7 @@ class YoutubeItemSourceManager @JvmOverloads constructor(
             }
         }
 
-        override fun mix(mixId: String, selectedVideoId: String): AudioItem? {
+        override fun mix(mixId: String, selectedVideoId: String?): AudioItem {
             log.debug("Starting to load mix with ID {} selected track {}", mixId, selectedVideoId)
             try {
                 httpInterface.use { httpInterface ->

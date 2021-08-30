@@ -6,9 +6,9 @@ interface YoutubeLinkRouter {
     interface Routes<T> {
         fun track(videoId: String): T
 
-        fun playlist(playlistId: String, selectedVideoId: String): T
+        fun playlist(playlistId: String, selectedVideoId: String?): T
 
-        fun mix(mixId: String, selectedVideoId: String): T
+        fun mix(mixId: String, selectedVideoId: String?): T
 
         fun search(query: String): T
 
