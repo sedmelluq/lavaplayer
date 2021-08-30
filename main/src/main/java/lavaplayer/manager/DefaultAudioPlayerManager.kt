@@ -51,7 +51,7 @@ open class DefaultAudioPlayerManager : DefaultTrackEncoder(), AudioPlayerManager
     @Volatile
     override var isUsingSeekGhosting: Boolean = true
     override val configuration = AudioConfiguration()
-    override val itemLoaders: ItemLoaderFactory = DefaultItemLoaderFactory(this)
+    override val items: ItemLoaderFactory = DefaultItemLoaderFactory(this)
 
     @Volatile
     var trackStuckThresholdNanos: Long = TimeUnit.MILLISECONDS.toNanos(10000)
@@ -68,7 +68,7 @@ open class DefaultAudioPlayerManager : DefaultTrackEncoder(), AudioPlayerManager
     private val _sources = mutableListOf<ItemSourceManager>()
 
     override fun shutdown() {
-        itemLoaders.shutdown()
+        items.shutdown()
         garbageCollectionMonitor.disable()
         lifecycleManager.shutdown()
         sourceManagers.forEach(Consumer { obj: ItemSourceManager -> obj.shutdown() })

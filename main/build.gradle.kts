@@ -2,15 +2,15 @@ plugins {
     `java-library`
     `maven-publish`
 
-    kotlin("plugin.serialization") version "1.5.21"
+    kotlin("plugin.serialization") version "1.5.30"
 }
 
 val moduleName = "lavaplayer"
-version = "1.4.4"
+version = "1.4.5"
 
 dependencies {
     /* kotlin */
-    implementation("org.jetbrains.kotlin:kotlin-reflect:1.5.21")
+    implementation("org.jetbrains.kotlin:kotlin-reflect:1.5.30")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.5.1")
 
     /* other */

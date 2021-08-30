@@ -232,7 +232,7 @@ public class MusicController implements BotController {
     private void addTrack(final Message message, final String identifier, final boolean now, final boolean first) {
         outputChannel.set((TextChannel) message.getChannel());
 
-        var itemLoader = manager.getItemLoaders().createItemLoader(identifier);
+        var itemLoader = manager.getItems().createItemLoader(identifier);
 
         itemLoader.setResultHandler(new ItemLoadResultAdapter() {
             @Override

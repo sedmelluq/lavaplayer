@@ -3,6 +3,7 @@ package lavaplayer.track
 import kotlinx.serialization.Serializable
 import lavaplayer.tools.DataFormatTools
 import lavaplayer.tools.io.MessageInput
+import lavaplayer.track.info.AudioTrackInfoBuilder
 import java.io.DataInput
 import java.io.DataOutput
 import kotlin.experimental.and
@@ -63,6 +64,14 @@ data class AudioTrackInfo(
             } else {
                 1
             }
+
+        @JvmName("create")
+        @JvmStatic
+        operator fun invoke(build: AudioTrackInfoBuilder.() -> Unit): AudioTrackInfo {
+            return AudioTrackInfoBuilder()
+                .apply(build)
+                .build()
+        }
 
         @JvmStatic
         fun encode(output: DataOutput, info: AudioTrackInfo) {

@@ -142,7 +142,6 @@ class DefaultAudioPlayer(private val manager: DefaultAudioPlayerManager) : Audio
         lateinit var track: InternalAudioTrack
 
         lastRequestTime = System.currentTimeMillis()
-
         if (timeout == 0L && paused.get()) {
             return null
         }
@@ -181,7 +180,6 @@ class DefaultAudioPlayer(private val manager: DefaultAudioPlayerManager) : Audio
         lateinit var track: InternalAudioTrack
 
         lastRequestTime = System.currentTimeMillis()
-
         if (timeout == 0L && paused.get()) {
             return false
         }
@@ -241,7 +239,6 @@ class DefaultAudioPlayer(private val manager: DefaultAudioPlayerManager) : Audio
         val track = playingTrack
         if (track != null && System.currentTimeMillis() - lastRequestTime >= threshold) {
             log.debug("Triggering cleanup on an audio player playing track {}", track)
-
             stopWithReason(CLEANUP)
         }
     }
@@ -252,7 +249,6 @@ class DefaultAudioPlayer(private val manager: DefaultAudioPlayerManager) : Audio
         synchronized(trackSwitchLock) {
             val previousTrack = activeTrack
             activeTrack = null
-
             if (previousTrack != null) {
                 previousTrack.stop()
                 dispatchEvent(TrackEndEvent(this, previousTrack, reason))
@@ -290,7 +286,7 @@ class DefaultAudioPlayer(private val manager: DefaultAudioPlayerManager) : Audio
     }
 
     private fun dispatchEvent(event: AudioEvent) {
-        log.debug("Firing an event with class {}", event::class.qualifiedName)
+        log.debug("Firing an event with class ${event::class.qualifiedName}")
         runBlocking {
             eventFlow.emit(event)
         }
@@ -321,10 +317,8 @@ class DefaultAudioPlayer(private val manager: DefaultAudioPlayerManager) : Audio
 
     private fun getStackTrace(track: AudioTrack): List<StackTraceElement>? {
         if (track is InternalAudioTrack) {
-            val executor = track.activeExecutor
-            if (executor is LocalAudioTrackExecutor) {
-                return executor.stackTrace.toList()
-            }
+            val executor = track.activeExecutor as? LocalAudioTrackExecutor
+            return executor?.stackTrace?.toList()
         }
 
         return null

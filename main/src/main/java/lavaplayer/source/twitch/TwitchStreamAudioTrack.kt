@@ -27,7 +27,7 @@ class TwitchStreamAudioTrack(
     /**
      * @return Name of the channel of the stream.
      */
-    val channelName: String
+    val channelName: String?
         get() = TwitchStreamItemSourceManager.getChannelIdentifierFromUrl(info.identifier)
 
     override fun getSegmentUrlProvider(): M3uStreamSegmentUrlProvider {

@@ -22,21 +22,18 @@ abstract class ProbingItemSourceManager protected constructor(@JvmField protecte
 
     protected abstract fun createTrack(
         trackInfo: AudioTrackInfo,
-        containerTrackFactory: MediaContainerDescriptor
+        containerDescriptor: MediaContainerDescriptor
     ): AudioTrack
 
-    protected fun handleLoadResult(result: MediaContainerDetectionResult?): AudioItem? {
-        return if (result != null) {
-            if (result.isReference) {
-                result.reference
-            } else if (!result.isContainerDetected) {
-                throw FriendlyException("Unknown file format.", FriendlyException.Severity.COMMON, null)
-            } else if (!result.isSupportedFile) {
-                throw FriendlyException(result.unsupportedReason, FriendlyException.Severity.COMMON, null)
-            } else {
-                createTrack(result.trackInfo, result.containerDescriptor)
-            }
-        } else null
+    protected fun handleLoadResult(result: MediaContainerDetectionResult?): AudioItem? = if (result != null) {
+        when {
+            result.isReference -> result.reference
+            !result.isContainerDetected -> throw FriendlyException("Unknown file format.", FriendlyException.Severity.COMMON, null)
+            !result.isSupportedFile -> throw FriendlyException(result.unsupportedReason, FriendlyException.Severity.COMMON, null)
+            else -> createTrack(result.trackInfo, result.containerDescriptor)
+        }
+    } else {
+        null
     }
 
     @Throws(IOException::class)

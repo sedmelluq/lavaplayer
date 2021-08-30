@@ -30,7 +30,7 @@ interface ItemSourceManager {
      * @param reference  The reference with the identifier which the source manager should find the track with
      * @return The loaded item or null on unrecognized identifier
      */
-    fun loadItem(state: LoaderState, reference: AudioReference): AudioItem?
+    suspend fun loadItem(state: LoaderState, reference: AudioReference): AudioItem?
 
     /**
      * Returns whether the specified track can be encoded. The argument is always a track created by this manager. Being
@@ -63,7 +63,7 @@ interface ItemSourceManager {
      * @throws IOException On read error.
      */
     @Throws(IOException::class)
-    fun decodeTrack(trackInfo: AudioTrackInfo, input: DataInput): AudioTrack
+    fun decodeTrack(trackInfo: AudioTrackInfo, input: DataInput): AudioTrack?
 
     /**
      * Shut down the source manager, freeing all associated resources and threads. A source manager is not responsible for
