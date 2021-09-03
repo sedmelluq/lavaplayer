@@ -6,13 +6,14 @@ output is required.
 
 ## Changes 
 
-This is a heavily modified fork of lavaplayer, almost everything that isn't an internal api is changed. If you
+This is a heavily modified fork of lavaplayer, almost everything that isn't an internal api has been changed. If you
 use this fork I promise you a partial rewrite of everything interacting with lavaplayer (both kotlin and java code)
 
 ### Fixes
 
-- Fixes soundcloud tracks
-- Fixes youtube music searching
+- Fixes SoundCloud playback
+- Fixes YouTube music searching
+- Fixes YouTube 403 errors?
 
 ### New Features
 
@@ -46,7 +47,7 @@ I have rewrote many systems because java sucks
 
 ### Maven package
 
-Replace `x.y.z` with the latest version number: 1.4.3
+Replace `x.y.z` with the latest version number: 1.4.6
 
 * Repository: https://dimensional.jfrog.io/artifactory/maven
 

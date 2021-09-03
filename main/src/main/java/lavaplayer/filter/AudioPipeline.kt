@@ -1,45 +1,31 @@
-package lavaplayer.filter;
+package lavaplayer.filter
 
-import java.nio.ShortBuffer;
-import java.util.List;
+import java.nio.ShortBuffer
 
 /**
  * Represents an audio pipeline (top-level audio filter chain).
  */
-public class AudioPipeline extends CompositeAudioFilter {
-    private final List<AudioFilter> filters;
-    private final UniversalPcmAudioFilter first;
+open class AudioPipeline(chain: AudioFilterChain) : CompositeAudioFilter() {
+    override val filters: List<AudioFilter> = chain.filters
+    private val first: UniversalPcmAudioFilter = chain.input
 
-    /**
-     * @param chain The top-level filter chain.
-     */
-    public AudioPipeline(AudioFilterChain chain) {
-        this.filters = chain.filters;
-        this.first = chain.input;
+    @Throws(InterruptedException::class)
+    override fun process(input: Array<FloatArray>, offset: Int, length: Int) {
+        first.process(input, offset, length)
     }
 
-    @Override
-    public void process(float[][] input, int offset, int length) throws InterruptedException {
-        first.process(input, offset, length);
+    @Throws(InterruptedException::class)
+    override fun process(input: ShortArray, offset: Int, length: Int) {
+        first.process(input, offset, length)
     }
 
-    @Override
-    public void process(short[] input, int offset, int length) throws InterruptedException {
-        first.process(input, offset, length);
+    @Throws(InterruptedException::class)
+    override fun process(buffer: ShortBuffer) {
+        first.process(buffer)
     }
 
-    @Override
-    public void process(ShortBuffer buffer) throws InterruptedException {
-        first.process(buffer);
-    }
-
-    @Override
-    public void process(short[][] input, int offset, int length) throws InterruptedException {
-        first.process(input, offset, length);
-    }
-
-    @Override
-    protected List<AudioFilter> getFilters() {
-        return filters;
+    @Throws(InterruptedException::class)
+    override fun process(input: Array<ShortArray>, offset: Int, length: Int) {
+        first.process(input, offset, length)
     }
 }

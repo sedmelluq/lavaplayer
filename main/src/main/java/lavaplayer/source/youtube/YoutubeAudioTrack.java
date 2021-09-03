@@ -105,8 +105,9 @@ public class YoutubeAudioTrack extends DelegatedAudioTrack {
     }
 
     private FormatWithUrl loadBestFormatWithUrl(HttpInterface httpInterface) throws Exception {
-        YoutubeTrackDetails details = sourceManager.getTrackDetailsLoader()
-            .loadDetails(httpInterface, getIdentifier(), true);
+        YoutubeTrackDetails details = sourceManager
+            .getTrackDetailsLoader()
+            .loadDetails(httpInterface, getIdentifier(), true, sourceManager);
 
         // If the error reason is "Video unavailable" details will return null
         if (details == null) {
@@ -133,13 +134,6 @@ public class YoutubeAudioTrack extends DelegatedAudioTrack {
         return sourceManager;
     }
 
-    private static class FormatWithUrl {
-        private final YoutubeTrackFormat details;
-        private final URI signedUrl;
-
-        private FormatWithUrl(YoutubeTrackFormat details, URI signedUrl) {
-            this.details = details;
-            this.signedUrl = signedUrl;
-        }
+    private record FormatWithUrl(YoutubeTrackFormat details, URI signedUrl) {
     }
 }

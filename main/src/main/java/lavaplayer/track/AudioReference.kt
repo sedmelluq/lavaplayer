@@ -14,11 +14,11 @@ class AudioReference @JvmOverloads constructor(
     /**
      * The identifier of the other item.
      */
-    @JvmField override val identifier: String?,
+    override val identifier: String?,
     /**
      * The title of the other item, if known.
      */
-    @JvmField override val title: String?,
+    override val title: String?,
     /**
      * Known probe and probe settings of the item to be loaded.
      */

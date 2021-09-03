@@ -41,7 +41,7 @@ public class FlacContainerProbe implements MediaContainerProbe {
             return null;
         }
 
-        log.debug("Track {} is a FLAC file.", reference.identifier);
+        log.debug("Track {} is a FLAC file.", reference.getIdentifier());
 
         FlacTrackInfo fileInfo = new FlacFileLoader(inputStream).parseHeaders();
         AudioTrackInfo trackInfo = AudioTrackInfoBuilder.create(reference, inputStream, builder -> {

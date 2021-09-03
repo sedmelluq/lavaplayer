@@ -136,7 +136,13 @@ class YoutubeItemSourceManager @JvmOverloads constructor(
     fun loadTrackWithVideoId(videoId: String?, mustExist: Boolean): AudioItem {
         try {
             httpInterface.use { httpInterface ->
-                val details = trackDetailsLoader.loadDetails(httpInterface, videoId!!, false)
+                val details = trackDetailsLoader.loadDetails(httpInterface, videoId!!, false, this)
+                    ?: if (mustExist) {
+                        throw FriendlyException("Video unavailable", FriendlyException.Severity.COMMON, null)
+                    } else {
+                        return AudioReference.NO_TRACK
+                    }
+
                 return YoutubeAudioTrack(details.getTrackInfo(), this)
             }
         } catch (e: Exception) {

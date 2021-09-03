@@ -6,7 +6,7 @@ package lavaplayer.filter
  * @param channelCount See [.channelCount].
  * @param sampleRate   See [.sampleRate].
  */
-class PcmFormat(
+data class PcmFormat(
     /**
      * Number of channels.
      */

@@ -48,7 +48,7 @@ public class MpegAdtsContainerProbe implements MediaContainerProbe {
 
         try {
             if (reader.findPacketHeader() != null) {
-                log.debug("Track {} is an MPEG-TS stream with an ADTS track.", reference.identifier);
+                log.debug("Track {} is an MPEG-TS stream with an ADTS track.", reference.getIdentifier());
 
                 return supportedFormat(this, null,
                     AudioTrackInfoBuilder.create(reference, inputStream)

@@ -1,31 +1,29 @@
 package lavaplayer.source.youtube.music
 
-import lavaplayer.source.youtube.YoutubeHttpContextFilter.PBJ_PARAMETER
-import lavaplayer.tools.DataFormatTools
+import lavaplayer.source.youtube.YoutubeConstants
+import lavaplayer.tools.DataFormatTools.durationTextToMillis
 import lavaplayer.tools.FriendlyException
 import lavaplayer.tools.JsonBrowser
+import lavaplayer.tools.JsonBrowser.Companion.parse
 import lavaplayer.tools.ThumbnailTools
 import lavaplayer.tools.io.HttpClientTools
 import lavaplayer.tools.io.HttpInterface
 import lavaplayer.track.*
-import org.apache.http.client.methods.HttpGet
+import org.apache.http.client.methods.HttpPost
+import org.apache.http.entity.StringEntity
 import java.io.IOException
 import java.util.function.Function
+
 
 /**
  * Handles loading of YouTube mixes.
  */
 class YoutubeMixProvider : YoutubeMixLoader {
-    companion object {
-        const val YOUTUBE_MUSIC_MIX = "https://music.youtube.com/playlist?list="
-        const val YOUTUBE_MUSIC_VIDEO = "https://music.youtube.com/watch?v="
-    }
-
     /**
      * Loads tracks from mix in parallel into a playlist entry.
      *
-     * @param mixId           ID of the mix
-     * @param selectedVideoId Selected track, {@link AudioTrackCollection#getSelectedTrack()} will return this.
+     * @param mixId ID of the mix
+     * @param selectedVideoId Selected track, [AudioTrackCollection.selectedTrack] will return this.
      * @return Playlist of the tracks in the mix.
      */
     override fun load(
@@ -35,24 +33,27 @@ class YoutubeMixProvider : YoutubeMixLoader {
         trackFactory: Function<AudioTrackInfo, AudioTrack>
     ): AudioTrackCollection {
         var playlistTitle = "YouTube mix"
-        val tracks = mutableListOf<AudioTrack>()
-        val mixUrl = "https://www.youtube.com/watch?v=$selectedVideoId&list=$mixId$PBJ_PARAMETER"
-        httpInterface.execute(HttpGet(mixUrl)).use { response ->
-            try {
-                HttpClientTools.assertSuccessWithContent(response, "mix response")
+        val tracks: MutableList<AudioTrack> = ArrayList()
+        val post = HttpPost(YoutubeConstants.NEXT_URL)
+        val payload =
+            StringEntity(java.lang.String.format(YoutubeConstants.NEXT_PAYLOAD, selectedVideoId, mixId), "UTF-8")
+        post.entity = payload
 
-                val body = JsonBrowser.parse(response.entity.content)
-                val playlist =
-                    body.index(3)["response"]["contents"]["twoColumnWatchNextResults"]["playlist"]["playlist"]
+        try {
+            httpInterface.execute(post).use { response ->
+                HttpClientTools.assertSuccessWithContent(response, "mix response")
+                val body = parse(response.entity.content)
+                val playlist = body["contents"]["singleColumnWatchNextResults"]["playlist"]["playlist"]
+
                 val title = playlist["title"]
                 if (!title.isNull) {
                     playlistTitle = title.safeText
                 }
 
                 extractPlaylistTracks(playlist["contents"], tracks, trackFactory)
-            } catch (e: IOException) {
-                throw FriendlyException("Could not read mix page.", FriendlyException.Severity.SUSPICIOUS, e)
             }
+        } catch (e: IOException) {
+            throw FriendlyException("Could not read mix page.", FriendlyException.Severity.SUSPICIOUS, e)
         }
 
         if (tracks.isEmpty()) {
@@ -60,12 +61,7 @@ class YoutubeMixProvider : YoutubeMixLoader {
         }
 
         val selectedTrack = findSelectedTrack(tracks, selectedVideoId)
-        return BasicAudioTrackCollection(
-            playlistTitle,
-            AudioTrackCollectionType.Playlist,
-            tracks,
-            selectedTrack
-        )
+        return BasicAudioTrackCollection(playlistTitle, AudioTrackCollectionType.Playlist, tracks, selectedTrack)
     }
 
     private fun extractPlaylistTracks(
@@ -74,15 +70,15 @@ class YoutubeMixProvider : YoutubeMixLoader {
         trackFactory: Function<AudioTrackInfo, AudioTrack>
     ) {
         for (renderer in browser.values().map { it["playlistPanelVideoRenderer"] }) {
-            val identifier = renderer["videoId"].safeText
+            val title = renderer["title"]["runs"].index(0)["text"].text
+            val author = renderer["longBylineText"]["runs"].index(0)["text"].text
+            val durationStr = renderer["lengthText"]["runs"].index(0)["text"].text
+            val duration = durationTextToMillis(durationStr!!)
+            val identifier = renderer["videoId"].text
+            val uri = "https://youtube.com/watch?v=$identifier"
             val trackInfo = AudioTrackInfo(
-                title = renderer["title"]["simpleText"].safeText,
-                author = renderer["longBylineText"]["runs"].index(0)["text"].safeText,
-                length = DataFormatTools.parseDuration(renderer["lengthText"]["simpleText"].safeText),
-                identifier = identifier,
-                isStream = false,
-                uri = "https://youtube.com/watch?v=$identifier",
-                artworkUrl = ThumbnailTools.extractYouTube(renderer, identifier)
+                title!!, author!!, duration, identifier!!, false, uri,
+                ThumbnailTools.extractYouTube(renderer, identifier)
             )
 
             tracks.add(trackFactory.apply(trackInfo))
@@ -91,9 +87,10 @@ class YoutubeMixProvider : YoutubeMixLoader {
 
     private fun findSelectedTrack(tracks: List<AudioTrack>, selectedVideoId: String?): AudioTrack? {
         if (selectedVideoId != null) {
-            return tracks.find { it.identifier.equals(selectedVideoId) }
+            return tracks.find { it.identifier == selectedVideoId }
         }
 
         return null
     }
 }
+

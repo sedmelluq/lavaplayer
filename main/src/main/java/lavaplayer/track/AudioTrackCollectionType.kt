@@ -4,29 +4,22 @@ import kotlinx.serialization.Serializable
 
 // TODO: think of a better way of doing this...
 
-@Serializable
-open class AudioTrackCollectionType {
+interface AudioTrackCollectionType {
     /**
      * This audio track collection represents a (user) created track collection.
      */
     @Serializable
-    object Playlist : AudioTrackCollectionType() {
-        override fun toString(): String = "Playlist()"
-    }
+    object Playlist : AudioTrackCollectionType
 
     /**
      * This audio track collection represents an album.
      */
     @Serializable
-    open class Album(val artist: String) : AudioTrackCollectionType() {
-        override fun toString() = "Album(artist=$artist)"
-    }
+    open class Album(val artist: String) : AudioTrackCollectionType
 
     /**
      * This audio track collection represents a search result.
      */
     @Serializable
-    open class SearchResult(val query: String) : AudioTrackCollectionType() {
-        override fun toString() = "SearchResult(query=$query)"
-    }
+    open class SearchResult(val query: String) : AudioTrackCollectionType
 }

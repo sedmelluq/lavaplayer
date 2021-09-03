@@ -14,8 +14,7 @@ import java.io.IOException
 /**
  * The base class for audio sources which use probing to detect container type.
  */
-abstract class ProbingItemSourceManager protected constructor(@JvmField protected val containerRegistry: MediaContainerRegistry) :
-    ItemSourceManager {
+abstract class ProbingItemSourceManager(@JvmField protected val containerRegistry: MediaContainerRegistry) : ItemSourceManager {
     companion object {
         private const val PARAMETERS_SEPARATOR = '|'
     }

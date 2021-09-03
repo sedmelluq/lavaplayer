@@ -11,13 +11,9 @@ import lavaplayer.track.AudioTrack
  * the only custom filter used.
  */
 class EqualizerFactory : EqualizerConfiguration(FloatArray(Equalizer.BAND_COUNT)), PcmFilterFactory {
-    override fun buildChain(
-        track: AudioTrack?,
-        format: AudioDataFormat?,
-        output: UniversalPcmAudioFilter?
-    ): List<AudioFilter> {
+    override fun buildChain(track: AudioTrack, format: AudioDataFormat, output: UniversalPcmAudioFilter): List<AudioFilter> {
         return if (Equalizer.isCompatible(format)) {
-            listOf<AudioFilter>(Equalizer(format!!.channelCount, output, bandMultipliers))
+            listOf<AudioFilter>(Equalizer(format.channelCount, output, bandMultipliers))
         } else {
             emptyList()
         }

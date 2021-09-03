@@ -8,6 +8,8 @@ import lavaplayer.source.youtube.YoutubeCipherOperationType.*
 class YoutubeSignatureCipher {
     private val operations = mutableListOf<YoutubeCipherOperation>()
 
+    var scriptTimestamp = ""
+
     /**
      * @return True if the cipher contains no operations.
      */
@@ -42,5 +44,13 @@ class YoutubeSignatureCipher {
      */
     fun addOperation(operation: YoutubeCipherOperation) {
         operations.add(operation)
+    }
+
+
+    /**
+     * @param timestamp The timestamp in cipher
+     */
+    fun setTimestamp(timestamp: String) {
+        scriptTimestamp = timestamp
     }
 }

@@ -6,7 +6,7 @@ plugins {
 }
 
 val moduleName = "lavaplayer"
-version = "1.4.5.2"
+version = "1.4.6"
 
 dependencies {
     /* kotlin */

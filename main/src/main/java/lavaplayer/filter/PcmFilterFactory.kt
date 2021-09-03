@@ -19,5 +19,5 @@ fun interface PcmFilterFactory {
      * @param output The filter that the last filter in this chain should send its data to.
      * @return The list of filters in the built chain. May be empty, but not `null`.
      */
-    fun buildChain(track: AudioTrack?, format: AudioDataFormat?, output: UniversalPcmAudioFilter?): List<AudioFilter>
+    fun buildChain(track: AudioTrack, format: AudioDataFormat, output: UniversalPcmAudioFilter): List<AudioFilter>
 }
