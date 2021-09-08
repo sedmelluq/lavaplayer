@@ -8,15 +8,19 @@ import lavaplayer.common.tools.DaemonThreadFactory
 import lavaplayer.common.tools.ExecutorTools
 import lavaplayer.source.SourceRegistry
 import lavaplayer.track.AudioReference
+import java.util.concurrent.SynchronousQueue
+import java.util.concurrent.ThreadPoolExecutor
+import java.util.concurrent.TimeUnit
 import kotlin.coroutines.CoroutineContext
 
 class DefaultItemLoaderFactory(internal val sourceRegistry: SourceRegistry) : ItemLoaderFactory, CoroutineScope {
     companion object {
-        private fun createThreadPool() = ExecutorTools.createEagerlyScalingExecutor(
+        private fun createThreadPool() = ThreadPoolExecutor(
             1,
             10,
-            30L * 60000L,
-            5000,
+            30L,
+            TimeUnit.SECONDS,
+            SynchronousQueue(false),
             DaemonThreadFactory("lp item-loader")
         )
     }

@@ -1,3 +1,5 @@
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import lavaplayer.manager.AudioPlayerManager
 import lavaplayer.manager.DefaultAudioPlayerManager
@@ -7,12 +9,18 @@ import lavaplayer.track.loader.ItemLoadResult
 import java.util.concurrent.ExecutionException
 
 object Test {
+    val playerManager: AudioPlayerManager = DefaultAudioPlayerManager()
+
     @JvmStatic
-    fun main(args: Array<String>) = runBlocking {
-        val playerManager: AudioPlayerManager = DefaultAudioPlayerManager()
+    fun main(args: Array<String>) = runBlocking<Unit> {
         SourceRegistry.registerRemoteSources(playerManager)
 
-        val query = "ytsearch:hey hi hyd glaive"
+        val query = "ytsearch:formula labrinth"
+        launch { doQuery(query, true) }
+        launch { doQuery(query, false) }
+    }
+
+    suspend fun doQuery(query: String, long: Boolean) {
         try {
             when (val result = playerManager.items.createItemLoader(query).load()) {
                 is ItemLoadResult.TrackLoaded -> println(
@@ -28,7 +36,10 @@ object Test {
                 )
 
                 is ItemLoadResult.CollectionLoaded -> {
-                    println("search result? ${if (result.collection.isSearchResult) "yes" else "no"}")
+                    println("long? $long")
+                    delay(if (long) 5000 else 500)
+
+                    println("search result? ${if (result.collection.isSearchResult) "yes" else "no"} long? $long")
                     for (track in result.collection.tracks) {
                         println(
                             """
