@@ -12,6 +12,5 @@ abstract class OfflineYoutubeTrackFormatExtractor : YoutubeTrackFormatExtractor 
         response: YoutubeTrackJsonData,
         httpInterface: HttpInterface,
         signatureResolver: YoutubeSignatureResolver
-    ): List<YoutubeTrackFormat> =
-        extract(response)
+    ): List<YoutubeTrackFormat> = extract(response)
 }

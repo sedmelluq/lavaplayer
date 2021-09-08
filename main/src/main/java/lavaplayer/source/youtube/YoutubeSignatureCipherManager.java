@@ -220,7 +220,7 @@ public class YoutubeSignatureCipherManager implements YoutubeSignatureResolver {
 
         YoutubeSignatureCipher cipherKey = new YoutubeSignatureCipher();
 
-        cipherKey.setTimestamp(scriptTimestamp.group(2));
+        cipherKey.setScriptTimestamp(scriptTimestamp.group(2));
 
         while (matcher.find()) {
             String type = matcher.group(1);

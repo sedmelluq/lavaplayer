@@ -45,12 +45,4 @@ class YoutubeSignatureCipher {
     fun addOperation(operation: YoutubeCipherOperation) {
         operations.add(operation)
     }
-
-
-    /**
-     * @param timestamp The timestamp in cipher
-     */
-    fun setTimestamp(timestamp: String) {
-        scriptTimestamp = timestamp
-    }
 }

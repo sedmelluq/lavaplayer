@@ -34,10 +34,7 @@ class DefaultYoutubeTrackDetails(
     override fun getPlayerScript(): String? =
         data.playerScriptUrl
 
-    override fun getFormats(
-        httpInterface: HttpInterface,
-        signatureResolver: YoutubeSignatureResolver
-    ): List<YoutubeTrackFormat> {
+    override fun getFormats(httpInterface: HttpInterface, signatureResolver: YoutubeSignatureResolver): List<YoutubeTrackFormat> {
         try {
             return loadTrackFormats(httpInterface, signatureResolver)
         } catch (e: Exception) {
@@ -45,23 +42,18 @@ class DefaultYoutubeTrackDetails(
         }
     }
 
-    private fun loadTrackFormats(
-        httpInterface: HttpInterface,
-        signatureResolver: YoutubeSignatureResolver
-    ): List<YoutubeTrackFormat> {
-        for (extractor in FORMAT_EXTRACTORS) {
-            val formats = extractor.extract(data, httpInterface, signatureResolver)
-            if (formats.isNotEmpty()) {
-                return formats
-            }
+    private fun loadTrackFormats(httpInterface: HttpInterface, signatureResolver: YoutubeSignatureResolver): List<YoutubeTrackFormat> {
+        val formats = FORMAT_EXTRACTORS.firstNotNullOfOrNull {
+            it.extract(data, httpInterface, signatureResolver)
+                .takeUnless { formats -> formats.isEmpty() }
         }
 
-        log.warn("Video $videoId with no detected format field, response ${data.playerResponse.format()} polymer ${data.polymerArguments.format()}")
-        throw FriendlyException(
-            "Unable to play this YouTube track.",
-            SUSPICIOUS,
-            IllegalStateException("No track formats found.")
-        )
+        if (formats == null) {
+            log.warn("Video $videoId with no detected format field, response ${data.playerResponse.format()} polymer ${data.polymerArguments.format()}")
+            throw FriendlyException("Unable to play this YouTube track.", SUSPICIOUS, IllegalStateException("No track formats found."))
+        }
+
+        return formats
     }
 
     private fun loadTrackInfo(): AudioTrackInfo {

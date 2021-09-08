@@ -44,7 +44,7 @@ public class DefaultYoutubeTrackDetailsLoader implements YoutubeTrackDetailsLoad
         JsonBrowser mainInfo = loadTrackInfoFromInnertube(httpInterface, videoId, sourceManager);
 
         try {
-            YoutubeTrackJsonData initialData = loadBaseResponse(mainInfo, httpInterface, videoId);
+            YoutubeTrackJsonData initialData = loadBaseResponse(mainInfo, httpInterface, videoId, requireFormats, sourceManager);
 
             if (initialData == null) {
                 return null;
@@ -62,7 +62,9 @@ public class DefaultYoutubeTrackDetailsLoader implements YoutubeTrackDetailsLoad
     protected YoutubeTrackJsonData loadBaseResponse(
         JsonBrowser mainInfo,
         HttpInterface httpInterface,
-        String videoId
+        String videoId,
+        boolean requireFormats,
+        YoutubeItemSourceManager sourceManager
     ) throws IOException {
         YoutubeTrackJsonData data = YoutubeTrackJsonData.fromMainResult(mainInfo);
         InfoStatus status = checkPlayabilityStatus(data.playerResponse);
@@ -76,6 +78,11 @@ public class DefaultYoutubeTrackDetailsLoader implements YoutubeTrackDetailsLoad
             return YoutubeTrackJsonData.fromMainResult(trackInfo);
         }
 
+        if (requireFormats && status == InfoStatus.REQUIRES_LOGIN) {
+            JsonBrowser trackInfo = loadTrackInfoFromInnertube(httpInterface, videoId, sourceManager);
+            return YoutubeTrackJsonData.fromMainResult(trackInfo);
+        }
+//
         return data;
     }
 

@@ -17,7 +17,6 @@ class LegacyAdaptiveFormatsExtractor : OfflineYoutubeTrackFormatExtractor() {
     private fun loadTrackFormatsFromAdaptive(adaptiveFormats: String) = adaptiveFormats.split(",")
         .map { formatString ->
             val format = decodeUrlEncodedItems(formatString, false)
-
             YoutubeTrackFormat(
                 ContentType.parse(format["type"]),
                 format["bitrate"]!!.toLong(),
