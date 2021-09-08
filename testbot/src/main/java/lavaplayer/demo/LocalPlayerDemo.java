@@ -22,9 +22,9 @@ public class LocalPlayerDemo {
         AudioPlayer player = manager.createPlayer();
 
         /* load items. */
-        var itemLoader = manager.getItems().createItemLoader("ytsearch:DHL frank ocean");
+        var itemLoader = manager.getItems().createItemLoader("https://www.youtube.com/watch?v=R76_7N4gyDA");
         itemLoader.setResultHandler(new DelegatedItemLoadResultHandler(
-            null,
+            player::playTrack,
             playlist -> player.playTrack(playlist.getTracks().get(0)),
             null,
             null
