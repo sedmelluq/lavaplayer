@@ -13,8 +13,12 @@ interface ItemLoader {
      */
     var resultHandler: ItemLoadResultHandler?
 
-    suspend fun load(): ItemLoadResult =
-        loadAsync().await()
+    /**
+     * Loads a track (collection) with the supplied identifier.
+     *
+     * @return [ItemLoadResult]
+     */
+    suspend fun load(): ItemLoadResult
 
     /**
      * Schedules loading a track (collection) with the specified identifier.

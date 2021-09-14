@@ -21,8 +21,8 @@ open class DefaultItemLoader(reference: AudioReference, private val factory: Def
 
     override var resultHandler: ItemLoadResultHandler? = null
 
-    override fun loadAsync() = factory.async {
-        try {
+    override suspend fun load(): ItemLoadResult {
+        return try {
             val result = loadReference()
             if (result is ItemLoadResult.NoMatches) {
                 log.debug("No matches found for identifier '${state.reference.identifier}'")
@@ -37,6 +37,10 @@ open class DefaultItemLoader(reference: AudioReference, private val factory: Def
         } finally {
             state.messages.shutdown()
         }
+    }
+
+    override fun loadAsync() = factory.async {
+        load()
     }
 
     private suspend fun loadReference(): ItemLoadResult {

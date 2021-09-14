@@ -5,7 +5,7 @@ import lavaplayer.track.AudioTrack
 import lavaplayer.track.AudioTrackCollection
 import java.util.function.Consumer
 
-class DelegatedItemLoadResultHandler(
+open class DelegatedItemLoadResultHandler(
     var trackConsumer: Consumer<AudioTrack>?,
     var collectionConsumer: Consumer<AudioTrackCollection>?,
     var emptyResultHandler: Runnable?,
