@@ -41,11 +41,6 @@ data class AudioTrackInfo(
     @JvmField
     val identifier: String,
     /**
-     * True if this track is a stream
-     */
-    @JvmField
-    val isStream: Boolean,
-    /**
      * URL of the track, or local path to the file.
      */
     @JvmField
@@ -54,7 +49,12 @@ data class AudioTrackInfo(
      * URL of the artwork for this track.
      */
     @JvmField
-    val artworkUrl: String?
+    val artworkUrl: String? = null,
+    /**
+     * True if this track is a stream
+     */
+    @JvmField
+    val isStream: Boolean = false
 ) {
     companion object {
         @JvmStatic
@@ -90,9 +90,9 @@ data class AudioTrackInfo(
             input.readUTF(),
             input.readLong(),
             input.readUTF(),
-            input.readBoolean(),
             DataFormatTools.readNullableText(input),
-            DataFormatTools.readNullableText(input)
+            DataFormatTools.readNullableText(input),
+            input.readBoolean()
         )
     }
 }

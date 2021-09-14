@@ -5,7 +5,7 @@ import lavaplayer.format.AudioPlayerInputStream;
 import lavaplayer.manager.AudioPlayer;
 import lavaplayer.manager.AudioPlayerManager;
 import lavaplayer.manager.DefaultAudioPlayerManager;
-import lavaplayer.source.SourceRegistry;
+import lavaplayer.source.common.SourceRegistry;
 import lavaplayer.track.loader.DelegatedItemLoadResultHandler;
 
 import javax.sound.sampled.*;

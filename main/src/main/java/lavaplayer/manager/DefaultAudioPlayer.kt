@@ -19,8 +19,7 @@ import lavaplayer.track.playback.AudioFrame
 import lavaplayer.track.playback.AudioFrameProviderTools
 import lavaplayer.track.playback.LocalAudioTrackExecutor
 import lavaplayer.track.playback.MutableAudioFrame
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
+import mu.KotlinLogging
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.coroutines.CoroutineContext
@@ -31,7 +30,7 @@ import kotlin.coroutines.CoroutineContext
 class DefaultAudioPlayer(private val manager: DefaultAudioPlayerManager) : AudioPlayer, TrackStateListener,
     CoroutineScope {
     companion object {
-        private val log: Logger = LoggerFactory.getLogger(AudioPlayer::class.java)
+        private val log = KotlinLogging.logger { }
     }
 
     override val coroutineContext: CoroutineContext
@@ -238,7 +237,7 @@ class DefaultAudioPlayer(private val manager: DefaultAudioPlayerManager) : Audio
     override fun checkCleanup(threshold: Long) {
         val track = playingTrack
         if (track != null && System.currentTimeMillis() - lastRequestTime >= threshold) {
-            log.debug("Triggering cleanup on an audio player playing track {}", track)
+            log.debug { "Triggering cleanup on an audio player playing track $track" }
             stopWithReason(CLEANUP)
         }
     }
@@ -286,7 +285,7 @@ class DefaultAudioPlayer(private val manager: DefaultAudioPlayerManager) : Audio
     }
 
     private fun dispatchEvent(event: AudioEvent) {
-        log.debug("Firing an event with class ${event::class.qualifiedName}")
+        log.debug { "Firing an event with class ${event::class.qualifiedName}" }
         runBlocking {
             eventFlow.emit(event)
         }

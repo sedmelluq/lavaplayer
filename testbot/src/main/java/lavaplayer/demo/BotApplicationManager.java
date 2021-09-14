@@ -10,7 +10,7 @@ import lavaplayer.manager.AudioConfiguration;
 import lavaplayer.manager.AudioPlayerManager;
 import lavaplayer.manager.DefaultAudioPlayerManager;
 import lavaplayer.natives.samplerate.SampleRateConverter;
-import lavaplayer.source.SourceRegistry;
+import lavaplayer.source.common.SourceRegistry;
 import net.dv8tion.jda.api.entities.ChannelType;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;

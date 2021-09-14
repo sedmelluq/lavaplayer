@@ -4,7 +4,6 @@ import java.math.BigInteger;
 import java.net.InetAddress;
 
 public abstract class IpBlock<I extends InetAddress> {
-
     public abstract I getRandomAddress();
 
     public I getAddressAtIndex(long index) {

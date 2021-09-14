@@ -1,13 +1,10 @@
 package lavaplayer.tools.io
 
+import mu.KotlinLogging
 import org.apache.http.client.config.RequestConfig
 import org.apache.http.impl.client.CloseableHttpClient
 import org.apache.http.impl.client.HttpClientBuilder
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
 import java.io.IOException
-import java.util.function.Consumer
-import java.util.function.Function
 
 /**
  * Base class for an HTTP interface manager with lazily initialized http client instance.
@@ -19,7 +16,7 @@ abstract class AbstractHttpInterfaceManager(
     private var requestConfig: RequestConfig
 ) : HttpInterfaceManager {
     companion object {
-        private val logger: Logger = LoggerFactory.getLogger(AbstractHttpInterfaceManager::class.java)
+        private val logger = KotlinLogging.logger { }
     }
 
     private var closed: Boolean = false
@@ -31,30 +28,30 @@ abstract class AbstractHttpInterfaceManager(
         sharedClient?.use { sharedClient = null } ?: Unit
     }
 
-    override fun configureRequests(configurator: Function<RequestConfig, RequestConfig>) {
+    override fun configureRequests(configurator: RequestConfigurator) {
         synchronized(this) {
             try {
                 close()
             } catch (e: Exception) {
-                logger.warn("Failed to close HTTP client.", e)
+                logger.warn(e) { "Failed to close HTTP client." }
             }
 
             closed = false
-            requestConfig = configurator.apply(requestConfig)
+            requestConfig = configurator(requestConfig)
             clientBuilder.setDefaultRequestConfig(requestConfig)
         }
     }
 
-    override fun configureBuilder(configurator: Consumer<HttpClientBuilder>) {
+    override fun configureBuilder(configurator: BuilderConfigurator) {
         synchronized(this) {
             try {
                 close()
             } catch (e: Exception) {
-                logger.warn("Failed to close HTTP client.", e)
+                logger.warn(e) { "Failed to close HTTP client." }
             }
 
             closed = false
-            configurator.accept(clientBuilder)
+            clientBuilder.apply(configurator)
         }
     }
 

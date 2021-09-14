@@ -6,7 +6,7 @@ import lavaplayer.tools.io.HttpInterface
 import lavaplayer.track.AudioTrack
 import lavaplayer.track.AudioTrackInfo
 import lavaplayer.track.playback.LocalAudioTrackExecutor
-import org.slf4j.LoggerFactory
+import mu.KotlinLogging
 
 /**
  * Audio track that handles processing Twitch tracks.
@@ -19,7 +19,7 @@ class TwitchStreamAudioTrack(
     override val sourceManager: TwitchStreamItemSourceManager
 ) : MpegTsM3uStreamAudioTrack(trackInfo) {
     companion object {
-        private val log = LoggerFactory.getLogger(TwitchStreamAudioTrack::class.java)
+        private val log = KotlinLogging.logger { }
     }
 
     private val segmentUrlProvider = TwitchStreamSegmentUrlProvider(channelName, sourceManager)
@@ -40,7 +40,7 @@ class TwitchStreamAudioTrack(
 
     @Throws(Exception::class)
     override fun process(executor: LocalAudioTrackExecutor) {
-        log.debug("Starting to play Twitch channel {}.", channelName)
+        log.debug { "Starting to play Twitch channel $channelName." }
         super.process(executor)
     }
 

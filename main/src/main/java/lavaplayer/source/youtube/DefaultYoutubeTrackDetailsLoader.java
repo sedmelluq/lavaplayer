@@ -3,9 +3,9 @@ package lavaplayer.source.youtube;
 import lavaplayer.tools.DataFormatTools;
 import lavaplayer.tools.ExceptionTools;
 import lavaplayer.tools.FriendlyException;
-import lavaplayer.tools.JsonBrowser;
 import lavaplayer.tools.io.HttpClientTools;
 import lavaplayer.tools.io.HttpInterface;
+import lavaplayer.tools.json.JsonBrowser;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
@@ -129,13 +129,6 @@ public class DefaultYoutubeTrackDetailsLoader implements YoutubeTrackDetailsLoad
         }
     }
 
-    protected enum InfoStatus {
-        INFO_PRESENT,
-        REQUIRES_LOGIN,
-        DOES_NOT_EXIST,
-        CONTENT_CHECK_REQUIRED
-    }
-
     protected String getUnplayableReason(JsonBrowser statusBlock) {
         JsonBrowser playerErrorMessage = statusBlock.get("errorScreen").get("playerErrorMessageRenderer");
         String unplayableReason = statusBlock.get("reason").text();
@@ -158,7 +151,9 @@ public class DefaultYoutubeTrackDetailsLoader implements YoutubeTrackDetailsLoad
     }
 
     protected JsonBrowser loadTrackInfoFromInnertube(HttpInterface httpInterface, String videoId, YoutubeItemSourceManager sourceManager) throws IOException {
-        if (cachedPlayerScript == null) fetchScript(videoId, httpInterface);
+        if (cachedPlayerScript == null) {
+            fetchScript(videoId, httpInterface);
+        }
 
         YoutubeSignatureCipher playerScriptTimestamp = sourceManager.getSignatureResolver().getCipherKeyAndTimestampFromScript(httpInterface, cachedPlayerScript.playerScriptUrl);
         HttpPost post = new HttpPost(YoutubeConstants.PLAYER_URL);
@@ -262,6 +257,13 @@ public class DefaultYoutubeTrackDetailsLoader implements YoutubeTrackDetailsLoad
 
             return fetchedPlayerScript;
         }
+    }
+
+    protected enum InfoStatus {
+        INFO_PRESENT,
+        REQUIRES_LOGIN,
+        DOES_NOT_EXIST,
+        CONTENT_CHECK_REQUIRED
     }
 
     protected record CachedPlayerScript(String playerScriptUrl, long timestamp) {

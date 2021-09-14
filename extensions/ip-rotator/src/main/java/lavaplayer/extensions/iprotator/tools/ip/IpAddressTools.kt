@@ -11,7 +11,6 @@ import java.net.UnknownHostException;
 import kotlin.jvm.Throws
 
 object IpAddressTools {
-
     @Throws(HttpException::class)
     @JvmStatic
     fun getRandomAddressesFromHost(host: HttpHost): Pair<Inet4Address, Inet6Address> {

@@ -3,7 +3,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import lavaplayer.manager.AudioPlayerManager
 import lavaplayer.manager.DefaultAudioPlayerManager
-import lavaplayer.source.SourceRegistry
+import lavaplayer.source.common.SourceRegistry
 import lavaplayer.tools.extensions.isSearchResult
 import lavaplayer.track.loader.ItemLoadResult
 import java.util.concurrent.ExecutionException

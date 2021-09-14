@@ -1,7 +1,6 @@
 package lavaplayer.track.playback
 
 import lavaplayer.format.AudioDataFormat
-import lavaplayer.track.playback.AudioFrame
 
 /**
  * A single audio frame.

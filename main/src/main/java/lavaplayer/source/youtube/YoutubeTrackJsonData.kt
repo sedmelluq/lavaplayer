@@ -1,9 +1,8 @@
 package lavaplayer.source.youtube
 
 import lavaplayer.tools.ExceptionTools.throwWithDebugInfo
-import lavaplayer.tools.JsonBrowser
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
+import lavaplayer.tools.json.JsonBrowser
+import mu.KotlinLogging
 
 data class YoutubeTrackJsonData(
     @JvmField val playerResponse: JsonBrowser,
@@ -11,7 +10,7 @@ data class YoutubeTrackJsonData(
     @JvmField val playerScriptUrl: String?
 ) {
     companion object {
-        private val log: Logger = LoggerFactory.getLogger(DefaultYoutubeTrackDetailsLoader::class.java)
+        private val log = KotlinLogging.logger { }
 
         @JvmStatic
         fun fromMainResult(result: JsonBrowser): YoutubeTrackJsonData {

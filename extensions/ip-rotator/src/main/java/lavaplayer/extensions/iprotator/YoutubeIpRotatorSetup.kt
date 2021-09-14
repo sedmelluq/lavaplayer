@@ -1,48 +1,59 @@
 package lavaplayer.extensions.iprotator
 
 import lavaplayer.extensions.iprotator.planner.AbstractRoutePlanner
-import lavaplayer.manager.AudioPlayerManager
+import lavaplayer.source.common.SourceRegistry
 import lavaplayer.source.youtube.YoutubeHttpContextFilter
 import lavaplayer.source.youtube.YoutubeItemSourceManager
 import lavaplayer.tools.extensions.source
-import lavaplayer.tools.http.ExtendedHttpClientBuilder
 import lavaplayer.tools.http.ExtendedHttpConfigurable
 import lavaplayer.tools.http.HttpContextFilter
-import lavaplayer.tools.http.SimpleHttpClientConnectionManager
-import org.apache.http.impl.client.HttpClientBuilder
 
-class YoutubeIpRotatorSetup(private val routePlanner: AbstractRoutePlanner) {
-    private val mainConfiguration: MutableList<ExtendedHttpConfigurable>
-    private val searchConfiguration: MutableList<ExtendedHttpConfigurable>
+class YoutubeIpRotatorSetup(routePlanner: AbstractRoutePlanner) : IpRotatorSetup(routePlanner) {
+    companion object {
+        private const val DEFAULT_RETRY_LIMIT = 4
+        private val DEFAULT_DELEGATE: HttpContextFilter = YoutubeHttpContextFilter()
+        private val RETRY_HANDLER = IpRotatorRetryHandler()
+
+        operator fun invoke(routePlanner: AbstractRoutePlanner, build: YoutubeIpRotatorSetup.() -> Unit): YoutubeIpRotatorSetup {
+            return YoutubeIpRotatorSetup(routePlanner)
+                .apply(build)
+        }
+    }
+
+    private val mainConfiguration = mutableListOf<ExtendedHttpConfigurable>()
+    private val searchConfiguration = mutableListOf<ExtendedHttpConfigurable>()
 
     var retryLimit = DEFAULT_RETRY_LIMIT
     var mainDelegate = DEFAULT_DELEGATE
     var searchDelegate: HttpContextFilter? = null
 
-    fun forConfiguration(configurable: ExtendedHttpConfigurable, isSearch: Boolean): YoutubeIpRotatorSetup {
-        if (isSearch) {
-            searchConfiguration.add(configurable)
-        } else {
-            mainConfiguration.add(configurable)
-        }
+    override val retryHandler: IpRotatorRetryHandler = RETRY_HANDLER
+
+    /**
+     * Applies this ip-rotator configuration to the supplied [sourceManager]
+     *
+     * @param sourceManager The [YoutubeItemSourceManager] to apply to.
+     */
+    fun applyTo(sourceManager: YoutubeItemSourceManager): YoutubeIpRotatorSetup {
+        useConfiguration(sourceManager.mainHttpConfiguration, false)
+        useConfiguration(sourceManager.searchHttpConfiguration, true)
+        useConfiguration(sourceManager.searchMusicHttpConfiguration, true)
         return this
     }
 
-    fun forSource(sourceManager: YoutubeItemSourceManager): YoutubeIpRotatorSetup {
-        forConfiguration(sourceManager.mainHttpConfiguration, false)
-        forConfiguration(sourceManager.searchHttpConfiguration, true)
-        forConfiguration(sourceManager.searchMusicHttpConfiguration, true)
+    /**
+     * Applies this ip-rotator configuration to the supplied [registry]
+     *
+     * @param registry The [SourceRegistry] to apply to.
+     */
+    fun applyTo(registry: SourceRegistry): YoutubeIpRotatorSetup {
+        val sourceManager = registry.source<YoutubeItemSourceManager>()
+        sourceManager?.let { applyTo(it) }
         return this
     }
 
-    fun forManager(playerManager: AudioPlayerManager): YoutubeIpRotatorSetup {
-        val sourceManager = playerManager.source<YoutubeItemSourceManager>()
-        sourceManager?.let { forSource(it) }
-        return this
-    }
-
-    fun withRetryLimit(retryLimit: Int): YoutubeIpRotatorSetup {
-        this.retryLimit = retryLimit
+    fun withRetryLimit(limit: Int): YoutubeIpRotatorSetup {
+        retryLimit = limit
         return this
     }
 
@@ -56,40 +67,14 @@ class YoutubeIpRotatorSetup(private val routePlanner: AbstractRoutePlanner) {
         return this
     }
 
-    fun setup() {
+    override fun setup() {
         apply(mainConfiguration, IpRotatorFilter(mainDelegate, false, routePlanner, retryLimit))
         apply(searchConfiguration, IpRotatorFilter(searchDelegate, true, routePlanner, retryLimit))
     }
 
-    protected fun apply(configurables: List<ExtendedHttpConfigurable>, filter: IpRotatorFilter?) {
-        for (configurable in configurables) {
-            configurable.configureBuilder { builder: HttpClientBuilder ->
-                (builder as ExtendedHttpClientBuilder).setConnectionManagerFactory(::SimpleHttpClientConnectionManager)
-            }
-
-            configurable.configureBuilder { it: HttpClientBuilder ->
-                it.setRoutePlanner(routePlanner)
-
-                // No retry for some exceptions we know are hopeless for retry.
-                it.setRetryHandler(RETRY_HANDLER)
-
-                // Regularly cleans up per-route connection pool which gets huge due to many routes caused by
-                // each request having a unique route.
-                it.evictExpiredConnections()
-            }
-
-            configurable.setHttpContextFilter(filter!!)
-        }
-    }
-
-    companion object {
-        private const val DEFAULT_RETRY_LIMIT = 4
-        private val DEFAULT_DELEGATE: HttpContextFilter = YoutubeHttpContextFilter()
-        private val RETRY_HANDLER = IpRotatorRetryHandler()
-    }
-
-    init {
-        mainConfiguration = ArrayList()
-        searchConfiguration = ArrayList()
+    private fun useConfiguration(configurable: ExtendedHttpConfigurable, isSearch: Boolean): YoutubeIpRotatorSetup {
+        val configurations = if (isSearch) searchConfiguration else mainConfiguration
+        configurations.add(configurable)
+        return this
     }
 }

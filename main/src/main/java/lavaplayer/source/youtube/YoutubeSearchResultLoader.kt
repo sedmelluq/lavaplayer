@@ -2,12 +2,10 @@ package lavaplayer.source.youtube
 
 import lavaplayer.tools.http.ExtendedHttpConfigurable
 import lavaplayer.track.AudioItem
-import lavaplayer.track.AudioTrack
-import lavaplayer.track.AudioTrackInfo
-import java.util.function.Function
+import lavaplayer.track.AudioTrackFactory
 
 interface YoutubeSearchResultLoader {
-    fun loadSearchResult(query: String, trackFactory: Function<AudioTrackInfo, AudioTrack>): AudioItem
+    val httpConfiguration: ExtendedHttpConfigurable
 
-    fun getHttpConfiguration(): ExtendedHttpConfigurable
+    fun loadSearchResult(query: String, trackFactory: AudioTrackFactory): AudioItem
 }

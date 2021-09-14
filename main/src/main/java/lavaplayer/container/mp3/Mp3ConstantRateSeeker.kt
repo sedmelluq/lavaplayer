@@ -1,13 +1,9 @@
 package lavaplayer.container.mp3
 
-import lavaplayer.tools.DataFormatTools.arrayRangeEquals
-import lavaplayer.container.mp3.Mp3Seeker
 import lavaplayer.natives.mp3.Mp3Decoder
-import kotlin.Throws
-import java.io.IOException
+import lavaplayer.tools.DataFormatTools.arrayRangeEquals
 import lavaplayer.tools.io.SeekableInputStream
-import lavaplayer.container.mp3.Mp3ConstantRateSeeker
-import lavaplayer.tools.DataFormatTools
+import java.io.IOException
 
 /**
  * MP3 seeking support for constant bitrate files or in cases where the variable bitrate format used by the file is not
@@ -33,7 +29,11 @@ class Mp3ConstantRateSeeker private constructor(
          * @return Constant rate seeker, will always succeed, never null.
          */
         @JvmStatic
-        fun createFromFrame(firstFramePosition: Long, contentLength: Long, frameBuffer: ByteArray): Mp3ConstantRateSeeker {
+        fun createFromFrame(
+            firstFramePosition: Long,
+            contentLength: Long,
+            frameBuffer: ByteArray
+        ): Mp3ConstantRateSeeker {
             val sampleRate = Mp3Decoder.getFrameSampleRate(frameBuffer, 0)
             val averageFrameSize = Mp3Decoder.getAverageFrameSize(frameBuffer, 0)
             return Mp3ConstantRateSeeker(averageFrameSize, sampleRate, firstFramePosition, contentLength)

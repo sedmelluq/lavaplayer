@@ -1,10 +1,10 @@
 package lavaplayer.format
 
 import lavaplayer.format.transcoder.AudioChunkDecoder
-import lavaplayer.format.transcoder.OpusChunkDecoder
-import lavaplayer.manager.AudioConfiguration
 import lavaplayer.format.transcoder.AudioChunkEncoder
+import lavaplayer.format.transcoder.OpusChunkDecoder
 import lavaplayer.format.transcoder.OpusChunkEncoder
+import lavaplayer.manager.AudioConfiguration
 
 /**
  * An [AudioDataFormat] for OPUS.
@@ -13,7 +13,8 @@ import lavaplayer.format.transcoder.OpusChunkEncoder
  * @param sampleRate       Sample rate (frequency).
  * @param chunkSampleCount Number of samples in one chunk.
  */
-class OpusAudioDataFormat(channelCount: Int, sampleRate: Int, chunkSampleCount: Int) : AudioDataFormat(channelCount, sampleRate, chunkSampleCount) {
+class OpusAudioDataFormat(channelCount: Int, sampleRate: Int, chunkSampleCount: Int) :
+    AudioDataFormat(channelCount, sampleRate, chunkSampleCount) {
     companion object {
         const val CODEC_NAME = "OPUS"
         private val SILENT_OPUS_FRAME = byteArrayOf(0xFC.toByte(), 0xFF.toByte(), 0xFE.toByte())

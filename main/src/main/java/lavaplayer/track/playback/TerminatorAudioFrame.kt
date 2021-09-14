@@ -1,7 +1,6 @@
 package lavaplayer.track.playback
 
 import lavaplayer.format.AudioDataFormat
-import kotlin.UnsupportedOperationException
 
 /**
  * Audio frame where [.isTerminator] is `true`.

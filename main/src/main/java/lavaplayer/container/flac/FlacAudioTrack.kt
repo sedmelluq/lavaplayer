@@ -4,7 +4,7 @@ import lavaplayer.tools.io.SeekableInputStream
 import lavaplayer.track.AudioTrackInfo
 import lavaplayer.track.BaseAudioTrack
 import lavaplayer.track.playback.LocalAudioTrackExecutor
-import org.slf4j.LoggerFactory
+import mu.KotlinLogging
 
 /**
  * Audio track that handles a FLAC stream
@@ -13,7 +13,7 @@ import org.slf4j.LoggerFactory
  */
 class FlacAudioTrack(trackInfo: AudioTrackInfo, private val stream: SeekableInputStream) : BaseAudioTrack(trackInfo) {
     companion object {
-        private val log = LoggerFactory.getLogger(FlacAudioTrack::class.java)
+        private val log = KotlinLogging.logger {}
     }
 
     @Throws(Exception::class)
@@ -21,7 +21,7 @@ class FlacAudioTrack(trackInfo: AudioTrackInfo, private val stream: SeekableInpu
         val file = FlacFileLoader(stream)
         val trackProvider = file.loadTrack(executor.processingContext)
         try {
-            log.debug("Starting to play FLAC track {}", identifier)
+            log.debug { "Starting to play FLAC track $identifier" }
             executor.executeProcessingLoop({ trackProvider.provideFrames() }) { trackProvider.seekToTimecode(it) }
         } finally {
             trackProvider.close()

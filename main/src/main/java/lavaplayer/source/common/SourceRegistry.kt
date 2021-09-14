@@ -1,6 +1,7 @@
-package lavaplayer.source
+package lavaplayer.source.common
 
 import lavaplayer.container.MediaContainerRegistry
+import lavaplayer.source.ItemSourceManager
 import lavaplayer.source.bandcamp.BandcampItemSourceManager
 import lavaplayer.source.getyarn.GetyarnItemSourceManager
 import lavaplayer.source.http.HttpItemSourceManager

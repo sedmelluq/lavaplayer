@@ -1,18 +1,16 @@
 package lavaplayer.source.youtube
 
 import lavaplayer.tools.io.HttpInterface
-import lavaplayer.track.AudioTrack
 import lavaplayer.track.AudioTrackCollection
-import lavaplayer.track.AudioTrackInfo
-import java.util.function.Function
+import lavaplayer.track.AudioTrackFactory
 
 interface YoutubePlaylistLoader {
-    fun setPlaylistPageCount(playlistPageCount: Int)
+    var playlistPageCount: Int
 
     fun load(
         httpInterface: HttpInterface,
         playlistId: String,
         selectedVideoId: String?,
-        trackFactory: Function<AudioTrackInfo, AudioTrack>
+        trackFactory: AudioTrackFactory
     ): AudioTrackCollection
 }

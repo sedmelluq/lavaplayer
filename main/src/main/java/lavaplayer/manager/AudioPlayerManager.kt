@@ -3,13 +3,11 @@ package lavaplayer.manager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
-import lavaplayer.source.SourceRegistry
+import lavaplayer.source.common.SourceRegistry
+import lavaplayer.tools.io.BuilderConfigurator
+import lavaplayer.tools.io.RequestConfigurator
 import lavaplayer.track.TrackEncoder
 import lavaplayer.track.loader.ItemLoaderFactory
-import org.apache.http.client.config.RequestConfig
-import org.apache.http.impl.client.HttpClientBuilder
-import java.util.function.Consumer
-import java.util.function.Function
 import kotlin.coroutines.CoroutineContext
 
 /**
@@ -88,7 +86,7 @@ interface AudioPlayerManager : TrackEncoder, SourceRegistry, CoroutineScope {
      * use will close all active connections, so this should be called before the sources have been
      * used.
      */
-    fun setHttpRequestConfigurator(configurator: Function<RequestConfig, RequestConfig>?)
+    fun setHttpRequestConfigurator(configurator: RequestConfigurator?)
 
     /**
      * @param configurator Function used to reconfigure the HTTP builder of all sources which perform HTTP requests.
@@ -96,5 +94,5 @@ interface AudioPlayerManager : TrackEncoder, SourceRegistry, CoroutineScope {
      * use will close all active connections, so this should be called before the sources have been
      * used.
      */
-    fun setHttpBuilderConfigurator(configurator: Consumer<HttpClientBuilder>?)
+    fun setHttpBuilderConfigurator(configurator: BuilderConfigurator?)
 }

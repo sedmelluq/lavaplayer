@@ -9,7 +9,10 @@ import lavaplayer.track.loader.ItemLoadResultAdapter
 fun AudioPlayerManager.loadItemAsync(identifier: String, handler: ItemLoadResultAdapter): Deferred<ItemLoadResult> =
     loadItemAsync(AudioReference(identifier, null), handler)
 
-fun AudioPlayerManager.loadItemAsync(reference: AudioReference, handler: ItemLoadResultAdapter): Deferred<ItemLoadResult> {
+fun AudioPlayerManager.loadItemAsync(
+    reference: AudioReference,
+    handler: ItemLoadResultAdapter
+): Deferred<ItemLoadResult> {
     val itemLoader = items.createItemLoader(reference)
     itemLoader.resultHandler = handler
     return itemLoader.loadAsync()

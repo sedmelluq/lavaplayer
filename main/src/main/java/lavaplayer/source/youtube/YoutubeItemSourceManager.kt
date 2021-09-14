@@ -1,7 +1,7 @@
 package lavaplayer.source.youtube
 
 import lavaplayer.source.ItemSourceManager
-import lavaplayer.source.youtube.YoutubeLinkRouter.Routes
+import lavaplayer.source.common.LinkRouter
 import lavaplayer.source.youtube.music.YoutubeMixLoader
 import lavaplayer.source.youtube.music.YoutubeMixProvider
 import lavaplayer.source.youtube.music.YoutubeSearchMusicProvider
@@ -10,25 +10,15 @@ import lavaplayer.tools.ExceptionTools
 import lavaplayer.tools.FriendlyException
 import lavaplayer.tools.http.ExtendedHttpConfigurable
 import lavaplayer.tools.http.MultiHttpConfigurable
-import lavaplayer.tools.io.HttpClientTools
-import lavaplayer.tools.io.HttpConfigurable
-import lavaplayer.tools.io.HttpInterface
-import lavaplayer.track.AudioItem
-import lavaplayer.track.AudioReference
-import lavaplayer.track.AudioTrack
-import lavaplayer.track.AudioTrackInfo
+import lavaplayer.tools.io.*
+import lavaplayer.track.*
 import lavaplayer.track.loader.LoaderState
-import org.apache.http.client.config.RequestConfig
+import mu.KotlinLogging
 import org.apache.http.client.methods.HttpGet
-import org.apache.http.impl.client.HttpClientBuilder
-import org.slf4j.LoggerFactory
 import java.io.DataInput
-import java.io.DataOutput
-import java.util.function.Consumer
-import java.util.function.Function
 
 /**
- * Audio source manager that implements finding Youtube videos or playlists based on an URL or ID.
+ * Audio source manager that implements finding YouTube videos or playlists based on a URL or ID.
  *
  * @param allowSearch Whether to allow search queries as identifiers
  */
@@ -39,11 +29,11 @@ class YoutubeItemSourceManager @JvmOverloads constructor(
     private val searchMusicResultLoader: YoutubeSearchMusicResultLoader = YoutubeSearchMusicProvider(),
     val signatureResolver: YoutubeSignatureResolver = YoutubeSignatureCipherManager(),
     private val playlistLoader: YoutubePlaylistLoader = DefaultYoutubePlaylistLoader(),
-    private val linkRouter: YoutubeLinkRouter = DefaultYoutubeLinkRouter(),
+    private val linkRouter: LinkRouter<YoutubeLinkRoutes> = DefaultYoutubeLinkRouter(),
     private val mixLoader: YoutubeMixLoader = YoutubeMixProvider()
 ) : ItemSourceManager, HttpConfigurable {
     companion object {
-        private val log = LoggerFactory.getLogger(YoutubeItemSourceManager::class.java)
+        private val log = KotlinLogging.logger { }
     }
 
     private val loadingRoutes: LoadingRoutes = LoadingRoutes()
@@ -51,7 +41,7 @@ class YoutubeItemSourceManager @JvmOverloads constructor(
     private val httpConfiguration = MultiHttpConfigurable(
         listOf(
             httpInterfaceManager,
-            searchResultLoader.getHttpConfiguration(),
+            searchResultLoader.httpConfiguration,
             searchMusicResultLoader.getHttpConfiguration()
         )
     )
@@ -66,23 +56,25 @@ class YoutubeItemSourceManager @JvmOverloads constructor(
         get() = httpInterfaceManager
 
     val searchHttpConfiguration: ExtendedHttpConfigurable
-        get() = searchResultLoader.getHttpConfiguration()
+        get() = searchResultLoader.httpConfiguration
 
     val searchMusicHttpConfiguration: ExtendedHttpConfigurable
         get() = searchMusicResultLoader.getHttpConfiguration()
+
+    /**
+     * Maximum number of pages loaded from one playlist. There are 100 tracks per page.
+     */
+    var playlistPageCount: Int
+        get() = playlistLoader.playlistPageCount
+        set(value) {
+            playlistLoader.playlistPageCount = value
+        }
 
     override val sourceName: String
         get() = "youtube"
 
     init {
         httpInterfaceManager.setHttpContextFilter(YoutubeHttpContextFilter())
-    }
-
-    /**
-     * @param playlistPageCount Maximum number of pages loaded from one playlist. There are 100 tracks per page.
-     */
-    fun setPlaylistPageCount(playlistPageCount: Int) {
-        playlistLoader.setPlaylistPageCount(playlistPageCount)
     }
 
     override suspend fun loadItem(state: LoaderState, reference: AudioReference): AudioItem? {
@@ -102,10 +94,6 @@ class YoutubeItemSourceManager @JvmOverloads constructor(
         return true
     }
 
-    override fun encodeTrack(track: AudioTrack, output: DataOutput) {
-        // No custom values that need saving
-    }
-
     override fun decodeTrack(trackInfo: AudioTrackInfo, input: DataInput): AudioTrack {
         return YoutubeAudioTrack(trackInfo, this)
     }
@@ -114,16 +102,16 @@ class YoutubeItemSourceManager @JvmOverloads constructor(
         ExceptionTools.closeWithWarnings(httpInterfaceManager)
     }
 
-    override fun configureRequests(configurator: Function<RequestConfig, RequestConfig>) {
+    override fun configureRequests(configurator: RequestConfigurator) {
         httpConfiguration.configureRequests(configurator)
     }
 
-    override fun configureBuilder(configurator: Consumer<HttpClientBuilder>) {
+    override fun configureBuilder(configurator: BuilderConfigurator) {
         httpConfiguration.configureBuilder(configurator)
     }
 
-    private fun loadItemOnce(reference: AudioReference): AudioItem? {
-        return linkRouter.route(reference.identifier!!, loadingRoutes)
+    private suspend fun loadItemOnce(reference: AudioReference): AudioItem? {
+        return linkRouter.find(reference.identifier!!, loadingRoutes)
     }
 
     /**
@@ -154,39 +142,39 @@ class YoutubeItemSourceManager @JvmOverloads constructor(
         }
     }
 
+    /**
+     * Loads a track collection from a mix or playlist id
+     *
+     * @param type The type of playlist to load.
+     * @param id The playlist id.
+     * @param selectedVideoId The selected video id.
+     */
+    fun loadPlaylistWithId(type: PlaylistType, id: String, selectedVideoId: String?): AudioTrackCollection {
+        log.debug { "Starting to load ${type.name.lowercase()} with ID $id selected track $selectedVideoId" }
+        try {
+            httpInterface.use { httpInterface ->
+                return mixLoader.load(httpInterface, id, selectedVideoId) { buildTrackFromInfo(it) }
+            }
+        } catch (e: Exception) {
+            throw ExceptionTools.wrapUnfriendlyException(e)
+        }
+    }
+
     private fun buildTrackFromInfo(info: AudioTrackInfo): YoutubeAudioTrack {
         return YoutubeAudioTrack(info, this)
     }
 
-    private inner class LoadingRoutes : Routes<AudioItem?> {
+    private inner class LoadingRoutes : YoutubeLinkRoutes {
         override fun track(videoId: String): AudioItem {
             return loadTrackWithVideoId(videoId, false)
         }
 
         override fun playlist(playlistId: String, selectedVideoId: String?): AudioItem {
-            log.debug("Starting to load playlist with ID {}", playlistId)
-            try {
-                httpInterface.use { httpInterface ->
-                    return playlistLoader.load(httpInterface, playlistId, selectedVideoId) { info: AudioTrackInfo ->
-                        buildTrackFromInfo(info)
-                    }
-                }
-            } catch (e: Exception) {
-                throw ExceptionTools.wrapUnfriendlyExceptions(e)
-            }
+            return loadPlaylistWithId(PlaylistType.Regular, playlistId, selectedVideoId)
         }
 
         override fun mix(mixId: String, selectedVideoId: String?): AudioItem {
-            log.debug("Starting to load mix with ID {} selected track {}", mixId, selectedVideoId)
-            try {
-                httpInterface.use { httpInterface ->
-                    return mixLoader.load(httpInterface, mixId, selectedVideoId) { info: AudioTrackInfo ->
-                        buildTrackFromInfo(info)
-                    }
-                }
-            } catch (e: Exception) {
-                throw ExceptionTools.wrapUnfriendlyExceptions(e)
-            }
+            return loadPlaylistWithId(PlaylistType.Mix, mixId, selectedVideoId)
         }
 
         override fun search(query: String): AudioItem? {
@@ -212,16 +200,16 @@ class YoutubeItemSourceManager @JvmOverloads constructor(
                         .use { response ->
                             HttpClientTools.assertSuccessWithContent(response, "playlist response")
                             val context = httpInterface.context
-                            // youtube currently transforms watch_video links into a link with a video id and a list id.
-                            // because thats what happens, we can simply re-process with the redirected link
+                            // YouTube currently transforms watch_video links into a link with a video id and a list id.
+                            // because that's what happens, we can simply re-process with the redirected link
                             val redirects = context.redirectLocations
-                            return if (redirects != null && !redirects.isEmpty()) {
+                            return if (redirects != null && redirects.isNotEmpty()) {
                                 AudioReference(redirects[0].toString(), null)
                             } else {
                                 throw FriendlyException(
-                                    "Unable to process youtube watch_videos link",
+                                    "Unable to process YouTube watch_videos link",
                                     FriendlyException.Severity.SUSPICIOUS,
-                                    IllegalStateException("Expected youtube to redirect watch_videos link to a watch?v={id}&list={list_id} link, but it did not redirect at all")
+                                    IllegalStateException("Expected YouTube to redirect watch_videos link to a watch?v={id}&list={list_id} link, but it did not redirect at all")
                                 )
                             }
                         }
@@ -235,4 +223,6 @@ class YoutubeItemSourceManager @JvmOverloads constructor(
             return AudioReference.NO_TRACK
         }
     }
+
+    enum class PlaylistType { Mix, Regular }
 }

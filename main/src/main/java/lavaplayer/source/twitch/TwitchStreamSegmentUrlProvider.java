@@ -2,9 +2,9 @@ package lavaplayer.source.twitch;
 
 import lavaplayer.container.playlists.ExtendedM3uParser;
 import lavaplayer.source.stream.M3uStreamSegmentUrlProvider;
-import lavaplayer.tools.JsonBrowser;
 import lavaplayer.tools.io.HttpClientTools;
 import lavaplayer.tools.io.HttpInterface;
+import lavaplayer.tools.json.JsonBrowser;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpUriRequest;

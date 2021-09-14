@@ -9,12 +9,12 @@ import lavaplayer.track.AudioReference
 import lavaplayer.track.AudioTrack
 import lavaplayer.track.AudioTrackCollection
 import lavaplayer.track.loader.message.DefaultItemLoaderMessages
-import org.slf4j.LoggerFactory
+import mu.KotlinLogging
 
 open class DefaultItemLoader(reference: AudioReference, private val factory: DefaultItemLoaderFactory) : ItemLoader {
     companion object {
         private const val MAXIMUM_LOAD_REDIRECTS = 5
-        private val log = LoggerFactory.getLogger(DefaultItemLoader::class.java)
+        private val log = KotlinLogging.logger { }
     }
 
     override val state = LoaderState(reference, DefaultItemLoaderMessages())
@@ -25,13 +25,17 @@ open class DefaultItemLoader(reference: AudioReference, private val factory: Def
         return try {
             val result = loadReference()
             if (result is ItemLoadResult.NoMatches) {
-                log.debug("No matches found for identifier '${state.reference.identifier}'")
+                log.debug { "No matches found for identifier '${state.reference.identifier}'" }
             }
 
             resultHandler?.handle(result)
             result
         } catch (t: Throwable) {
-            val exception = ExceptionTools.wrapUnfriendlyExceptions("Something went wrong when looking up the track", FriendlyException.Severity.FAULT, t)
+            val exception = ExceptionTools.wrapUnfriendlyException(
+                "Something went wrong when looking up the track",
+                FriendlyException.Severity.FAULT,
+                t
+            )
             ExceptionTools.log(log, exception, "loading item '${state.reference.identifier}'")
             ItemLoadResult.LoadFailed(exception)
         } finally {
@@ -74,7 +78,7 @@ open class DefaultItemLoader(reference: AudioReference, private val factory: Def
 
             if (item !is AudioReference) {
                 val name = "audio track${" collection".takeIf { item is AudioTrackCollection } ?: ""}"
-                log.debug("Loaded an $name with identifier '${reference.uri}' using ${sourceManager::class.qualifiedName}.")
+                log.debug { "Loaded an $name with identifier '${reference.uri}' using ${sourceManager::class.qualifiedName}." }
             }
 
             return item

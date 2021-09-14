@@ -34,23 +34,6 @@ public class YoutubeSignatureCipherManager implements YoutubeSignatureResolver {
 
     private static final String VARIABLE_PART = "[a-zA-Z_\\$][a-zA-Z_0-9]*";
     private static final String VARIABLE_PART_DEFINE = "\\\"?" + VARIABLE_PART + "\\\"?";
-    private static final String BEFORE_ACCESS = "(?:\\[\\\"|\\.)";
-    private static final String AFTER_ACCESS = "(?:\\\"\\]|)";
-    private static final String VARIABLE_PART_ACCESS = BEFORE_ACCESS + VARIABLE_PART + AFTER_ACCESS;
-    private static final String REVERSE_PART = ":function\\(a\\)\\{(?:return )?a\\.reverse\\(\\)\\}";
-    private static final String SLICE_PART = ":function\\(a,b\\)\\{return a\\.slice\\(b\\)\\}";
-    private static final String SPLICE_PART = ":function\\(a,b\\)\\{a\\.splice\\(0,b\\)\\}";
-    private static final String SWAP_PART = ":function\\(a,b\\)\\{" +
-        "var c=a\\[0\\];a\\[0\\]=a\\[b%a\\.length\\];a\\[b(?:%a.length|)\\]=c(?:;return a)?\\}";
-
-    private static final Pattern functionPattern = Pattern.compile("" +
-        "function(?: " + VARIABLE_PART + ")?\\(a\\)\\{" +
-        "a=a\\.split\\(\"\"\\);\\s*" +
-        "((?:(?:a=)?" + VARIABLE_PART + VARIABLE_PART_ACCESS + "\\(a,\\d+\\);)+)" +
-        "return a\\.join\\(\"\"\\)" +
-        "\\}"
-    );
-
     private static final Pattern actionsPattern = Pattern.compile("" +
         "var (" + VARIABLE_PART + ")=\\{((?:(?:" +
         VARIABLE_PART_DEFINE + REVERSE_PART + "|" +
@@ -59,7 +42,21 @@ public class YoutubeSignatureCipherManager implements YoutubeSignatureResolver {
         VARIABLE_PART_DEFINE + SWAP_PART +
         "),?\\n?)+)\\};"
     );
-
+    private static final String BEFORE_ACCESS = "(?:\\[\\\"|\\.)";
+    private static final String AFTER_ACCESS = "(?:\\\"\\]|)";
+    private static final String VARIABLE_PART_ACCESS = BEFORE_ACCESS + VARIABLE_PART + AFTER_ACCESS;
+    private static final Pattern functionPattern = Pattern.compile("" +
+        "function(?: " + VARIABLE_PART + ")?\\(a\\)\\{" +
+        "a=a\\.split\\(\"\"\\);\\s*" +
+        "((?:(?:a=)?" + VARIABLE_PART + VARIABLE_PART_ACCESS + "\\(a,\\d+\\);)+)" +
+        "return a\\.join\\(\"\"\\)" +
+        "\\}"
+    );
+    private static final String REVERSE_PART = ":function\\(a\\)\\{(?:return )?a\\.reverse\\(\\)\\}";
+    private static final String SLICE_PART = ":function\\(a,b\\)\\{return a\\.slice\\(b\\)\\}";
+    private static final String SPLICE_PART = ":function\\(a,b\\)\\{a\\.splice\\(0,b\\)\\}";
+    private static final String SWAP_PART = ":function\\(a,b\\)\\{" +
+        "var c=a\\[0\\];a\\[0\\]=a\\[b%a\\.length\\];a\\[b(?:%a.length|)\\]=c(?:;return a)?\\}";
     private static final String PATTERN_PREFIX = "(?:^|,)\\\"?(" + VARIABLE_PART + ")\\\"?";
 
     private static final Pattern reversePattern = Pattern.compile(PATTERN_PREFIX + REVERSE_PART, Pattern.MULTILINE);
@@ -83,11 +80,31 @@ public class YoutubeSignatureCipherManager implements YoutubeSignatureResolver {
         this.cipherLoadLock = new Object();
     }
 
+    private static String extractDollarEscapedFirstGroup(Pattern pattern, String text) {
+        Matcher matcher = pattern.matcher(text);
+        return matcher.find() ? matcher.group(1).replace("$", "\\$") : null;
+    }
+
+    private static URI parseTokenScriptUrl(String urlString) {
+        try {
+            if (urlString.startsWith("//")) {
+                return new URI("https:" + urlString);
+            } else if (urlString.startsWith("/")) {
+                return new URI("https://www.youtube.com" + urlString);
+            } else {
+                return new URI(urlString);
+            }
+        } catch (URISyntaxException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     /**
      * Produces a valid playback URL for the specified track
+     *
      * @param httpInterface HTTP interface to use
-     * @param playerScript Address of the script which is used to decipher signatures
-     * @param format The track for which to get the URL
+     * @param playerScript  Address of the script which is used to decipher signatures
+     * @param format        The track for which to get the URL
      * @return Valid playback URL
      * @throws IOException On network IO error
      */
@@ -114,9 +131,10 @@ public class YoutubeSignatureCipherManager implements YoutubeSignatureResolver {
 
     /**
      * Produces a valid dash XML URL from the possibly ciphered URL.
+     *
      * @param httpInterface HTTP interface instance to use
-     * @param playerScript Address of the script which is used to decipher signatures
-     * @param dashUrl URL of the dash XML, possibly with a ciphered signature
+     * @param playerScript  Address of the script which is used to decipher signatures
+     * @param dashUrl       URL of the dash XML, possibly with a ciphered signature
      * @return Valid dash XML URL
      * @throws IOException On network IO error
      */
@@ -244,24 +262,5 @@ public class YoutubeSignatureCipherManager implements YoutubeSignatureResolver {
         }
 
         return cipherKey;
-    }
-
-    private static String extractDollarEscapedFirstGroup(Pattern pattern, String text) {
-        Matcher matcher = pattern.matcher(text);
-        return matcher.find() ? matcher.group(1).replace("$", "\\$") : null;
-    }
-
-    private static URI parseTokenScriptUrl(String urlString) {
-        try {
-            if (urlString.startsWith("//")) {
-                return new URI("https:" + urlString);
-            } else if (urlString.startsWith("/")) {
-                return new URI("https://www.youtube.com" + urlString);
-            } else {
-                return new URI(urlString);
-            }
-        } catch (URISyntaxException e) {
-            throw new RuntimeException(e);
-        }
     }
 }

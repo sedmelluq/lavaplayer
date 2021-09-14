@@ -52,7 +52,8 @@ interface ItemSourceManager {
      * @throws IOException On write error.
      */
     @Throws(IOException::class)
-    fun encodeTrack(track: AudioTrack, output: DataOutput)
+    fun encodeTrack(track: AudioTrack, output: DataOutput) {
+    }
 
     /**
      * Decodes an audio track from the encoded format encoded with encodeTrack().
@@ -69,5 +70,5 @@ interface ItemSourceManager {
      * Shut down the source manager, freeing all associated resources and threads. A source manager is not responsible for
      * terminating the tracks that it has created.
      */
-    fun shutdown()
+    fun shutdown() {}
 }

@@ -10,16 +10,12 @@ import lavaplayer.track.AudioTrack
 import lavaplayer.track.AudioTrackInfo
 import lavaplayer.track.loader.LoaderState
 import org.apache.commons.io.IOUtils
-import org.apache.http.client.config.RequestConfig
 import org.apache.http.client.methods.HttpGet
-import org.apache.http.impl.client.HttpClientBuilder
 import org.jsoup.Jsoup
 import java.io.DataInput
 import java.io.DataOutput
 import java.io.IOException
 import java.nio.charset.StandardCharsets
-import java.util.function.Consumer
-import java.util.function.Function
 import java.util.regex.Pattern
 
 /**
@@ -64,11 +60,11 @@ class GetyarnItemSourceManager : HttpConfigurable, ItemSourceManager {
         // Nothing to shut down
     }
 
-    override fun configureRequests(configurator: Function<RequestConfig, RequestConfig>) {
+    override fun configureRequests(configurator: RequestConfigurator) {
         httpInterfaceManager.configureRequests(configurator)
     }
 
-    override fun configureBuilder(configurator: Consumer<HttpClientBuilder>) {
+    override fun configureBuilder(configurator: BuilderConfigurator) {
         httpInterfaceManager.configureBuilder(configurator)
     }
 

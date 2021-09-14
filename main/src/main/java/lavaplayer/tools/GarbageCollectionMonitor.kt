@@ -1,7 +1,7 @@
 package lavaplayer.tools
 
 import com.sun.management.GarbageCollectionNotificationInfo
-import org.slf4j.LoggerFactory
+import mu.KotlinLogging
 import java.lang.management.ManagementFactory
 import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.ScheduledFuture
@@ -21,7 +21,7 @@ import javax.management.openmbean.CompositeData
 class GarbageCollectionMonitor(private val reportingExecutor: ScheduledExecutorService) : NotificationListener,
     Runnable {
     companion object {
-        private val log = LoggerFactory.getLogger(GarbageCollectionMonitor::class.java)
+        private val log = KotlinLogging.logger { }
         private val REPORTING_FREQUENCY = TimeUnit.MINUTES.toMillis(2)
         private val BUCKETS = longArrayOf(2000, 500, 200, 50, 20, 0)
     }
@@ -36,8 +36,15 @@ class GarbageCollectionMonitor(private val reportingExecutor: ScheduledExecutorS
     fun enable() {
         if (enabled.compareAndSet(false, true)) {
             registerBeanListener()
-            executorFuture.set(reportingExecutor.scheduleAtFixedRate(this, REPORTING_FREQUENCY, REPORTING_FREQUENCY, TimeUnit.MILLISECONDS))
-            log.info("GC monitoring enabled, reporting results every 2 minutes.")
+            executorFuture.set(
+                reportingExecutor.scheduleAtFixedRate(
+                    this,
+                    REPORTING_FREQUENCY,
+                    REPORTING_FREQUENCY,
+                    TimeUnit.MILLISECONDS
+                )
+            )
+            log.info { "GC monitoring enabled, reporting results every 2 minutes." }
         }
     }
 
@@ -48,7 +55,7 @@ class GarbageCollectionMonitor(private val reportingExecutor: ScheduledExecutorS
         if (enabled.compareAndSet(true, false)) {
             unregisterBeanListener()
             executorFuture.getAndSet(null)?.cancel(false)
-            log.info("GC monitoring disabled.")
+            log.info { "GC monitoring disabled." }
         }
     }
 
@@ -75,9 +82,9 @@ class GarbageCollectionMonitor(private val reportingExecutor: ScheduledExecutorS
         }
 
         if (hasBadLatency) {
-            log.warn("Suspicious GC results for the last 2 minutes: {}", statistics)
+            log.warn { "Suspicious GC results for the last 2 minutes: $statistics" }
         } else {
-            log.debug("GC results for the last 2 minutes: {}", statistics)
+            log.debug { "GC results for the last 2 minutes: $statistics" }
         }
     }
 
@@ -94,7 +101,7 @@ class GarbageCollectionMonitor(private val reportingExecutor: ScheduledExecutorS
                 try {
                     bean.removeNotificationListener(this)
                 } catch (e: ListenerNotFoundException) {
-                    log.debug("No listener found on bean {}, should have been there.", bean, e)
+                    log.debug(e) { "No listener found on bean $bean, should have been there." }
                 }
             }
     }

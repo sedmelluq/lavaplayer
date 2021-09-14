@@ -6,7 +6,9 @@ import lavaplayer.common.tools.ExecutorTools
 import lavaplayer.source.ItemSourceManager
 import lavaplayer.tools.GarbageCollectionMonitor
 import lavaplayer.tools.extensions.addListener
+import lavaplayer.tools.io.BuilderConfigurator
 import lavaplayer.tools.io.HttpConfigurable
+import lavaplayer.tools.io.RequestConfigurator
 import lavaplayer.track.DefaultTrackEncoder
 import lavaplayer.track.InternalAudioTrack
 import lavaplayer.track.TrackStateListener
@@ -14,13 +16,10 @@ import lavaplayer.track.loader.DefaultItemLoaderFactory
 import lavaplayer.track.loader.ItemLoaderFactory
 import lavaplayer.track.playback.AudioTrackExecutor
 import lavaplayer.track.playback.LocalAudioTrackExecutor
-import org.apache.http.client.config.RequestConfig
-import org.apache.http.impl.client.HttpClientBuilder
 import java.util.*
 import java.util.concurrent.*
 import java.util.concurrent.atomic.AtomicLong
 import java.util.function.Consumer
-import java.util.function.Function
 
 /**
  * The default implementation of audio player manager.
@@ -42,10 +41,10 @@ open class DefaultAudioPlayerManager : DefaultTrackEncoder(), AudioPlayerManager
     private val lifecycleManager = AudioPlayerLifecycleManager(scheduledExecutorService, cleanupThreshold)
 
     @Volatile
-    private var httpConfigurator: Function<RequestConfig, RequestConfig>? = null
+    private var httpConfigurator: RequestConfigurator? = null
 
     @Volatile
-    private var httpBuilderConfigurator: Consumer<HttpClientBuilder>? = null
+    private var httpBuilderConfigurator: BuilderConfigurator? = null
 
     // Configuration
     @Volatile
@@ -158,7 +157,7 @@ open class DefaultAudioPlayerManager : DefaultTrackEncoder(), AudioPlayerManager
         return player
     }
 
-    override fun setHttpRequestConfigurator(configurator: Function<RequestConfig, RequestConfig>?) {
+    override fun setHttpRequestConfigurator(configurator: RequestConfigurator?) {
         httpConfigurator = configurator
         if (configurator != null) {
             for (sourceManager in sourceManagers) {
@@ -169,7 +168,7 @@ open class DefaultAudioPlayerManager : DefaultTrackEncoder(), AudioPlayerManager
         }
     }
 
-    override fun setHttpBuilderConfigurator(configurator: Consumer<HttpClientBuilder>?) {
+    override fun setHttpBuilderConfigurator(configurator: BuilderConfigurator?) {
         httpBuilderConfigurator = configurator
         if (configurator != null) {
             for (sourceManager in sourceManagers) {

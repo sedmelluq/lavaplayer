@@ -11,15 +11,8 @@ class DefaultSoundCloudFormatHandler : SoundCloudFormatHandler {
 
     override fun chooseBestFormat(formats: List<SoundCloudTrackFormat>): SoundCloudTrackFormat {
         // TODO: clean this shit up bro
-        for (type in TYPES) {
-            for (format in formats) {
-                if (type.matches(format)) {
-                    return format
-                }
-            }
-        }
-
-        throw RuntimeException("Did not detect any supported formats")
+        return formats.find { format -> TYPES.any { it.matches(format) } }
+            ?: throw RuntimeException("Did not detect any supported formats")
     }
 
     override fun buildFormatIdentifier(format: SoundCloudTrackFormat): String {

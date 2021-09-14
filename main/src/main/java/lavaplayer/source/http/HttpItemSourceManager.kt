@@ -17,20 +17,17 @@ import lavaplayer.track.AudioTrackInfo
 import lavaplayer.track.info.AudioTrackInfoBuilder.Companion.create
 import lavaplayer.track.loader.LoaderState
 import org.apache.http.HttpStatus
-import org.apache.http.client.config.RequestConfig
-import org.apache.http.impl.client.HttpClientBuilder
 import java.io.DataInput
 import java.io.DataOutput
 import java.io.IOException
 import java.net.URI
 import java.net.URISyntaxException
-import java.util.function.Consumer
-import java.util.function.Function
 
 /**
  * Audio source manager which implements finding audio files from HTTP addresses.
  */
-class HttpItemSourceManager @JvmOverloads constructor(containerRegistry: MediaContainerRegistry? = MediaContainerRegistry.DEFAULT_REGISTRY) : ProbingItemSourceManager(containerRegistry!!), HttpConfigurable {
+class HttpItemSourceManager @JvmOverloads constructor(containerRegistry: MediaContainerRegistry? = MediaContainerRegistry.DEFAULT_REGISTRY) :
+    ProbingItemSourceManager(containerRegistry!!), HttpConfigurable {
     private val httpInterfaceManager: HttpInterfaceManager = ThreadLocalHttpInterfaceManager(
         HttpClientTools
             .createSharedCookiesHttpBuilder()
@@ -62,11 +59,11 @@ class HttpItemSourceManager @JvmOverloads constructor(containerRegistry: MediaCo
         return HttpAudioTrack(trackInfo, containerDescriptor, this)
     }
 
-    override fun configureRequests(configurator: Function<RequestConfig, RequestConfig>) {
+    override fun configureRequests(configurator: RequestConfigurator) {
         httpInterfaceManager.configureRequests(configurator)
     }
 
-    override fun configureBuilder(configurator: Consumer<HttpClientBuilder>) {
+    override fun configureBuilder(configurator: BuilderConfigurator) {
         httpInterfaceManager.configureBuilder(configurator)
     }
 
@@ -118,7 +115,10 @@ class HttpItemSourceManager @JvmOverloads constructor(containerRegistry: MediaCo
                 val statusCode = inputStream.checkStatusCode()
                 val redirectUrl = HttpClientTools.getRedirectLocation(reference.identifier, inputStream.currentResponse)
                 when {
-                    redirectUrl != null -> return MediaContainerDetectionResult.refer(null, AudioReference(redirectUrl, null))
+                    redirectUrl != null -> return MediaContainerDetectionResult.refer(
+                        null,
+                        AudioReference(redirectUrl, null)
+                    )
                     statusCode == HttpStatus.SC_NOT_FOUND -> return null
                     !HttpClientTools.isSuccessWithContent(statusCode) -> throw FriendlyException(
                         "That URL is not playable.",

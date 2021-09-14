@@ -3,14 +3,14 @@ package lavaplayer.track.loader.message
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.*
-import org.slf4j.LoggerFactory
+import mu.KotlinLogging
 import kotlin.coroutines.CoroutineContext
 import kotlin.reflect.KClass
 
 class DefaultItemLoaderMessages : ItemLoaderMessages, CoroutineScope {
     companion object {
         @PublishedApi
-        internal val log = LoggerFactory.getLogger(DefaultItemLoaderMessages::class.java)
+        internal val log = KotlinLogging.logger { }
     }
 
     override val coroutineContext: CoroutineContext
@@ -24,6 +24,7 @@ class DefaultItemLoaderMessages : ItemLoaderMessages, CoroutineScope {
         MutableSharedFlow(extraBufferCapacity = Int.MAX_VALUE)
     }
 
+    @Suppress("UNCHECKED_CAST")
     override fun <T : ItemLoaderMessage> on(clazz: KClass<T>, block: suspend T.() -> Unit): Job {
         active = true
         return (events
@@ -33,7 +34,7 @@ class DefaultItemLoaderMessages : ItemLoaderMessages, CoroutineScope {
                 launch {
                     event
                         .runCatching { block(event) }
-                        .onFailure { log.error("Error occurred while handling audio reference loader message", it) }
+                        .onFailure { log.error(it) { "Error occurred while handling audio reference loader message" } }
                 }
             }
             .launchIn(this)

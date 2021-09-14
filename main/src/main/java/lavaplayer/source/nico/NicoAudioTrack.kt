@@ -9,10 +9,10 @@ import lavaplayer.track.AudioTrack
 import lavaplayer.track.AudioTrackInfo
 import lavaplayer.track.DelegatedAudioTrack
 import lavaplayer.track.playback.LocalAudioTrackExecutor
+import mu.KotlinLogging
 import org.apache.http.client.methods.HttpGet
 import org.apache.http.client.utils.URLEncodedUtils
 import org.apache.http.util.EntityUtils
-import org.slf4j.LoggerFactory
 import java.io.IOException
 import java.net.URI
 import java.nio.charset.StandardCharsets
@@ -28,7 +28,7 @@ class NicoAudioTrack(
     override val sourceManager: NicoItemSourceManager
 ) : DelegatedAudioTrack(trackInfo) {
     companion object {
-        private val log = LoggerFactory.getLogger(NicoAudioTrack::class.java)
+        private val log = KotlinLogging.logger { }
     }
 
     @Throws(Exception::class)
@@ -37,7 +37,7 @@ class NicoAudioTrack(
         sourceManager.httpInterface.use { httpInterface ->
             loadVideoMainPage(httpInterface)
             val playbackUrl = loadPlaybackUrl(httpInterface).also {
-                log.debug("Starting NicoNico track from URL: $it")
+                log.debug { "Starting NicoNico track from URL: $it" }
             }
 
             PersistentHttpStream(httpInterface, URI(playbackUrl), null).use { stream ->
@@ -54,6 +54,7 @@ class NicoAudioTrack(
             if (!HttpClientTools.isSuccessWithContent(statusCode)) {
                 throw IOException("Unexpected status code from video main page: $statusCode")
             }
+
             EntityUtils.consume(response.entity)
         }
     }

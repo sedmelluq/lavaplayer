@@ -4,14 +4,17 @@ import lavaplayer.source.youtube.format.LegacyAdaptiveFormatsExtractor
 import lavaplayer.source.youtube.format.LegacyDashMpdFormatsExtractor
 import lavaplayer.source.youtube.format.LegacyStreamMapFormatsExtractor
 import lavaplayer.source.youtube.format.StreamingDataFormatsExtractor
-import lavaplayer.tools.*
+import lavaplayer.tools.ExceptionTools
+import lavaplayer.tools.FriendlyException
 import lavaplayer.tools.FriendlyException.Severity.COMMON
 import lavaplayer.tools.FriendlyException.Severity.SUSPICIOUS
+import lavaplayer.tools.ThumbnailTools
+import lavaplayer.tools.Units
 import lavaplayer.tools.Units.DURATION_MS_UNKNOWN
 import lavaplayer.tools.io.HttpInterface
+import lavaplayer.tools.json.JsonBrowser
 import lavaplayer.track.AudioTrackInfo
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
+import mu.KotlinLogging
 
 class DefaultYoutubeTrackDetails(
     private val videoId: String,
@@ -19,8 +22,8 @@ class DefaultYoutubeTrackDetails(
 ) : YoutubeTrackDetails {
 
     companion object {
-        val log: Logger = LoggerFactory.getLogger(DefaultYoutubeTrackDetails::class.java)
-        val FORMAT_EXTRACTORS = listOf(
+        private val log = KotlinLogging.logger { }
+        private val FORMAT_EXTRACTORS = listOf(
             LegacyAdaptiveFormatsExtractor(),
             StreamingDataFormatsExtractor(),
             LegacyDashMpdFormatsExtractor(),
@@ -34,7 +37,10 @@ class DefaultYoutubeTrackDetails(
     override fun getPlayerScript(): String? =
         data.playerScriptUrl
 
-    override fun getFormats(httpInterface: HttpInterface, signatureResolver: YoutubeSignatureResolver): List<YoutubeTrackFormat> {
+    override fun getFormats(
+        httpInterface: HttpInterface,
+        signatureResolver: YoutubeSignatureResolver
+    ): List<YoutubeTrackFormat> {
         try {
             return loadTrackFormats(httpInterface, signatureResolver)
         } catch (e: Exception) {
@@ -42,15 +48,22 @@ class DefaultYoutubeTrackDetails(
         }
     }
 
-    private fun loadTrackFormats(httpInterface: HttpInterface, signatureResolver: YoutubeSignatureResolver): List<YoutubeTrackFormat> {
+    private fun loadTrackFormats(
+        httpInterface: HttpInterface,
+        signatureResolver: YoutubeSignatureResolver
+    ): List<YoutubeTrackFormat> {
         val formats = FORMAT_EXTRACTORS.firstNotNullOfOrNull {
             it.extract(data, httpInterface, signatureResolver)
                 .takeUnless { formats -> formats.isEmpty() }
         }
 
         if (formats == null) {
-            log.warn("Video $videoId with no detected format field, response ${data.playerResponse.format()} polymer ${data.polymerArguments.format()}")
-            throw FriendlyException("Unable to play this YouTube track.", SUSPICIOUS, IllegalStateException("No track formats found."))
+            log.warn { "Video $videoId with no detected format field, response ${data.playerResponse.format()} polymer ${data.polymerArguments.format()}" }
+            throw FriendlyException(
+                "Unable to play this YouTube track.",
+                SUSPICIOUS,
+                IllegalStateException("No track formats found.")
+            )
         }
 
         return formats
@@ -66,7 +79,7 @@ class DefaultYoutubeTrackDetails(
             ?: return loadLegacyTrackInfo()
 
         val temporalInfo =
-            TemporalInfo.fromRawData(videoDetails["isLiveContent"].asBoolean(false), videoDetails["lengthSeconds"])
+            TemporalInfo.fromRawData(videoDetails["isLiveContent"].cast(false), videoDetails["lengthSeconds"])
         val artworkUrl = ThumbnailTools.extractYouTube(videoDetails, videoId)
 
         return buildTrackInfo(
@@ -102,16 +115,16 @@ class DefaultYoutubeTrackDetails(
             uploader,
             temporalInfo.durationMillis,
             videoId,
-            temporalInfo.isActiveStream,
             "https://www.youtube.com/watch?v=$videoId",
-            artworkUrl
+            artworkUrl,
+            temporalInfo.isActiveStream
         )
     }
 
     data class TemporalInfo(val isActiveStream: Boolean, val durationMillis: Long) {
         companion object {
             fun fromRawData(wasLiveStream: Boolean, durationSecondsField: JsonBrowser): TemporalInfo {
-                val durationValue = durationSecondsField.asLong(0L)
+                val durationValue = durationSecondsField.cast(0L)
                 // VODs are not really live streams, even though that field in JSON claims they are. If it is actually live, then
                 // duration is also missing or 0.
                 val isActiveStream = wasLiveStream && durationValue == 0L

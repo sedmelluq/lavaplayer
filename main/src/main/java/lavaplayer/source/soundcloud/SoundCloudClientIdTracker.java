@@ -86,7 +86,7 @@ public class SoundCloudClientIdTracker {
     }
 
     private List<String> findScriptUrls(HttpInterface httpInterface) throws IOException {
-        try (CloseableHttpResponse response = httpInterface.execute(new HttpGet("https://soundcloud.com"))) {
+        try (CloseableHttpResponse response = httpInterface.execute(new HttpGet("https://soundcloud.com/discover"))) {
             HttpClientTools.assertSuccessWithContent(response, "main page response");
 
             String page = EntityUtils.toString(response.getEntity());

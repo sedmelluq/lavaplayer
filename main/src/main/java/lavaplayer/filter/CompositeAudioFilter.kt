@@ -1,13 +1,13 @@
 package lavaplayer.filter
 
-import org.slf4j.LoggerFactory
+import mu.KotlinLogging
 
 /**
  * An audio filter which may consist of a number of other filters.
  */
 abstract class CompositeAudioFilter : UniversalPcmAudioFilter {
     companion object {
-        private val log = LoggerFactory.getLogger(CompositeAudioFilter::class.java)
+        private val log = KotlinLogging.logger { }
     }
 
     protected abstract val filters: List<AudioFilter>
@@ -17,7 +17,7 @@ abstract class CompositeAudioFilter : UniversalPcmAudioFilter {
             try {
                 filter.seekPerformed(requestedTime, providedTime)
             } catch (e: Exception) {
-                log.error("Notifying filter {} of seek failed with exception.", filter.javaClass, e)
+                log.error(e) { "Notifying filter ${filter.javaClass} of seek failed with exception." }
             }
         }
     }
@@ -28,7 +28,7 @@ abstract class CompositeAudioFilter : UniversalPcmAudioFilter {
             try {
                 filter.flush()
             } catch (e: Exception) {
-                log.error("Flushing filter {} failed with exception.", filter.javaClass, e)
+                log.error(e) { "Flushing filter ${filter.javaClass} failed with exception." }
             }
         }
     }
@@ -38,7 +38,7 @@ abstract class CompositeAudioFilter : UniversalPcmAudioFilter {
             try {
                 filter.close()
             } catch (e: Exception) {
-                log.error("Closing filter {} failed with exception.", filter.javaClass, e)
+                log.error(e) { "Closing filter ${filter.javaClass} failed with exception." }
             }
         }
     }

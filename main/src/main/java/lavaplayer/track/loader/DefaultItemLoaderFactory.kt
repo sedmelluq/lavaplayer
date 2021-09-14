@@ -6,7 +6,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.asCoroutineDispatcher
 import lavaplayer.common.tools.DaemonThreadFactory
 import lavaplayer.common.tools.ExecutorTools
-import lavaplayer.source.SourceRegistry
+import lavaplayer.source.common.SourceRegistry
 import lavaplayer.track.AudioReference
 import java.util.concurrent.SynchronousQueue
 import java.util.concurrent.ThreadPoolExecutor

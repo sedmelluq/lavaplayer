@@ -4,26 +4,16 @@ import lavaplayer.source.ItemSourceManager
 import lavaplayer.tools.DataFormatTools.extractBetween
 import lavaplayer.tools.ExceptionTools
 import lavaplayer.tools.FriendlyException
-import lavaplayer.tools.JsonBrowser
-import lavaplayer.tools.JsonBrowser.Companion.parse
-import lavaplayer.tools.io.HttpClientTools
-import lavaplayer.tools.io.HttpConfigurable
-import lavaplayer.tools.io.HttpInterface
-import lavaplayer.tools.io.HttpInterfaceManager
+import lavaplayer.tools.extensions.decodeJson
+import lavaplayer.tools.io.*
 import lavaplayer.track.*
-import lavaplayer.track.AudioTrackCollectionType.Album
 import lavaplayer.track.loader.LoaderState
 import org.apache.commons.io.IOUtils
 import org.apache.http.HttpStatus
-import org.apache.http.client.config.RequestConfig
 import org.apache.http.client.methods.HttpGet
-import org.apache.http.impl.client.HttpClientBuilder
 import java.io.DataInput
-import java.io.DataOutput
 import java.io.IOException
 import java.nio.charset.StandardCharsets
-import java.util.function.Consumer
-import java.util.function.Function
 import java.util.regex.Pattern
 
 /**
@@ -34,6 +24,12 @@ class BandcampItemSourceManager : ItemSourceManager, HttpConfigurable {
 
     override val sourceName: String
         get() = "bandcamp"
+
+    /**
+     * @return Get an HTTP interface for a playing track.
+     */
+    val httpInterface: HttpInterface
+        get() = httpInterfaceManager.get()
 
     override suspend fun loadItem(state: LoaderState, reference: AudioReference): AudioItem? {
         val urlInfo = parseUrl(reference.identifier)
@@ -48,6 +44,41 @@ class BandcampItemSourceManager : ItemSourceManager, HttpConfigurable {
         }
     }
 
+    override fun isTrackEncodable(track: AudioTrack): Boolean {
+        return true
+    }
+
+    @Throws(IOException::class)
+    override fun decodeTrack(trackInfo: AudioTrackInfo, input: DataInput): AudioTrack? {
+        return BandcampAudioTrack(trackInfo, this)
+    }
+
+    override fun shutdown() {
+        ExceptionTools.closeWithWarnings(httpInterfaceManager)
+    }
+
+    override fun configureRequests(configurator: RequestConfigurator) {
+        httpInterfaceManager.configureRequests(configurator)
+    }
+
+    override fun configureBuilder(configurator: BuilderConfigurator) {
+        httpInterfaceManager.configureBuilder(configurator)
+    }
+
+    @Throws(IOException::class)
+    internal fun readTrackListInformation(text: String?): BandcampTrackListModel {
+        val trackInfoJson = extractBetween(text!!, "data-tralbum=\"", "\"")
+            ?: throw FriendlyException(
+                "Track information not found on the Bandcamp page.",
+                FriendlyException.Severity.SUSPICIOUS,
+                null
+            )
+
+        return trackInfoJson
+            .replace("&quot;", "\"")
+            .decodeJson()
+    }
+
     private fun parseUrl(url: String?): UrlInfo? {
         val matcher = urlRegex.matcher(url)
         return if (matcher.matches()) {
@@ -59,81 +90,67 @@ class BandcampItemSourceManager : ItemSourceManager, HttpConfigurable {
 
     private fun loadTrack(urlInfo: UrlInfo): AudioItem? {
         return extractFromPage(urlInfo.fullUrl) { _: HttpInterface?, text: String? ->
-            val trackListInfo = readTrackListInformation(text)
-            val artist = trackListInfo["artist"].safeText
-            val artworkUrl = extractArtwork(trackListInfo)
-            extractTrack(trackListInfo["trackinfo"].index(0), urlInfo.baseUrl, artist, artworkUrl)
+            val trackList = readTrackListInformation(text)
+
+            extractTrack(trackList.trackInfo.first(), trackList, urlInfo.baseUrl)
         }
     }
 
     private fun loadAlbum(urlInfo: UrlInfo): AudioItem? {
         return extractFromPage(urlInfo.fullUrl) { _: HttpInterface?, text: String? ->
-            val trackListInfo = readTrackListInformation(text)
-            val artist = trackListInfo["artist"].safeText
-            val artworkUrl = extractArtwork(trackListInfo)
-            val tracks: MutableList<AudioTrack> = ArrayList()
-            for (trackInfo in trackListInfo["trackinfo"].values()) {
-                tracks.add(extractTrack(trackInfo, urlInfo.baseUrl, artist, artworkUrl))
-            }
+            val trackList = readTrackListInformation(text)
+            val tracks: MutableList<AudioTrack> = trackList.trackInfo
+                .map { extractTrack(it, trackList, urlInfo.baseUrl) }
+                .toMutableList()
 
             val albumInfo = readAlbumInformation(text)
             BasicAudioTrackCollection(
-                albumInfo["current"]["title"].safeText,
-                Album(artist),
+                albumInfo.current.title,
+                AudioTrackCollectionType.Album(trackList.artist),
                 tracks,
                 null
             )
         }
     }
 
-    private fun extractTrack(trackInfo: JsonBrowser, bandUrl: String, artist: String, artworkUrl: String?): AudioTrack {
-        val trackPageUrl = bandUrl + trackInfo["title_link"].text
-        return BandcampAudioTrack(
-            AudioTrackInfo(
-                trackInfo["title"].text!!,
-                artist, (trackInfo["duration"].asDouble() * 1000.0).toLong(),
-                bandUrl + trackInfo["title_link"].text,
-                false,
-                trackPageUrl,
-                artworkUrl
-            ), this
+    private fun extractTrack(
+        trackInfo: BandcampTrackModel,
+        trackList: BandcampTrackListModel,
+        bandUrl: String
+    ): AudioTrack {
+        val info = AudioTrackInfo(
+            title = trackInfo.title,
+            author = trackList.artist,
+            length = (trackInfo.duration * 1000.0).toLong(),
+            uri = bandUrl + trackInfo.titleLink,
+            identifier = trackInfo.id,
+            artworkUrl = trackList.artworkUrl,
         )
+
+        return BandcampAudioTrack(info, this)
     }
 
     @Throws(IOException::class)
-    private fun readAlbumInformation(text: String?): JsonBrowser {
-        var albumInfoJson = extractBetween(text!!, "data-tralbum=\"", "\"")
+    private fun readAlbumInformation(text: String?): BandcampTrackListModel {
+        val albumInfoJson = extractBetween(text!!, "data-tralbum=\"", "\"")
             ?: throw FriendlyException(
                 "Album information not found on the Bandcamp page.",
                 FriendlyException.Severity.SUSPICIOUS,
                 null
             )
-        albumInfoJson = albumInfoJson.replace("&quot;", "\"")
-        return parse(albumInfoJson)
-    }
 
-    @Throws(IOException::class)
-    fun readTrackListInformation(text: String?): JsonBrowser {
-        var trackInfoJson = extractBetween(text!!, "data-tralbum=\"", "\"")
-            ?: throw FriendlyException(
-                "Track information not found on the Bandcamp page.",
-                FriendlyException.Severity.SUSPICIOUS,
-                null
-            )
-
-        trackInfoJson = trackInfoJson.replace("&quot;", "\"")
-        return parse(trackInfoJson)
+        return albumInfoJson
+            .replace("&quot;", "\"")
+            .decodeJson()
     }
 
     private fun extractFromPage(url: String?, extractor: AudioItemExtractor): AudioItem? {
         try {
             httpInterfaceManager
                 .get()
-                .use { httpInterface ->
-                    return extractFromPageWithInterface(httpInterface, url, extractor)
-                }
+                .use { httpInterface -> return extractFromPageWithInterface(httpInterface, url, extractor) }
         } catch (e: Exception) {
-            throw ExceptionTools.wrapUnfriendlyExceptions(
+            throw ExceptionTools.wrapUnfriendlyException(
                 "Loading information for a Bandcamp track failed.",
                 FriendlyException.Severity.FAULT,
                 e
@@ -162,53 +179,6 @@ class BandcampItemSourceManager : ItemSourceManager, HttpConfigurable {
         return extractor.extract(httpInterface, responseText)
     }
 
-    private fun extractArtwork(root: JsonBrowser): String? {
-        var artId = root["art_id"].text
-        if (artId != null) {
-            if (artId.length < 10) {
-                val builder = StringBuilder(artId)
-                while (builder.length < 10) {
-                    builder.insert(0, "0")
-                }
-                artId = builder.toString()
-            }
-            return String.format(ARTWORK_URL_FORMAT, artId)
-        }
-        return null
-    }
-
-    override fun isTrackEncodable(track: AudioTrack): Boolean {
-        return true
-    }
-
-    @Throws(IOException::class)
-    override fun encodeTrack(track: AudioTrack, output: DataOutput) {
-        // No special values to encode
-    }
-
-    @Throws(IOException::class)
-    override fun decodeTrack(trackInfo: AudioTrackInfo, input: DataInput): AudioTrack? {
-        return BandcampAudioTrack(trackInfo, this)
-    }
-
-    override fun shutdown() {
-        ExceptionTools.closeWithWarnings(httpInterfaceManager)
-    }
-
-    /**
-     * @return Get an HTTP interface for a playing track.
-     */
-    val httpInterface: HttpInterface
-        get() = httpInterfaceManager.get()
-
-    override fun configureRequests(configurator: Function<RequestConfig, RequestConfig>) {
-        httpInterfaceManager.configureRequests(configurator)
-    }
-
-    override fun configureBuilder(configurator: Consumer<HttpClientBuilder>) {
-        httpInterfaceManager.configureBuilder(configurator)
-    }
-
     private fun interface AudioItemExtractor {
         @Throws(Exception::class)
         fun extract(httpInterface: HttpInterface, text: String?): AudioItem?
@@ -219,7 +189,6 @@ class BandcampItemSourceManager : ItemSourceManager, HttpConfigurable {
     companion object {
         private const val URL_REGEX =
             "^(https?://(?:[^.]+\\.|)bandcamp\\.com)/(track|album)/([a-zA-Z0-9-_]+)/?(?:\\?.*|)$"
-        private const val ARTWORK_URL_FORMAT = "https://f4.bcbits.com/img/a%s_9.jpg"
         private val urlRegex = Pattern.compile(URL_REGEX)
     }
 

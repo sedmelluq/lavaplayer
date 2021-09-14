@@ -1,7 +1,6 @@
 package lavaplayer.format
 
 import javax.sound.sampled.AudioFormat
-import java.lang.IllegalStateException
 
 /**
  * Tools to deal with audio data formats.

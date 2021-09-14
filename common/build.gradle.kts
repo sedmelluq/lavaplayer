@@ -4,11 +4,13 @@ plugins {
 }
 
 val moduleName = "lava-common"
-version = "1.1.4"
+version = "1.1.5"
 
 dependencies {
-    implementation("org.slf4j:slf4j-api:1.7.32")
+    implementation("io.github.microutils:kotlin-logging:1.12.5")
     implementation("commons-io:commons-io:2.11.0")
+
+    api("org.slf4j:slf4j-api:1.7.32")
 }
 
 val sourcesJar by tasks.registering(Jar::class) {

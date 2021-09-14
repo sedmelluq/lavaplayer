@@ -11,8 +11,8 @@ import lavaplayer.tools.io.SeekableInputStream
 import lavaplayer.track.AudioTrackInfo
 import lavaplayer.track.DelegatedAudioTrack
 import lavaplayer.track.playback.LocalAudioTrackExecutor
+import mu.KotlinLogging
 import org.apache.http.client.methods.HttpGet
-import org.slf4j.LoggerFactory
 import java.io.IOException
 import java.io.InputStream
 import java.util.concurrent.TimeUnit
@@ -23,7 +23,7 @@ class SoundCloudM3uAudioTrack(
     private val m3uInfo: SoundCloudM3uInfo
 ) : DelegatedAudioTrack(trackInfo) {
     companion object {
-        private val log = LoggerFactory.getLogger(SoundCloudM3uAudioTrack::class.java)
+        private val log = KotlinLogging.logger { }
         private val SEGMENT_UPDATE_INTERVAL = TimeUnit.MINUTES.toMillis(10)
     }
 
@@ -129,13 +129,13 @@ class SoundCloudM3uAudioTrack(
             try {
                 val newSegments: List<HlsStreamSegment> = loadSegments()
                 if (newSegments.size != segments.size) {
-                    log.error("For ${info.identifier}, received different number of segments on update, skipping.")
+                    log.error { "For ${info.identifier}, received different number of segments on update, skipping." }
                     return
                 }
 
                 for (i in segments.indices) {
                     if (newSegments[i].duration != segments[i].duration) {
-                        log.error("For ${info.identifier}, segment $i has different length than previously on update.")
+                        log.error { "For ${info.identifier}, segment $i has different length than previously on update." }
                         return
                     }
                 }
@@ -144,7 +144,7 @@ class SoundCloudM3uAudioTrack(
                     segments[i] = newSegments[i]
                 }
             } catch (e: Exception) {
-                log.error("For ${info.identifier}, failed to update segment list, skipping.", e)
+                log.error(e) { "For ${info.identifier}, failed to update segment list, skipping." }
             }
         }
 
@@ -152,7 +152,7 @@ class SoundCloudM3uAudioTrack(
             val now = System.currentTimeMillis()
             val delta = now - lastUpdate
             if (delta > SEGMENT_UPDATE_INTERVAL) {
-                log.debug("For {}, {}ms has passed since last segment update, updating", info.identifier, delta)
+                log.debug { "For ${info.identifier}, ${delta}ms has passed since last segment update, updating" }
                 updateSegmentList()
                 lastUpdate = now
             }

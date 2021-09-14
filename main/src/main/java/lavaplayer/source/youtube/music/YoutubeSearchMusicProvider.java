@@ -3,24 +3,24 @@ package lavaplayer.source.youtube.music;
 import lavaplayer.source.youtube.YoutubeConstants;
 import lavaplayer.tools.DataFormatTools;
 import lavaplayer.tools.ExceptionTools;
-import lavaplayer.tools.JsonBrowser;
 import lavaplayer.tools.ThumbnailTools;
 import lavaplayer.tools.http.ExtendedHttpConfigurable;
 import lavaplayer.tools.io.HttpClientTools;
 import lavaplayer.tools.io.HttpInterface;
 import lavaplayer.tools.io.HttpInterfaceManager;
+import lavaplayer.tools.json.JsonBrowser;
 import lavaplayer.track.*;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.util.EntityUtils;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Function;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -41,11 +41,13 @@ public class YoutubeSearchMusicProvider implements YoutubeSearchMusicResultLoade
     }
 
     /**
-     * @param query Search query.
+     * @param query        Search query.
+     * @param trackFactory
      * @return Playlist of the first page of music results.
      */
+    @NotNull
     @Override
-    public AudioItem loadSearchMusicResult(String query, Function<AudioTrackInfo, AudioTrack> trackFactory) {
+    public AudioItem loadSearchMusicResult(@NotNull String query, @NotNull AudioTrackFactory trackFactory) {
         log.debug("Performing a search music with query {}", query);
 
         try (HttpInterface httpInterface = httpInterfaceManager.get()) {
@@ -68,7 +70,7 @@ public class YoutubeSearchMusicProvider implements YoutubeSearchMusicResultLoade
     }
 
     private AudioItem extractSearchResults(JsonBrowser jsonBrowser, String query,
-                                           Function<AudioTrackInfo, AudioTrack> trackFactory) {
+                                           AudioTrackFactory trackFactory) {
         List<AudioTrack> tracks;
         log.debug("Attempting to parse results from music search page");
         try {
@@ -84,7 +86,7 @@ public class YoutubeSearchMusicProvider implements YoutubeSearchMusicResultLoade
         }
     }
 
-    private List<AudioTrack> extractMusicSearchPage(JsonBrowser jsonBrowser, Function<AudioTrackInfo, AudioTrack> trackFactory) throws IOException {
+    private List<AudioTrack> extractMusicSearchPage(JsonBrowser jsonBrowser, AudioTrackFactory trackFactory) throws IOException {
         ArrayList<AudioTrack> list = new ArrayList<>();
         JsonBrowser tracks = jsonBrowser.get("contents")
             .get("tabbedSearchResultsRenderer")
@@ -122,7 +124,7 @@ public class YoutubeSearchMusicProvider implements YoutubeSearchMusicResultLoade
         return list;
     }
 
-    private AudioTrack extractMusicTrack(JsonBrowser jsonBrowser, Function<AudioTrackInfo, AudioTrack> trackFactory) {
+    private AudioTrack extractMusicTrack(JsonBrowser jsonBrowser, AudioTrackFactory trackFactory) {
         JsonBrowser columns = jsonBrowser.get("musicResponsiveListItemRenderer").get("flexColumns");
         if (columns.isNull()) {
             // Somehow don't get track info, ignore
@@ -153,11 +155,11 @@ public class YoutubeSearchMusicProvider implements YoutubeSearchMusicResultLoade
             author,
             duration,
             videoId,
-            false,
             YoutubeConstants.WATCH_URL_PREFIX + videoId,
-            ThumbnailTools.extractYouTubeMusic(jsonBrowser, videoId)
+            ThumbnailTools.extractYouTubeMusic(jsonBrowser, videoId),
+            false
         );
 
-        return trackFactory.apply(info);
+        return trackFactory.create(info);
     }
 }

@@ -1,10 +1,10 @@
 package lavaplayer.format
 
 import lavaplayer.format.transcoder.AudioChunkDecoder
-import lavaplayer.format.transcoder.PcmChunkDecoder
-import lavaplayer.manager.AudioConfiguration
 import lavaplayer.format.transcoder.AudioChunkEncoder
+import lavaplayer.format.transcoder.PcmChunkDecoder
 import lavaplayer.format.transcoder.PcmChunkEncoder
+import lavaplayer.manager.AudioConfiguration
 
 /**
  * An [AudioDataFormat] for 16-bit signed PCM.
@@ -14,7 +14,8 @@ import lavaplayer.format.transcoder.PcmChunkEncoder
  * @param chunkSampleCount Number of samples in one chunk.
  * @param bigEndian        Whether the samples are in big-endian format (as opposed to little-endian).
  */
-class Pcm16AudioDataFormat(channelCount: Int, sampleRate: Int, chunkSampleCount: Int, private val bigEndian: Boolean) : AudioDataFormat(channelCount, sampleRate, chunkSampleCount) {
+class Pcm16AudioDataFormat(channelCount: Int, sampleRate: Int, chunkSampleCount: Int, private val bigEndian: Boolean) :
+    AudioDataFormat(channelCount, sampleRate, chunkSampleCount) {
     companion object {
         const val CODEC_NAME_BE = "PCM_S16_BE"
         const val CODEC_NAME_LE = "PCM_S16_LE"

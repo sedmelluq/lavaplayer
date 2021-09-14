@@ -1,4 +1,4 @@
-package lavaplayer.tools
+package lavaplayer.tools.json
 
 import kotlinx.serialization.InternalSerializationApi
 import kotlinx.serialization.decodeFromString
@@ -46,12 +46,21 @@ class JsonBrowser(@get:JvmName("element") val element: JsonElement) {
             parse(stream.reader().readText())
     }
 
+    /**
+     * Whether the current element is null.
+     */
     val isNull: Boolean
         get() = element is JsonNull
 
+    /**
+     * Whether the current element is a json array.
+     */
     val isList: Boolean
         get() = element is JsonArray
 
+    /**
+     * Whether the current element is a json object.
+     */
     val isMap: Boolean
         get() = element is JsonObject
 
@@ -109,33 +118,29 @@ class JsonBrowser(@get:JvmName("element") val element: JsonElement) {
         return values.map { JsonBrowser(it) }
     }
 
-    fun format(): String =
-        format.encodeToString(element)
-
     inline fun <reified T> cast(): T {
         return format.decodeFromJsonElement(element)
     }
 
-    inline fun <reified T> safeCast(): T? {
-        return element
-            .runCatching { format.decodeFromJsonElement<T>(element) }
-            .getOrNull()
+    inline fun <reified T> cast(default: T): T {
+        return safeCast<T>() ?: default
     }
 
-    fun asDouble(): Double =
-        cast()
+    inline fun <reified T> safeCast(): T? {
+        return element.runCatching { cast<T>() }.getOrNull()
+    }
 
-    fun asInt(): Int =
-        cast()
+    fun format(): String =
+        format.encodeToString(element)
 
     fun asLong(): Long =
         cast()
 
     fun asLong(default: Long): Long =
-        safeCast() ?: default
+        cast(default)
 
     fun asBoolean(default: Boolean): Boolean =
-        safeCast() ?: default
+        cast(default)
 
     override fun equals(other: Any?): Boolean {
         return element == other
@@ -145,5 +150,4 @@ class JsonBrowser(@get:JvmName("element") val element: JsonElement) {
     fun <T : Any> cast(kclass: KClass<T>): T {
         return format.decodeFromJsonElement(kclass.serializer(), element)
     }
-
 }

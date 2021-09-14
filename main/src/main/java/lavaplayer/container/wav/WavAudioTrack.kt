@@ -4,7 +4,7 @@ import lavaplayer.tools.io.SeekableInputStream
 import lavaplayer.track.AudioTrackInfo
 import lavaplayer.track.BaseAudioTrack
 import lavaplayer.track.playback.LocalAudioTrackExecutor
-import org.slf4j.LoggerFactory
+import mu.KotlinLogging
 
 /**
  * Audio track that handles a WAV stream
@@ -14,7 +14,7 @@ import org.slf4j.LoggerFactory
  */
 class WavAudioTrack(trackInfo: AudioTrackInfo, private val stream: SeekableInputStream) : BaseAudioTrack(trackInfo) {
     companion object {
-        private val log = LoggerFactory.getLogger(WavAudioTrack::class.java)
+        private val log = KotlinLogging.logger {}
     }
 
     @Throws(Exception::class)

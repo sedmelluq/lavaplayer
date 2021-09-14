@@ -2,8 +2,8 @@ package lavaplayer.source.youtube.format;
 
 import lavaplayer.source.youtube.YoutubeTrackFormat;
 import lavaplayer.source.youtube.YoutubeTrackJsonData;
-import lavaplayer.tools.JsonBrowser;
 import lavaplayer.tools.Units;
+import lavaplayer.tools.json.JsonBrowser;
 import org.apache.http.entity.ContentType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

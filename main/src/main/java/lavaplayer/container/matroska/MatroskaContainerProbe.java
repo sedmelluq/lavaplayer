@@ -60,9 +60,7 @@ public class MatroskaContainerProbe implements MediaContainerProbe {
             UNKNOWN_ARTIST,
             (long) file.getDuration(),
             reference.getIdentifier(),
-            false,
-            reference.getIdentifier(),
-            null
+            reference.getIdentifier(), null, false
         );
 
         return supportedFormat(this, null, trackInfo);

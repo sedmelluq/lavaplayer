@@ -1,8 +1,8 @@
 package lavaplayer.format
 
 import lavaplayer.format.transcoder.AudioChunkDecoder
-import lavaplayer.manager.AudioConfiguration
 import lavaplayer.format.transcoder.AudioChunkEncoder
+import lavaplayer.manager.AudioConfiguration
 
 /**
  * Describes the format for audio with fixed chunk size.

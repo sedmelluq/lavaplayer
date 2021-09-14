@@ -3,17 +3,15 @@ package lavaplayer.source.youtube.music
 import lavaplayer.source.youtube.YoutubeConstants
 import lavaplayer.tools.DataFormatTools.durationTextToMillis
 import lavaplayer.tools.FriendlyException
-import lavaplayer.tools.JsonBrowser
-import lavaplayer.tools.JsonBrowser.Companion.parse
 import lavaplayer.tools.ThumbnailTools
 import lavaplayer.tools.io.HttpClientTools
 import lavaplayer.tools.io.HttpInterface
+import lavaplayer.tools.json.JsonBrowser
+import lavaplayer.tools.json.JsonBrowser.Companion.parse
 import lavaplayer.track.*
 import org.apache.http.client.methods.HttpPost
 import org.apache.http.entity.StringEntity
 import java.io.IOException
-import java.util.function.Function
-
 
 /**
  * Handles loading of YouTube mixes.
@@ -30,7 +28,7 @@ class YoutubeMixProvider : YoutubeMixLoader {
         httpInterface: HttpInterface,
         mixId: String,
         selectedVideoId: String?,
-        trackFactory: Function<AudioTrackInfo, AudioTrack>
+        trackFactory: AudioTrackFactory
     ): AudioTrackCollection {
         var playlistTitle = "YouTube mix"
         val tracks: MutableList<AudioTrack> = ArrayList()
@@ -67,21 +65,22 @@ class YoutubeMixProvider : YoutubeMixLoader {
     private fun extractPlaylistTracks(
         browser: JsonBrowser,
         tracks: MutableList<AudioTrack>,
-        trackFactory: Function<AudioTrackInfo, AudioTrack>
+        trackFactory: AudioTrackFactory
     ) {
         for (renderer in browser.values().map { it["playlistPanelVideoRenderer"] }) {
-            val title = renderer["title"]["runs"].index(0)["text"].text
-            val author = renderer["longBylineText"]["runs"].index(0)["text"].text
-            val durationStr = renderer["lengthText"]["runs"].index(0)["text"].text
-            val duration = durationTextToMillis(durationStr!!)
-            val identifier = renderer["videoId"].text
-            val uri = "https://youtube.com/watch?v=$identifier"
+            val videoId = renderer["videoId"].text!!
+
+            /* create the audio track. */
             val trackInfo = AudioTrackInfo(
-                title!!, author!!, duration, identifier!!, false, uri,
-                ThumbnailTools.extractYouTube(renderer, identifier)
+                title = renderer["title"]["runs"][0]["text"].text!!,
+                author = renderer["longBylineText"]["runs"][0]["text"].text!!,
+                length = durationTextToMillis(renderer["lengthText"]["runs"][0]["text"].text!!),
+                identifier = videoId,
+                uri = "https://youtube.com/watch?v=$videoId",
+                artworkUrl = ThumbnailTools.extractYouTube(renderer, videoId),
             )
 
-            tracks.add(trackFactory.apply(trackInfo))
+            tracks.add(trackFactory.create(trackInfo))
         }
     }
 

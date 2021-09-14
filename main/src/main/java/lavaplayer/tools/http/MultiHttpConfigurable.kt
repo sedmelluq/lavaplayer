@@ -1,10 +1,7 @@
 package lavaplayer.tools.http
 
-import org.apache.http.client.config.RequestConfig
-import org.apache.http.impl.client.HttpClientBuilder
-
-import java.util.function.Consumer
-import java.util.function.Function
+import lavaplayer.tools.io.BuilderConfigurator
+import lavaplayer.tools.io.RequestConfigurator
 
 open class MultiHttpConfigurable(private val configurables: Collection<ExtendedHttpConfigurable>) :
     ExtendedHttpConfigurable {
@@ -14,13 +11,13 @@ open class MultiHttpConfigurable(private val configurables: Collection<ExtendedH
         }
     }
 
-    override fun configureRequests(configurator: Function<RequestConfig, RequestConfig>) {
+    override fun configureRequests(configurator: RequestConfigurator) {
         for (configurable in configurables) {
             configurable.configureRequests(configurator)
         }
     }
 
-    override fun configureBuilder(configurator: Consumer<HttpClientBuilder>) {
+    override fun configureBuilder(configurator: BuilderConfigurator) {
         for (configurable in configurables) {
             configurable.configureBuilder(configurator)
         }

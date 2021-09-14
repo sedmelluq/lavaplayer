@@ -1,15 +1,13 @@
 package lavaplayer.source.youtube
 
+import lavaplayer.tools.FriendlyException
 import lavaplayer.tools.http.HttpContextFilter
+import lavaplayer.tools.io.HttpClientTools
+import org.apache.commons.codec.digest.DigestUtils
+import org.apache.http.HttpResponse
+import org.apache.http.client.methods.HttpUriRequest
 import org.apache.http.client.protocol.HttpClientContext
 import org.apache.http.impl.client.BasicCookieStore
-import org.apache.http.client.methods.HttpUriRequest
-import lavaplayer.source.youtube.YoutubeHttpContextFilter
-import org.apache.commons.codec.digest.DigestUtils
-import lavaplayer.source.youtube.YoutubeConstants
-import lavaplayer.tools.FriendlyException
-import lavaplayer.tools.io.HttpClientTools
-import org.apache.http.HttpResponse
 
 class YoutubeHttpContextFilter : HttpContextFilter {
     companion object {
@@ -50,7 +48,11 @@ class YoutubeHttpContextFilter : HttpContextFilter {
         response: HttpResponse
     ): Boolean {
         if (response.statusLine.statusCode == 429) {
-            throw FriendlyException("This IP address has been blocked by YouTube (429).", FriendlyException.Severity.COMMON, null)
+            throw FriendlyException(
+                "This IP address has been blocked by YouTube (429).",
+                FriendlyException.Severity.COMMON,
+                null
+            )
         }
 
         return false

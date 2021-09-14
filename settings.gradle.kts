@@ -1,5 +1,4 @@
 include("common")
 include("main")
 include("testbot")
-include("test-samples")
 include(":extensions:ip-rotator")

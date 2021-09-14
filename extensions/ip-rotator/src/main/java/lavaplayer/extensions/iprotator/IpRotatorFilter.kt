@@ -5,10 +5,10 @@ import lavaplayer.extensions.iprotator.tools.RateLimitException
 import lavaplayer.tools.http.AbstractHttpContextFilter
 import lavaplayer.tools.http.HttpContextFilter
 import lavaplayer.tools.http.HttpContextRetryCounter
+import mu.KotlinLogging
 import org.apache.http.HttpResponse
 import org.apache.http.client.methods.HttpUriRequest
 import org.apache.http.client.protocol.HttpClientContext
-import org.slf4j.LoggerFactory
 import java.net.BindException
 
 class IpRotatorFilter @JvmOverloads constructor(
@@ -21,7 +21,7 @@ class IpRotatorFilter @JvmOverloads constructor(
     companion object {
         const val RETRY_COUNT_ATTRIBUTE = "retry-counter"
 
-        private val log = LoggerFactory.getLogger(IpRotatorFilter::class.java)
+        private val log = KotlinLogging.logger {}
     }
 
     private val retryCounter = HttpContextRetryCounter(retryCountAttribute)
@@ -33,10 +33,10 @@ class IpRotatorFilter @JvmOverloads constructor(
 
     override fun onRequestException(context: HttpClientContext, request: HttpUriRequest, error: Throwable): Boolean {
         if (error is BindException) {
-            log.warn(
-                "Cannot assign requested address {}, marking address as failing and retry!",
-                routePlanner.getLastAddress(context)
-            )
+            log.warn {
+                "Cannot assign requested address ${routePlanner.getLastAddress(context)}, marking address as failing and retry!"
+            }
+
             routePlanner.markAddressFailing(context)
             return context.limitedRetry()
         }
@@ -52,18 +52,14 @@ class IpRotatorFilter @JvmOverloads constructor(
         if (isSearch) {
             if (response.isRateLimited) {
                 if (routePlanner.shouldHandleSearchFailure()) {
-                    log.warn("Search rate-limit reached, marking address as failing and retry")
+                    log.warn { "Search rate-limit reached, marking address as failing and retry" }
                     routePlanner.markAddressFailing(context)
                 }
 
                 return context.limitedRetry()
             }
         } else if (response.isRateLimited) {
-            log.warn(
-                "Rate-limit reached, marking address {} as failing and retry",
-                routePlanner.getLastAddress(context)
-            )
-
+            log.warn { "Rate-limit reached, marking address ${routePlanner.getLastAddress(context)} as failing and retry" }
             routePlanner.markAddressFailing(context)
             return context.limitedRetry()
         }

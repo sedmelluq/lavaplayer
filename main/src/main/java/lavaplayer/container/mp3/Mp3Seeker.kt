@@ -1,8 +1,7 @@
 package lavaplayer.container.mp3
 
-import kotlin.Throws
-import java.io.IOException
 import lavaplayer.tools.io.SeekableInputStream
+import java.io.IOException
 
 /**
  * A seeking handler for MP3 files.

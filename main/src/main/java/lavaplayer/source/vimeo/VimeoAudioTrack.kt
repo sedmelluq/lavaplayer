@@ -2,18 +2,18 @@ package lavaplayer.source.vimeo
 
 import lavaplayer.container.mpeg.MpegAudioTrack
 import lavaplayer.tools.FriendlyException
-import lavaplayer.tools.JsonBrowser
-import lavaplayer.tools.JsonBrowser.Companion.parse
 import lavaplayer.tools.io.HttpClientTools
 import lavaplayer.tools.io.HttpInterface
 import lavaplayer.tools.io.PersistentHttpStream
+import lavaplayer.tools.json.JsonBrowser
+import lavaplayer.tools.json.JsonBrowser.Companion.parse
 import lavaplayer.track.AudioTrack
 import lavaplayer.track.AudioTrackInfo
 import lavaplayer.track.DelegatedAudioTrack
 import lavaplayer.track.playback.LocalAudioTrackExecutor
+import mu.KotlinLogging
 import org.apache.commons.io.IOUtils
 import org.apache.http.client.methods.HttpGet
-import org.slf4j.LoggerFactory
 import java.io.IOException
 import java.net.URI
 import java.nio.charset.StandardCharsets
@@ -29,7 +29,7 @@ class VimeoAudioTrack(
     override val sourceManager: VimeoItemSourceManager
 ) : DelegatedAudioTrack(trackInfo) {
     companion object {
-        private val log = LoggerFactory.getLogger(VimeoAudioTrack::class.java)
+        private val log = KotlinLogging.logger { }
     }
 
     @Throws(Exception::class)
@@ -37,7 +37,7 @@ class VimeoAudioTrack(
         sourceManager.httpInterface.use { httpInterface ->
             val playbackUrl = loadPlaybackUrl(httpInterface)
             PersistentHttpStream(httpInterface, URI(playbackUrl), null).use { stream ->
-                log.debug("Starting Vimeo track from URL: {}", playbackUrl)
+                log.debug { "Starting Vimeo track from URL: $playbackUrl" }
                 processDelegate(MpegAudioTrack(info, stream), executor)
             }
         }

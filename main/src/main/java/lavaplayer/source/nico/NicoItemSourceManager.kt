@@ -4,18 +4,14 @@ import lavaplayer.source.ItemSourceManager
 import lavaplayer.tools.DataFormatTools
 import lavaplayer.tools.FriendlyException
 import lavaplayer.tools.extensions.UrlEncodedFormEntity
-import lavaplayer.tools.io.HttpClientTools
-import lavaplayer.tools.io.HttpConfigurable
-import lavaplayer.tools.io.HttpInterface
+import lavaplayer.tools.io.*
 import lavaplayer.track.AudioItem
 import lavaplayer.track.AudioReference
 import lavaplayer.track.AudioTrack
 import lavaplayer.track.AudioTrackInfo
 import lavaplayer.track.loader.LoaderState
-import org.apache.http.client.config.RequestConfig
 import org.apache.http.client.methods.HttpGet
 import org.apache.http.client.methods.HttpPost
-import org.apache.http.impl.client.HttpClientBuilder
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import org.jsoup.parser.Parser
@@ -24,8 +20,6 @@ import java.io.DataOutput
 import java.io.IOException
 import java.nio.charset.StandardCharsets
 import java.util.concurrent.atomic.AtomicBoolean
-import java.util.function.Consumer
-import java.util.function.Function
 import java.util.regex.Pattern
 
 /**
@@ -109,11 +103,11 @@ class NicoItemSourceManager(private val email: String, private val password: Str
         // Nothing to shut down
     }
 
-    override fun configureRequests(configurator: Function<RequestConfig, RequestConfig>) {
+    override fun configureRequests(configurator: RequestConfigurator) {
         httpInterfaceManager.configureRequests(configurator)
     }
 
-    override fun configureBuilder(configurator: Consumer<HttpClientBuilder>) {
+    override fun configureBuilder(configurator: BuilderConfigurator) {
         httpInterfaceManager.configureBuilder(configurator)
     }
 
@@ -154,9 +148,9 @@ class NicoItemSourceManager(private val email: String, private val password: Str
                 uploader,
                 duration,
                 videoId,
-                false,
                 getWatchUrl(videoId),
-                artworkUrl
+                artworkUrl,
+                false
             )
 
             return NicoAudioTrack(trackInfo, this)

@@ -14,7 +14,8 @@ import java.io.IOException
 /**
  * The base class for audio sources which use probing to detect container type.
  */
-abstract class ProbingItemSourceManager(@JvmField protected val containerRegistry: MediaContainerRegistry) : ItemSourceManager {
+abstract class ProbingItemSourceManager(@JvmField protected val containerRegistry: MediaContainerRegistry) :
+    ItemSourceManager {
     companion object {
         private const val PARAMETERS_SEPARATOR = '|'
     }
@@ -27,8 +28,16 @@ abstract class ProbingItemSourceManager(@JvmField protected val containerRegistr
     protected fun handleLoadResult(result: MediaContainerDetectionResult?): AudioItem? = if (result != null) {
         when {
             result.isReference -> result.reference
-            !result.isContainerDetected -> throw FriendlyException("Unknown file format.", FriendlyException.Severity.COMMON, null)
-            !result.isSupportedFile -> throw FriendlyException(result.unsupportedReason, FriendlyException.Severity.COMMON, null)
+            !result.isContainerDetected -> throw FriendlyException(
+                "Unknown file format.",
+                FriendlyException.Severity.COMMON,
+                null
+            )
+            !result.isSupportedFile -> throw FriendlyException(
+                result.unsupportedReason,
+                FriendlyException.Severity.COMMON,
+                null
+            )
             else -> createTrack(result.trackInfo, result.containerDescriptor)
         }
     } else {

@@ -9,7 +9,7 @@ import lavaplayer.track.AudioTrack
 import lavaplayer.track.AudioTrackInfo
 import lavaplayer.track.DelegatedAudioTrack
 import lavaplayer.track.playback.LocalAudioTrackExecutor
-import org.slf4j.LoggerFactory
+import mu.KotlinLogging
 import java.io.IOException
 import java.net.URI
 
@@ -24,7 +24,7 @@ class SoundCloudAudioTrack(
     override val sourceManager: SoundCloudItemSourceManager
 ) : DelegatedAudioTrack(trackInfo) {
     companion object {
-        private val log = LoggerFactory.getLogger(SoundCloudAudioTrack::class.java)
+        private val log = KotlinLogging.logger { }
     }
 
     @Throws(Exception::class)
@@ -57,13 +57,15 @@ class SoundCloudAudioTrack(
         if (!recursion) {
             // Old "track ID" entry? Let's "load" it to get url.
             val track = sourceManager.loadFromTrackPage(info.uri)
+                ?: return
+
             playFromIdentifier(httpInterface, track.identifier, true, localExecutor)
         }
     }
 
     @Throws(Exception::class)
     private fun loadFromMp3Url(localExecutor: LocalAudioTrackExecutor, httpInterface: HttpInterface, trackUrl: String) {
-        log.debug("Starting SoundCloud track from URL: $trackUrl")
+        log.debug { "Starting SoundCloud track from URL: $trackUrl" }
         PersistentHttpStream(httpInterface, URI(trackUrl), null).use { stream ->
             if (!HttpClientTools.isSuccessWithContent(stream.checkStatusCode())) {
                 throw IOException("Invalid status code for soundcloud stream: " + stream.checkStatusCode())

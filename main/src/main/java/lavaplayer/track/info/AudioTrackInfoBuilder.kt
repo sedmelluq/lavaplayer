@@ -127,9 +127,9 @@ class AudioTrackInfoBuilder internal constructor() : AudioTrackInfoProvider {
             author!!,
             length,
             identifier!!,
-            isStream ?: (length == DURATION_MS_UNKNOWN),
             uri,
-            artworkUrl
+            artworkUrl,
+            isStream ?: (length == DURATION_MS_UNKNOWN)
         )
     }
 }

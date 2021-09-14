@@ -1,7 +1,7 @@
 package lavaplayer.tools.extensions
 
 import lavaplayer.source.ItemSourceManager
-import lavaplayer.source.SourceRegistry
+import lavaplayer.source.common.SourceRegistry
 
 
 /**

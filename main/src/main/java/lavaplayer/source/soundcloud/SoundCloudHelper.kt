@@ -1,9 +1,9 @@
 package lavaplayer.source.soundcloud
 
-import lavaplayer.tools.JsonBrowser
 import lavaplayer.tools.io.HttpClientTools
 import lavaplayer.tools.io.HttpInterface
 import lavaplayer.tools.io.PersistentHttpStream
+import lavaplayer.tools.json.JsonBrowser
 import java.io.IOException
 import java.net.URI
 

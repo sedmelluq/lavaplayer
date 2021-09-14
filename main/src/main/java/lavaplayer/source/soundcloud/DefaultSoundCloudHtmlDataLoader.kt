@@ -5,20 +5,19 @@ import lavaplayer.tools.DataFormatTools.TextRange
 import lavaplayer.tools.ExceptionTools
 import lavaplayer.tools.FriendlyException
 import lavaplayer.tools.FriendlyException.Severity.SUSPICIOUS
-import lavaplayer.tools.JsonBrowser
+import lavaplayer.tools.extensions.decodeJson
 import lavaplayer.tools.io.HttpClientTools
 import lavaplayer.tools.io.HttpInterface
+import mu.KotlinLogging
 import org.apache.http.HttpStatus
 import org.apache.http.client.methods.HttpGet
 import org.apache.http.util.EntityUtils
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
 import java.io.IOException
 import java.nio.charset.StandardCharsets
 
 class DefaultSoundCloudHtmlDataLoader : SoundCloudHtmlDataLoader {
     companion object {
-        private val log: Logger = LoggerFactory.getLogger(DefaultSoundCloudHtmlDataLoader::class.java)
+        private val log = KotlinLogging.logger { }
         private val JSON_RANGES: List<TextRange> = listOf(
             TextRange("window.__sc_hydration =", ";</script>"),
             TextRange("catch(e){}})},", ");</script>"),
@@ -28,10 +27,10 @@ class DefaultSoundCloudHtmlDataLoader : SoundCloudHtmlDataLoader {
 
 
     @Throws(IOException::class)
-    override fun load(httpInterface: HttpInterface, url: String): JsonBrowser {
+    override fun load(httpInterface: HttpInterface, url: String): SoundCloudRootDataModel? {
         httpInterface.execute(HttpGet(url)).use { response ->
             if (response.statusLine.statusCode == HttpStatus.SC_NOT_FOUND) {
-                return JsonBrowser.NULL_BROWSER
+                return null
             }
 
             HttpClientTools.assertSuccessWithContent(response, "video page response")
@@ -43,7 +42,7 @@ class DefaultSoundCloudHtmlDataLoader : SoundCloudHtmlDataLoader {
                     ExceptionTools.throwWithDebugInfo(log, null, "No track JSON found", "html", html)
                 )
 
-            return JsonBrowser.parse(rootData)
+            return rootData.decodeJson()
         }
     }
 }

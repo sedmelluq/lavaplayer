@@ -5,13 +5,13 @@ plugins {
 }
 
 dependencies {
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.5.1")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.5.2-native-mt")
 
     implementation(project(":main"))
     implementation("net.dv8tion:JDA:4.3.0_285")
     implementation("net.iharder:base64:2.3.9")
 
-    runtimeOnly("ch.qos.logback:logback-classic:1.1.8")
+    runtimeOnly("ch.qos.logback:logback-classic:1.2.5")
 }
 
 application {

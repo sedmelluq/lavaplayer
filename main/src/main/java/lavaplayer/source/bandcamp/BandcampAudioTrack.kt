@@ -8,9 +8,9 @@ import lavaplayer.track.AudioTrack
 import lavaplayer.track.AudioTrackInfo
 import lavaplayer.track.DelegatedAudioTrack
 import lavaplayer.track.playback.LocalAudioTrackExecutor
+import mu.KotlinLogging
 import org.apache.commons.io.IOUtils
 import org.apache.http.client.methods.HttpGet
-import org.slf4j.LoggerFactory
 import java.io.IOException
 import java.net.URI
 import java.nio.charset.StandardCharsets
@@ -26,17 +26,17 @@ class BandcampAudioTrack(
     override val sourceManager: BandcampItemSourceManager
 ) : DelegatedAudioTrack(trackInfo) {
     companion object {
-        private val log = LoggerFactory.getLogger(BandcampAudioTrack::class.java)
+        private val log = KotlinLogging.logger { }
     }
 
     @Throws(Exception::class)
     override fun process(executor: LocalAudioTrackExecutor) {
         sourceManager.httpInterface.use { httpInterface ->
-            log.debug("Loading Bandcamp track page from URL: {}", info.identifier)
+            log.debug { "Loading Bandcamp track page from URL: ${info.identifier}" }
 
             val trackMediaUrl = getTrackMediaUrl(httpInterface)
             PersistentHttpStream(httpInterface, URI(trackMediaUrl), null).use { stream ->
-                log.debug("Starting Bandcamp track from URL: {}", trackMediaUrl)
+                log.debug { "Starting Bandcamp track from URL: $trackMediaUrl" }
                 processDelegate(Mp3AudioTrack(info, stream), executor)
             }
         }
@@ -44,11 +44,11 @@ class BandcampAudioTrack(
 
     @Throws(IOException::class)
     private fun getTrackMediaUrl(httpInterface: HttpInterface): String {
-        httpInterface.execute(HttpGet(info.identifier)).use { response ->
+        httpInterface.execute(HttpGet(info.uri)).use { response ->
             HttpClientTools.assertSuccessWithContent(response, "track page")
             val responseText = IOUtils.toString(response.entity.content, StandardCharsets.UTF_8)
-            val trackInfo = sourceManager.readTrackListInformation(responseText)
-            return trackInfo["trackinfo"].index(0)["file"]["mp3-128"].safeText
+            val trackList = sourceManager.readTrackListInformation(responseText)
+            return trackList.trackInfo.first().file.url
         }
     }
 
