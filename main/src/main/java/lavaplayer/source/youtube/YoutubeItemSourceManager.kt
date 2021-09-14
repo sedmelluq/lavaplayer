@@ -134,7 +134,7 @@ class YoutubeItemSourceManager @JvmOverloads constructor(
                 return YoutubeAudioTrack(details.getTrackInfo(), this)
             }
         } catch (e: Exception) {
-            throw ExceptionTools.wrapUnfriendlyExceptions(
+            throw ExceptionTools.wrapUnfriendlyException(
                 "Loading information for a YouTube track failed.",
                 FriendlyException.Severity.FAULT,
                 e
@@ -215,7 +215,7 @@ class YoutubeItemSourceManager @JvmOverloads constructor(
                         }
                 }
             } catch (e: Exception) {
-                throw ExceptionTools.wrapUnfriendlyExceptions(e)
+                throw ExceptionTools.wrapUnfriendlyException(e)
             }
         }
 

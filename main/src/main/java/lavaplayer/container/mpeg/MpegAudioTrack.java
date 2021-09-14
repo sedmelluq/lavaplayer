@@ -72,7 +72,7 @@ public class MpegAudioTrack extends BaseAudioTrack {
             success = true;
             return trackConsumer;
         } catch (Exception e) {
-            throw ExceptionTools.wrapUnfriendlyExceptions("Something went wrong when loading an MP4 format track.", FAULT, e);
+            throw ExceptionTools.wrapUnfriendlyException("Something went wrong when loading an MP4 format track.", FAULT, e);
         } finally {
             if (!success && trackConsumer != null) {
                 trackConsumer.close();

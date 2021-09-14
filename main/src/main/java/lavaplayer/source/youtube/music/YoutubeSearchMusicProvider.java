@@ -65,7 +65,7 @@ public class YoutubeSearchMusicProvider implements YoutubeSearchMusicResultLoade
                 return extractSearchResults(jsonBrowser, query, trackFactory);
             }
         } catch (Exception e) {
-            throw ExceptionTools.wrapUnfriendlyExceptions(e);
+            throw ExceptionTools.wrapUnfriendlyException(e);
         }
     }
 
@@ -141,7 +141,7 @@ public class YoutubeSearchMusicProvider implements YoutubeSearchMusicResultLoade
         }
 
         List<JsonBrowser> secondColumn = columns.index(1).get("musicResponsiveListItemFlexColumnRenderer").get("text").get("runs").values();
-        String author = secondColumn.get(0).get("text").text();
+        String author = secondColumn.get(0).get("text").safeText();
         JsonBrowser lastElement = secondColumn.get(secondColumn.size() - 1);
 
         if (!lastElement.get("navigationEndpoint").isNull()) {

@@ -110,7 +110,7 @@ public class LocalAudioTrackExecutor implements AudioTrackExecutor {
                 } else {
                     frameBuffer.setTerminateOnEmpty();
 
-                    FriendlyException exception = ExceptionTools.wrapUnfriendlyExceptions("Something broke when playing the track.", FAULT, e);
+                    FriendlyException exception = ExceptionTools.wrapUnfriendlyException("Something broke when playing the track.", FAULT, e);
                     ExceptionTools.log(log, exception, "playback of " + audioTrack.getIdentifier());
 
                     trackException = exception;
@@ -289,7 +289,7 @@ public class LocalAudioTrackExecutor implements AudioTrackExecutor {
                 if (interruption != null) {
                     proceed = handlePlaybackInterrupt(interruption, seekExecutor);
                 } else {
-                    throw ExceptionTools.wrapUnfriendlyExceptions("Something went wrong when decoding the track.", FAULT, e);
+                    throw ExceptionTools.wrapUnfriendlyException("Something went wrong when decoding the track.", FAULT, e);
                 }
             }
         }
@@ -403,7 +403,7 @@ public class LocalAudioTrackExecutor implements AudioTrackExecutor {
         try {
             seekExecutor.performSeek(seekPosition);
         } catch (Exception e) {
-            throw ExceptionTools.wrapUnfriendlyExceptions("Something went wrong when seeking to a position.", FAULT, e);
+            throw ExceptionTools.wrapUnfriendlyException("Something went wrong when seeking to a position.", FAULT, e);
         }
     }
 

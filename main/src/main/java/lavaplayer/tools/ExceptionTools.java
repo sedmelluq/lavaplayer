@@ -38,7 +38,7 @@ public class ExceptionTools {
      * @param throwable The exception to potentially wrap
      * @return Original or wrapped exception
      */
-    public static FriendlyException wrapUnfriendlyExceptions(String message, Severity severity, Throwable throwable) {
+    public static FriendlyException wrapUnfriendlyException(String message, Severity severity, Throwable throwable) {
         if (throwable instanceof FriendlyException) {
             return (FriendlyException) throwable;
         } else {
@@ -52,7 +52,7 @@ public class ExceptionTools {
      * @param throwable The exception to potentially wrap
      * @return Original or wrapped exception
      */
-    public static RuntimeException wrapUnfriendlyExceptions(Throwable throwable) {
+    public static RuntimeException wrapUnfriendlyException(Throwable throwable) {
         if (throwable instanceof FriendlyException) {
             return (FriendlyException) throwable;
         } else {

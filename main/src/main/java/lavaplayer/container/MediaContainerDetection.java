@@ -141,7 +141,7 @@ public class MediaContainerDetection {
                 result = detectContainer(savedHeadInputStream, false);
             }
         } catch (Exception e) {
-            throw ExceptionTools.wrapUnfriendlyExceptions("Could not read the file for detecting file type.", SUSPICIOUS, e);
+            throw ExceptionTools.wrapUnfriendlyException("Could not read the file for detecting file type.", SUSPICIOUS, e);
         }
 
         return result != null ? result : unknownFormat();
