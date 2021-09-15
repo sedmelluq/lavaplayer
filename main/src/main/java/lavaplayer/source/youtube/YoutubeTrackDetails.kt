@@ -4,9 +4,8 @@ import lavaplayer.tools.io.HttpInterface
 import lavaplayer.track.AudioTrackInfo
 
 interface YoutubeTrackDetails {
-    fun getTrackInfo(): AudioTrackInfo
+    val trackInfo: AudioTrackInfo
+    val playerScript: String?
 
     fun getFormats(httpInterface: HttpInterface, signatureResolver: YoutubeSignatureResolver): List<YoutubeTrackFormat>
-
-    fun getPlayerScript(): String?
 }

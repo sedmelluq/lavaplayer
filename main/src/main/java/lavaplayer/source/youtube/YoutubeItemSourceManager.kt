@@ -131,7 +131,7 @@ class YoutubeItemSourceManager @JvmOverloads constructor(
                         return AudioReference.NO_TRACK
                     }
 
-                return YoutubeAudioTrack(details.getTrackInfo(), this)
+                return YoutubeAudioTrack(details.trackInfo, this)
             }
         } catch (e: Exception) {
             throw ExceptionTools.wrapUnfriendlyException(

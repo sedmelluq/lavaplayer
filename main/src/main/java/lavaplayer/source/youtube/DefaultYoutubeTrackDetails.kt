@@ -31,11 +31,11 @@ class DefaultYoutubeTrackDetails(
         )
     }
 
-    override fun getTrackInfo(): AudioTrackInfo =
-        loadTrackInfo()
+    override val trackInfo: AudioTrackInfo
+        get() = loadTrackInfo()
 
-    override fun getPlayerScript(): String? =
-        data.playerScriptUrl
+    override val playerScript: String?
+        get() = data.playerScriptUrl
 
     override fun getFormats(
         httpInterface: HttpInterface,

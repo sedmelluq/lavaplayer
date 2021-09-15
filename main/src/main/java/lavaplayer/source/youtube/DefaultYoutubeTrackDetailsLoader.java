@@ -35,12 +35,7 @@ public class DefaultYoutubeTrackDetailsLoader implements YoutubeTrackDetailsLoad
         }
     }
 
-    private YoutubeTrackDetails load(
-        HttpInterface httpInterface,
-        String videoId,
-        boolean requireFormats,
-        YoutubeItemSourceManager sourceManager
-    ) throws IOException {
+    private YoutubeTrackDetails load(HttpInterface httpInterface, String videoId, boolean requireFormats, YoutubeItemSourceManager sourceManager) throws IOException {
         JsonBrowser mainInfo = loadTrackInfoFromInnertube(httpInterface, videoId, sourceManager);
 
         try {
@@ -124,9 +119,9 @@ public class DefaultYoutubeTrackDetailsLoader implements YoutubeTrackDetailsLoad
             return InfoStatus.REQUIRES_LOGIN;
         } else if ("CONTENT_CHECK_REQUIRED".equals(status)) {
             return InfoStatus.CONTENT_CHECK_REQUIRED;
-        } else {
-            throw new FriendlyException("This video cannot be viewed anonymously.", COMMON, null);
         }
+
+        throw new FriendlyException("This video cannot be viewed anonymously.", COMMON, null);
     }
 
     protected String getUnplayableReason(JsonBrowser statusBlock) {

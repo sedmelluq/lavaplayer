@@ -4,7 +4,7 @@ import lavaplayer.tools.json.JsonBrowser
 
 object ThumbnailTools {
 
-    private const val YOUTUBE_THUMBNAIL_FORMAT: String = "https://img.youtube.com/vi/%s/0.jpg"
+    const val YOUTUBE_THUMBNAIL_FORMAT: String = "https://img.youtube.com/vi/%s/0.jpg"
 
     @JvmStatic
     fun extractYouTube(jsonBrowser: JsonBrowser, videoId: String): String {

@@ -34,14 +34,6 @@ public class YoutubeSignatureCipherManager implements YoutubeSignatureResolver {
 
     private static final String VARIABLE_PART = "[a-zA-Z_\\$][a-zA-Z_0-9]*";
     private static final String VARIABLE_PART_DEFINE = "\\\"?" + VARIABLE_PART + "\\\"?";
-    private static final Pattern actionsPattern = Pattern.compile("" +
-        "var (" + VARIABLE_PART + ")=\\{((?:(?:" +
-        VARIABLE_PART_DEFINE + REVERSE_PART + "|" +
-        VARIABLE_PART_DEFINE + SLICE_PART + "|" +
-        VARIABLE_PART_DEFINE + SPLICE_PART + "|" +
-        VARIABLE_PART_DEFINE + SWAP_PART +
-        "),?\\n?)+)\\};"
-    );
     private static final String BEFORE_ACCESS = "(?:\\[\\\"|\\.)";
     private static final String AFTER_ACCESS = "(?:\\\"\\]|)";
     private static final String VARIABLE_PART_ACCESS = BEFORE_ACCESS + VARIABLE_PART + AFTER_ACCESS;
@@ -63,6 +55,15 @@ public class YoutubeSignatureCipherManager implements YoutubeSignatureResolver {
     private static final Pattern slicePattern = Pattern.compile(PATTERN_PREFIX + SLICE_PART, Pattern.MULTILINE);
     private static final Pattern splicePattern = Pattern.compile(PATTERN_PREFIX + SPLICE_PART, Pattern.MULTILINE);
     private static final Pattern swapPattern = Pattern.compile(PATTERN_PREFIX + SWAP_PART, Pattern.MULTILINE);
+
+    private static final Pattern actionsPattern = Pattern.compile("" +
+        "var (" + VARIABLE_PART + ")=\\{((?:(?:" +
+        VARIABLE_PART_DEFINE + REVERSE_PART + "|" +
+        VARIABLE_PART_DEFINE + SLICE_PART + "|" +
+        VARIABLE_PART_DEFINE + SPLICE_PART + "|" +
+        VARIABLE_PART_DEFINE + SWAP_PART +
+        "),?\\n?)+)\\};"
+    );
 
     private static final Pattern signatureExtraction = Pattern.compile("/s/([^/]+)/");
     private static final Pattern timestampPattern = Pattern.compile("(signatureTimestamp|sts)[\\:](\\d+)");
