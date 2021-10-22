@@ -4,6 +4,7 @@ import lavaplayer.tools.io.HttpClientTools
 import lavaplayer.tools.io.HttpInterface
 import lavaplayer.tools.io.PersistentHttpStream
 import lavaplayer.tools.json.JsonBrowser
+import org.apache.commons.io.IOUtils
 import java.io.IOException
 import java.net.URI
 
@@ -22,8 +23,7 @@ object SoundCloudHelper {
                 throw IOException("Invalid status code for soundcloud stream: " + stream.checkStatusCode())
             }
 
-            val json = JsonBrowser.parse(stream)
-            return json["url"].safeText
+            return JsonBrowser.parse(stream)["url"].safeText
         }
     }
 }

@@ -1,8 +1,9 @@
 package lavaplayer.tools.extensions
 
 import lavaplayer.tools.json.JsonTools
-import org.apache.commons.io.IOUtils
 import org.apache.http.HttpEntity
+import org.apache.http.util.EntityUtils
+import java.io.InputStream
 
 val linkPattern = "^https?://.+".toPattern()
 
@@ -12,7 +13,7 @@ fun String.isLink() =
 inline fun <reified T : Any> String.decodeJson(): T =
     JsonTools.decode(this)
 
-inline fun <reified T : Any> HttpEntity.decodeJson(): T =
-    JsonTools.decode(IOUtils.toString(content, "UTF-8"))
+inline fun <reified T : Any> T.encodeJson(): String =
+    JsonTools.encode(this)
 
 

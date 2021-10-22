@@ -2,10 +2,10 @@ package lavaplayer.source.youtube;
 
 import lavaplayer.tools.io.HttpClientTools;
 import lavaplayer.tools.io.HttpInterface;
-import org.apache.commons.io.IOUtils;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.utils.URIBuilder;
+import org.apache.http.util.EntityUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -162,7 +162,7 @@ public class YoutubeSignatureCipherManager implements YoutubeSignatureResolver {
                 try (CloseableHttpResponse response = httpInterface.execute(new HttpGet(parseTokenScriptUrl(cipherScriptUrl)))) {
                     validateResponseCode(cipherScriptUrl, response);
 
-                    cipherKey = extractTokensAndTimestampFromScript(IOUtils.toString(response.getEntity().getContent(), StandardCharsets.UTF_8), cipherScriptUrl);
+                    cipherKey = extractTokensAndTimestampFromScript(EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8), cipherScriptUrl);
                     cipherCache.put(cipherScriptUrl, cipherKey);
                 }
             }

@@ -147,10 +147,8 @@ public class MediaContainerDetection {
         return result != null ? result : unknownFormat();
     }
 
-    private MediaContainerDetectionResult detectContainer(SeekableInputStream innerStream, boolean matchHints)
-        throws IOException {
-
-        for (MediaContainerProbe probe : containerRegistry.getAll()) {
+    private MediaContainerDetectionResult detectContainer(SeekableInputStream innerStream, boolean matchHints) throws IOException {
+        for (MediaContainerProbe probe : containerRegistry.getProbes()) {
             if (matchHints == probe.matchesHints(hints)) {
                 innerStream.seek(0);
                 MediaContainerDetectionResult result = checkContainer(probe, reference, innerStream);

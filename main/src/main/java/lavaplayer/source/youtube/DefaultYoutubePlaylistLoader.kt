@@ -1,15 +1,13 @@
 package lavaplayer.source.youtube
 
 import lavaplayer.tools.FriendlyException
-import lavaplayer.tools.ThumbnailTools
-import lavaplayer.tools.Units
-import lavaplayer.tools.Units.secondsToMillis
 import lavaplayer.tools.io.HttpClientTools
 import lavaplayer.tools.io.HttpInterface
 import lavaplayer.tools.json.JsonBrowser
 import lavaplayer.track.*
 import org.apache.http.client.methods.HttpPost
 import org.apache.http.entity.StringEntity
+import org.apache.http.util.EntityUtils
 import java.io.IOException
 
 class DefaultYoutubePlaylistLoader : YoutubePlaylistLoader {
@@ -29,8 +27,8 @@ class DefaultYoutubePlaylistLoader : YoutubePlaylistLoader {
             httpInterface.execute(post).use { response ->
                 HttpClientTools.assertSuccessWithContent(response, "playlist response")
                 HttpClientTools.assertJsonContentType(response)
-                val json = JsonBrowser.parse(response.entity.content)
-                return buildPlaylist(httpInterface, json, selectedVideoId, trackFactory)
+                val playlist = JsonBrowser.parse(response.entity.content)
+                return buildPlaylist(httpInterface, playlist, selectedVideoId, trackFactory)
             }
         } catch (e: IOException) {
             throw RuntimeException(e)
@@ -40,19 +38,19 @@ class DefaultYoutubePlaylistLoader : YoutubePlaylistLoader {
     @Throws(IOException::class)
     private fun buildPlaylist(
         httpInterface: HttpInterface,
-        json: JsonBrowser,
+        playlist: JsonBrowser,
         selectedVideoId: String?,
         trackFactory: AudioTrackFactory
     ): BasicAudioTrackCollection {
-        findErrorAlert(json)?.let { message ->
+        findErrorAlert(playlist)?.let { message ->
             throw FriendlyException(message, FriendlyException.Severity.COMMON, null)
         }
 
         val playlistName =
-            json["header"]["playlistHeaderRenderer"]["title"]["runs"][0]["text"].text
+            playlist["header"]["playlistHeaderRenderer"]["title"]["runs"][0]["text"].text
 
         val playlistVideoList =
-            json["contents"]["singleColumnBrowseResultsRenderer"]["tabs"][0]["tabRenderer"]["content"]["sectionListRenderer"]["contents"][0]["playlistVideoListRenderer"]
+            playlist["contents"]["singleColumnBrowseResultsRenderer"]["tabs"][0]["tabRenderer"]["content"]["sectionListRenderer"]["contents"][0]["playlistVideoListRenderer"]
 
         val tracks: MutableList<AudioTrack> = ArrayList()
         var continuationsToken = extractPlaylistTracks(playlistVideoList, tracks, trackFactory)
@@ -66,8 +64,10 @@ class DefaultYoutubePlaylistLoader : YoutubePlaylistLoader {
 
             httpInterface.execute(post).use { response ->
                 HttpClientTools.assertSuccessWithContent(response, "playlist response")
-                val continuationJson = JsonBrowser.parse(response.entity.content)
-                val playlistVideoListPage = continuationJson["continuationContents"]["playlistVideoListContinuation"]
+
+                val continuation = JsonBrowser.parse(response.entity.content)
+                val playlistVideoListPage = continuation["continuationContents"]["playlistVideoListContinuation"]
+
                 continuationsToken = extractPlaylistTracks(playlistVideoListPage, tracks, trackFactory)
             }
         }
@@ -107,31 +107,25 @@ class DefaultYoutubePlaylistLoader : YoutubePlaylistLoader {
         return null
     }
 
-    private fun extractPlaylistTracks(
-        playlistVideoList: JsonBrowser,
-        tracks: MutableList<AudioTrack>,
-        trackFactory: AudioTrackFactory
-    ): String? {
+    private fun extractPlaylistTracks(playlistVideoList: JsonBrowser, tracks: MutableList<AudioTrack>, trackFactory: AudioTrackFactory): String? {
         val contents = playlistVideoList["contents"].takeUnless { it.isNull }
             ?: return null
 
         for (track in contents.values()) {
-            val item = track["playlistVideoRenderer"]
-            val shortBylineText = item["shortBylineText"]
+            val video = track["playlistVideoRenderer"].cast<YouTubeVideoModel>()
 
             // If the isPlayable property does not exist, it means the video is removed or private
             // If the shortBylineText property does not exist, it means the Track is Region blocked
-            if (!item["isPlayable"].isNull && !shortBylineText.isNull) {
-                val videoId = item["videoId"].text
+            if (video.isPlayable != null && video.author != null) {
 
                 /* create the audio track. */
                 val info = AudioTrackInfo(
-                    title = item["title"].let { it["simpleText"].text ?: it["runs"][0]["text"].safeText },
-                    author = shortBylineText["runs"][0]["text"].safeText,
-                    length = secondsToMillis(item["lengthSeconds"].cast(Units.DURATION_SEC_UNKNOWN)),
-                    identifier = videoId!!,
-                    uri = "https://www.youtube.com/watch?v=$videoId",
-                    artworkUrl = ThumbnailTools.extractYouTube(item, videoId),
+                    title = video.title,
+                    author = video.author!!,
+                    length = video.length!!,
+                    identifier = video.id,
+                    uri = "https://www.youtube.com/watch?v=${video.id}",
+                    artworkUrl = video.thumbnail,
                 )
 
                 tracks.add(trackFactory.create(info))

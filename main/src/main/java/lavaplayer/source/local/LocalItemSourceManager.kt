@@ -26,7 +26,7 @@ class LocalItemSourceManager @JvmOverloads constructor(containerRegistry: MediaC
         get() = "local"
 
     override suspend fun loadItem(state: LoaderState, reference: AudioReference): AudioItem? {
-        val file = File(reference.identifier)
+        val file = File(reference.identifier!!)
         return if (file.exists() && file.isFile && file.canRead()) {
             handleLoadResult(detectContainerForFile(reference, file))
         } else {
@@ -64,9 +64,5 @@ class LocalItemSourceManager @JvmOverloads constructor(containerRegistry: MediaC
     override fun decodeTrack(trackInfo: AudioTrackInfo, input: DataInput): AudioTrack? {
         val containerTrackFactory = decodeTrackFactory(input)
         return if (containerTrackFactory != null) LocalAudioTrack(trackInfo, containerTrackFactory, this) else null
-    }
-
-    override fun shutdown() {
-        // Nothing to shut down
     }
 }

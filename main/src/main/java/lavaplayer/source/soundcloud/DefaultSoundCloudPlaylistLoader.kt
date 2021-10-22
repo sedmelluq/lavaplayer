@@ -63,7 +63,7 @@ class DefaultSoundCloudPlaylistLoader(
             val tracks = trackIds.subList(i, (i + 50).coerceAtMost(trackIds.size))
             httpInterface.execute(HttpGet(buildTrackListUrl(tracks))).use { response ->
                 HttpClientTools.assertSuccessWithContent(response, "track list response")
-                val trackList = response.entity.decodeJson<List<SoundCloudTrackModel>>()
+                val trackList = response.entity.content.decodeJson<List<SoundCloudTrackModel>>()
                 trackDataList.addAll(trackList)
             }
         }

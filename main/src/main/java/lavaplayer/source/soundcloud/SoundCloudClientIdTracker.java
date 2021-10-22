@@ -1,5 +1,6 @@
 package lavaplayer.source.soundcloud;
 
+import kotlin.text.Charsets;
 import lavaplayer.tools.io.HttpClientTools;
 import lavaplayer.tools.io.HttpInterface;
 import lavaplayer.tools.io.HttpInterfaceManager;
@@ -89,7 +90,7 @@ public class SoundCloudClientIdTracker {
         try (CloseableHttpResponse response = httpInterface.execute(new HttpGet("https://soundcloud.com/discover"))) {
             HttpClientTools.assertSuccessWithContent(response, "main page response");
 
-            String page = EntityUtils.toString(response.getEntity());
+            String page = EntityUtils.toString(response.getEntity(), Charsets.UTF_8);
             Matcher matcher = pageAppScriptPattern.matcher(page);
             List<String> scriptUrls = new ArrayList<>();
 
@@ -123,7 +124,7 @@ public class SoundCloudClientIdTracker {
         try (CloseableHttpResponse response = httpInterface.execute(new HttpGet(scriptUrl))) {
             HttpClientTools.assertSuccessWithContent(response, "application script response");
 
-            String page = EntityUtils.toString(response.getEntity());
+            String page = EntityUtils.toString(response.getEntity(), Charsets.UTF_8);
             Matcher clientIdMatcher = appScriptClientIdPattern.matcher(page);
 
             if (clientIdMatcher.find()) {

@@ -16,7 +16,6 @@ import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import org.jsoup.parser.Parser
 import java.io.DataInput
-import java.io.DataOutput
 import java.io.IOException
 import java.nio.charset.StandardCharsets
 import java.util.concurrent.atomic.AtomicBoolean
@@ -92,15 +91,6 @@ class NicoItemSourceManager(private val email: String, private val password: Str
     override suspend fun loadItem(state: LoaderState, reference: AudioReference): AudioItem? {
         val trackMatcher = trackUrlPattern.matcher(reference.identifier)
         return if (trackMatcher.matches()) loadTrack(trackMatcher.group(1)) else null
-    }
-
-    @Throws(IOException::class)
-    override fun encodeTrack(track: AudioTrack, output: DataOutput) {
-        // No extra information to save
-    }
-
-    override fun shutdown() {
-        // Nothing to shut down
     }
 
     override fun configureRequests(configurator: RequestConfigurator) {

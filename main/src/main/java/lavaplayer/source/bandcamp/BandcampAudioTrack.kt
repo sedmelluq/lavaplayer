@@ -9,11 +9,10 @@ import lavaplayer.track.AudioTrackInfo
 import lavaplayer.track.DelegatedAudioTrack
 import lavaplayer.track.playback.LocalAudioTrackExecutor
 import mu.KotlinLogging
-import org.apache.commons.io.IOUtils
 import org.apache.http.client.methods.HttpGet
+import org.apache.http.util.EntityUtils
 import java.io.IOException
 import java.net.URI
-import java.nio.charset.StandardCharsets
 
 /**
  * Audio track that handles processing Bandcamp tracks.
@@ -46,7 +45,7 @@ class BandcampAudioTrack(
     private fun getTrackMediaUrl(httpInterface: HttpInterface): String {
         httpInterface.execute(HttpGet(info.uri)).use { response ->
             HttpClientTools.assertSuccessWithContent(response, "track page")
-            val responseText = IOUtils.toString(response.entity.content, StandardCharsets.UTF_8)
+            val responseText = EntityUtils.toString(response.entity, Charsets.UTF_8)
             val trackList = sourceManager.readTrackListInformation(responseText)
             return trackList.trackInfo.first().file.url
         }

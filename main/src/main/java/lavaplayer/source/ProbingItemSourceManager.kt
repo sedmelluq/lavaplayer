@@ -46,8 +46,12 @@ abstract class ProbingItemSourceManager(@JvmField protected val containerRegistr
 
     @Throws(IOException::class)
     protected fun encodeTrackFactory(factory: MediaContainerDescriptor, output: DataOutput) {
-        val probeInfo =
-            factory.probe.name + if (factory.parameters != null) PARAMETERS_SEPARATOR.toString() + factory.parameters else ""
+        val probeInfo = factory.probe.name + if (factory.parameters != null) {
+            PARAMETERS_SEPARATOR.toString() + factory.parameters
+        } else {
+            ""
+        }
+
         output.writeUTF(probeInfo)
     }
 
@@ -58,6 +62,7 @@ abstract class ProbingItemSourceManager(@JvmField protected val containerRegistr
         val probeName = if (separatorPosition < 0) probeInfo else probeInfo.substring(0, separatorPosition)
         val parameters = if (separatorPosition < 0) null else probeInfo.substring(separatorPosition + 1)
         val probe = containerRegistry.find(probeName)
+
         return probe?.let { MediaContainerDescriptor(it, parameters) }
     }
 }

@@ -58,10 +58,7 @@ public class YoutubeSearchMusicProvider implements YoutubeSearchMusicResultLoade
 
             try (CloseableHttpResponse response = httpInterface.execute(post)) {
                 HttpClientTools.assertSuccessWithContent(response, "search music response");
-
-                String responseText = EntityUtils.toString(response.getEntity(), UTF_8);
-
-                JsonBrowser jsonBrowser = JsonBrowser.parse(responseText);
+                JsonBrowser jsonBrowser = JsonBrowser.parse(response.getEntity().getContent());
                 return extractSearchResults(jsonBrowser, query, trackFactory);
             }
         } catch (Exception e) {

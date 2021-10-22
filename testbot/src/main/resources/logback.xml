@@ -1,0 +1,20 @@
+<!--
+  ~ Copyright Mixtape Bot 2021 - All Rights Reserved
+  ~ Unauthorized copying of this file, via any medium is strictly prohibited
+  ~ Proprietary and confidential
+  -->
+
+<configuration debug="false">
+    <variable name="MX_LOG_LEVEL" value="${MX_LOG_LEVEL:-DEBUG}"/>
+
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%gray(%d{yyyy-MM-dd HH:mm:ss.SSS}) %magenta([%-30.-30thread]) %cyan(%-30.-30logger{30}) %highlight(%-6level) %msg%n
+            </pattern>
+        </encoder>
+    </appender>
+
+    <root level="${MX_LOG_LEVEL}">
+        <appender-ref ref="STDOUT"/>
+    </root>
+</configuration>

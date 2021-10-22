@@ -150,10 +150,14 @@ class YoutubeItemSourceManager @JvmOverloads constructor(
      * @param selectedVideoId The selected video id.
      */
     fun loadPlaylistWithId(type: PlaylistType, id: String, selectedVideoId: String?): AudioTrackCollection {
-        log.debug { "Starting to load ${type.name.lowercase()} with ID $id selected track $selectedVideoId" }
+        log.debug { "Starting to load ${type.name.lowercase()} playlist with ID=$id, selected track=$selectedVideoId" }
         try {
             httpInterface.use { httpInterface ->
-                return mixLoader.load(httpInterface, id, selectedVideoId) { buildTrackFromInfo(it) }
+                return if (type == PlaylistType.Mix) {
+                    mixLoader.load(httpInterface, id, selectedVideoId) { buildTrackFromInfo(it) }
+                } else {
+                    playlistLoader.load(httpInterface, id, selectedVideoId) { buildTrackFromInfo(it) }
+                }
             }
         } catch (e: Exception) {
             throw ExceptionTools.wrapUnfriendlyException(e)

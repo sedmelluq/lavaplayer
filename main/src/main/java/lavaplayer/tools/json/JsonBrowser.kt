@@ -1,10 +1,7 @@
 package lavaplayer.tools.json
 
-import kotlinx.serialization.InternalSerializationApi
-import kotlinx.serialization.decodeFromString
-import kotlinx.serialization.encodeToString
+import kotlinx.serialization.*
 import kotlinx.serialization.json.*
-import kotlinx.serialization.serializer
 import java.io.IOException
 import java.io.InputStream
 import kotlin.reflect.KClass
@@ -30,20 +27,21 @@ class JsonBrowser(@get:JvmName("element") val element: JsonElement) {
          * @return JsonBrowser instance for navigating in the result
          * @throws IOException When parsing the JSON failed
          */
+        @OptIn(ExperimentalSerializationApi::class)
         @JvmStatic
-        @Throws(IOException::class)
         fun parse(json: String) =
             JsonBrowser(format.decodeFromString(json))
 
         /**
-         * Parse from string.
-         * @param stream The JSON object as a stream
+         * Parse from an input stream.
+         * @param stream The input stream to parse.
          * @return JsonBrowser instance for navigating in the result
          * @throws IOException When parsing the JSON failed
          */
+        @OptIn(ExperimentalSerializationApi::class)
         @JvmStatic
         fun parse(stream: InputStream) =
-            parse(stream.reader().readText())
+            JsonBrowser(format.decodeFromStream(stream))
     }
 
     /**

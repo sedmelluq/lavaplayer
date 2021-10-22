@@ -1,26 +1,25 @@
-package lavaplayer.container;
+package lavaplayer.container
 
-import lavaplayer.tools.io.SeekableInputStream;
-import lavaplayer.track.AudioReference;
-import lavaplayer.track.AudioTrack;
-import lavaplayer.track.AudioTrackInfo;
-
-import java.io.IOException;
+import lavaplayer.tools.io.SeekableInputStream
+import lavaplayer.track.AudioReference
+import lavaplayer.track.AudioTrack
+import lavaplayer.track.AudioTrackInfo
+import java.io.IOException
 
 /**
  * Track information probe for one media container type and factory for tracks for that container.
  */
-public interface MediaContainerProbe {
+interface MediaContainerProbe {
     /**
-     * @return The name of this container
+     * The name of this container
      */
-    String getName();
+    val name: String
 
     /**
      * @param hints The available hints about the possible container.
      * @return True if the hints match the format this probe detects. Should always return false if all hints are null.
      */
-    boolean matchesHints(MediaContainerHints hints);
+    fun matchesHints(hints: MediaContainerHints?): Boolean
 
     /**
      * Detect whether the file readable from the input stream is using this container and if this specific file uses
@@ -33,7 +32,8 @@ public interface MediaContainerProbe {
      * null in case this file does not appear to be using this container format.
      * @throws IOException On read error.
      */
-    MediaContainerDetectionResult probe(AudioReference reference, SeekableInputStream inputStream) throws IOException;
+    @Throws(IOException::class)
+    fun probe(reference: AudioReference, inputStream: SeekableInputStream): MediaContainerDetectionResult?
 
     /**
      * Creates a new track for this container. The audio tracks created here are never used directly, but the playback is
@@ -44,5 +44,5 @@ public interface MediaContainerProbe {
      * @param inputStream Input stream of the track file
      * @return A new audio track
      */
-    AudioTrack createTrack(String parameters, AudioTrackInfo trackInfo, SeekableInputStream inputStream);
+    fun createTrack(parameters: String?, trackInfo: AudioTrackInfo, inputStream: SeekableInputStream): AudioTrack
 }

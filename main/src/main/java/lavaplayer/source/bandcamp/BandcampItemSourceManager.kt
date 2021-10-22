@@ -8,12 +8,11 @@ import lavaplayer.tools.extensions.decodeJson
 import lavaplayer.tools.io.*
 import lavaplayer.track.*
 import lavaplayer.track.loader.LoaderState
-import org.apache.commons.io.IOUtils
 import org.apache.http.HttpStatus
 import org.apache.http.client.methods.HttpGet
+import org.apache.http.util.EntityUtils
 import java.io.DataInput
 import java.io.IOException
-import java.nio.charset.StandardCharsets
 import java.util.regex.Pattern
 
 /**
@@ -32,7 +31,7 @@ class BandcampItemSourceManager : ItemSourceManager, HttpConfigurable {
         get() = httpInterfaceManager.get()
 
     override suspend fun loadItem(state: LoaderState, reference: AudioReference): AudioItem? {
-        val urlInfo = parseUrl(reference.identifier)
+        val urlInfo = parseUrl(reference.identifier!!)
         return if (urlInfo != null) {
             if (urlInfo.isAlbum) {
                 loadAlbum(urlInfo)
@@ -49,7 +48,7 @@ class BandcampItemSourceManager : ItemSourceManager, HttpConfigurable {
     }
 
     @Throws(IOException::class)
-    override fun decodeTrack(trackInfo: AudioTrackInfo, input: DataInput): AudioTrack? {
+    override fun decodeTrack(trackInfo: AudioTrackInfo, input: DataInput): AudioTrack {
         return BandcampAudioTrack(trackInfo, this)
     }
 
@@ -79,7 +78,7 @@ class BandcampItemSourceManager : ItemSourceManager, HttpConfigurable {
             .decodeJson()
     }
 
-    private fun parseUrl(url: String?): UrlInfo? {
+    private fun parseUrl(url: String): UrlInfo? {
         val matcher = urlRegex.matcher(url)
         return if (matcher.matches()) {
             UrlInfo(url, matcher.group(1), "album" == matcher.group(2))
@@ -164,7 +163,6 @@ class BandcampItemSourceManager : ItemSourceManager, HttpConfigurable {
         url: String?,
         extractor: AudioItemExtractor
     ): AudioItem? {
-        var responseText: String?
         httpInterface.execute(HttpGet(url)).use { response ->
             val statusCode = response.statusLine.statusCode
             if (statusCode == HttpStatus.SC_NOT_FOUND) {
@@ -173,10 +171,9 @@ class BandcampItemSourceManager : ItemSourceManager, HttpConfigurable {
                 throw IOException("Invalid status code for track page: $statusCode")
             }
 
-            responseText = IOUtils.toString(response.entity.content, StandardCharsets.UTF_8)
+            val responseText = EntityUtils.toString(response.entity, Charsets.UTF_8)
+            return extractor.extract(httpInterface, responseText)
         }
-
-        return extractor.extract(httpInterface, responseText)
     }
 
     private fun interface AudioItemExtractor {

@@ -1,6 +1,5 @@
 package lavaplayer.source.twitch
 
-import lavaplayer.source.stream.M3uStreamSegmentUrlProvider
 import lavaplayer.source.stream.MpegTsM3uStreamAudioTrack
 import lavaplayer.tools.io.HttpInterface
 import lavaplayer.track.AudioTrack
@@ -15,14 +14,12 @@ import mu.KotlinLogging
  * @param sourceManager Source manager which was used to find this track
  */
 class TwitchStreamAudioTrack(
-    trackInfo: AudioTrackInfo?,
+    trackInfo: AudioTrackInfo,
     override val sourceManager: TwitchStreamItemSourceManager
 ) : MpegTsM3uStreamAudioTrack(trackInfo) {
     companion object {
         private val log = KotlinLogging.logger { }
     }
-
-    private val segmentUrlProvider = TwitchStreamSegmentUrlProvider(channelName, sourceManager)
 
     /**
      * @return Name of the channel of the stream.
@@ -30,13 +27,10 @@ class TwitchStreamAudioTrack(
     val channelName: String?
         get() = TwitchStreamItemSourceManager.getChannelIdentifierFromUrl(info.identifier)
 
-    override fun getSegmentUrlProvider(): M3uStreamSegmentUrlProvider {
-        return segmentUrlProvider
-    }
+    override val segmentUrlProvider = TwitchStreamSegmentUrlProvider(channelName, sourceManager)
 
-    override fun getHttpInterface(): HttpInterface {
-        return sourceManager.httpInterface
-    }
+    override val httpInterface: HttpInterface
+        get() = sourceManager.httpInterface
 
     @Throws(Exception::class)
     override fun process(executor: LocalAudioTrackExecutor) {

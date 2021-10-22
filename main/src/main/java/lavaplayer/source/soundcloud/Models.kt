@@ -62,16 +62,20 @@ enum class SoundCloudResourceKind {
 }
 
 @Serializable
-enum class SoundCloudTrackPolicy {
+enum class SoundCloudTrackPolicy(val playable: Boolean) {
+    Unknown(true),
+
     @SerialName("ALLOW")
-    Allow,
+    Allow(true),
 
     @SerialName("BLOCK")
-    Block,
+    Block(false),
 
     @SerialName("MONETIZE")
-    Monetize,
-    Unknown;
+    Monetize(true),
+
+    @SerialName("SNIP")
+    Snip(false);
 }
 
 @Serializable

@@ -10,9 +10,11 @@ data class MatroskaCuePoint(
     /**
      * Timecode using the file timescale
      */
-    @JvmField val timecode: Long,
+    @JvmField
+    val timecode: Long,
     /**
      * Absolute offset to the cluster
      */
-    @JvmField val trackClusterOffsets: LongArray
+    @JvmField
+    val trackClusterOffsets: LongArray
 )

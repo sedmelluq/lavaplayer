@@ -1,6 +1,6 @@
 package lavaplayer.container
 
-class MediaContainerRegistry(val all: List<MediaContainerProbe>) {
+open class MediaContainerRegistry(vararg val probes: MediaContainerProbe) {
     companion object {
         @JvmField
         val DEFAULT_REGISTRY = MediaContainerRegistry(MediaContainer.asList())
@@ -12,6 +12,8 @@ class MediaContainerRegistry(val all: List<MediaContainerProbe>) {
         }
     }
 
+    constructor(probes: List<MediaContainerProbe>) : this(*probes.toTypedArray())
+
     fun find(name: String): MediaContainerProbe? =
-        all.find { it.name == name }
+        probes.find { it.name == name }
 }

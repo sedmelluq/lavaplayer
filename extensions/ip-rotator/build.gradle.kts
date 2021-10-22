@@ -8,7 +8,7 @@ version = "0.2.8"
 
 dependencies {
     compileOnly(project(":main"))
-    implementation("io.github.microutils:kotlin-logging:1.12.5")
+    implementation("io.github.microutils:kotlin-logging:2.0.11")
 
     api("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.5.2-native-mt")
     api("org.slf4j:slf4j-api:1.7.32")

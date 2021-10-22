@@ -1,13 +1,11 @@
 package lavaplayer.source.youtube
 
-import lavaplayer.tools.DataFormatTools.durationTextToMillis
+import kotlinx.serialization.Serializable
 import lavaplayer.tools.ExceptionTools
-import lavaplayer.tools.ThumbnailTools
+import lavaplayer.tools.extensions.decodeJson
 import lavaplayer.tools.http.ExtendedHttpConfigurable
 import lavaplayer.tools.io.HttpClientTools
 import lavaplayer.tools.io.HttpInterfaceManager
-import lavaplayer.tools.json.JsonBrowser
-import lavaplayer.tools.json.JsonBrowser.Companion.parse
 import lavaplayer.track.*
 import mu.KotlinLogging
 import org.apache.http.client.methods.HttpPost
@@ -42,9 +40,8 @@ class YoutubeSearchProvider : YoutubeSearchResultLoader {
 
                 httpInterface.execute(post).use { response ->
                     HttpClientTools.assertSuccessWithContent(response, "search response")
-                    val responseText = EntityUtils.toString(response.entity, StandardCharsets.UTF_8)
-                    val jsonBrowser = parse(responseText)
-                    return extractSearchResults(jsonBrowser, query, trackFactory)
+                    val searchResults = response.entity.content.decodeJson<SearchResult>()
+                    return extractSearchResults(searchResults, query, trackFactory)
                 }
             }
         } catch (e: Exception) {
@@ -53,61 +50,66 @@ class YoutubeSearchProvider : YoutubeSearchResultLoader {
     }
 
     private fun extractSearchResults(
-        jsonBrowser: JsonBrowser,
+        searchResults: SearchResult,
         query: String,
         trackFactory: AudioTrackFactory
     ): AudioItem {
         log.debug { "Attempting to parse results from search page" }
 
-        val tracks: MutableList<AudioTrack> = jsonBrowser
-            .runCatching { extractSearchPage(this, trackFactory) }
-            .onFailure { throw RuntimeException(it) }
-            .getOrThrow()
+        val tracks: MutableList<AudioTrack> = extractSearchPage(searchResults, trackFactory)
+            .ifEmpty { return AudioReference.NO_TRACK }
 
-        return if (tracks.isEmpty()) {
-            AudioReference.NO_TRACK
-        } else {
-            BasicAudioTrackCollection(
-                "Search results for: $query",
-                AudioTrackCollectionType.SearchResult(query),
-                tracks,
-                null
-            )
-        }
+        return BasicAudioTrackCollection(
+            "Search results for: $query",
+            AudioTrackCollectionType.SearchResult(query),
+            tracks,
+            null
+        )
     }
 
     @Throws(IOException::class)
-    private fun extractSearchPage(
-        jsonBrowser: JsonBrowser,
-        trackFactory: AudioTrackFactory
-    ): MutableList<AudioTrack> {
-        return jsonBrowser["contents"]["sectionListRenderer"]["contents"][0]["itemSectionRenderer"]["contents"]
-            .values()
+    private fun extractSearchPage(searchResults: SearchResult, trackFactory: AudioTrackFactory): MutableList<AudioTrack> {
+        return searchResults.contents.sectionListRenderer.contents.first().itemSectionRenderer.contents
             .mapNotNull { extractPolymerData(it, trackFactory) }
             .toMutableList()
     }
 
-    private fun extractPolymerData(json: JsonBrowser, trackFactory: AudioTrackFactory): AudioTrack? {
-        val renderer = json["compactVideoRenderer"].takeUnless { it.isNull }
+    private fun extractPolymerData(listedTrack: SectionList.Track, trackFactory: AudioTrackFactory): AudioTrack? {
+        val video = listedTrack.compactVideoRenderer
             ?: return null // Ignore everything which is not a track
 
         /* Ignore if the video is a live stream */
-        if (renderer["lengthText"].isNull) {
-            return null
-        }
-
-        val videoId = renderer["videoId"].text
+        val length = video.length
+            ?: return null
 
         /* create the audio track. */
         val info = AudioTrackInfo(
-            title = renderer["title"]["runs"][0]["text"].safeText,
-            author = renderer["longBylineText"]["runs"][0]["text"].safeText,
-            length = durationTextToMillis(renderer["lengthText"]["runs"][0]["text"].safeText),
-            identifier = videoId!!,
-            uri = "${YoutubeConstants.WATCH_URL_PREFIX}$videoId",
-            artworkUrl = ThumbnailTools.extractYouTube(renderer, videoId)
+            title = video.title,
+            author = video.author!!,
+            length = length,
+            identifier = video.id,
+            uri = "${YoutubeConstants.WATCH_URL_PREFIX}${video.id}",
+            artworkUrl = video.thumbnail
         )
 
         return trackFactory.create(info)
+    }
+
+    @Serializable
+    data class SearchResult(val contents: Contents) {
+        @Serializable
+        data class Contents(val sectionListRenderer: SectionList)
+    }
+
+    @Serializable
+    data class SectionList(val contents: List<Item>) {
+        @Serializable
+        data class Item(val itemSectionRenderer: Renderer) {
+            @Serializable
+            data class Renderer(val contents: List<Track>)
+        }
+
+        @Serializable
+        data class Track(val compactVideoRenderer: YouTubeVideoModel? = null)
     }
 }

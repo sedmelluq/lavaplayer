@@ -1,5 +1,6 @@
 package lavaplayer.source.youtube;
 
+import kotlin.text.Charsets;
 import lavaplayer.tools.DataFormatTools;
 import lavaplayer.tools.ExceptionTools;
 import lavaplayer.tools.FriendlyException;
@@ -175,9 +176,8 @@ public class DefaultYoutubeTrackDetailsLoader implements YoutubeTrackDetailsLoad
         try (CloseableHttpResponse response = httpInterface.execute(post)) {
             HttpClientTools.assertSuccessWithContent(response, "content verify response");
 
-            String json = EntityUtils.toString(response.getEntity(), UTF_8);
-            String fetchedContentVerifiedLink = JsonBrowser.parse(json)
-                .get("actions")
+            JsonBrowser json = JsonBrowser.parse(response.getEntity().getContent());
+            String fetchedContentVerifiedLink = json.get("actions")
                 .index(0)
                 .get("navigateAction")
                 .get("endpoint")
@@ -188,7 +188,7 @@ public class DefaultYoutubeTrackDetailsLoader implements YoutubeTrackDetailsLoad
                 return loadTrackInfoFromMainPage(httpInterface, fetchedContentVerifiedLink.substring(9));
             }
 
-            log.error("Did not receive requested content verified link on track {} response: {}", videoId, json);
+            log.error("Did not receive requested content verified link on track {} response: {}", videoId, json.format());
         }
 
         throw new FriendlyException("Track requires content verification.", SUSPICIOUS,
@@ -240,7 +240,7 @@ public class DefaultYoutubeTrackDetailsLoader implements YoutubeTrackDetailsLoad
         try (CloseableHttpResponse response = httpInterface.execute(new HttpGet("https://www.youtube.com/embed/" + videoId))) {
             HttpClientTools.assertSuccessWithContent(response, "youtube embed video id");
 
-            String responseText = EntityUtils.toString(response.getEntity());
+            String responseText = EntityUtils.toString(response.getEntity(), Charsets.UTF_8);
             String encodedUrl = DataFormatTools.extractBetween(responseText, "\"jsUrl\":\"", "\"");
 
             if (encodedUrl == null) {

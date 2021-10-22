@@ -1,5 +1,6 @@
 package lavaplayer.source.twitch;
 
+import kotlin.text.Charsets;
 import lavaplayer.container.playlists.ExtendedM3uParser;
 import lavaplayer.source.stream.M3uStreamSegmentUrlProvider;
 import lavaplayer.tools.io.HttpClientTools;
@@ -9,6 +10,7 @@ import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.utils.URIBuilder;
+import org.apache.http.util.EntityUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

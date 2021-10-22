@@ -8,7 +8,8 @@ import java.io.DataOutput
 import java.io.IOException
 import java.io.InputStream
 import java.nio.charset.Charset
-import java.nio.charset.StandardCharsets
+
+typealias TextRange = Pair<String, String>
 
 /**
  * Helper methods related to Strings, Maps, and Numbers.
@@ -63,7 +64,7 @@ object DataFormatTools {
 
     @JvmStatic
     fun extractBetween(haystack: String, candidates: List<TextRange>): String? {
-        return candidates.firstNotNullOfOrNull { extractBetween(haystack, it.start, it.end) }
+        return candidates.firstNotNullOfOrNull { extractBetween(haystack, it.first, it.second) }
     }
 
     /**
@@ -74,7 +75,7 @@ object DataFormatTools {
      */
     @JvmStatic
     fun convertToMapLayout(pairs: List<NameValuePair>): Map<String, String> {
-        val map: MutableMap<String, String> = HashMap()
+        val map: MutableMap<String, String> = mutableMapOf()
         for (pair in pairs) {
             map[pair.name] = pair.value
         }
@@ -89,7 +90,7 @@ object DataFormatTools {
             input = input.replace("""\\u0026""", "&")
         }
 
-        return convertToMapLayout(URLEncodedUtils.parse(input, StandardCharsets.UTF_8))
+        return convertToMapLayout(URLEncodedUtils.parse(input, Charsets.UTF_8))
     }
 
     /**
@@ -137,7 +138,7 @@ object DataFormatTools {
 
     /**
      * Writes a string to output with the additional information whether it is `null` or not. Compatible with
-     * [.readNullableText].
+     * [readNullableText].
      *
      * @param output Output to write to.
      * @param text   Text to write.
@@ -153,7 +154,7 @@ object DataFormatTools {
 
     /**
      * Reads a string from input which may be `null`. Compatible with
-     * [.writeNullableText].
+     * [writeNullableText].
      *
      * @param input Input to read from.
      * @return The string that was read, or `null`.
@@ -173,6 +174,4 @@ object DataFormatTools {
 
         return segment.withIndex().all { (it, _) -> segment[it] == array[it + offset] }
     }
-
-    data class TextRange(val start: String, val end: String)
 }

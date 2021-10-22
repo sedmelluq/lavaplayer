@@ -8,7 +8,6 @@ import lavaplayer.tools.extensions.decodeJson
 import lavaplayer.tools.io.*
 import lavaplayer.track.*
 import lavaplayer.track.loader.LoaderState
-import org.apache.commons.io.IOUtils
 import org.apache.http.HttpResponse
 import org.apache.http.HttpStatus
 import org.apache.http.client.methods.HttpGet
@@ -18,7 +17,6 @@ import java.io.DataInput
 import java.io.IOException
 import java.net.URI
 import java.net.URISyntaxException
-import java.nio.charset.StandardCharsets
 import java.util.regex.Pattern
 
 /**
@@ -115,7 +113,8 @@ class SoundCloudItemSourceManager(
                 throw IOException("Invalid status code for track list response: $statusCode")
             }
 
-            val matcher = likedUserUrnPattern.matcher(IOUtils.toString(response.entity.content, StandardCharsets.UTF_8))
+            val responseText = EntityUtils.toString(response.entity, Charsets.UTF_8)
+            val matcher = likedUserUrnPattern.matcher(responseText)
             return if (matcher.find()) UserInfo(matcher.group(1), matcher.group(2)) else null
         }
     }
@@ -125,7 +124,7 @@ class SoundCloudItemSourceManager(
         val uri = URI.create("https://api-v2.soundcloud.com/users/${userInfo.id}/likes?limit=200&offset=0")
         httpInterface.execute(HttpGet(uri)).use { response ->
             HttpClientTools.assertSuccessWithContent(response, "liked tracks response")
-            return response.entity.decodeJson()
+            return response.entity.content.decodeJson()
         }
     }
 
@@ -145,7 +144,7 @@ class SoundCloudItemSourceManager(
     @Throws(IOException::class)
     private fun loadSearchResultsFromResponse(response: HttpResponse, query: String): AudioItem {
         return try {
-            val searchResults = response.entity.decodeJson<SoundCloudSearchResultModel>()
+            val searchResults = response.entity.content.decodeJson<SoundCloudSearchResultModel>()
             extractTracksFromSearchResults(query, searchResults)
         } finally {
             EntityUtils.consumeQuietly(response.entity)
@@ -166,6 +165,7 @@ class SoundCloudItemSourceManager(
 
     private fun extractTracksFromSearchResults(query: String, searchResults: SoundCloudSearchResultModel): AudioItem {
         val tracks: MutableList<AudioTrack> = searchResults.collection
+            .filter { it.policy.playable }
             .map { loadFromTrackData(it) }
             .toMutableList()
 
@@ -210,11 +210,7 @@ class SoundCloudItemSourceManager(
                     return extractTracksFromLikedList(loadLikedListForUserId(httpInterface, userInfo), userInfo)
                 }
             } catch (e: IOException) {
-                throw FriendlyException(
-                    "Loading liked tracks from SoundCloud failed.",
-                    FriendlyException.Severity.SUSPICIOUS,
-                    e
-                )
+                throw FriendlyException("Loading liked tracks from SoundCloud failed.", FriendlyException.Severity.SUSPICIOUS, e)
             }
         }
 
@@ -232,11 +228,7 @@ class SoundCloudItemSourceManager(
                         .use { return loadSearchResultsFromResponse(it, query) }
                 }
             } catch (e: IOException) {
-                throw FriendlyException(
-                    "Loading search results from SoundCloud failed.",
-                    FriendlyException.Severity.SUSPICIOUS,
-                    e
-                )
+                throw FriendlyException("Loading search results from SoundCloud failed.", FriendlyException.Severity.SUSPICIOUS, e)
             }
         }
 

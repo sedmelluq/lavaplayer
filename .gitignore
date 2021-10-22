@@ -32,3 +32,6 @@ version.txt
 testbot/src/main/java/local
 
 *.log
+
+# json samples
+json-samples/

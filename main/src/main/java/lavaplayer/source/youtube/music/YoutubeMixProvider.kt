@@ -7,10 +7,10 @@ import lavaplayer.tools.ThumbnailTools
 import lavaplayer.tools.io.HttpClientTools
 import lavaplayer.tools.io.HttpInterface
 import lavaplayer.tools.json.JsonBrowser
-import lavaplayer.tools.json.JsonBrowser.Companion.parse
 import lavaplayer.track.*
 import org.apache.http.client.methods.HttpPost
 import org.apache.http.entity.StringEntity
+import org.apache.http.util.EntityUtils
 import java.io.IOException
 
 /**
@@ -33,21 +33,21 @@ class YoutubeMixProvider : YoutubeMixLoader {
         var playlistTitle = "YouTube mix"
         val tracks: MutableList<AudioTrack> = ArrayList()
         val post = HttpPost(YoutubeConstants.NEXT_URL)
-        val payload =
-            StringEntity(java.lang.String.format(YoutubeConstants.NEXT_PAYLOAD, selectedVideoId, mixId), "UTF-8")
+        val payload = StringEntity(java.lang.String.format(YoutubeConstants.NEXT_PAYLOAD, selectedVideoId, mixId), "UTF-8")
         post.entity = payload
 
         try {
             httpInterface.execute(post).use { response ->
                 HttpClientTools.assertSuccessWithContent(response, "mix response")
-                val body = parse(response.entity.content)
-                val playlist = body["contents"]["singleColumnWatchNextResults"]["playlist"]["playlist"]
+                val body = JsonBrowser.parse(response.entity.content)
+                val playlist = body["contents"]["singleColumnWatchNextResults"]["results"]["results"]["contents"]
 
                 val title = playlist["title"]
                 if (!title.isNull) {
                     playlistTitle = title.safeText
                 }
 
+                println(body.format())
                 extractPlaylistTracks(playlist["contents"], tracks, trackFactory)
             }
         } catch (e: IOException) {

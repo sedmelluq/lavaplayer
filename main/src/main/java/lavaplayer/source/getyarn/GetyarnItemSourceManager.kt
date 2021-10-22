@@ -9,13 +9,11 @@ import lavaplayer.track.AudioReference
 import lavaplayer.track.AudioTrack
 import lavaplayer.track.AudioTrackInfo
 import lavaplayer.track.loader.LoaderState
-import org.apache.commons.io.IOUtils
 import org.apache.http.client.methods.HttpGet
+import org.apache.http.util.EntityUtils
 import org.jsoup.Jsoup
 import java.io.DataInput
-import java.io.DataOutput
 import java.io.IOException
-import java.nio.charset.StandardCharsets
 import java.util.regex.Pattern
 
 /**
@@ -48,16 +46,8 @@ class GetyarnItemSourceManager : HttpConfigurable, ItemSourceManager {
         return true
     }
 
-    override fun encodeTrack(track: AudioTrack, output: DataOutput) {
-        // No custom values that need saving
-    }
-
     override fun decodeTrack(trackInfo: AudioTrackInfo, input: DataInput): AudioTrack? {
         return GetyarnAudioTrack(trackInfo, this)
-    }
-
-    override fun shutdown() {
-        // Nothing to shut down
     }
 
     override fun configureRequests(configurator: RequestConfigurator) {
@@ -75,7 +65,7 @@ class GetyarnItemSourceManager : HttpConfigurable, ItemSourceManager {
     private fun extractVideoUrlFromPage(reference: AudioReference): AudioTrack {
         try {
             httpInterface.execute(HttpGet(reference.identifier)).use { response ->
-                val html = IOUtils.toString(response.entity.content, StandardCharsets.UTF_8)
+                val html = EntityUtils.toString(response.entity, Charsets.UTF_8)
                 val document = Jsoup.parse(html)
                 val trackInfo = AudioTrackInfo {
                     uri = reference.uri

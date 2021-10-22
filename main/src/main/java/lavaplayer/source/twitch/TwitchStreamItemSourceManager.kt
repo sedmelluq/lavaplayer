@@ -6,7 +6,6 @@ import lavaplayer.tools.FriendlyException
 import lavaplayer.tools.Units
 import lavaplayer.tools.io.*
 import lavaplayer.tools.json.JsonBrowser
-import lavaplayer.tools.json.JsonBrowser.Companion.parse
 import lavaplayer.track.AudioItem
 import lavaplayer.track.AudioReference
 import lavaplayer.track.AudioTrack
@@ -15,7 +14,6 @@ import lavaplayer.track.loader.LoaderState
 import org.apache.http.client.methods.HttpGet
 import org.apache.http.client.methods.HttpUriRequest
 import java.io.DataInput
-import java.io.DataOutput
 import java.io.IOException
 import java.net.URI
 import java.util.regex.Pattern
@@ -28,6 +26,33 @@ import java.util.regex.Pattern
 class TwitchStreamItemSourceManager @JvmOverloads constructor(
     private val clientId: String = DEFAULT_CLIENT_ID
 ) : ItemSourceManager, HttpConfigurable {
+    companion object {
+        const val DEFAULT_CLIENT_ID = "jzkbprff40iqj646a697cyrvl0zt2m6"
+        private const val STREAM_NAME_REGEX = "^https://(?:www\\.|go\\.)?twitch.tv/([^/]+)$"
+        private val streamNameRegex = Pattern.compile(STREAM_NAME_REGEX)
+
+        /**
+         * Extract channel identifier from a channel URL.
+         *
+         * @param url Channel URL
+         * @return Channel identifier (for API requests)
+         */
+        fun getChannelIdentifierFromUrl(url: String?): String? {
+            val matcher = streamNameRegex.matcher(url)
+            return if (!matcher.matches()) {
+                null
+            } else {
+                matcher.group(1)
+            }
+        }
+
+        private fun addClientHeaders(request: HttpUriRequest, clientId: String): HttpUriRequest {
+            request.setHeader("Accept", "application/vnd.twitchtv.v5+json; charset=UTF-8")
+            request.setHeader("Client-ID", clientId)
+            return request
+        }
+    }
+
     private val httpInterfaceManager: HttpInterfaceManager = HttpClientTools.createDefaultThreadLocalManager()
 
     /**
@@ -66,7 +91,7 @@ class TwitchStreamItemSourceManager @JvmOverloads constructor(
 
         val channelId: String
         try {
-            val token = parse(accessToken["token"].text!!)
+            val token = JsonBrowser.parse(accessToken["token"].text!!)
             channelId = token["channel_id"].safeText
         } catch (e: IOException) {
             return null
@@ -112,12 +137,7 @@ class TwitchStreamItemSourceManager @JvmOverloads constructor(
     }
 
     @Throws(IOException::class)
-    override fun encodeTrack(track: AudioTrack, output: DataOutput) {
-        // Nothing special to do, URL (identifier) is enough
-    }
-
-    @Throws(IOException::class)
-    override fun decodeTrack(trackInfo: AudioTrackInfo, input: DataInput): AudioTrack? {
+    override fun decodeTrack(trackInfo: AudioTrackInfo, input: DataInput): AudioTrack {
         return TwitchStreamAudioTrack(trackInfo, this)
     }
 
@@ -157,38 +177,7 @@ class TwitchStreamItemSourceManager @JvmOverloads constructor(
                 return HttpClientTools.fetchResponseAsJson(httpInterface, request)
             }
         } catch (e: IOException) {
-            throw FriendlyException(
-                "Loading Twitch channel information failed.",
-                FriendlyException.Severity.SUSPICIOUS,
-                e
-            )
-        }
-    }
-
-    companion object {
-        const val DEFAULT_CLIENT_ID = "jzkbprff40iqj646a697cyrvl0zt2m6"
-        private const val STREAM_NAME_REGEX = "^https://(?:www\\.|go\\.)?twitch.tv/([^/]+)$"
-        private val streamNameRegex = Pattern.compile(STREAM_NAME_REGEX)
-
-        /**
-         * Extract channel identifier from a channel URL.
-         *
-         * @param url Channel URL
-         * @return Channel identifier (for API requests)
-         */
-        fun getChannelIdentifierFromUrl(url: String?): String? {
-            val matcher = streamNameRegex.matcher(url)
-            return if (!matcher.matches()) {
-                null
-            } else {
-                matcher.group(1)
-            }
-        }
-
-        private fun addClientHeaders(request: HttpUriRequest, clientId: String): HttpUriRequest {
-            request.setHeader("Accept", "application/vnd.twitchtv.v5+json; charset=UTF-8")
-            request.setHeader("Client-ID", clientId)
-            return request
+            throw FriendlyException("Loading Twitch channel information failed.", FriendlyException.Severity.SUSPICIOUS, e)
         }
     }
 }

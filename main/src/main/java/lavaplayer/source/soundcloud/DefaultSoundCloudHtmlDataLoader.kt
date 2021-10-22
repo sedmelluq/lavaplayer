@@ -1,10 +1,10 @@
 package lavaplayer.source.soundcloud
 
 import lavaplayer.tools.DataFormatTools
-import lavaplayer.tools.DataFormatTools.TextRange
 import lavaplayer.tools.ExceptionTools
 import lavaplayer.tools.FriendlyException
 import lavaplayer.tools.FriendlyException.Severity.SUSPICIOUS
+import lavaplayer.tools.TextRange
 import lavaplayer.tools.extensions.decodeJson
 import lavaplayer.tools.io.HttpClientTools
 import lavaplayer.tools.io.HttpInterface
@@ -13,15 +13,14 @@ import org.apache.http.HttpStatus
 import org.apache.http.client.methods.HttpGet
 import org.apache.http.util.EntityUtils
 import java.io.IOException
-import java.nio.charset.StandardCharsets
 
 class DefaultSoundCloudHtmlDataLoader : SoundCloudHtmlDataLoader {
     companion object {
         private val log = KotlinLogging.logger { }
         private val JSON_RANGES: List<TextRange> = listOf(
-            TextRange("window.__sc_hydration =", ";</script>"),
-            TextRange("catch(e){}})},", ");</script>"),
-            TextRange("){}})},", ");</script>"),
+            "window.__sc_hydration =" to ";</script>",
+            "catch(e){}})}," to ");</script>",
+            "){}})}," to ");</script>",
         )
     }
 
@@ -35,7 +34,7 @@ class DefaultSoundCloudHtmlDataLoader : SoundCloudHtmlDataLoader {
 
             HttpClientTools.assertSuccessWithContent(response, "video page response")
 
-            val html = EntityUtils.toString(response.entity, StandardCharsets.UTF_8)
+            val html = EntityUtils.toString(response.entity, Charsets.UTF_8)
             val rootData = DataFormatTools.extractBetween(html, JSON_RANGES)
                 ?: throw FriendlyException(
                     "This url does not appear to be a playable track.", SUSPICIOUS,

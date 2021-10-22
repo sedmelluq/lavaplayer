@@ -1,5 +1,6 @@
 package lavaplayer.tools.io;
 
+import kotlin.text.Charsets;
 import lavaplayer.tools.DataFormatTools;
 import lavaplayer.tools.ExceptionTools;
 import lavaplayer.tools.FriendlyException;
@@ -221,7 +222,8 @@ public class HttpClientTools {
                     new IllegalStateException("Response code from channel info is " + statusCode));
             }
 
-            return JsonBrowser.parse(response.getEntity().getContent());
+            String json = EntityUtils.toString(response.getEntity(), Charsets.UTF_8);
+            return JsonBrowser.parse(json);
         }
     }
 

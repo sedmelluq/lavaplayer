@@ -52,6 +52,7 @@ class SoundCloudM3uAudioTrack(
         val initialSegments = loadSegments()
         val tracker = SegmentTracker(initialSegments)
         tracker.setupDecoder(m3uInfo.decoderFactory)
+
         return tracker
     }
 

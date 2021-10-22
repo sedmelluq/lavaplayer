@@ -22,6 +22,7 @@ public final class CombinedIpBlock extends IpBlock {
         if (ipBlocks.size() == 0) {
             throw new IllegalArgumentException("Ip Blocks list size must be greater than zero");
         }
+
         this.type = ipBlocks.get(0).getType();
         if (ipBlocks.stream().anyMatch(block -> !block.getType().equals(type))) {
             throw new IllegalArgumentException("All Ip Blocks must have the same type for a combined block");

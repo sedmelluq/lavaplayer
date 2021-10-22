@@ -1,28 +1,31 @@
-package lavaplayer.container.mpeg.reader;
+package lavaplayer.container.mpeg.reader
 
-import lavaplayer.container.mpeg.MpegTrackConsumer;
+import lavaplayer.container.mpeg.MpegTrackConsumer
+import kotlin.Throws
+import java.lang.InterruptedException
 
 /**
  * Track provider for a type of MP4 file.
  */
-public interface MpegFileTrackProvider {
+interface MpegFileTrackProvider {
+    /**
+     * @return Total duration of the file in milliseconds
+     */
+    val duration: Long
+
     /**
      * @param trackConsumer Track consumer which defines the track this will provide and the consumer for packets.
      * @return Returns true if it had enough information for initialisation.
      */
-    boolean initialise(MpegTrackConsumer trackConsumer);
-
-    /**
-     * @return Total duration of the file in milliseconds
-     */
-    long getDuration();
+    fun initialise(trackConsumer: MpegTrackConsumer): Boolean
 
     /**
      * Provide audio frames to the frame consumer until the end of the track or interruption.
      *
      * @throws InterruptedException When interrupted externally (or for seek/stop).
      */
-    void provideFrames() throws InterruptedException;
+    @Throws(InterruptedException::class)
+    fun provideFrames()
 
     /**
      * Perform a seek to the given timecode (ms). On the next call to provideFrames, the seekPerformed method of frame
@@ -31,5 +34,5 @@ public interface MpegFileTrackProvider {
      *
      * @param timecode The timecode to seek to in milliseconds
      */
-    void seekToTimecode(long timecode);
+    fun seekToTimecode(timecode: Long)
 }

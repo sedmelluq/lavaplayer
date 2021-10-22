@@ -79,9 +79,9 @@ data class AudioTrackInfo(
             output.writeUTF(info.author)
             output.writeLong(info.length)
             output.writeUTF(info.identifier)
-            output.writeBoolean(info.isStream)
             DataFormatTools.writeNullableText(output, info.uri)
             DataFormatTools.writeNullableText(output, info.artworkUrl)
+            output.writeBoolean(info.isStream)
         }
 
         @JvmStatic

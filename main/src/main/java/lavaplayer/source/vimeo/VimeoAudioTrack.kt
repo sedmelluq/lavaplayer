@@ -2,21 +2,19 @@ package lavaplayer.source.vimeo
 
 import lavaplayer.container.mpeg.MpegAudioTrack
 import lavaplayer.tools.FriendlyException
+import lavaplayer.tools.extensions.decodeJson
 import lavaplayer.tools.io.HttpClientTools
 import lavaplayer.tools.io.HttpInterface
 import lavaplayer.tools.io.PersistentHttpStream
-import lavaplayer.tools.json.JsonBrowser
-import lavaplayer.tools.json.JsonBrowser.Companion.parse
 import lavaplayer.track.AudioTrack
 import lavaplayer.track.AudioTrackInfo
 import lavaplayer.track.DelegatedAudioTrack
 import lavaplayer.track.playback.LocalAudioTrackExecutor
 import mu.KotlinLogging
-import org.apache.commons.io.IOUtils
 import org.apache.http.client.methods.HttpGet
+import org.apache.http.util.EntityUtils
 import java.io.IOException
 import java.net.URI
-import java.nio.charset.StandardCharsets
 
 /**
  * Audio track that handles processing Vimeo tracks.
@@ -32,6 +30,9 @@ class VimeoAudioTrack(
         private val log = KotlinLogging.logger { }
     }
 
+    override fun makeShallowClone(): AudioTrack =
+        VimeoAudioTrack(info, sourceManager)
+
     @Throws(Exception::class)
     override fun process(executor: LocalAudioTrackExecutor) {
         sourceManager.httpInterface.use { httpInterface ->
@@ -44,42 +45,30 @@ class VimeoAudioTrack(
     }
 
     @Throws(IOException::class)
-    private fun loadPlaybackUrl(httpInterface: HttpInterface): String? {
+    private fun loadPlaybackUrl(httpInterface: HttpInterface): String {
         val config = loadPlayerConfig(httpInterface)
-            ?: throw FriendlyException(
-                "Track information not present on the page.",
-                FriendlyException.Severity.SUSPICIOUS,
-                null
-            )
+            ?: throw FriendlyException("Track information not present on the page.", FriendlyException.Severity.SUSPICIOUS, null)
 
-        val trackConfigUrl = config["player"]["config_url"].text
-        val trackConfig = loadTrackConfig(httpInterface, trackConfigUrl)
-        return trackConfig["request"]["files"]["progressive"].index(0)["url"].text
+        val player = loadTrackConfig(httpInterface, config.player.configUrl)
+        return player.request.files.best.url
     }
 
     @Throws(IOException::class)
-    private fun loadPlayerConfig(httpInterface: HttpInterface): JsonBrowser? {
+    private fun loadPlayerConfig(httpInterface: HttpInterface): VimeoClipPage? {
         httpInterface.execute(HttpGet(info.identifier)).use { response ->
             val statusCode = response.statusLine.statusCode
             if (!HttpClientTools.isSuccessWithContent(statusCode)) {
-                throw FriendlyException(
-                    "Server responded with an error.", FriendlyException.Severity.SUSPICIOUS,
-                    IllegalStateException("Response code for player config is $statusCode")
-                )
+                throw FriendlyException("Server responded with an error.", FriendlyException.Severity.SUSPICIOUS, IllegalStateException("Response code for player config is $statusCode"))
             }
 
-            return sourceManager.loadConfigJsonFromPageContent(
-                IOUtils.toString(
-                    response.entity.content,
-                    StandardCharsets.UTF_8
-                )
-            )
+            val pageContent = EntityUtils.toString(response.entity, Charsets.UTF_8)
+            return sourceManager.loadConfigJsonFromPageContent(pageContent)
         }
     }
 
     @Throws(IOException::class)
-    private fun loadTrackConfig(httpInterface: HttpInterface, trackAccessInfoUrl: String?): JsonBrowser {
-        httpInterface.execute(HttpGet(trackAccessInfoUrl)).use { response ->
+    private fun loadTrackConfig(httpInterface: HttpInterface, playerUrl: String?): VimeoPlayer {
+        httpInterface.execute(HttpGet(playerUrl)).use { response ->
             val statusCode = response.statusLine.statusCode
             if (!HttpClientTools.isSuccessWithContent(statusCode)) {
                 throw FriendlyException(
@@ -88,10 +77,7 @@ class VimeoAudioTrack(
                 )
             }
 
-            return parse(response.entity.content)
+            return response.entity.content.decodeJson()
         }
     }
-
-    override fun makeShallowClone(): AudioTrack =
-        VimeoAudioTrack(info, sourceManager)
 }

@@ -13,7 +13,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * A frame buffer. Stores the specified duration worth of frames in the internal buffer.
- * Consumes frames in a blocking manner and provides frames in a non-blocking manner.
+ * Consumes {@link AudioFrame AudioFrames} in a blocking manner and provides frames in a non-blocking manner.
  */
 public class AllocatingAudioFrameBuffer extends AbstractAudioFrameBuffer {
     private static final Logger log = LoggerFactory.getLogger(AudioFrameBuffer.class);

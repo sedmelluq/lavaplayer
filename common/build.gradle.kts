@@ -7,7 +7,7 @@ val moduleName = "lava-common"
 version = "1.1.5"
 
 dependencies {
-    implementation("io.github.microutils:kotlin-logging:1.12.5")
+    implementation("io.github.microutils:kotlin-logging:2.0.11")
     implementation("commons-io:commons-io:2.11.0")
 
     api("org.slf4j:slf4j-api:1.7.32")

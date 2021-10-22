@@ -4,21 +4,19 @@ import lavaplayer.source.ItemSourceManager
 import lavaplayer.tools.DataFormatTools
 import lavaplayer.tools.ExceptionTools
 import lavaplayer.tools.FriendlyException
+import lavaplayer.tools.extensions.decodeJson
 import lavaplayer.tools.io.*
-import lavaplayer.tools.json.JsonBrowser
-import lavaplayer.tools.json.JsonBrowser.Companion.parse
 import lavaplayer.track.AudioItem
 import lavaplayer.track.AudioReference
 import lavaplayer.track.AudioTrack
 import lavaplayer.track.AudioTrackInfo
 import lavaplayer.track.loader.LoaderState
-import org.apache.commons.io.IOUtils
 import org.apache.http.HttpStatus
 import org.apache.http.client.methods.HttpGet
+import org.apache.http.util.EntityUtils
 import java.io.DataInput
 import java.io.DataOutput
 import java.io.IOException
-import java.nio.charset.StandardCharsets
 import java.util.regex.Pattern
 
 /**
@@ -26,7 +24,7 @@ import java.util.regex.Pattern
  */
 class VimeoItemSourceManager : ItemSourceManager, HttpConfigurable {
     companion object {
-        private const val TRACK_URL_REGEX = "^https://vimeo.com/[0-9]+(?:\\?.*|)$"
+        private const val TRACK_URL_REGEX = """^https://vimeo.com/\d+(?:\?.*)?$"""
         private val trackUrlPattern = Pattern.compile(TRACK_URL_REGEX)
     }
 
@@ -78,49 +76,39 @@ class VimeoItemSourceManager : ItemSourceManager, HttpConfigurable {
         httpInterfaceManager.configureBuilder(configurator)
     }
 
-    @Throws(IOException::class)
-    fun loadConfigJsonFromPageContent(content: String): JsonBrowser? {
-        val configText = DataFormatTools.extractBetween(content, "window.vimeo.clip_page_config = ", "\n")
-        return if (configText != null) parse(configText) else null
+    internal fun loadConfigJsonFromPageContent(content: String): VimeoClipPage? {
+        return DataFormatTools.extractBetween(content, "window.vimeo.clip_page_config = ", "\n")
+            ?.removeSuffix(";")
+            ?.decodeJson()
     }
 
-    @Throws(IOException::class)
     private fun loadFromTrackPage(httpInterface: HttpInterface, trackUrl: String?): AudioItem {
         httpInterface.execute(HttpGet(trackUrl)).use { response ->
             val statusCode = response.statusLine.statusCode
             if (statusCode == HttpStatus.SC_NOT_FOUND) {
                 return AudioReference.NO_TRACK
             } else if (!HttpClientTools.isSuccessWithContent(statusCode)) {
-                throw FriendlyException(
-                    "Server responded with an error.", FriendlyException.Severity.SUSPICIOUS,
-                    IllegalStateException("Response code is $statusCode")
-                )
+                throw FriendlyException("Server responded with an error.", FriendlyException.Severity.SUSPICIOUS, IllegalStateException("Response code is $statusCode"))
             }
 
-            return loadTrackFromPageContent(trackUrl, IOUtils.toString(response.entity.content, StandardCharsets.UTF_8))
+            val pageContent = EntityUtils.toString(response.entity, Charsets.UTF_8)
+            return loadTrackFromPageContent(trackUrl, pageContent)
         }
     }
 
-    @Throws(IOException::class)
     private fun loadTrackFromPageContent(trackUrl: String?, content: String): AudioTrack {
         val config = loadConfigJsonFromPageContent(content)
-            ?: throw FriendlyException(
-                "Track information not found on the page.",
-                FriendlyException.Severity.SUSPICIOUS,
-                null
-            )
+            ?: throw FriendlyException("Track information not found on the page.", FriendlyException.Severity.SUSPICIOUS, null)
 
-        return VimeoAudioTrack(
-            AudioTrackInfo(
-                config["clip"]["title"].text!!,
-                config["owner"]["display_name"].text!!,
-                (config["clip"]["duration"]["raw"].cast<Double>() * 1000.0).toLong(),
-                trackUrl!!,
-                trackUrl,
-                config["thumbnail"]["src"].text,
-                false
-            ), this
+        val info = AudioTrackInfo(
+            title = config.clip.title,
+            author = config.owner.displayName,
+            length = (config.clip.duration.raw * 1000.0).toLong(),
+            identifier = trackUrl!!,
+            uri = trackUrl,
+            artworkUrl = config.thumbnail.src
         )
-    }
 
+        return VimeoAudioTrack(info, this)
+    }
 }

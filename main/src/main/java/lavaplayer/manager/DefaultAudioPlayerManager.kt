@@ -160,22 +160,18 @@ open class DefaultAudioPlayerManager : DefaultTrackEncoder(), AudioPlayerManager
     override fun setHttpRequestConfigurator(configurator: RequestConfigurator?) {
         httpConfigurator = configurator
         if (configurator != null) {
-            for (sourceManager in sourceManagers) {
-                if (sourceManager is HttpConfigurable) {
-                    (sourceManager as HttpConfigurable).configureRequests(configurator)
-                }
-            }
+            sourceManagers
+                .filterIsInstance<HttpConfigurable>()
+                .forEach { it.configureRequests(configurator) }
         }
     }
 
     override fun setHttpBuilderConfigurator(configurator: BuilderConfigurator?) {
         httpBuilderConfigurator = configurator
         if (configurator != null) {
-            for (sourceManager in sourceManagers) {
-                if (sourceManager is HttpConfigurable) {
-                    (sourceManager as HttpConfigurable).configureBuilder(configurator)
-                }
-            }
+            sourceManagers
+                .filterIsInstance<HttpConfigurable>()
+                .forEach { it.configureBuilder(configurator) }
         }
     }
 
