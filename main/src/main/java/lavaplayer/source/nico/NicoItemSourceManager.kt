@@ -1,5 +1,6 @@
 package lavaplayer.source.nico
 
+import kotlinx.atomicfu.atomic
 import lavaplayer.source.ItemSourceManager
 import lavaplayer.tools.DataFormatTools
 import lavaplayer.tools.FriendlyException
@@ -18,7 +19,6 @@ import org.jsoup.parser.Parser
 import java.io.DataInput
 import java.io.IOException
 import java.nio.charset.StandardCharsets
-import java.util.concurrent.atomic.AtomicBoolean
 import java.util.regex.Pattern
 
 /**
@@ -33,7 +33,7 @@ class NicoItemSourceManager(private val email: String, private val password: Str
     }
 
     private val httpInterfaceManager = HttpClientTools.createDefaultThreadLocalManager()
-    private val loggedIn = AtomicBoolean()
+    private var loggedIn by atomic(false)
 
     override val sourceName: String =
         "niconico"
@@ -45,7 +45,7 @@ class NicoItemSourceManager(private val email: String, private val password: Str
         get() = httpInterfaceManager.get()
 
     fun checkLoggedIn() = synchronized(loggedIn) {
-        if (loggedIn.get()) {
+        if (loggedIn) {
             return
         }
 
@@ -69,7 +69,7 @@ class NicoItemSourceManager(private val email: String, private val password: Str
                         )
                     }
 
-                    loggedIn.set(true)
+                    loggedIn = true
                 }
             }
         } catch (e: IOException) {

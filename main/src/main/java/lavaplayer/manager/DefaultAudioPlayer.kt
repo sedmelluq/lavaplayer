@@ -1,5 +1,6 @@
 package lavaplayer.manager
 
+import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
@@ -21,7 +22,6 @@ import lavaplayer.track.playback.LocalAudioTrackExecutor
 import lavaplayer.track.playback.MutableAudioFrame
 import mu.KotlinLogging
 import java.util.concurrent.TimeUnit
-import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.coroutines.CoroutineContext
 
 /**
@@ -37,13 +37,13 @@ class DefaultAudioPlayer(private val manager: DefaultAudioPlayerManager) : Audio
         get() = Dispatchers.IO + manager.coroutineContext
 
     override var volume: Int
-        get() = resources.volumeLevel.get()
+        get() = resources.volumeLevel
         set(value) {
-            resources.volumeLevel.set(1000.coerceAtMost(0.coerceAtLeast(value)))
+            resources.volumeLevel = 1000.coerceAtMost(0.coerceAtLeast(value))
         }
 
     override var isPaused: Boolean
-        get() = paused.get()
+        get() = paused.value
         set(value) {
             if (paused.compareAndSet(!value, value)) {
                 if (value) {
@@ -61,7 +61,7 @@ class DefaultAudioPlayer(private val manager: DefaultAudioPlayerManager) : Audio
     override val events: SharedFlow<AudioEvent>
         get() = eventFlow
 
-    private val paused = AtomicBoolean()
+    private val paused = atomic(false)
     private val trackSwitchLock = Any()
     private val resources = AudioPlayerResources()
     private val eventFlow = MutableSharedFlow<AudioEvent>(extraBufferCapacity = 1)
@@ -141,7 +141,7 @@ class DefaultAudioPlayer(private val manager: DefaultAudioPlayerManager) : Audio
         lateinit var track: InternalAudioTrack
 
         lastRequestTime = System.currentTimeMillis()
-        if (timeout == 0L && paused.get()) {
+        if (timeout == 0L && isPaused) {
             return null
         }
 
@@ -179,7 +179,7 @@ class DefaultAudioPlayer(private val manager: DefaultAudioPlayerManager) : Audio
         lateinit var track: InternalAudioTrack
 
         lastRequestTime = System.currentTimeMillis()
-        if (timeout == 0L && paused.get()) {
+        if (timeout == 0L && isPaused) {
             return false
         }
 
@@ -206,11 +206,11 @@ class DefaultAudioPlayer(private val manager: DefaultAudioPlayerManager) : Audio
     }
 
     override fun setFilterFactory(factory: PcmFilterFactory?) {
-        resources.filterFactory.set(factory)
+        resources.filterFactory = factory
     }
 
-    override fun setFrameBufferDuration(duration: Int?) {
-        resources.frameBufferDuration.set(duration?.let { 200.coerceAtLeast(it) })
+    override fun setFrameBufferDuration(duration: Int) {
+        resources.frameBufferDuration = duration.let { 200.coerceAtLeast(it) }
     }
 
     /**

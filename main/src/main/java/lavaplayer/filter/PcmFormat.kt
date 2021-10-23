@@ -3,8 +3,8 @@ package lavaplayer.filter
 /**
  * Describes the properties of PCM data.
  *
- * @param channelCount See [.channelCount].
- * @param sampleRate   See [.sampleRate].
+ * @param channelCount See [channelCount].
+ * @param sampleRate   See [sampleRate].
  */
 data class PcmFormat(
     /**

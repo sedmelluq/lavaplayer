@@ -1,76 +1,73 @@
-package lavaplayer.track.playback;
+package lavaplayer.track.playback
 
-import lavaplayer.format.AudioDataFormat;
+import lavaplayer.format.AudioDataFormat
+import lavaplayer.tools.extensions.wait
 
 /**
  * Common parts of a frame buffer which are not likely to depend on the specific implementation.
  */
-public abstract class AbstractAudioFrameBuffer implements AudioFrameBuffer {
-    protected final AudioDataFormat format;
-    protected final Object synchronizer;
-    protected volatile boolean locked;
-    protected volatile boolean receivedFrames;
-    protected boolean terminated;
-    protected boolean terminateOnEmpty;
-    protected boolean clearOnInsert;
+abstract class AbstractAudioFrameBuffer protected constructor(protected val format: AudioDataFormat) : AudioFrameBuffer {
+    @JvmField
+    protected val synchronizer: Any = Any()
 
-    protected AbstractAudioFrameBuffer(AudioDataFormat format) {
-        this.format = format;
-        this.synchronizer = new Object();
-        locked = false;
-        receivedFrames = false;
-        terminated = false;
-        terminateOnEmpty = false;
-        clearOnInsert = false;
-    }
+    @JvmField
+    @Volatile
+    protected var locked: Boolean = false
 
-    @Override
-    public void waitForTermination() throws InterruptedException {
-        synchronized (synchronizer) {
+    @JvmField
+    @Volatile
+    protected var receivedFrames: Boolean = false
+
+    @JvmField
+    protected var terminated: Boolean = false
+
+    @JvmField
+    protected var terminateOnEmpty: Boolean = false
+
+    @JvmField
+    protected var clearOnInsert: Boolean = false
+
+    @Throws(InterruptedException::class)
+    override fun waitForTermination() {
+        synchronized(synchronizer) {
             while (!terminated) {
-                synchronizer.wait();
+                synchronizer.wait()
             }
         }
     }
 
-    @Override
-    public void setTerminateOnEmpty() {
-        synchronized (synchronizer) {
-            // Count this also as inserting the terminator frame, hence trigger clearOnInsert
+    override fun setTerminateOnEmpty() {
+        synchronized(synchronizer) {
             if (clearOnInsert) {
-                clear();
-                clearOnInsert = false;
+                clear()
+                clearOnInsert = false
             }
 
             if (!terminated) {
-                terminateOnEmpty = true;
-                signalWaiters();
+                terminateOnEmpty = true
+                signalWaiters()
             }
         }
     }
 
-    @Override
-    public void setClearOnInsert() {
-        synchronized (synchronizer) {
-            clearOnInsert = true;
-            terminateOnEmpty = false;
+    override fun setClearOnInsert() {
+        synchronized(synchronizer) {
+            clearOnInsert = true
+            terminateOnEmpty = false
         }
     }
 
-    @Override
-    public boolean hasClearOnInsert() {
-        return clearOnInsert;
+    override fun hasClearOnInsert(): Boolean {
+        return clearOnInsert
     }
 
-    @Override
-    public void lockBuffer() {
-        locked = true;
+    override fun lockBuffer() {
+        locked = true
     }
 
-    @Override
-    public boolean hasReceivedFrames() {
-        return receivedFrames;
+    override fun hasReceivedFrames(): Boolean {
+        return receivedFrames
     }
 
-    protected abstract void signalWaiters();
+    protected abstract fun signalWaiters()
 }

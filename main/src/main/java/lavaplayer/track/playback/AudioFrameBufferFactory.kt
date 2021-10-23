@@ -1,8 +1,7 @@
 package lavaplayer.track.playback
 
+import kotlinx.atomicfu.AtomicBoolean
 import lavaplayer.format.AudioDataFormat
-
-import java.util.concurrent.atomic.AtomicBoolean
 
 /**
  * Factory for audio frame buffers.

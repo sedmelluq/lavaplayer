@@ -3,7 +3,7 @@ package lavaplayer.track.playback
 import lavaplayer.format.AudioDataFormat
 
 /**
- * Audio frame where [.isTerminator] is `true`.
+ * Audio frame where [isTerminator] is `true`.
  */
 open class TerminatorAudioFrame : AudioFrame {
     companion object INSTANCE : TerminatorAudioFrame()

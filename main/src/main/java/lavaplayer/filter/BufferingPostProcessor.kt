@@ -26,7 +26,7 @@ class BufferingPostProcessor(private val context: AudioProcessingContext, privat
         outputBuffer.clear()
         encoder.encode(buffer, outputBuffer)
         offeredFrame.timecode = timecode
-        offeredFrame.volume = context.playerOptions.volumeLevel.get()
+        offeredFrame.volume = context.playerOptions.volumeLevel
         offeredFrame.setBuffer(outputBuffer)
         context.frameBuffer.consume(offeredFrame)
     }

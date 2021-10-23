@@ -1,29 +1,28 @@
-package lavaplayer.natives.aac;
+package lavaplayer.natives.aac
 
-import lavaplayer.natives.ConnectorNativeLibLoader;
+import lavaplayer.natives.ConnectorNativeLibLoader.loadConnectorLibrary
+import java.nio.ByteBuffer
+import java.nio.ShortBuffer
 
-import java.nio.ByteBuffer;
-import java.nio.ShortBuffer;
+internal class AacDecoderLibrary private constructor() {
+    external fun create(transportType: Int): Long
 
-class AacDecoderLibrary {
-    private AacDecoderLibrary() {
+    external fun destroy(instance: Long)
 
+    external fun configure(instance: Long, bufferData: Long): Int
+
+    external fun fill(instance: Long, directBuffer: ByteBuffer?, offset: Int, length: Int): Int
+
+    external fun decode(instance: Long, directBuffer: ShortBuffer?, length: Int, flush: Boolean): Int
+
+    external fun getStreamInfo(instance: Long): Long
+
+    companion object {
+        @kotlin.jvm.JvmStatic
+        val instance: AacDecoderLibrary
+            get() {
+                loadConnectorLibrary()
+                return AacDecoderLibrary()
+            }
     }
-
-    static AacDecoderLibrary getInstance() {
-        ConnectorNativeLibLoader.loadConnectorLibrary();
-        return new AacDecoderLibrary();
-    }
-
-    native long create(int transportType);
-
-    native void destroy(long instance);
-
-    native int configure(long instance, long bufferData);
-
-    native int fill(long instance, ByteBuffer directBuffer, int offset, int length);
-
-    native int decode(long instance, ShortBuffer directBuffer, int length, boolean flush);
-
-    native long getStreamInfo(long instance);
 }

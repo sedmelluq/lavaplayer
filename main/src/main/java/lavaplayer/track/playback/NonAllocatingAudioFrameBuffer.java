@@ -73,9 +73,7 @@ public class NonAllocatingAudioFrameBuffer extends AbstractAudioFrameBuffer {
 
             int bufferHead = frames[firstFrame].getFrameOffset();
             int bufferTail = frames[lastFrame].getFrameEndOffset();
-
-            int maximumFrameSize = format.getMaximumChunkSize();
-
+            int maximumFrameSize = getFormat().getMaximumChunkSize();
             if (bufferHead < bufferTail) {
                 return (frameBuffer.length - bufferTail) / maximumFrameSize + bufferHead / maximumFrameSize;
             } else {
@@ -295,7 +293,7 @@ public class NonAllocatingAudioFrameBuffer extends AbstractAudioFrameBuffer {
     private MutableAudioFrame getBridgeFrame() {
         if (bridgeFrame == null) {
             bridgeFrame = new MutableAudioFrame();
-            bridgeFrame.setBuffer(ByteBuffer.allocate(format.getMaximumChunkSize()));
+            bridgeFrame.setBuffer(ByteBuffer.allocate(getFormat().getMaximumChunkSize()));
         }
 
         return bridgeFrame;

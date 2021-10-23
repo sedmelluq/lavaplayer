@@ -12,7 +12,7 @@ class MutableAudioFrame : AbstractMutableAudioFrame() {
     override val data: ByteArray
         get() {
             val data = ByteArray(dataLength)
-            getData(data, 0)
+            this[data, 0]
             return data
         }
 

@@ -1,21 +1,23 @@
 package lavaplayer.track.playback;
 
+import kotlinx.atomicfu.AtomicBoolean;
+import kotlinx.atomicfu.AtomicLong;
 import lavaplayer.format.AudioDataFormat;
 import lavaplayer.manager.AudioConfiguration;
 import lavaplayer.manager.AudioPlayerResources;
 import lavaplayer.tools.ExceptionTools;
 import lavaplayer.tools.FriendlyException;
 import lavaplayer.track.*;
+import mu.KotlinLogging;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.InterruptedIOException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static kotlinx.atomicfu.AtomicFU.atomic;
 import static lavaplayer.tools.ExceptionTools.findDeepException;
 import static lavaplayer.tools.FriendlyException.Severity.FAULT;
 import static lavaplayer.tools.FriendlyException.Severity.SUSPICIOUS;
@@ -26,16 +28,16 @@ import static lavaplayer.track.TrackMarkerHandler.MarkerState.STOPPED;
  * Handles the execution and output buffering of an audio track.
  */
 public class LocalAudioTrackExecutor implements AudioTrackExecutor {
-    private static final Logger log = LoggerFactory.getLogger(LocalAudioTrackExecutor.class);
+    private static final Logger log = KotlinLogging.INSTANCE.logger(() -> null);
 
     private final InternalAudioTrack audioTrack;
     private final AudioProcessingContext processingContext;
     private final boolean useSeekGhosting;
     private final AudioFrameBuffer frameBuffer;
     private final AtomicReference<Thread> playingThread = new AtomicReference<>();
-    private final AtomicBoolean queuedStop = new AtomicBoolean(false);
-    private final AtomicLong queuedSeek = new AtomicLong(-1);
-    private final AtomicLong lastFrameTimecode = new AtomicLong(0);
+    private final AtomicBoolean queuedStop = atomic(false);
+    private final AtomicLong queuedSeek = atomic(-1L);
+    private final AtomicLong lastFrameTimecode = atomic(0L);
     private final AtomicReference<AudioTrackState> state = new AtomicReference<>(AudioTrackState.INACTIVE);
     private final Object actionSynchronizer = new Object();
     private final TrackMarkerManager markerTracker = new TrackMarkerManager();
@@ -167,7 +169,7 @@ public class LocalAudioTrackExecutor implements AudioTrackExecutor {
 
     /**
      * Wait until all the frames from the frame buffer have been consumed. Keeps the buffering thread alive to keep it
-     * interruptible for seeking until buffer is empty.
+     * interruptable for seeking until buffer is empty.
      *
      * @throws InterruptedException When interrupted externally (or for seek/stop).
      */
@@ -196,8 +198,8 @@ public class LocalAudioTrackExecutor implements AudioTrackExecutor {
 
     @Override
     public long getPosition() {
-        long seek = queuedSeek.get();
-        return seek != -1 ? seek : lastFrameTimecode.get();
+        long seek = queuedSeek.getValue();
+        return seek != -1 ? seek : lastFrameTimecode.getValue();
     }
 
     @Override
@@ -211,7 +213,7 @@ public class LocalAudioTrackExecutor implements AudioTrackExecutor {
                 timecode = 0;
             }
 
-            queuedSeek.set(timecode);
+            queuedSeek.setValue(timecode);
 
             if (!useSeekGhosting) {
                 frameBuffer.clear();
@@ -230,7 +232,7 @@ public class LocalAudioTrackExecutor implements AudioTrackExecutor {
      * @return True if this track is currently in the middle of a seek.
      */
     private boolean isPerformingSeek() {
-        return queuedSeek.get() != -1 || (useSeekGhosting && frameBuffer.hasClearOnInsert());
+        return queuedSeek.getValue() != -1 || (useSeekGhosting && frameBuffer.hasClearOnInsert());
     }
 
     @Override
@@ -331,7 +333,6 @@ public class LocalAudioTrackExecutor implements AudioTrackExecutor {
         }
 
         SeekResult seekResult = checkPendingSeek(seekExecutor);
-
         if (seekResult != SeekResult.NO_SEEK) {
             // Double-check, might have received a stop request while seeking
             if (checkStopped()) {
@@ -380,8 +381,7 @@ public class LocalAudioTrackExecutor implements AudioTrackExecutor {
         long seekPosition;
 
         synchronized (actionSynchronizer) {
-            seekPosition = queuedSeek.get();
-
+            seekPosition = queuedSeek.getValue();
             if (seekPosition == -1) {
                 return SeekResult.NO_SEEK;
             }
@@ -416,7 +416,7 @@ public class LocalAudioTrackExecutor implements AudioTrackExecutor {
             frameBuffer.clear();
         }
 
-        queuedSeek.set(-1);
+        queuedSeek.setValue(-1);
         markerTracker.checkSeekTimecode(seekPosition);
     }
 
@@ -428,14 +428,14 @@ public class LocalAudioTrackExecutor implements AudioTrackExecutor {
     }
 
     @Override
-    public AudioFrame provide(long timeout, TimeUnit unit) throws TimeoutException, InterruptedException {
+    public AudioFrame provide(long timeout, @NotNull TimeUnit unit) throws TimeoutException, InterruptedException {
         AudioFrame frame = frameBuffer.provide(timeout, unit);
         processProvidedFrame(frame);
         return frame;
     }
 
     @Override
-    public boolean provide(MutableAudioFrame targetFrame) {
+    public boolean provide(@NotNull MutableAudioFrame targetFrame) {
         if (frameBuffer.provide(targetFrame)) {
             processProvidedFrame(targetFrame);
             return true;
@@ -445,7 +445,7 @@ public class LocalAudioTrackExecutor implements AudioTrackExecutor {
     }
 
     @Override
-    public boolean provide(MutableAudioFrame targetFrame, long timeout, TimeUnit unit)
+    public boolean provide(@NotNull MutableAudioFrame targetFrame, long timeout, @NotNull TimeUnit unit)
         throws TimeoutException, InterruptedException {
 
         if (frameBuffer.provide(targetFrame, timeout, unit)) {
@@ -462,7 +462,7 @@ public class LocalAudioTrackExecutor implements AudioTrackExecutor {
                 markerTracker.checkPlaybackTimecode(frame.getTimecode());
             }
 
-            lastFrameTimecode.set(frame.getTimecode());
+            lastFrameTimecode.setValue(frame.getTimecode());
         }
     }
 

@@ -1,6 +1,7 @@
 package lavaplayer.filter.converter;
 
 import lavaplayer.filter.FloatPcmAudioFilter;
+import org.jetbrains.annotations.NotNull;
 
 import java.nio.ShortBuffer;
 
@@ -19,11 +20,7 @@ public class ToFloatAudioFilter extends ConverterAudioFilter {
     public ToFloatAudioFilter(FloatPcmAudioFilter downstream, int channelCount) {
         this.downstream = downstream;
         this.channelCount = channelCount;
-        this.buffers = new float[channelCount][];
-
-        for (int i = 0; i < channelCount; i++) {
-            this.buffers[i] = new float[BUFFER_SIZE];
-        }
+        this.buffers = new float[channelCount][BUFFER_SIZE];
     }
 
     private static float shortToFloat(short value) {
@@ -31,17 +28,15 @@ public class ToFloatAudioFilter extends ConverterAudioFilter {
     }
 
     @Override
-    public void process(float[][] input, int offset, int length) throws InterruptedException {
+    public void process(@NotNull float[][] input, int offset, int length) throws InterruptedException {
         downstream.process(input, offset, length);
     }
 
     @Override
-    public void process(short[] input, int offset, int length) throws InterruptedException {
+    public void process(@NotNull short[] input, int offset, int length) throws InterruptedException {
         int end = offset + length;
-
         while (end - offset >= channelCount) {
             int chunkLength = Math.min((end - offset) / channelCount, BUFFER_SIZE);
-
             for (int chunkPosition = 0; chunkPosition < chunkLength; chunkPosition++) {
                 for (int channel = 0; channel < channelCount; channel++) {
                     buffers[channel][chunkPosition] = shortToFloat(input[offset++]);
@@ -56,7 +51,6 @@ public class ToFloatAudioFilter extends ConverterAudioFilter {
     public void process(ShortBuffer buffer) throws InterruptedException {
         while (buffer.hasRemaining()) {
             int chunkLength = Math.min(buffer.remaining() / channelCount, BUFFER_SIZE);
-
             if (chunkLength == 0) {
                 break;
             }
@@ -72,12 +66,10 @@ public class ToFloatAudioFilter extends ConverterAudioFilter {
     }
 
     @Override
-    public void process(short[][] input, int offset, int length) throws InterruptedException {
+    public void process(@NotNull short[][] input, int offset, int length) throws InterruptedException {
         int end = offset + length;
-
         while (offset < end) {
             int chunkLength = Math.min(end - offset, BUFFER_SIZE);
-
             for (int channel = 0; channel < buffers.length; channel++) {
                 for (int chunkPosition = 0; chunkPosition < chunkLength; chunkPosition++) {
                     buffers[channel][chunkPosition] = shortToFloat(input[channel][offset + chunkPosition]);

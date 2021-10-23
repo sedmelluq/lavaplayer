@@ -18,8 +18,8 @@ public class AudioPipelineFactory {
      * @return True if no audio processing is currently required with this context and input format combination.
      */
     public static boolean isProcessingRequired(AudioProcessingContext context, AudioDataFormat inputFormat) {
-        return !context.outputFormat.equals(inputFormat) || context.playerOptions.volumeLevel.get() != 100 ||
-            context.playerOptions.filterFactory.get() != null;
+        return !context.outputFormat.equals(inputFormat) || context.playerOptions.getVolumeLevel() != 100 ||
+            context.playerOptions.getFilterFactory() != null;
     }
 
     /**
@@ -37,7 +37,7 @@ public class AudioPipelineFactory {
         FilterChainBuilder builder = new FilterChainBuilder();
         builder.addFirst(end);
 
-        if (context.filterHotSwapEnabled || context.playerOptions.filterFactory.get() != null) {
+        if (context.isFilterHotSwapEnabled() || context.playerOptions.getFilterFactory() != null) {
             UserProvidedAudioFilters userFilters = new UserProvidedAudioFilters(context, end);
             builder.addFirst(userFilters);
         }

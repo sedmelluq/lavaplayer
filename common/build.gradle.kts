@@ -1,10 +1,12 @@
 plugins {
     `java-library`
     `maven-publish`
+
+    id("kotlinx-atomicfu")
 }
 
 val moduleName = "lava-common"
-version = "1.1.5"
+version = "1.1.6"
 
 dependencies {
     implementation("io.github.microutils:kotlin-logging:2.0.11")

@@ -1,5 +1,6 @@
 package lavaplayer.manager
 
+import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.cancel
 import lavaplayer.common.tools.DaemonThreadFactory
 import lavaplayer.common.tools.ExecutorTools
@@ -18,7 +19,6 @@ import lavaplayer.track.playback.AudioTrackExecutor
 import lavaplayer.track.playback.LocalAudioTrackExecutor
 import java.util.*
 import java.util.concurrent.*
-import java.util.concurrent.atomic.AtomicLong
 import java.util.function.Consumer
 
 /**
@@ -34,7 +34,7 @@ open class DefaultAudioPlayerManager : DefaultTrackEncoder(), AudioPlayerManager
     private val trackPlaybackExecutorService: ExecutorService =
         ThreadPoolExecutor(1, Int.MAX_VALUE, 10, TimeUnit.SECONDS, SynchronousQueue(), DaemonThreadFactory("playback"))
     private val scheduledExecutorService = Executors.newScheduledThreadPool(1, DaemonThreadFactory("manager"))
-    private val cleanupThreshold = AtomicLong(DEFAULT_CLEANUP_THRESHOLD)
+    private val cleanupThreshold = atomic(DEFAULT_CLEANUP_THRESHOLD)
 
     // Additional services
     private val garbageCollectionMonitor = GarbageCollectionMonitor(scheduledExecutorService)
@@ -133,8 +133,7 @@ open class DefaultAudioPlayerManager : DefaultTrackEncoder(), AudioPlayerManager
         return if (customExecutor != null) {
             customExecutor
         } else {
-            val bufferDuration =
-                Optional.ofNullable(playerOptions.frameBufferDuration.get()).orElse(frameBufferDuration)
+            val bufferDuration = Optional.ofNullable(playerOptions.frameBufferDuration).orElse(frameBufferDuration)
             LocalAudioTrackExecutor(track, configuration, playerOptions, isUsingSeekGhosting, bufferDuration)
         }
     }
@@ -148,7 +147,7 @@ open class DefaultAudioPlayerManager : DefaultTrackEncoder(), AudioPlayerManager
     }
 
     override fun setPlayerCleanupThreshold(cleanupThreshold: Long) {
-        this.cleanupThreshold.set(cleanupThreshold)
+        this.cleanupThreshold.value = cleanupThreshold
     }
 
     override fun createPlayer(): AudioPlayer {

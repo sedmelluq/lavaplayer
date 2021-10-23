@@ -1,6 +1,7 @@
 package lavaplayer.filter.converter;
 
 import lavaplayer.filter.ShortPcmAudioFilter;
+import org.jetbrains.annotations.NotNull;
 
 import java.nio.ShortBuffer;
 
@@ -23,7 +24,7 @@ public class ToShortAudioFilter extends ConverterAudioFilter {
     }
 
     @Override
-    public void process(float[][] input, int offset, int length) throws InterruptedException {
+    public void process(@NotNull float[][] input, int offset, int length) throws InterruptedException {
         int end = offset + length;
 
         while (offset < end) {
@@ -42,17 +43,17 @@ public class ToShortAudioFilter extends ConverterAudioFilter {
     }
 
     @Override
-    public void process(short[] input, int offset, int length) throws InterruptedException {
+    public void process(@NotNull short[] input, int offset, int length) throws InterruptedException {
         downstream.process(input, offset, length);
     }
 
     @Override
-    public void process(ShortBuffer buffer) throws InterruptedException {
+    public void process(@NotNull ShortBuffer buffer) throws InterruptedException {
         downstream.process(buffer);
     }
 
     @Override
-    public void process(short[][] input, int offset, int length) throws InterruptedException {
+    public void process(@NotNull short[][] input, int offset, int length) throws InterruptedException {
         int end = offset + length;
 
         while (offset < end) {

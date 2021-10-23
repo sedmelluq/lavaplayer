@@ -6,7 +6,7 @@ import lavaplayer.demo.controller.BotController;
 import lavaplayer.demo.controller.BotControllerManager;
 import lavaplayer.demo.music.MusicController;
 import lavaplayer.filter.ResamplingPcmAudioFilter;
-import lavaplayer.manager.AudioConfiguration;
+import lavaplayer.filter.ResamplingQuality;
 import lavaplayer.manager.AudioPlayerManager;
 import lavaplayer.manager.DefaultAudioPlayerManager;
 import lavaplayer.natives.samplerate.SampleRateConverter;
@@ -40,10 +40,10 @@ public class BotApplicationManager extends ListenerAdapter {
 
         controllerManager.registerController(new MusicController.Factory());
 
-        ResamplingPcmAudioFilter.RESAMPLING_VALUES.replace(AudioConfiguration.ResamplingQuality.HIGH, SampleRateConverter.ResamplingType.SINC_BEST_QUALITY);
+        ResamplingPcmAudioFilter.RESAMPLING_VALUES.replace(ResamplingQuality.HIGH, SampleRateConverter.ResamplingType.SINC_BEST_QUALITY);
 
         playerManager = new DefaultAudioPlayerManager();
-        playerManager.getConfiguration().setResamplingQuality(AudioConfiguration.ResamplingQuality.HIGH);
+        playerManager.getConfiguration().setResamplingQuality(ResamplingQuality.HIGH);
         SourceRegistry.registerRemoteSources(playerManager);
         executorService = Executors.newScheduledThreadPool(1, new DaemonThreadFactory("bot"));
     }

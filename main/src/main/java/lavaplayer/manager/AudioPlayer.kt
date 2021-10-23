@@ -1,11 +1,14 @@
 package lavaplayer.manager
 
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.channels.Channel.Factory.UNLIMITED
+import kotlinx.coroutines.flow.*
 import lavaplayer.filter.PcmFilterFactory
 import lavaplayer.manager.event.AudioEvent
 import lavaplayer.track.AudioTrack
 import lavaplayer.track.playback.AudioFrameProvider
+import mu.KotlinLogging
 
 /**
  * An audio player that is capable of playing audio tracks and provides audio frames from the currently playing track.
@@ -56,7 +59,7 @@ interface AudioPlayer : AudioFrameProvider, CoroutineScope {
     /**
      * Sets the frame buffer duration for this player.
      */
-    fun setFrameBufferDuration(duration: Int?)
+    fun setFrameBufferDuration(duration: Int)
 
     /**
      * Destroy the player and stop playing track.
@@ -69,4 +72,22 @@ interface AudioPlayer : AudioFrameProvider, CoroutineScope {
      * @param threshold Threshold in milliseconds to use
      */
     fun checkCleanup(threshold: Long)
+}
+
+@PublishedApi
+internal val playerOnLogger = KotlinLogging.logger("AudioPlayer.on")
+
+/**
+ *
+ */
+suspend inline fun <reified T : AudioEvent> AudioPlayer.on(scope: CoroutineScope = this, noinline block: suspend T.() -> Unit): Job {
+    return events
+        .buffer(UNLIMITED)
+        .filterIsInstance<T>()
+        .onEach { event ->
+            event
+                .runCatching { block() }
+                .onFailure { playerOnLogger.error(it) { "[${T::class.simpleName}]" } }
+        }
+        .launchIn(scope)
 }

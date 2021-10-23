@@ -1,5 +1,7 @@
 package lavaplayer.manager
 
+import kotlinx.atomicfu.AtomicLong
+import kotlinx.atomicfu.atomic
 import lavaplayer.manager.event.AudioEvent
 import lavaplayer.manager.event.AudioEventListener
 import lavaplayer.manager.event.TrackEndEvent
@@ -8,8 +10,6 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.TimeUnit
-import java.util.concurrent.atomic.AtomicLong
-import java.util.concurrent.atomic.AtomicReference
 
 /**
  * Triggers cleanup checks on all active audio players at a fixed interval.
@@ -26,7 +26,7 @@ class AudioPlayerLifecycleManager(
     }
 
     private val activePlayers = ConcurrentHashMap<AudioPlayer, AudioPlayer>()
-    private val scheduledTask = AtomicReference<ScheduledFuture<*>>()
+    private val scheduledTask = atomic<ScheduledFuture<*>?>(null)
 
     /**
      * Initialise the scheduled task.
@@ -54,7 +54,7 @@ class AudioPlayerLifecycleManager(
 
     override fun run() {
         for (player in activePlayers.keys) {
-            player.checkCleanup(cleanupThreshold.get())
+            player.checkCleanup(cleanupThreshold.value)
         }
     }
 }

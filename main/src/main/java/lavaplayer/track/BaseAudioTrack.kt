@@ -1,5 +1,6 @@
 package lavaplayer.track
 
+import kotlinx.atomicfu.atomic
 import lavaplayer.manager.AudioPlayerManager
 import lavaplayer.source.ItemSourceManager
 import lavaplayer.track.playback.AudioFrame
@@ -8,8 +9,6 @@ import lavaplayer.track.playback.MutableAudioFrame
 import lavaplayer.track.playback.PrimordialAudioTrackExecutor
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException
-import java.util.concurrent.atomic.AtomicBoolean
-import java.util.concurrent.atomic.AtomicLong
 
 /**
  * Abstract base for all audio tracks with an executor
@@ -18,10 +17,10 @@ import java.util.concurrent.atomic.AtomicLong
  */
 abstract class BaseAudioTrack(final override val info: AudioTrackInfo) : InternalAudioTrack {
     @JvmField
-    protected val accurateDuration = AtomicLong()
+    protected val accurateDuration = atomic(0L)
 
     private val initialExecutor = PrimordialAudioTrackExecutor(info)
-    private val executorAssigned = AtomicBoolean()
+    private val executorAssigned = atomic(false)
 
     @Volatile
     private var _activeExecutor: AudioTrackExecutor? = null
@@ -35,7 +34,7 @@ abstract class BaseAudioTrack(final override val info: AudioTrackInfo) : Interna
     override val sourceManager: ItemSourceManager?
         get() = null
 
-    override val state: AudioTrackState
+    override val state: AudioTrackState?
         get() = activeExecutor.state
 
     override val identifier: String
@@ -52,12 +51,12 @@ abstract class BaseAudioTrack(final override val info: AudioTrackInfo) : Interna
 
     override val duration: Long
         get() {
-            val accurate = accurateDuration.get()
+            val accurate = accurateDuration.value
             return if (accurate == 0L) info.length else accurate
         }
 
     override fun assignExecutor(executor: AudioTrackExecutor?, applyPrimordialState: Boolean) {
-        _activeExecutor = if (executorAssigned.compareAndSet(false, true)) {
+        _activeExecutor = if (executorAssigned.compareAndSet(expect = false, update = true)) {
             if (applyPrimordialState) {
                 initialExecutor.applyStateToExecutor(executor)
             }

@@ -8,8 +8,11 @@ import lavaplayer.format.AudioDataFormat
  */
 abstract class AbstractMutableAudioFrame : AudioFrame {
     override var timecode: Long = 0
-    override var volume = 0
-    override var isTerminator = false
+
+    override var volume: Int = 0
+
+    override var isTerminator: Boolean = false
+
     override var format: AudioDataFormat? = null
 
     /**

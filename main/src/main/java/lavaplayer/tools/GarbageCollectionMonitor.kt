@@ -1,13 +1,12 @@
 package lavaplayer.tools
 
 import com.sun.management.GarbageCollectionNotificationInfo
+import kotlinx.atomicfu.atomic
 import mu.KotlinLogging
 import java.lang.management.ManagementFactory
 import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.TimeUnit
-import java.util.concurrent.atomic.AtomicBoolean
-import java.util.concurrent.atomic.AtomicReference
 import javax.management.ListenerNotFoundException
 import javax.management.Notification
 import javax.management.NotificationEmitter
@@ -18,8 +17,7 @@ import javax.management.openmbean.CompositeData
  * Garbage collection monitor which records all GC pause lengths and logs them. In case the GC pause statistics are
  * considered bad for latency, the statistics are logged at a warning level.
  */
-class GarbageCollectionMonitor(private val reportingExecutor: ScheduledExecutorService) : NotificationListener,
-    Runnable {
+class GarbageCollectionMonitor(private val reportingExecutor: ScheduledExecutorService) : NotificationListener, Runnable {
     companion object {
         private val log = KotlinLogging.logger { }
         private val REPORTING_FREQUENCY = TimeUnit.MINUTES.toMillis(2)
@@ -27,8 +25,8 @@ class GarbageCollectionMonitor(private val reportingExecutor: ScheduledExecutorS
     }
 
     private val bucketCounters = IntArray(BUCKETS.size)
-    private val enabled = AtomicBoolean()
-    private val executorFuture = AtomicReference<ScheduledFuture<*>?>()
+    private val enabled = atomic(false)
+    private var executorFuture by atomic<ScheduledFuture<*>?>(null)
 
     /**
      * Enable GC monitoring and reporting.
@@ -36,13 +34,11 @@ class GarbageCollectionMonitor(private val reportingExecutor: ScheduledExecutorS
     fun enable() {
         if (enabled.compareAndSet(false, true)) {
             registerBeanListener()
-            executorFuture.set(
-                reportingExecutor.scheduleAtFixedRate(
-                    this,
-                    REPORTING_FREQUENCY,
-                    REPORTING_FREQUENCY,
-                    TimeUnit.MILLISECONDS
-                )
+            executorFuture = reportingExecutor.scheduleAtFixedRate(
+                this,
+                REPORTING_FREQUENCY,
+                REPORTING_FREQUENCY,
+                TimeUnit.MILLISECONDS
             )
             log.info { "GC monitoring enabled, reporting results every 2 minutes." }
         }
@@ -54,7 +50,10 @@ class GarbageCollectionMonitor(private val reportingExecutor: ScheduledExecutorS
     fun disable() {
         if (enabled.compareAndSet(true, false)) {
             unregisterBeanListener()
-            executorFuture.getAndSet(null)?.cancel(false)
+
+            executorFuture?.cancel(false)
+            executorFuture = null
+
             log.info { "GC monitoring disabled." }
         }
     }

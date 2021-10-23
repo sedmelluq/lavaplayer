@@ -1,13 +1,13 @@
 package lavaplayer.track
 
+import kotlinx.atomicfu.atomic
 import lavaplayer.track.TrackMarkerHandler.MarkerState
-import java.util.concurrent.atomic.AtomicReference
 
 /**
  * Tracks the state of a track position marker.
  */
 class TrackMarkerManager {
-    private val current = AtomicReference<TrackMarker?>()
+    private val current = atomic<TrackMarker?>(null)
 
     /**
      * Set a new track position marker.
@@ -48,7 +48,7 @@ class TrackMarkerManager {
      * @param timecode Timecode which was reached by normal playback.
      */
     fun checkPlaybackTimecode(timecode: Long) {
-        val marker = current.get()
+        val marker = current.value
         if (marker != null && timecode >= marker.timecode) {
             trigger(marker, MarkerState.REACHED)
         }
@@ -60,7 +60,7 @@ class TrackMarkerManager {
      * @param timecode Timecode which was reached by seeking.
      */
     fun checkSeekTimecode(timecode: Long) {
-        val marker = current.get()
+        val marker = current.value
         if (marker != null && timecode >= marker.timecode) {
             trigger(marker, MarkerState.BYPASSED)
         }

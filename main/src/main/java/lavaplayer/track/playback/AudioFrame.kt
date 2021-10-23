@@ -32,6 +32,12 @@ interface AudioFrame {
     val data: ByteArray
 
     /**
+     * @return Whether this frame is a terminator. This is an internal concept of the player and should never be
+     * `true` in any frames received by the user.
+     */
+    val isTerminator: Boolean
+
+    /**
      * Before calling this method, the caller should verify that the data fits in the buffer using
      * [.getDataLength].
      *
@@ -39,10 +45,8 @@ interface AudioFrame {
      * @param offset Offset in the buffer to start writing at.
      */
     fun getData(buffer: ByteArray, offset: Int)
+}
 
-    /**
-     * @return Whether this frame is a terminator. This is an internal concept of the player and should never be
-     * `true` in any frames received by the user.
-     */
-    val isTerminator: Boolean
+operator fun AudioFrame.get(buffer: ByteArray, offset: Int) {
+    return getData(buffer, offset)
 }

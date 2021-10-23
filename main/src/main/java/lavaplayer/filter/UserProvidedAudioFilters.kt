@@ -1,93 +1,82 @@
-package lavaplayer.filter;
+package lavaplayer.filter
 
-import lavaplayer.track.playback.AudioProcessingContext;
-
-import java.nio.ShortBuffer;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import lavaplayer.track.playback.AudioProcessingContext
+import java.nio.ShortBuffer
 
 /**
- * An composite audio filter for filters provided by a {@link PcmFilterFactory}. Automatically rebuilds the chain
+ * A composite audio filter for filters provided by a [PcmFilterFactory]. Automatically rebuilds the chain
  * whenever the filter factory is changed.
+ *
+ * @param context    Configuration and output information for processing
+ * @param nextFilter The next filter that should be processed after this one.
  */
-public class UserProvidedAudioFilters extends CompositeAudioFilter {
-    private final AudioProcessingContext context;
-    private final UniversalPcmAudioFilter nextFilter;
-    private final boolean hotSwapEnabled;
-    private AudioFilterChain chain;
+open class UserProvidedAudioFilters(
+    private val context: AudioProcessingContext,
+    private val nextFilter: UniversalPcmAudioFilter
+) : CompositeAudioFilter() {
+    private val hotSwapEnabled: Boolean = context.filterHotSwapEnabled
+    private var chain: AudioFilterChain = buildFragment(context, nextFilter)
 
-    /**
-     * @param context    Configuration and output information for processing
-     * @param nextFilter The next filter that should be processed after this one.
-     */
-    public UserProvidedAudioFilters(AudioProcessingContext context, UniversalPcmAudioFilter nextFilter) {
-        this.context = context;
-        this.nextFilter = nextFilter;
-        this.hotSwapEnabled = context.filterHotSwapEnabled;
-        this.chain = buildFragment(context, nextFilter);
+    override val filters: List<AudioFilter>
+        protected get() = chain.filters
+
+    @Throws(InterruptedException::class)
+    override fun process(input: Array<FloatArray>, offset: Int, length: Int) {
+        checkRebuild()
+        chain.input.process(input, offset, length)
     }
 
-    private static AudioFilterChain buildFragment(AudioProcessingContext context,
-                                                  UniversalPcmAudioFilter nextFilter) {
+    @Throws(InterruptedException::class)
+    override fun process(input: ShortArray, offset: Int, length: Int) {
+        checkRebuild()
+        chain.input.process(input, offset, length)
+    }
 
-        PcmFilterFactory factory = context.playerOptions.filterFactory.get();
+    @Throws(InterruptedException::class)
+    override fun process(buffer: ShortBuffer) {
+        checkRebuild()
+        chain.input.process(buffer)
+    }
 
-        if (factory == null) {
-            return new AudioFilterChain(nextFilter, Collections.emptyList(), null);
-        } else {
-            FilterChainBuilder builder = new FilterChainBuilder();
+    @Throws(InterruptedException::class)
+    override fun process(input: Array<ShortArray>, offset: Int, length: Int) {
+        checkRebuild()
+        chain.input.process(input, offset, length)
+    }
 
-            List<AudioFilter> filters = new ArrayList<>(factory.buildChain(null, context.outputFormat, nextFilter));
-
-            if (filters.isEmpty()) {
-                return new AudioFilterChain(nextFilter, Collections.emptyList(), null);
-            }
-
-            Collections.reverse(filters);
-
-            for (AudioFilter filter : filters) {
-                builder.addFirst(filter);
-            }
-
-            return builder.build(factory, context.outputFormat.channelCount);
+    @Throws(InterruptedException::class)
+    private fun checkRebuild() {
+        if (hotSwapEnabled && context.playerOptions.filterFactory !== chain.context) {
+            flush()
+            close()
+            chain = buildFragment(context, nextFilter)
         }
     }
 
-    @Override
-    protected List<AudioFilter> getFilters() {
-        return chain.filters;
-    }
+    companion object {
+        private fun buildFragment(
+            context: AudioProcessingContext,
+            nextFilter: UniversalPcmAudioFilter
+        ): AudioFilterChain {
+            val factory = context.playerOptions.filterFactory
+                ?: return AudioFilterChain(nextFilter, emptyList(), null)
 
-    @Override
-    public void process(float[][] input, int offset, int length) throws InterruptedException {
-        checkRebuild();
-        chain.input.process(input, offset, length);
-    }
+            val filters = factory
+                .buildChain(null, context.outputFormat, nextFilter)
+                .toMutableList()
 
-    @Override
-    public void process(short[] input, int offset, int length) throws InterruptedException {
-        checkRebuild();
-        chain.input.process(input, offset, length);
-    }
+            if (filters.isEmpty()) {
+                return AudioFilterChain(nextFilter, emptyList(), null)
+            }
 
-    @Override
-    public void process(ShortBuffer buffer) throws InterruptedException {
-        checkRebuild();
-        chain.input.process(buffer);
-    }
+            filters.reverse()
 
-    @Override
-    public void process(short[][] input, int offset, int length) throws InterruptedException {
-        checkRebuild();
-        chain.input.process(input, offset, length);
-    }
+            val builder = FilterChainBuilder()
+            for (filter in filters) {
+                builder.addFirst(filter)
+            }
 
-    private void checkRebuild() throws InterruptedException {
-        if (hotSwapEnabled && context.playerOptions.filterFactory.get() != chain.context) {
-            flush();
-            close();
-            chain = buildFragment(context, nextFilter);
+            return builder.build(factory, context.outputFormat.channelCount)
         }
     }
 }

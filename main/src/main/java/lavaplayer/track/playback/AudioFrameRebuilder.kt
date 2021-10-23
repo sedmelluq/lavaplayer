@@ -5,10 +5,10 @@ package lavaplayer.track.playback
  */
 interface AudioFrameRebuilder {
     /**
-     * Rebuilds a frame (for example by reencoding)
+     * Rebuilds a frame (for example by re-encoding)
      *
      * @param frame The audio frame
-     * @return The new frame (may be the same as input)
+     * @return The new frame (might be the same as input)
      */
     fun rebuild(frame: AudioFrame): AudioFrame
 }

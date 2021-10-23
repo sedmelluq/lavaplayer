@@ -51,7 +51,7 @@ public class MatroskaAudioTrack extends BaseAudioTrack {
             MatroskaStreamingFile file = new MatroskaStreamingFile(inputStream);
             file.readFile();
 
-            accurateDuration.set((int) file.getDuration());
+            accurateDuration.setValue((int) file.getDuration());
             return file;
         } catch (IOException e) {
             throw new RuntimeException(e);

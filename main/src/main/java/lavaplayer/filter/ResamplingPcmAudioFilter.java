@@ -10,14 +10,14 @@ import java.util.Map;
  * Filter which resamples audio to the specified sample rate
  */
 public class ResamplingPcmAudioFilter implements FloatPcmAudioFilter {
-    public static final Map<AudioConfiguration.ResamplingQuality, SampleRateConverter.ResamplingType> RESAMPLING_VALUES = new HashMap<>();
+    public static final Map<ResamplingQuality, SampleRateConverter.ResamplingType> RESAMPLING_VALUES = new HashMap<>();
 
     private static final int BUFFER_SIZE = 4096;
 
     static {
-        RESAMPLING_VALUES.put(AudioConfiguration.ResamplingQuality.HIGH, SampleRateConverter.ResamplingType.SINC_MEDIUM_QUALITY);
-        RESAMPLING_VALUES.put(AudioConfiguration.ResamplingQuality.MEDIUM, SampleRateConverter.ResamplingType.SINC_FASTEST);
-        RESAMPLING_VALUES.put(AudioConfiguration.ResamplingQuality.LOW, SampleRateConverter.ResamplingType.LINEAR);
+        RESAMPLING_VALUES.put(ResamplingQuality.HIGH, SampleRateConverter.ResamplingType.SINC_MEDIUM_QUALITY);
+        RESAMPLING_VALUES.put(ResamplingQuality.MEDIUM, SampleRateConverter.ResamplingType.SINC_FASTEST);
+        RESAMPLING_VALUES.put(ResamplingQuality.LOW, SampleRateConverter.ResamplingType.LINEAR);
     }
 
     private final FloatPcmAudioFilter downstream;
@@ -47,7 +47,7 @@ public class ResamplingPcmAudioFilter implements FloatPcmAudioFilter {
         }
     }
 
-    private static SampleRateConverter.ResamplingType getResamplingType(AudioConfiguration.ResamplingQuality quality) {
+    private static SampleRateConverter.ResamplingType getResamplingType(ResamplingQuality quality) {
         return RESAMPLING_VALUES.get(quality);
     }
 

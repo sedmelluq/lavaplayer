@@ -3,7 +3,9 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 plugins {
     java
     `maven-publish`
-    kotlin("jvm") version "1.5.30"
+
+    id("kotlinx-atomicfu") version "0.16.3" apply false
+    kotlin("jvm")
 }
 
 group = "com.sedmelluq"
@@ -13,9 +15,10 @@ allprojects {
 
     repositories {
         maven("https://dimensional.jfrog.io/artifactory/maven")
+        maven("https://oss.sonatype.org/content/repositories/snapshots")
+        maven("https://m2.dv8tion.net/releases")
         mavenLocal()
         mavenCentral()
-        maven("https://m2.dv8tion.net/releases")
     }
 
     apply(plugin = "kotlin")
@@ -23,8 +26,8 @@ allprojects {
     apply(plugin = "maven-publish")
 
     java {
-        sourceCompatibility = JavaVersion.VERSION_16
-        targetCompatibility = JavaVersion.VERSION_16
+        sourceCompatibility = JavaVersion.VERSION_1_8
+        targetCompatibility = JavaVersion.VERSION_1_8
     }
 
     publishing {
@@ -40,10 +43,10 @@ allprojects {
     }
 
     tasks.withType<KotlinCompile> {
-        sourceCompatibility = "16"
-        targetCompatibility = "16"
+        sourceCompatibility = "1.8"
+        targetCompatibility = "1.8"
         kotlinOptions {
-            jvmTarget = "16"
+            jvmTarget = "1.8"
             freeCompilerArgs = listOf("-Xopt-in=kotlin.RequiresOptIn")
         }
     }

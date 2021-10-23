@@ -37,6 +37,7 @@ data class AudioProcessingContext(
     /**
      * Whether filter factory change is applied to already playing tracks.
      */
-    @JvmField
-    val filterHotSwapEnabled: Boolean = configuration.filterHotSwapEnabled
+    val filterHotSwapEnabled: Boolean
+        @JvmName("isFilterHotSwapEnabled")
+        get() = configuration.filterHotSwapEnabled
 }

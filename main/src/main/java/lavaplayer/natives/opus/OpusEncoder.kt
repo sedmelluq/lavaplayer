@@ -1,29 +1,22 @@
-package lavaplayer.natives.opus;
+package lavaplayer.natives.opus
 
-import lavaplayer.common.natives.NativeResourceHolder;
-
-import java.nio.ByteBuffer;
-import java.nio.ShortBuffer;
+import lavaplayer.common.natives.NativeResourceHolder
+import java.nio.ByteBuffer
+import java.nio.ShortBuffer
 
 /**
  * A wrapper around the native methods of OpusEncoderLibrary.
+ *
+ * @param sampleRate Input sample rate
+ * @param channels   Channel count
+ * @param quality    Encoding quality (0-10)
  */
-public class OpusEncoder extends NativeResourceHolder {
-    private final OpusEncoderLibrary library;
-    private final long instance;
+class OpusEncoder(sampleRate: Int, channels: Int, quality: Int) : NativeResourceHolder() {
+    private val library: OpusEncoderLibrary = OpusEncoderLibrary.instance
+    private val instance: Long = library.create(sampleRate, channels, OpusEncoderLibrary.APPLICATION_AUDIO, quality)
 
-    /**
-     * @param sampleRate Input sample rate
-     * @param channels   Channel count
-     * @param quality    Encoding quality (0-10)
-     */
-    public OpusEncoder(int sampleRate, int channels, int quality) {
-        library = OpusEncoderLibrary.getInstance();
-        instance = library.create(sampleRate, channels, OpusEncoderLibrary.APPLICATION_AUDIO, quality);
-
-        if (instance == 0) {
-            throw new IllegalStateException("Failed to create an encoder instance");
-        }
+    init {
+        check(instance != 0L) { "Failed to create an encoder instance" }
     }
 
     /**
@@ -34,28 +27,22 @@ public class OpusEncoder extends NativeResourceHolder {
      * @param directOutput Output byte buffer
      * @return Number of bytes written to the output
      */
-    public int encode(ShortBuffer directInput, int frameSize, ByteBuffer directOutput) {
-        checkNotReleased();
+    fun encode(directInput: ShortBuffer, frameSize: Int, directOutput: ByteBuffer): Int {
+        checkNotReleased()
 
-        if (!directInput.isDirect() || !directOutput.isDirect()) {
-            throw new IllegalArgumentException("Arguments must be direct buffers.");
-        }
+        require(directInput.isDirect && directOutput.isDirect) { "Arguments must be direct buffers." }
+        directOutput.clear()
 
-        directOutput.clear();
-        int result = library.encode(instance, directInput, frameSize, directOutput, directOutput.capacity());
+        val result = library.encode(instance, directInput, frameSize, directOutput, directOutput.capacity())
+        check(result >= 0) { "Encoding failed with error $result" }
 
-        if (result < 0) {
-            throw new IllegalStateException("Encoding failed with error " + result);
-        }
+        directOutput.position(result)
+        directOutput.flip()
 
-        directOutput.position(result);
-        directOutput.flip();
-
-        return result;
+        return result
     }
 
-    @Override
-    protected void freeResources() {
-        library.destroy(instance);
+    override fun freeResources() {
+        library.destroy(instance)
     }
 }

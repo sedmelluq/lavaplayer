@@ -1,25 +1,28 @@
-package lavaplayer.natives.opus;
+package lavaplayer.natives.opus
 
-import lavaplayer.natives.ConnectorNativeLibLoader;
+import lavaplayer.natives.ConnectorNativeLibLoader
+import java.nio.ByteBuffer
+import java.nio.ShortBuffer
 
-import java.nio.ByteBuffer;
-import java.nio.ShortBuffer;
+internal class OpusEncoderLibrary private constructor() {
+    external fun create(sampleRate: Int, channels: Int, application: Int, quality: Int): Long
+    external fun destroy(instance: Long)
+    external fun encode(
+        instance: Long,
+        directInput: ShortBuffer?,
+        frameSize: Int,
+        directOutput: ByteBuffer?,
+        outputCapacity: Int
+    ): Int
 
-class OpusEncoderLibrary {
-    static final int APPLICATION_AUDIO = 2049;
+    companion object {
+        const val APPLICATION_AUDIO = 2049
 
-    private OpusEncoderLibrary() {
-
+        @kotlin.jvm.JvmStatic
+        val instance: OpusEncoderLibrary
+            get() {
+                ConnectorNativeLibLoader.loadConnectorLibrary()
+                return OpusEncoderLibrary()
+            }
     }
-
-    static OpusEncoderLibrary getInstance() {
-        ConnectorNativeLibLoader.loadConnectorLibrary();
-        return new OpusEncoderLibrary();
-    }
-
-    native long create(int sampleRate, int channels, int application, int quality);
-
-    native void destroy(long instance);
-
-    native int encode(long instance, ShortBuffer directInput, int frameSize, ByteBuffer directOutput, int outputCapacity);
 }

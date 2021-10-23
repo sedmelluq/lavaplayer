@@ -8,11 +8,11 @@ import java.nio.ShortBuffer
  * Audio chunk post processor to apply selected volume.
  */
 class VolumePostProcessor(private val context: AudioProcessingContext) : AudioPostProcessor {
-    private val volumeProcessor: PcmVolumeProcessor = PcmVolumeProcessor(context.playerOptions.volumeLevel.get())
+    private val volumeProcessor: PcmVolumeProcessor = PcmVolumeProcessor(context.playerOptions.volumeLevel)
 
     @Throws(InterruptedException::class)
     override fun process(timecode: Long, buffer: ShortBuffer) {
-        val currentVolume = context.playerOptions.volumeLevel.get()
+        val currentVolume = context.playerOptions.volumeLevel
         if (currentVolume != volumeProcessor.lastVolume) {
             AudioFrameVolumeChanger.apply(context)
         }

@@ -47,7 +47,7 @@ public class MpegAudioTrack extends BaseAudioTrack {
                 throw new FriendlyException("Unknown MP4 format.", SUSPICIOUS, null);
             }
 
-            accurateDuration.set(fileReader.getDuration());
+            accurateDuration.setValue(fileReader.getDuration());
 
             localExecutor.executeProcessingLoop(fileReader::provideFrames, fileReader::seekToTimecode);
         } finally {

@@ -10,7 +10,7 @@ dependencies {
     compileOnly(project(":main"))
     implementation("io.github.microutils:kotlin-logging:2.0.11")
 
-    api("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.5.2-native-mt")
+    api("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.5.2")
     api("org.slf4j:slf4j-api:1.7.32")
 }
 

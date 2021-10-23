@@ -126,7 +126,6 @@ public class Equalizer extends EqualizerConfiguration implements FloatPcmAudioFi
                     int y = x + 3;
 
                     Coefficients coefficients = coefficients48000[bandIndex];
-
                     float bandResult = coefficients.alpha * (sample - history[x + minusTwo]) +
                         coefficients.gamma * history[y + minusOne] -
                         coefficients.beta * history[y + minusTwo];
@@ -158,15 +157,6 @@ public class Equalizer extends EqualizerConfiguration implements FloatPcmAudioFi
         }
     }
 
-    private static class Coefficients {
-        private final float beta;
-        private final float alpha;
-        private final float gamma;
-
-        private Coefficients(float beta, float alpha, float gamma) {
-            this.beta = beta;
-            this.alpha = alpha;
-            this.gamma = gamma;
-        }
+    private record Coefficients(float beta, float alpha, float gamma) {
     }
 }

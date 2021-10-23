@@ -1,33 +1,25 @@
-package lavaplayer.filter.volume;
+package lavaplayer.filter.volume
 
-import java.nio.ShortBuffer;
+import java.nio.ShortBuffer
+import kotlin.math.max
+import kotlin.math.min
+import kotlin.math.tan
 
 /**
  * Class used to apply a volume level to short PCM buffers
+ *
+ * @param initialVolume Initial volume level (only useful for getLastVolume() as specified with each call)
  */
-public class PcmVolumeProcessor {
-    private int currentVolume = -1;
-    private int integerMultiplier;
-
+class PcmVolumeProcessor(initialVolume: Int) {
     /**
-     * @param initialVolume Initial volume level (only useful for getLastVolume() as specified with each call)
+     * Last volume level used with this processor
      */
-    public PcmVolumeProcessor(int initialVolume) {
-        setupMultipliers(initialVolume);
-    }
+    var lastVolume = -1
 
-    /**
-     * @return Last volume level used with this processor
-     */
-    public int getLastVolume() {
-        return currentVolume;
-    }
+    private var integerMultiplier = 0
 
-    /**
-     * @param lastVolume Value to explicitly set for the return value of getLastVolume()
-     */
-    public void setLastVolume(int lastVolume) {
-        currentVolume = lastVolume;
+    init {
+        setupMultipliers(initialVolume)
     }
 
     /**
@@ -35,52 +27,49 @@ public class PcmVolumeProcessor {
      * @param targetVolume  The target volume of the samples
      * @param buffer        The buffer containing the samples
      */
-    public void applyVolume(int initialVolume, int targetVolume, ShortBuffer buffer) {
-        if (initialVolume != 100 && initialVolume != 0) {
-            setupMultipliers(initialVolume);
-            unapplyCurrentVolume(buffer);
+    fun applyVolume(initialVolume: Int, targetVolume: Int, buffer: ShortBuffer) {
+        if (initialVolume in 1..99) {
+            setupMultipliers(initialVolume)
+            unapplyCurrentVolume(buffer)
         }
 
-        setupMultipliers(targetVolume);
-        applyCurrentVolume(buffer);
+        setupMultipliers(targetVolume)
+        applyCurrentVolume(buffer)
     }
 
-    private void setupMultipliers(int activeVolume) {
-        if (currentVolume != activeVolume) {
-            currentVolume = activeVolume;
-
-            if (activeVolume <= 150) {
-                float floatMultiplier = (float) Math.tan(activeVolume * 0.0079f);
-                integerMultiplier = (int) (floatMultiplier * 10000);
+    private fun setupMultipliers(activeVolume: Int) {
+        if (lastVolume != activeVolume) {
+            lastVolume = activeVolume
+            integerMultiplier = if (activeVolume <= 150) {
+                val floatMultiplier = tan((activeVolume * 0.0079f).toDouble()).toFloat()
+                (floatMultiplier * 10000).toInt()
             } else {
-                integerMultiplier = 24621 * activeVolume / 150;
+                24621 * activeVolume / 150
             }
         }
     }
 
-    private void applyCurrentVolume(ShortBuffer buffer) {
-        if (currentVolume == 100) {
-            return;
+    private fun applyCurrentVolume(buffer: ShortBuffer) {
+        if (lastVolume == 100) {
+            return
         }
 
-        int endOffset = buffer.limit();
-
-        for (int i = buffer.position(); i < endOffset; i++) {
-            int value = buffer.get(i) * integerMultiplier / 10000;
-            buffer.put(i, (short) Math.max(-32767, Math.min(32767, value)));
+        val endOffset = buffer.limit()
+        for (i in buffer.position() until endOffset) {
+            val value = buffer[i] * integerMultiplier / 10000
+            buffer.put(i, max(-32767, min(32767, value)).toShort())
         }
     }
 
-    private void unapplyCurrentVolume(ShortBuffer buffer) {
+    private fun unapplyCurrentVolume(buffer: ShortBuffer) {
         if (integerMultiplier == 0) {
-            return;
+            return
         }
 
-        int endOffset = buffer.limit();
-
-        for (int i = buffer.position(); i < endOffset; i++) {
-            int value = buffer.get(i) * 10000 / integerMultiplier;
-            buffer.put(i, (short) Math.max(-32767, Math.min(32767, value)));
+        val endOffset = buffer.limit()
+        for (i in buffer.position() until endOffset) {
+            val value = buffer[i] * 10000 / integerMultiplier
+            buffer.put(i, max(-32767, min(32767, value)).toShort())
         }
     }
 }

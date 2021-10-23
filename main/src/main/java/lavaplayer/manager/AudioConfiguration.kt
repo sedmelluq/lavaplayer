@@ -1,5 +1,6 @@
 package lavaplayer.manager
 
+import lavaplayer.filter.ResamplingQuality
 import lavaplayer.format.AudioDataFormat
 import lavaplayer.format.StandardAudioDataFormats
 import lavaplayer.track.playback.AllocatingAudioFrameBuffer
@@ -46,6 +47,4 @@ class AudioConfiguration {
         copy.frameBufferFactory = frameBufferFactory
         return copy
     }
-
-    enum class ResamplingQuality { HIGH, MEDIUM, LOW }
 }

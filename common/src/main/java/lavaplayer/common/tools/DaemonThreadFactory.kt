@@ -1,90 +1,71 @@
-package lavaplayer.common.tools;
+package lavaplayer.common.tools
 
-import org.jetbrains.annotations.NotNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.atomic.AtomicInteger;
+import kotlinx.atomicfu.atomic
+import org.slf4j.LoggerFactory
+import java.lang.Runnable
+import java.util.concurrent.ThreadFactory
 
 /**
  * Thread factory for daemon threads.
+ *
+ * @param name         Name that will be included in thread names.
+ * @param exitCallback Runnable to be executed when the thread exits.
+ * @param nameFormat   Runnable to be executed when the thread exits.
  */
-public class DaemonThreadFactory implements ThreadFactory {
-    private static final Logger log = LoggerFactory.getLogger(DaemonThreadFactory.class);
-    private static final AtomicInteger poolNumber = new AtomicInteger(1);
-
-    public static String DEFAULT_NAME_FORMAT = "lava-daemon-pool-%s-%d-thread-";
-
-    private final ThreadGroup group;
-    private final AtomicInteger threadNumber = new AtomicInteger(1);
-    private final String namePrefix;
-    private final Runnable exitCallback;
-
-    /**
-     * @param name Name that will be included in thread names.
-     */
-    public DaemonThreadFactory(String name) {
-        this(name, null, DEFAULT_NAME_FORMAT);
+class DaemonThreadFactory @JvmOverloads constructor(
+    name: String?,
+    exitCallback: Runnable? = null,
+    nameFormat: String? = DEFAULT_NAME_FORMAT
+) : ThreadFactory {
+    companion object {
+        private val log = LoggerFactory.getLogger(DaemonThreadFactory::class.java)
+        private var poolNumber by atomic(1)
+        var DEFAULT_NAME_FORMAT = "lava-daemon-pool-%s-%d-thread-"
     }
 
-    /**
-     * @param name         Name that will be included in thread names.
-     * @param exitCallback Runnable to be executed when the thread exits.
-     * @param nameFormat   Runnable to be executed when the thread exits.
-     */
-    public DaemonThreadFactory(String name, Runnable exitCallback, String nameFormat) {
-        SecurityManager securityManager = System.getSecurityManager();
+    private val group: ThreadGroup
+    private var threadNumber by atomic(1)
+    private val namePrefix: String
+    private val exitCallback: Runnable?
 
-        group = (securityManager != null) ? securityManager.getThreadGroup() : Thread.currentThread().getThreadGroup();
-        namePrefix = String.format(nameFormat, name, poolNumber.getAndIncrement());
-        this.exitCallback = exitCallback;
+    init {
+        val securityManager = System.getSecurityManager()
+        group = if (securityManager != null) securityManager.threadGroup else Thread.currentThread().threadGroup
+        namePrefix = String.format(nameFormat!!, name, poolNumber++)
+
+        this.exitCallback = exitCallback
     }
 
-    @Override
-    public Thread newThread(@NotNull Runnable runnable) {
-        Thread thread = new Thread(group, getThreadRunnable(runnable), namePrefix + threadNumber.getAndIncrement(), 0);
-        thread.setDaemon(true);
-        thread.setPriority(Thread.NORM_PRIORITY);
-        return thread;
+    override fun newThread(runnable: Runnable): Thread {
+        val thread = Thread(group, getThreadRunnable(runnable), namePrefix + threadNumber++, 0)
+        thread.isDaemon = true
+        thread.priority = Thread.NORM_PRIORITY
+
+        return thread
     }
 
-    private Runnable getThreadRunnable(Runnable target) {
-        if (exitCallback == null) {
-            return target;
-        } else {
-            return new ExitCallbackRunnable(target);
-        }
+    private fun getThreadRunnable(target: Runnable): Runnable {
+        return if (exitCallback == null) target else ExitCallbackRunnable(target)
     }
 
-    private class ExitCallbackRunnable implements Runnable {
-        private final Runnable original;
-
-        private ExitCallbackRunnable(Runnable original) {
-            this.original = original;
-        }
-
-        @Override
-        public void run() {
+    private inner class ExitCallbackRunnable(private val original: Runnable) : Runnable {
+        override fun run() {
             try {
-                if (original != null) {
-                    original.run();
-                }
+                original.run()
             } finally {
-                wrapExitCallback();
+                wrapExitCallback()
             }
         }
 
-        private void wrapExitCallback() {
-            boolean wasInterrupted = Thread.interrupted();
-
+        private fun wrapExitCallback() {
+            val wasInterrupted = Thread.interrupted()
             try {
-                exitCallback.run();
-            } catch (Throwable throwable) {
-                log.error("Thread exit notification threw an exception.", throwable);
+                exitCallback?.run()
+            } catch (throwable: Throwable) {
+                log.error("Thread exit notification threw an exception.", throwable)
             } finally {
                 if (wasInterrupted) {
-                    Thread.currentThread().interrupt();
+                    Thread.currentThread().interrupt()
                 }
             }
         }

@@ -1,23 +1,26 @@
-package lavaplayer.natives.opus;
+package lavaplayer.natives.opus
 
-import lavaplayer.natives.ConnectorNativeLibLoader;
+import lavaplayer.natives.ConnectorNativeLibLoader.loadConnectorLibrary
+import java.nio.ByteBuffer
+import java.nio.ShortBuffer
 
-import java.nio.ByteBuffer;
-import java.nio.ShortBuffer;
+internal class OpusDecoderLibrary private constructor() {
+    external fun create(sampleRate: Int, channels: Int): Long
+    external fun destroy(instance: Long)
+    external fun decode(
+        instance: Long,
+        directInput: ByteBuffer?,
+        inputSize: Int,
+        directOutput: ShortBuffer?,
+        frameSize: Int
+    ): Int
 
-class OpusDecoderLibrary {
-    private OpusDecoderLibrary() {
-
+    companion object {
+        @JvmStatic
+        val instance: OpusDecoderLibrary
+            get() {
+                loadConnectorLibrary()
+                return OpusDecoderLibrary()
+            }
     }
-
-    static OpusDecoderLibrary getInstance() {
-        ConnectorNativeLibLoader.loadConnectorLibrary();
-        return new OpusDecoderLibrary();
-    }
-
-    native long create(int sampleRate, int channels);
-
-    native void destroy(long instance);
-
-    native int decode(long instance, ByteBuffer directInput, int inputSize, ShortBuffer directOutput, int frameSize);
 }
