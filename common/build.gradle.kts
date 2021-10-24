@@ -6,7 +6,7 @@ plugins {
 }
 
 val moduleName = "lava-common"
-version = "1.1.6"
+version = "1.2.0"
 
 dependencies {
     implementation("io.github.microutils:kotlin-logging:2.0.11")

@@ -1,25 +1,26 @@
 package lavaplayer.demo.music;
 
+import com.sedmelluq.discord.lavaplayer.track.loader.ItemLoader;
 import lavaplayer.demo.BotApplicationManager;
 import lavaplayer.demo.BotGuildContext;
 import lavaplayer.demo.MessageDispatcher;
 import lavaplayer.demo.controller.BotCommandHandler;
 import lavaplayer.demo.controller.BotController;
 import lavaplayer.demo.controller.BotControllerFactory;
-import lavaplayer.filter.equalizer.EqualizerFactory;
-import lavaplayer.manager.AudioPlayer;
-import lavaplayer.manager.AudioPlayerManager;
-import lavaplayer.source.youtube.YoutubeItemSourceManager;
-import lavaplayer.tools.FriendlyException;
-import lavaplayer.tools.PlayerLibrary;
-import lavaplayer.tools.extensions.AudioPlayerKt;
-import lavaplayer.tools.io.MessageInput;
-import lavaplayer.tools.io.MessageOutput;
-import lavaplayer.track.AudioTrack;
-import lavaplayer.track.AudioTrackCollection;
-import lavaplayer.track.DecodedTrackHolder;
-import lavaplayer.track.TrackMarker;
-import lavaplayer.track.loader.ItemLoadResultAdapter;
+import com.sedmelluq.discord.lavaplayer.filter.equalizer.EqualizerFactory;
+import com.sedmelluq.discord.lavaplayer.manager.AudioPlayer;
+import com.sedmelluq.discord.lavaplayer.manager.AudioPlayerManager;
+import com.sedmelluq.discord.lavaplayer.source.youtube.YoutubeItemSourceManager;
+import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
+import com.sedmelluq.discord.lavaplayer.tools.PlayerLibrary;
+import com.sedmelluq.discord.lavaplayer.tools.extensions.AudioPlayerKt;
+import com.sedmelluq.discord.lavaplayer.tools.io.MessageInput;
+import com.sedmelluq.discord.lavaplayer.tools.io.MessageOutput;
+import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
+import com.sedmelluq.discord.lavaplayer.track.AudioTrackCollection;
+import com.sedmelluq.discord.lavaplayer.track.DecodedTrackHolder;
+import com.sedmelluq.discord.lavaplayer.track.TrackMarker;
+import com.sedmelluq.discord.lavaplayer.track.loader.ItemLoadResultAdapter;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.TextChannel;
@@ -232,7 +233,7 @@ public class MusicController implements BotController {
     private void addTrack(final Message message, final String identifier, final boolean now, final boolean first) {
         outputChannel.set((TextChannel) message.getChannel());
 
-        var itemLoader = manager.getItems().createItemLoader(identifier);
+        ItemLoader itemLoader = manager.getItems().createItemLoader(identifier);
 
         itemLoader.setResultHandler(new ItemLoadResultAdapter() {
             @Override

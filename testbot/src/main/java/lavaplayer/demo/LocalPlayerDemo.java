@@ -1,17 +1,18 @@
 package lavaplayer.demo;
 
-import lavaplayer.format.AudioDataFormat;
-import lavaplayer.format.AudioPlayerInputStream;
-import lavaplayer.manager.AudioPlayer;
-import lavaplayer.manager.AudioPlayerManager;
-import lavaplayer.manager.DefaultAudioPlayerManager;
-import lavaplayer.source.common.SourceRegistry;
-import lavaplayer.track.loader.DelegatedItemLoadResultHandler;
+import com.sedmelluq.discord.lavaplayer.format.AudioDataFormat;
+import com.sedmelluq.discord.lavaplayer.format.AudioPlayerInputStream;
+import com.sedmelluq.discord.lavaplayer.manager.AudioPlayer;
+import com.sedmelluq.discord.lavaplayer.manager.AudioPlayerManager;
+import com.sedmelluq.discord.lavaplayer.manager.DefaultAudioPlayerManager;
+import com.sedmelluq.discord.lavaplayer.source.common.SourceRegistry;
+import com.sedmelluq.discord.lavaplayer.track.loader.DelegatedItemLoadResultHandler;
+import com.sedmelluq.discord.lavaplayer.track.loader.ItemLoader;
 
 import javax.sound.sampled.*;
 import java.io.IOException;
 
-import static lavaplayer.format.StandardAudioDataFormats.COMMON_PCM_S16_BE;
+import static com.sedmelluq.discord.lavaplayer.format.StandardAudioDataFormats.COMMON_PCM_S16_BE;
 
 public class LocalPlayerDemo {
     public static void main(String[] args) throws LineUnavailableException, IOException {
@@ -22,7 +23,7 @@ public class LocalPlayerDemo {
         AudioPlayer player = manager.createPlayer();
 
         /* load items. */
-        var itemLoader = manager.getItems().createItemLoader("https://www.youtube.com/watch?v=R76_7N4gyDA");
+        ItemLoader itemLoader = manager.getItems().createItemLoader("https://www.youtube.com/watch?v=R76_7N4gyDA");
         itemLoader.setResultHandler(new DelegatedItemLoadResultHandler(
             player::playTrack,
             playlist -> player.playTrack(playlist.getTracks().get(0)),

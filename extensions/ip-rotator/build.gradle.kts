@@ -4,7 +4,7 @@ plugins {
 }
 
 val moduleName = "lavaplayer-ext-ip-rotator"
-version = "0.2.8"
+version = "0.3.0"
 
 dependencies {
     compileOnly(project(":main"))

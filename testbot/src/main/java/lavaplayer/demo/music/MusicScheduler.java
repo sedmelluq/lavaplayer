@@ -1,10 +1,10 @@
 package lavaplayer.demo.music;
 
+import com.sedmelluq.discord.lavaplayer.manager.AudioPlayer;
+import com.sedmelluq.discord.lavaplayer.manager.event.AudioEventAdapter;
+import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
+import com.sedmelluq.discord.lavaplayer.track.AudioTrackEndReason;
 import lavaplayer.demo.MessageDispatcher;
-import lavaplayer.manager.AudioPlayer;
-import lavaplayer.manager.event.AudioEventAdapter;
-import lavaplayer.track.AudioTrack;
-import lavaplayer.track.AudioTrackEndReason;
 import net.dv8tion.jda.api.entities.Message;
 
 import java.util.ArrayList;

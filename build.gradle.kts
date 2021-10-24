@@ -21,6 +21,7 @@ allprojects {
         mavenCentral()
     }
 
+    apply(plugin = "kotlinx-atomicfu")
     apply(plugin = "kotlin")
     apply(plugin = "java")
     apply(plugin = "maven-publish")

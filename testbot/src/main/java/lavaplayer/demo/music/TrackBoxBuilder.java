@@ -1,6 +1,6 @@
 package lavaplayer.demo.music;
 
-import lavaplayer.track.AudioTrack;
+import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 
 public class TrackBoxBuilder {
     private static final String TOP_LEFT_CORNER = "\u2554";

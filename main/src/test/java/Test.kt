@@ -1,11 +1,11 @@
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import lavaplayer.manager.AudioPlayerManager
-import lavaplayer.manager.DefaultAudioPlayerManager
-import lavaplayer.source.common.SourceRegistry
-import lavaplayer.tools.extensions.isSearchResult
-import lavaplayer.track.loader.ItemLoadResult
+import com.sedmelluq.discord.lavaplayer.manager.AudioPlayerManager
+import com.sedmelluq.discord.lavaplayer.manager.DefaultAudioPlayerManager
+import com.sedmelluq.discord.lavaplayer.source.common.SourceRegistry
+import com.sedmelluq.discord.lavaplayer.tools.extensions.isSearchResult
+import com.sedmelluq.discord.lavaplayer.track.loader.ItemLoadResult
 import java.util.concurrent.ExecutionException
 
 object Test {
