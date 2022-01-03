@@ -1,2 +1,2 @@
 install:
-  - ./gradlew clean :main:build :main:publishToMavenLocal
+  - ./gradlew clean build publishToMavenLocal
