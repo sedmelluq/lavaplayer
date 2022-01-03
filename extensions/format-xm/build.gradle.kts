@@ -7,12 +7,19 @@ val moduleName = "lavaplayer-ext-format-xm"
 version = "0.1.0"
 
 repositories {
-  maven(url = "https://dl.bintray.com/gabixdev/kyoko")
+  ivy {
+    url = uri("https://github.com/")
+    patternLayout {
+      artifact("martincameron/micromod/raw/master/[module]-[revision].[ext]")
+    }
+    metadataSources { artifact() }
+  }
 }
 
 dependencies {
   compileOnly(project(":main"))
-  implementation("com.github.micromod:ibxm:a73")
+  implementation(":ibxm:a74:jar")
+  implementation("org.slf4j:slf4j-api:1.7.32")
 }
 
 val sourcesJar by tasks.registering(Jar::class) {
