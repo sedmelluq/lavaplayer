@@ -27,12 +27,24 @@ val sourcesJar by tasks.registering(Jar::class) {
   from(sourceSets["main"].allSource)
 }
 
+val uberJar by tasks.registering(Jar::class) {
+  archiveClassifier.set("uber")
+
+  from(sourceSets.main.get().output)
+
+  dependsOn(configurations.runtimeClasspath)
+  from({
+    configurations.runtimeClasspath.get().filter { it.name.endsWith("jar") }.map { zipTree(it) }
+  })
+}
+
 publishing {
   publications {
     create<MavenPublication>("mavenJava") {
       from(components["java"])
       artifactId = moduleName
       artifact(sourcesJar)
+      artifact(uberJar)
     }
   }
 }
