@@ -8,6 +8,7 @@ version = "0.1.0"
 
 dependencies {
   implementation(project(":main"))
+  implementation("org.slf4j:slf4j-api:1.7.32")
 }
 
 val sourcesJar by tasks.registering(Jar::class) {
