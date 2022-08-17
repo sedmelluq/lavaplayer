@@ -12,11 +12,11 @@ dependencies {
   implementation("com.sedmelluq:lavaplayer-natives:1.3.14")
   implementation("org.slf4j:slf4j-api:1.7.25")
 
-  api("org.apache.httpcomponents:httpclient:4.5.10")
-  implementation("commons-io:commons-io:2.6")
+  api("org.apache.httpcomponents:httpclient:4.5.13")
+  implementation("commons-io:commons-io:2.11.0")
 
   api("com.fasterxml.jackson.core:jackson-core:2.10.0")
-  api("com.fasterxml.jackson.core:jackson-databind:2.10.0")
+  api("com.fasterxml.jackson.core:jackson-databind:2.13.3")
 
   implementation("org.jsoup:jsoup:1.12.1")
   implementation("net.iharder:base64:2.3.9")
