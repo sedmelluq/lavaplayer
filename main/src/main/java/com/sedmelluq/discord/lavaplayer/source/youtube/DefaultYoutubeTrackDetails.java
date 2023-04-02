@@ -94,6 +94,7 @@ public class DefaultYoutubeTrackDetails implements YoutubeTrackDetails {
 
     TemporalInfo temporalInfo = TemporalInfo.fromRawData(
         videoDetails.get("isLiveContent").asBoolean(false),
+        videoDetails.get("isLive").asBoolean(false),
         videoDetails.get("lengthSeconds")
     );
 
@@ -109,6 +110,7 @@ public class DefaultYoutubeTrackDetails implements YoutubeTrackDetails {
 
     TemporalInfo temporalInfo = TemporalInfo.fromRawData(
         "1".equals(args.get("live_playback").text()),
+        false,
         args.get("length_seconds")
     );
 
@@ -129,11 +131,11 @@ public class DefaultYoutubeTrackDetails implements YoutubeTrackDetails {
       this.durationMillis = durationMillis;
     }
 
-    public static TemporalInfo fromRawData(boolean wasLiveStream, JsonBrowser durationSecondsField) {
+    public static TemporalInfo fromRawData(boolean wasLiveStream, boolean isSpecifiedLive, JsonBrowser durationSecondsField) {
       long durationValue = durationSecondsField.asLong(0L);
       // VODs are not really live streams, even though that field in JSON claims they are. If it is actually live, then
       // duration is also missing or 0.
-      boolean isActiveStream = wasLiveStream && durationValue == 0;
+      boolean isActiveStream = isSpecifiedLive || (wasLiveStream && durationValue == 0);
 
       return new TemporalInfo(
           isActiveStream,
